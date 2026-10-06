@@ -1,23 +1,49 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import type {
+  Campaign,
+  CampaignSummary,
   HandleAvailability,
   ImportResponse,
   MyProgress,
   Profile,
   PuzzleClues,
-  PuzzleSummary,
   SolveResponse,
 } from '@pixel-imperium/protocol'
 import { eq } from 'drizzle-orm'
 import { createApp } from './app.ts'
 import { account, progress as progressTable, session, solve as solveTable, user, userSettings } from './db/schema.ts'
-import { parseSeedPuzzle } from './puzzles.ts'
+import { buildCampaign } from './campaigns.ts'
+import type { SeedPuzzle } from './puzzles.ts'
 import { createTestDeps, signedInUser, truncateAll } from './test-db.ts'
 
 // A deliberately ambiguous puzzle: the anti-diagonal satisfies the same clues as the stored diagonal.
-const diagonal = parseSeedPuzzle({ id: 'diag', title: 'Diagonal', palette: { r: '#f00', b: '#00f' }, rows: ['r.', '.b'] })
+const diagonal: SeedPuzzle = { id: 'diag', title: 'Diagonal', palette: { r: '#f00', b: '#00f' }, rows: ['r.', '.b'] }
+const dot: SeedPuzzle = { id: 'dot', title: 'Dot', palette: { g: '#0f0' }, rows: ['g'] }
+
+/** A draft campaign whose map is one green cell per province, so the fixture can skip the size rules. */
+function fixture(id: string, provinces: Record<string, SeedPuzzle[]>) {
+  const ids = Object.keys(provinces)
+  const regionKeys = ids.map((_, i) => String(i))
+  return buildCampaign({
+    campaign: {
+      id,
+      name: `Campaign ${id}`,
+      draft: true,
+      closingLine: 'Done.',
+      puzzlesPerProvince: 30,
+      provinces: ids.map(p => ({ id: p, name: `Province ${p}`, theme: '', flavour: `${p} falls.`, minSize: 5, maxSize: 5 })),
+    },
+    map: {
+      palette: { g: '#0f0' },
+      rows: ['g'.repeat(ids.length - 1) + '.'],
+      regions: { key: Object.fromEntries(ids.map((p, i) => [regionKeys[i], p])), rows: [regionKeys.join('')] },
+    },
+    provinces,
+  })
+}
+
 const { db, auth } = await createTestDeps()
-const app = createApp([diagonal], { db, auth })
+const app = createApp([fixture('main', { first: [diagonal], second: [] })], { db, auth })
 
 beforeEach(() => truncateAll(db))
 afterAll(() => db.$client.end())
@@ -30,12 +56,38 @@ function solve(cells: unknown, id = 'diag', cookie?: string) {
   })
 }
 
-describe('GET /api/puzzles', () => {
-  it('lists summaries', async () => {
-    const res = await app.request('/api/puzzles')
-    expect(await res.json()).toEqual<PuzzleSummary[]>([
-      { id: 'diag', title: 'Diagonal', width: 2, height: 2, filledCount: 2 },
+describe('GET /api/campaigns', () => {
+  it('lists campaigns in order', async () => {
+    const multi = createApp([fixture('b', { x: [] }), fixture('a', { y: [] })], { db, auth })
+    expect(await (await multi.request('/api/campaigns')).json()).toEqual<CampaignSummary[]>([
+      { id: 'b', name: 'Campaign b' },
+      { id: 'a', name: 'Campaign a' },
     ])
+  })
+})
+
+describe('GET /api/campaigns/:id', () => {
+  it('returns the map and provinces with puzzle summaries, without palettes', async () => {
+    const res = await app.request('/api/campaigns/main')
+    expect(await res.json()).toEqual<Campaign>({
+      id: 'main',
+      name: 'Campaign main',
+      closingLine: 'Done.',
+      map: { width: 2, height: 1, colors: ['#0f0', null], regions: [0, 1] },
+      provinces: [
+        {
+          id: 'first',
+          name: 'Province first',
+          flavour: 'first falls.',
+          puzzles: [{ id: 'diag', title: 'Diagonal', width: 2, height: 2, filledCount: 2 }],
+        },
+        { id: 'second', name: 'Province second', flavour: 'second falls.', puzzles: [] },
+      ],
+    })
+  })
+
+  it('404s on unknown id', async () => {
+    expect((await app.request('/api/campaigns/nope')).status).toBe(404)
   })
 })
 
@@ -49,6 +101,8 @@ describe('GET /api/puzzles/:id', () => {
       width: 2,
       height: 2,
       filledCount: 2,
+      campaignId: 'main',
+      provinceId: 'first',
       clues: { rows: [[1], [1]], cols: [[1], [1]] },
     })
     expect(body).not.toHaveProperty('palette')
@@ -344,12 +398,11 @@ describe('handles', () => {
 })
 
 describe('GET /api/users/:handle', () => {
-  const dot = parseSeedPuzzle({ id: 'dot', title: 'Dot', palette: { g: '#0f0' }, rows: ['g'] })
-  const profileApp = createApp([diagonal, dot], { db, auth })
+  const profileApp = createApp([fixture('alpha', { one: [diagonal] }), fixture('beta', { two: [dot] })], { db, auth })
   const profile = async (handle: string, cookie?: string) =>
     (await (await profileApp.request(`/api/users/${handle}`, { headers: cookie ? { cookie } : {} })).json()) as Profile
 
-  /** Verified `diag`, unverified `dot`, and a verified solve of a puzzle no longer in the seed. */
+  /** Verified `diag`, unverified `dot`, and a verified solve of a puzzle no longer in any campaign. */
   async function owner() {
     const o = await signedInUser(db, auth, 'Owner')
     await db.insert(solveTable).values([
@@ -360,41 +413,32 @@ describe('GET /api/users/:handle', () => {
     return o
   }
 
-  const diagItem = { puzzleId: 'diag', title: 'Diagonal', width: 2, height: 2, verified: true }
-  const dotItem = { puzzleId: 'dot', title: 'Dot', width: 1, height: 1, verified: false }
+  const verifiedOnly: Profile = {
+    handle: 'Owner',
+    image: null,
+    joinedAt: expect.any(String),
+    verifiedSolves: 1,
+    campaigns: [{ id: 'alpha', verifiedPuzzleIds: ['diag'] }],
+  }
 
-  it('shows anonymous viewers verified solves of known puzzles, without palettes or private fields', async () => {
+  it('shows verified solves of known puzzles by campaign, without private fields', async () => {
     await owner()
     const body = await profile('owner')
-    expect(body).toEqual<Profile>({
-      handle: 'Owner',
-      image: null,
-      joinedAt: expect.any(String),
-      verifiedSolves: 1,
-      gallery: [{ ...diagItem, palette: null }],
-    })
+    expect(body).toEqual<Profile>(verifiedOnly)
     expect(JSON.stringify(body)).not.toContain('@example.com')
   })
 
-  it('reveals only the pictures the viewer has verifiably solved', async () => {
-    await owner()
-    const viewer = await signedInUser(db, auth, 'viewer')
-    expect((await profile('owner', viewer.cookie)).gallery).toEqual([{ ...diagItem, palette: null }])
-
-    await db.insert(solveTable).values({ userId: viewer.id, puzzleId: 'diag', verified: false })
-    expect((await profile('owner', viewer.cookie)).gallery[0]?.palette).toBeNull()
-
-    await db.update(solveTable).set({ verified: true }).where(eq(solveTable.userId, viewer.id))
-    expect((await profile('owner', viewer.cookie)).gallery[0]?.palette).toEqual(['#f00', null, null, '#00f'])
+  it('shows the owner verified solves only too', async () => {
+    const o = await owner()
+    expect(await profile('OWNER', o.cookie)).toEqual<Profile>(verifiedOnly)
   })
 
-  it('shows the owner their unverified solves too, newest first, with palettes for verified ones only', async () => {
+  it('orders campaigns by their most recent verified solve', async () => {
     const o = await owner()
-    const body = await profile('OWNER', o.cookie)
-    expect(body.verifiedSolves).toBe(1)
-    expect(body.gallery).toEqual([
-      { ...dotItem, palette: null },
-      { ...diagItem, palette: ['#f00', null, null, '#00f'] },
+    await db.update(solveTable).set({ verified: true }).where(eq(solveTable.userId, o.id))
+    expect((await profile('owner')).campaigns).toEqual([
+      { id: 'beta', verifiedPuzzleIds: ['dot'] },
+      { id: 'alpha', verifiedPuzzleIds: ['diag'] },
     ])
   })
 

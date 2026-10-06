@@ -1,32 +1,5 @@
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { isLogicSolvable, isUnique } from '@pixel-imperium/nonogram'
-import { type SeedPuzzle, SEED_PATH, loadSeedPuzzles, parseSeedPuzzle } from './puzzles.ts'
-
-const seeds = JSON.parse(readFileSync(SEED_PATH, 'utf8')) as SeedPuzzle[]
-
-describe('seed puzzles', () => {
-  it('have unique ids', () => {
-    const ids = seeds.map(s => s.id)
-    expect(new Set(ids).size).toBe(ids.length)
-  })
-
-  it('include at least one non-square grid', () => {
-    expect(loadSeedPuzzles().some(p => p.width !== p.height)).toBe(true)
-  })
-
-  describe.each(seeds.map(s => [s.id, s] as const))('%s', (_, seed) => {
-    it('is rectangular and uses only palette keys', () => {
-      expect(() => parseSeedPuzzle(seed)).not.toThrow()
-    })
-
-    it('is unique and logic-solvable', () => {
-      const { clues } = parseSeedPuzzle(seed)
-      expect(isUnique(clues)).toBe(true)
-      expect(isLogicSolvable(clues)).toBe(true)
-    })
-  })
-})
+import { parseSeedPuzzle } from './puzzles.ts'
 
 describe('parseSeedPuzzle', () => {
   it('rejects ragged rows', () => {

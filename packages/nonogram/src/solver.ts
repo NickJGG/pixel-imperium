@@ -139,6 +139,14 @@ export function isLogicSolvable(clues: Clues): boolean {
   return g !== null && g.every(cell => cell !== 'unknown')
 }
 
+/** Row+column sweeps line logic needs to solve the grid, or `null` if it can't. */
+export function logicPassCount(clues: Clues): number | null {
+  const { cells, resolvedPerPass } = runPropagation(clues, unknownGrid(clues))
+  if (!cells || cells.includes('unknown')) return null
+  // The final sweep confirms the fixed point and resolves nothing.
+  return resolvedPerPass.length - 1
+}
+
 export function isUnique(clues: Clues): boolean {
   let count = 0
 

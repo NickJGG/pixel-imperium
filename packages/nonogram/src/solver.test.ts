@@ -8,6 +8,7 @@ import {
   lineFeasible,
   linePlacements,
   lineSolve,
+  logicPassCount,
   propagate,
   rateDifficulty,
 } from './solver.ts'
@@ -134,5 +135,16 @@ describe('rateDifficulty', () => {
 
   it('rates puzzles needing guesswork 5', () => {
     expect(rateDifficulty(cluesOf(['#.', '.#']))).toBe(5)
+  })
+})
+
+describe('logicPassCount', () => {
+  it('counts the sweeps that resolve cells', () => {
+    expect(logicPassCount(cluesOf(['###', '###']))).toBe(1)
+    expect(logicPassCount(cluesOf(heart))).toBeGreaterThanOrEqual(1)
+  })
+
+  it('is null when line logic stalls', () => {
+    expect(logicPassCount(cluesOf(['#.', '.#']))).toBeNull()
   })
 })

@@ -39,7 +39,7 @@ An **Account**'s unique, case-insensitive public name, used in its profile URL `
 _Avoid_: Username, display name
 
 **Profile**:
-An **Account**'s public page showing its handle, avatar and gallery of solved puzzles.
+An **Account**'s public page showing its handle, avatar and **Map**.
 
 ### Solves
 
@@ -54,12 +54,43 @@ _Avoid_: Imported solve (as a status)
 Moving a device's **Signed-out play** data into an **Account**, after the player accepts the import prompt.
 _Avoid_: Migration, sync
 
+### Campaign
+
+**Campaign**:
+A single-player journey through a fixed sequence of **Provinces**, each **Campaign** defining its own shape and **Map**.
+_Avoid_: Story mode, adventure
+
+**Province**:
+A named group of **Puzzles** within the **Campaign**, unlocked one at a time in a fixed order.
+_Avoid_: Chapter, world, region, level
+
+**Conquest**:
+A **Province** becoming conquered once every one of its **Puzzles** is solved.
+_Avoid_: Completion, clear
+
+**Imperium**:
+The first **Campaign**: six **Provinces** of 30 **Puzzles** each, marching inward to the **Capital** and **Throne**.
+
+**Capital**:
+The second-to-last **Province** of the **Imperium**.
+
+**Throne**:
+The final and hardest **Province** of the **Imperium**.
+_Avoid_: Finale, boss
+
+**Map**:
+The pixel-art picture of a **Campaign**'s territory, divided into **Provinces** shown fogged, monochrome or in colour.
+_Avoid_: World map, overworld
+
 ## Relationships
 
 - An **Account** has exactly one **Handle** and one **Profile**
 - An **Account** has at most one solve per **Puzzle**, either **Verified** or **Unverified**
 - An **Unverified solve** becomes a **Verified solve** when its owner solves the **Puzzle** again while signed in
-- A **Profile** shows another player's solved **Puzzle** in its **Palette** only if the viewer has also solved it
+- A **Profile**'s **Map** counts a **Province** as conquered only if all its solves are **Verified**
+- A **Campaign** has an ordered list of **Provinces**; the **Imperium**'s is four outer **Provinces**, then the **Capital**, then the **Throne**
+- A **Province** has its **Campaign**'s number of **Puzzles** (30 in the **Imperium**), ordered from easiest to hardest
+- Each **Province** unlocks on the **Conquest** of the one before it
 
 ## Example dialogue
 

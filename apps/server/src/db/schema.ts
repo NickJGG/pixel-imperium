@@ -1,7 +1,7 @@
 /**
  * Better Auth's tables (`user`, `session`, `account`, `verification`) mirror what its Drizzle schema
  * generator emits for our config; keep them in step when changing `auth.ts` options.
- * Puzzle ids reference `data/puzzles.json`, so they carry no foreign key.
+ * Puzzle ids reference the campaign files in `data/campaigns/`, so they carry no foreign key.
  */
 import type { Assists } from '@pixel-imperium/protocol'
 import { sql } from 'drizzle-orm'

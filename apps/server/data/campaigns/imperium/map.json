@@ -1,0 +1,46 @@
+{
+  "palette": {"m": "#8fbf4f", "c": "#3a78c2", "w": "#2f6b35", "f": "#8a8f99", "k": "#c9a46a", "t": "#d9a62b"},
+  "rows": [
+    "mmmmmmmmmccc",
+    "mwwwwwwwwccc",
+    "mwwwwwwwwccc",
+    "mwwffffwwccc",
+    "mwfffffffccc",
+    "mwffkkkkfccc",
+    "mwffkkkkfccc",
+    "mwffkttkfccc",
+    "mwffkttkfccc",
+    "mwffkkkkfccc",
+    "mwffkkkkfccc",
+    "mwfffffffccc",
+    "mwwffffwwccc",
+    "mwwwwwwwwccc",
+    "mwwwwwwwwccc",
+    "mmmmmmmmmccc",
+    "mmmmmmmmmccc",
+    "mmmmmmmmmccc"
+  ],
+  "regions": {
+    "key": {"m": "marches", "c": "coast", "w": "wildwood", "f": "forge", "k": "capital", "t": "throne"},
+    "rows": [
+      "mmmmmmmmmccc",
+      "mwwwwwwwwccc",
+      "mwwwwwwwwccc",
+      "mwwffffwwccc",
+      "mwfffffffccc",
+      "mwffkkkkfccc",
+      "mwffkkkkfccc",
+      "mwffkttkfccc",
+      "mwffkttkfccc",
+      "mwffkkkkfccc",
+      "mwffkkkkfccc",
+      "mwfffffffccc",
+      "mwwffffwwccc",
+      "mwwwwwwwwccc",
+      "mwwwwwwwwccc",
+      "mmmmmmmmmccc",
+      "mmmmmmmmmccc",
+      "mmmmmmmmmccc"
+    ]
+  }
+}

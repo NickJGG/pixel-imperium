@@ -3,7 +3,8 @@ import { satisfiesClues } from '@pixel-imperium/nonogram'
 import type {
   ApiError,
   Assists,
-  GalleryItem,
+  Campaign as CampaignPayload,
+  CampaignSummary,
   HandleAvailability,
   HandleRejection,
   ImportItem,
@@ -11,6 +12,7 @@ import type {
   ImportResponse,
   MyProgress,
   Profile,
+  ProfileCampaign,
   PutHandleResponse,
   PutProgressResponse,
   PuzzleClues,
@@ -25,7 +27,7 @@ import type { Db } from './db/index.ts'
 import { progress, solve, user, userSettings } from './db/schema.ts'
 import { handleProblem } from './handles.ts'
 import { parseCells, planImport } from './import.ts'
-import type { Puzzle } from './puzzles.ts'
+import type { Campaign } from './campaigns.ts'
 
 export interface AppDeps {
   db: Db
@@ -57,8 +59,28 @@ function isUniqueViolation(e: unknown): boolean {
   return (e as { code?: unknown } | null)?.code === '23505' || (e instanceof Error && isUniqueViolation(e.cause))
 }
 
-export function createApp(puzzles: readonly Puzzle[], { db, auth }: AppDeps) {
-  const byId = new Map(puzzles.map(p => [p.id, p]))
+const summarize = ({ id, title, width, height, filledCount }: PuzzleSummary): PuzzleSummary => ({
+  id,
+  title,
+  width,
+  height,
+  filledCount,
+})
+
+export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps) {
+  const byId = new Map(campaigns.flatMap(c => c.provinces.flatMap(p => p.puzzles)).map(p => [p.id, p]))
+  const campaignPayloads = new Map(
+    campaigns.map(({ id, name, closingLine, map, provinces }): [string, CampaignPayload] => [
+      id,
+      {
+        id,
+        name,
+        closingLine,
+        map,
+        provinces: provinces.map(p => ({ id: p.id, name: p.name, flavour: p.flavour, puzzles: p.puzzles.map(summarize) })),
+      },
+    ]),
+  )
   const notFound = (id: string): ApiError => ({ error: `no puzzle '${id}'` })
 
   /** A verified solve upgrades an unverified one; nothing ever downgrades or re-dates a solve. */
@@ -85,18 +107,17 @@ export function createApp(puzzles: readonly Puzzle[], { db, auth }: AppDeps) {
       if (!c.get('user')) return c.json<ApiError>({ error: 'not signed in' }, 401)
       await next()
     })
-    .get('/puzzles', c =>
-      c.json(
-        puzzles.map(
-          ({ id, title, width, height, filledCount }): PuzzleSummary => ({ id, title, width, height, filledCount }),
-        ),
-      ),
-    )
+    .get('/campaigns', c => c.json(campaigns.map(({ id, name }): CampaignSummary => ({ id, name }))))
+    .get('/campaigns/:id', c => {
+      const campaign = campaignPayloads.get(c.req.param('id'))
+      if (!campaign) return c.json<ApiError>({ error: `no campaign '${c.req.param('id')}'` }, 404)
+      return c.json(campaign)
+    })
     .get('/puzzles/:id', c => {
       const p = byId.get(c.req.param('id'))
       if (!p) return c.json(notFound(c.req.param('id')), 404)
-      const { id, title, width, height, filledCount, clues } = p
-      return c.json<PuzzleClues>({ id, title, width, height, filledCount, clues })
+      const { campaignId, provinceId, clues } = p
+      return c.json<PuzzleClues>({ ...summarize(p), campaignId, provinceId, clues })
     })
     .post('/puzzles/:id/solve', async c => {
       const p = byId.get(c.req.param('id'))
@@ -128,35 +149,28 @@ export function createApp(puzzles: readonly Puzzle[], { db, auth }: AppDeps) {
       const [owner] = await db.select().from(user).where(handleIs(c.req.param('handle')))
       if (!owner) return c.json<ApiError>({ error: `no player '${c.req.param('handle')}'` }, 404)
 
-      const viewer = c.get('user')
-      const isOwner = viewer?.id === owner.id
-      const [solves, viewerSolves] = await Promise.all([
-        db
-          .select()
-          .from(solve)
-          .where(and(eq(solve.userId, owner.id), isOwner ? undefined : eq(solve.verified, true)))
-          .orderBy(desc(solve.solvedAt)),
-        viewer
-          ? db
-              .select({ puzzleId: solve.puzzleId })
-              .from(solve)
-              .where(and(eq(solve.userId, viewer.id), eq(solve.verified, true)))
-          : [],
-      ])
-      // Spoiler rule: a picture is revealed only to viewers who have verifiably solved it themselves.
-      const revealed = new Set(viewerSolves.map(s => s.puzzleId))
-      const gallery = solves.flatMap((s): GalleryItem[] => {
-        const p = byId.get(s.puzzleId)
-        if (!p) return []
-        const { id, title, width, height } = p
-        return [{ puzzleId: id, title, width, height, palette: revealed.has(id) ? p.palette : null, verified: s.verified }]
-      })
+      const solves = await db
+        .select({ puzzleId: solve.puzzleId })
+        .from(solve)
+        .where(and(eq(solve.userId, owner.id), eq(solve.verified, true)))
+        .orderBy(desc(solve.solvedAt))
+      // Insertion order follows the newest solve, so the most recently played campaign comes first.
+      const byCampaign = new Map<string, ProfileCampaign>()
+      let verifiedSolves = 0
+      for (const { puzzleId } of solves) {
+        const p = byId.get(puzzleId)
+        if (!p) continue
+        verifiedSolves++
+        const entry = byCampaign.get(p.campaignId) ?? { id: p.campaignId, verifiedPuzzleIds: [] }
+        entry.verifiedPuzzleIds.push(puzzleId)
+        byCampaign.set(p.campaignId, entry)
+      }
       return c.json<Profile>({
         handle: owner.handle,
         image: owner.image,
         joinedAt: owner.createdAt.toISOString(),
-        verifiedSolves: gallery.filter(g => g.verified).length,
-        gallery,
+        verifiedSolves,
+        campaigns: [...byCampaign.values()],
       })
     })
     .put('/me/handle', async c => {

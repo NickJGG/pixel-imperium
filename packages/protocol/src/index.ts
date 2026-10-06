@@ -1,6 +1,5 @@
 import type { Clues } from '@pixel-imperium/nonogram'
 
-/** `GET /api/puzzles` returns `PuzzleSummary[]`. */
 export interface PuzzleSummary {
   id: string
   title: string
@@ -12,7 +11,41 @@ export interface PuzzleSummary {
 
 /** `GET /api/puzzles/:id`. Never includes the solution or palette. */
 export interface PuzzleClues extends PuzzleSummary {
+  campaignId: string
+  provinceId: string
   clues: Clues
+}
+
+/** `GET /api/campaigns` returns `CampaignSummary[]`, in default-first order. */
+export interface CampaignSummary {
+  id: string
+  name: string
+}
+
+/** Row-major map art; `regions` holds each cell's index into `Campaign.provinces`, `null` for neutral terrain. */
+export interface CampaignMap {
+  width: number
+  height: number
+  colors: (string | null)[]
+  regions: (number | null)[]
+}
+
+export interface Province {
+  id: string
+  name: string
+  /** Shown once the province is conquered. */
+  flavour: string
+  /** Easiest first. */
+  puzzles: PuzzleSummary[]
+}
+
+/** `GET /api/campaigns/:id`. Provinces in unlock order; locking is left to the client. */
+export interface Campaign {
+  id: string
+  name: string
+  closingLine: string
+  map: CampaignMap
+  provinces: Province[]
 }
 
 /** `POST /api/puzzles/:id/solve`; `cells` is row-major, marks sent as `'empty'`. */
@@ -109,22 +142,18 @@ export interface HandleRejection extends ApiError {
   reason: HandleProblem
 }
 
-/** A solved puzzle on a profile; `palette` only when the viewer has a verified solve of it too. */
-export interface GalleryItem {
-  puzzleId: string
-  title: string
-  width: number
-  height: number
-  palette: (string | null)[] | null
-  /** Always true for other viewers: unverified solves are shown to their owner only. */
-  verified: boolean
+/** A campaign the player has verified solves in. */
+export interface ProfileCampaign {
+  id: string
+  verifiedPuzzleIds: string[]
 }
 
-/** `GET /api/users/:handle`, public. Newest solves first. */
+/** `GET /api/users/:handle`, public, and counting only verified solves, even for the owner. */
 export interface Profile {
   handle: string
   image: string | null
   joinedAt: string
   verifiedSolves: number
-  gallery: GalleryItem[]
+  /** Most recently solved in first. */
+  campaigns: ProfileCampaign[]
 }

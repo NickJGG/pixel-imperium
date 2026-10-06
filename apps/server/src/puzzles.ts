@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs'
 import { type Clues, cluesFromSolution } from '@pixel-imperium/nonogram'
 
 /**
@@ -46,11 +45,4 @@ export function parseSeedPuzzle(seed: SeedPuzzle): Puzzle {
   const clues = cluesFromSolution(width, height, colors.map(c => c !== null))
   const filledCount = colors.filter(c => c !== null).length
   return { id, title, width, height, clues, filledCount, palette: colors }
-}
-
-export const SEED_PATH = new URL('../data/puzzles.json', import.meta.url)
-
-export function loadSeedPuzzles(path: URL = SEED_PATH): Puzzle[] {
-  const seeds = JSON.parse(readFileSync(path, 'utf8')) as SeedPuzzle[]
-  return seeds.map(parseSeedPuzzle)
 }
