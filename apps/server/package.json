@@ -1,0 +1,19 @@
+{
+  "name": "@pixel-imperium/server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.3",
+    "@pixel-imperium/nonogram": "workspace:*",
+    "@pixel-imperium/protocol": "workspace:*",
+    "hono": "^4.13.13"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}

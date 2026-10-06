@@ -1,0 +1,90 @@
+[
+  {
+    "id": "crown",
+    "title": "Crown",
+    "palette": { "g": "#e0a526", "d": "#a86e12", "r": "#c0283a", "b": "#2f5fc4" },
+    "rows": [
+      "g..g..g",
+      "gg.g.gg",
+      "ggggggg",
+      "grgbgrg",
+      "ddddddd"
+    ]
+  },
+  {
+    "id": "sword",
+    "title": "Sword",
+    "palette": { "s": "#c9d1dc", "e": "#8a95a6", "g": "#d9a62b", "h": "#6b3f1f", "p": "#b8862a" },
+    "rows": [
+      "..s..",
+      ".ses.",
+      ".ses.",
+      ".ses.",
+      ".ses.",
+      ".ses.",
+      ".ses.",
+      "ggggg",
+      "g.h.g",
+      "..h..",
+      "..h..",
+      ".ppp."
+    ]
+  },
+  {
+    "id": "banner",
+    "title": "Banner",
+    "palette": { "p": "#5b3a1e", "r": "#a3172d", "y": "#e6b422" },
+    "rows": [
+      "pppppppppp",
+      ".rrrrrrrr.",
+      ".rrryyrrr.",
+      ".rryyyyrr.",
+      ".rr.yy.rr.",
+      ".rryyyyrr.",
+      ".rrryyrrr.",
+      ".rrrrrrrr.",
+      ".rrr..rrr.",
+      ".rr....rr.",
+      ".r......r."
+    ]
+  },
+  {
+    "id": "shield",
+    "title": "Shield",
+    "palette": { "o": "#3b3f4a", "b": "#1f4fa8", "w": "#f2efe6", "y": "#e2b23a" },
+    "rows": [
+      "oooooooooo",
+      "obbbbwwwwo",
+      "obbb.wwwwo",
+      "obb.y.www.",
+      "ob.yyy.wwo",
+      "o.yyyyy.wo",
+      "owwwywbbbo",
+      ".owwwbbbo.",
+      "..owwbbo..",
+      "...oooo..."
+    ]
+  },
+  {
+    "id": "castle",
+    "title": "Castle",
+    "palette": { "s": "#8c8f99", "d": "#5f626c", "f": "#c0283a", "p": "#4a3b2a", "b": "#6b4423" },
+    "rows": [
+      ".......p.......",
+      ".......pff.....",
+      ".......pf......",
+      "s.s.s..p..s.s.s",
+      "sssss.sss.sssss",
+      "sdsds.s.s.sdsds",
+      "s.sss.sss.sss.s",
+      "sssss.sss.sssss",
+      "sssssssssssssss",
+      "sdsdsdsdsdsdsds",
+      "ss.sssssssss.ss",
+      "ss.sssbbbsss.ss",
+      "sssssbbbbbsssss",
+      "sssssbb.bbsssss",
+      "dddddbb.bbddddd"
+    ]
+  }
+]
