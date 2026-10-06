@@ -1,29 +1,79 @@
+import { memo } from 'react'
+import type { LineHint } from './line-hints.ts'
 import styles from './Play.module.css'
 
-function ClueLine({ line, className }: { line: number[]; className: string | undefined }) {
-  return (
-    <div className={className}>
-      {line.length === 0 ? <span className={styles.zero}>0</span> : line.map((n, i) => <span key={i}>{n}</span>)}
-    </div>
-  )
+export interface ClueAssists {
+  fade: boolean
+  impossible: boolean
 }
 
-export function RowClues({ rows }: { rows: number[][] }) {
+interface PanelProps {
+  lines: number[][]
+  hints: readonly LineHint[]
+  active: number | null
+  assists: ClueAssists
+}
+
+const ClueLine = memo(function ClueLine({
+  line,
+  hint,
+  active,
+  assists,
+  className,
+}: {
+  line: number[]
+  hint: LineHint | undefined
+  active: boolean
+  assists: ClueAssists
+  className: string | undefined
+}) {
+  const impossible = assists.impossible && hint?.impossible
+  const classes = [className, impossible && styles.impossible, active && styles.active].filter(Boolean).join(' ')
+  return (
+    <div className={classes}>
+      {line.length === 0 ? (
+        <span className={styles.zero}>0</span>
+      ) : (
+        line.map((n, i) => (
+          <span key={i} className={assists.fade && hint?.done[i] ? styles.done : undefined}>
+            {n}
+          </span>
+        ))
+      )}
+    </div>
+  )
+})
+
+export function RowClues({ lines, hints, active, assists }: PanelProps) {
   return (
     <div className={styles.rowClues} role="group" aria-label="Row clues">
-      {rows.map((line, i) => (
-        <ClueLine key={i} line={line} className={styles.rowLine} />
+      {lines.map((line, i) => (
+        <ClueLine
+          key={i}
+          line={line}
+          hint={hints[i]}
+          active={active === i}
+          assists={assists}
+          className={styles.rowLine}
+        />
       ))}
     </div>
   )
 }
 
 /** Column clues stack their numbers vertically, last clue nearest the grid. */
-export function ColClues({ cols }: { cols: number[][] }) {
+export function ColClues({ lines, hints, active, assists }: PanelProps) {
   return (
     <div className={styles.colClues} role="group" aria-label="Column clues">
-      {cols.map((line, i) => (
-        <ClueLine key={i} line={line} className={styles.colLine} />
+      {lines.map((line, i) => (
+        <ClueLine
+          key={i}
+          line={line}
+          hint={hints[i]}
+          active={active === i}
+          assists={assists}
+          className={styles.colLine}
+        />
       ))}
     </div>
   )

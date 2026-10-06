@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { cluesFromSolution } from '@pixel-imperium/nonogram'
-import { PlayStore, type Pos, type Tool } from './store.ts'
+import { loadSolved } from './progress-storage.ts'
+import { PlayStore, type Pos, type Tool, crosshairOf } from './store.ts'
 
 // 4×3 plus sign with a tail:
 //   .#..
@@ -128,5 +129,61 @@ describe('PlayStore win', () => {
     drag(s, 'fill', [at(2, 3)])
     s.undo()
     expect(render(s)).toEqual(['x#..', '###.', '.#..'])
+  })
+})
+
+describe('PlayStore assists', () => {
+  // Row 2 and columns 2–3 have no clues.
+  const sparse = ['.#..', '##..', '....'].flatMap(row => Array.from(row, ch => ch === '#'))
+  const sparsePuzzle = { id: 'sparse', width: 4, height: 3, clues: cluesFromSolution(4, 3, sparse) }
+
+  it('auto-marks clueless lines as the initial, non-undoable state', () => {
+    const s = new PlayStore(sparsePuzzle, { autoMarkEmptyLines: true })
+    expect(render(s)).toEqual(['..xx', '..xx', 'xxxx'])
+    expect(s.getState().canUndo).toBe(false)
+  })
+
+  it('publishes a new cells array only when a cell changes', () => {
+    const s = makeStore()
+    const before = s.getState().cells
+    s.moveCursor(1, 1)
+    s.setHover(at(0, 0))
+    expect(s.getState().cells).toBe(before)
+    drag(s, 'fill', [at(0, 0)])
+    expect(s.getState().cells).not.toBe(before)
+  })
+
+  it('crosshair follows hover, else the cursor while focused, and hides once solved', () => {
+    const s = makeStore()
+    expect(crosshairOf(s.getState())).toBeNull()
+    s.setFocused(true)
+    s.moveCursor(1, 2)
+    expect(crosshairOf(s.getState())).toEqual(at(1, 2))
+    s.setHover(at(0, 3))
+    expect(crosshairOf(s.getState())).toEqual(at(0, 3))
+    s.moveCursor(0, -1)
+    expect(crosshairOf(s.getState())).toEqual(at(1, 1))
+    drag(s, 'fill', [at(0, 1), at(2, 1)])
+    drag(s, 'fill', [at(1, 0), at(1, 2)])
+    expect(crosshairOf(s.getState())).toBeNull()
+  })
+})
+
+describe('PlayStore solved flag', () => {
+  it('records the solve so the library can show it', () => {
+    const data = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => data.get(k) ?? null,
+      setItem: (k: string, v: string) => void data.set(k, v),
+    })
+    try {
+      const s = makeStore()
+      drag(s, 'fill', [at(0, 1), at(2, 1)])
+      expect(loadSolved('test')).toBe(false)
+      drag(s, 'fill', [at(1, 0), at(1, 2)])
+      expect(loadSolved('test')).toBe(true)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

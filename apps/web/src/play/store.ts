@@ -6,9 +6,12 @@
  * state onto empty cells; starting on the tool's state erases that state back to
  * empty; starting on the other state does nothing. So marks never overwrite fills
  * and vice versa.
+ *
+ * `cells` in the published state is a new array only when a cell changed, so it can
+ * key derived per-line work.
  */
 import { type Cell, type Clues, satisfiesClues } from '@pixel-imperium/nonogram'
-import { loadProgress, saveProgress } from './progress-storage.ts'
+import { loadProgress, saveProgress, saveSolved } from './progress-storage.ts'
 
 export type Tool = 'fill' | 'mark'
 
@@ -29,6 +32,9 @@ export interface PlayState {
   cursor: Pos
   /** Tool for touch/pen input; mouse buttons and keys pick their own. */
   mode: Tool
+  /** Cell under a hovering mouse, `null` when not hovering or mid-stroke. */
+  hover: Pos | null
+  focused: boolean
   canUndo: boolean
   canRedo: boolean
   solved: boolean
@@ -56,26 +62,44 @@ interface ActiveStroke {
 
 const toolState: Record<Tool, Cell> = { fill: 'filled', mark: 'marked' }
 
+/** The cell the crosshair assist follows: the hovered cell, else the keyboard cursor while focused. */
+export function crosshairOf(state: PlayState): Pos | null {
+  if (state.solved) return null
+  return state.hover ?? (state.focused ? state.cursor : null)
+}
+
 export class PlayStore {
   readonly puzzle: PlayPuzzle
   private cells: Cell[]
   private undoStack: Change[][] = []
   private redoStack: Change[][] = []
   private stroke: ActiveStroke | null = null
+  private cellsChanged = false
   private state: PlayState
   private listeners = new Set<() => void>()
 
-  constructor(puzzle: PlayPuzzle) {
+  /** `autoMarkEmptyLines` marks lines with no clues as part of the initial, non-undoable state. */
+  constructor(puzzle: PlayPuzzle, { autoMarkEmptyLines = false } = {}) {
     this.puzzle = puzzle
     const { id, width, height, clues } = puzzle
     this.cells = loadProgress(id, width * height) ?? Array<Cell>(width * height).fill('empty')
+    if (autoMarkEmptyLines) {
+      this.cells.forEach((c, i) => {
+        if (c !== 'empty') return
+        const row = Math.floor(i / width)
+        const col = i % width
+        if (clues.rows[row]!.length === 0 || clues.cols[col]!.length === 0) this.cells[i] = 'marked'
+      })
+    }
     this.state = {
       cells: this.cells.slice(),
       cursor: { row: 0, col: 0 },
       mode: 'fill',
+      hover: null,
+      focused: false,
       canUndo: false,
       canRedo: false,
-      solved: satisfiesClues({ width, height, cells: this.cells }, clues),
+      solved: this.checkSolved(),
       palette: null,
     }
   }
@@ -152,6 +176,7 @@ export class PlayStore {
     const changes = this.undoStack.pop()
     if (!changes) return
     for (const c of changes) this.cells[c.index] = c.from
+    this.cellsChanged = true
     this.redoStack.push(changes)
     this.commit()
   }
@@ -162,6 +187,7 @@ export class PlayStore {
     const changes = this.redoStack.pop()
     if (!changes) return
     for (const c of changes) this.cells[c.index] = c.to
+    this.cellsChanged = true
     this.undoStack.push(changes)
     this.commit()
   }
@@ -169,8 +195,19 @@ export class PlayStore {
   moveCursor(dRow: number, dCol: number): void {
     const { cursor } = this.state
     const next = this.clamp({ row: cursor.row + dRow, col: cursor.col + dCol })
+    if (this.state.hover) this.emit({ hover: null })
     if (this.stroke) this.extendStroke(next)
     else this.emit({ cursor: next })
+  }
+
+  setHover(hover: Pos | null): void {
+    const prev = this.state.hover
+    if (prev === hover || (prev && hover && prev.row === hover.row && prev.col === hover.col)) return
+    this.emit({ hover })
+  }
+
+  setFocused(focused: boolean): void {
+    if (focused !== this.state.focused) this.emit({ focused })
   }
 
   setMode(mode: Tool): void {
@@ -187,24 +224,33 @@ export class PlayStore {
     const from = this.cells[index]!
     if (s.from === null || from !== s.from) return
     this.cells[index] = s.to
+    this.cellsChanged = true
     s.changes.push({ index, from, to: s.to })
   }
 
   /** Persists and checks for the win after a completed edit. */
   private commit(): void {
+    saveProgress(this.puzzle.id, this.cells)
+    this.emit({ solved: this.checkSolved() })
+  }
+
+  /** Solving locks the grid, so the solved flag is only ever set, never cleared. */
+  private checkSolved(): boolean {
     const { id, width, height, clues } = this.puzzle
-    saveProgress(id, this.cells)
-    this.emit({ solved: satisfiesClues({ width, height, cells: this.cells }, clues) })
+    const solved = satisfiesClues({ width, height, cells: this.cells }, clues)
+    if (solved) saveSolved(id)
+    return solved
   }
 
   private emit(patch: Partial<PlayState>): void {
     this.state = {
       ...this.state,
       ...patch,
-      cells: this.cells.slice(),
+      cells: this.cellsChanged ? this.cells.slice() : this.state.cells,
       canUndo: this.undoStack.length > 0,
       canRedo: this.redoStack.length > 0,
     }
+    this.cellsChanged = false
     for (const listener of this.listeners) listener()
   }
 

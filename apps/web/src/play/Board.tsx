@@ -1,5 +1,6 @@
 import { type KeyboardEvent, type PointerEvent, useEffect, useRef, useSyncExternalStore } from 'react'
-import type { PlayState, PlayStore, Pos, Tool } from './store.ts'
+import { getSettings, subscribeSettings } from '../settings.ts'
+import { type PlayState, type PlayStore, type Pos, type Tool, crosshairOf } from './store.ts'
 import styles from './Play.module.css'
 
 const moves: Record<string, [number, number]> = {
@@ -15,33 +16,51 @@ const moves: Record<string, [number, number]> = {
 
 const keyTools: Record<string, Tool> = { z: 'fill', x: 'mark' }
 
+/** The reveal sweeps diagonally from the top-left; each cell then fades to its color. */
+const REVEAL_SWEEP_MS = 550
+const REVEAL_CELL_MS = 300
+const REVEAL_MS = REVEAL_SWEEP_MS + REVEAL_CELL_MS
+
 export function Board({ store, cellSize }: { store: PlayStore; cellSize: number }) {
   const { width, height } = store.puzzle
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const pointerId = useRef<number | null>(null)
   const heldKey = useRef<string | null>(null)
+  const revealStart = useRef<number | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current!
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
+    const darkScheme = matchMedia('(prefers-color-scheme: dark)')
     let frame = 0
-    const draw = () => {
+    const draw = (now: number) => {
       frame = 0
-      paint(canvas, store.getState(), width, height, cellSize, document.activeElement === canvas)
+      const state = store.getState()
+      let revealElapsed: number | null = null
+      if (state.palette) {
+        revealStart.current ??= reducedMotion.matches ? -Infinity : now
+        revealElapsed = now - revealStart.current
+      }
+      paint(canvas, state, width, height, cellSize, {
+        crosshair: getSettings().crosshair ? crosshairOf(state) : null,
+        revealElapsed,
+      })
+      if (revealElapsed !== null && revealElapsed < REVEAL_MS) request()
     }
     const request = () => {
       frame ||= requestAnimationFrame(draw)
     }
     request()
     const unsubscribe = store.subscribe(request)
-    canvas.addEventListener('focus', request)
-    canvas.addEventListener('blur', request)
+    const unsubscribeSettings = subscribeSettings(request)
+    darkScheme.addEventListener('change', request)
     // Catches devicePixelRatio changes from browser zoom or moving between screens.
     window.addEventListener('resize', request)
     return () => {
       unsubscribe()
+      unsubscribeSettings()
       cancelAnimationFrame(frame)
-      canvas.removeEventListener('focus', request)
-      canvas.removeEventListener('blur', request)
+      darkScheme.removeEventListener('change', request)
       window.removeEventListener('resize', request)
     }
   }, [store, width, height, cellSize])
@@ -75,11 +94,13 @@ export function Board({ store, cellSize }: { store: PlayStore; cellSize: number 
     e.currentTarget.focus({ preventScroll: true })
     e.currentTarget.setPointerCapture(e.pointerId)
     pointerId.current = e.pointerId
+    store.setHover(null)
     store.beginStroke(posFrom(e), tool, { lockAxis: true })
   }
 
   const onPointerMove = (e: PointerEvent<HTMLCanvasElement>) => {
     if (e.pointerId === pointerId.current) store.extendStroke(posFrom(e))
+    else if (e.pointerType === 'mouse' && pointerId.current === null) store.setHover(posFrom(e))
   }
 
   const onPointerEnd = (e: PointerEvent<HTMLCanvasElement>) => {
@@ -113,6 +134,7 @@ export function Board({ store, cellSize }: { store: PlayStore; cellSize: number 
   }
 
   const onBlur = () => {
+    store.setFocused(false)
     if (heldKey.current === null) return
     heldKey.current = null
     store.endStroke()
@@ -132,6 +154,8 @@ export function Board({ store, cellSize }: { store: PlayStore; cellSize: number 
         onPointerUp={onPointerEnd}
         onPointerCancel={onPointerEnd}
         onLostPointerCapture={onPointerEnd}
+        onPointerLeave={() => store.setHover(null)}
+        onFocus={() => store.setFocused(true)}
         onKeyDown={onKeyDown}
         onKeyUp={onKeyUp}
         onBlur={onBlur}
@@ -144,13 +168,24 @@ export function Board({ store, cellSize }: { store: PlayStore; cellSize: number 
   )
 }
 
+interface PaintOptions {
+  crosshair: Pos | null
+  /** Milliseconds since the color reveal began, `null` before a confirmed solve. */
+  revealElapsed: number | null
+}
+
+const smoothstep = (t: number) => {
+  const x = Math.min(Math.max(t, 0), 1)
+  return x * x * (3 - 2 * x)
+}
+
 function paint(
   canvas: HTMLCanvasElement,
   state: PlayState,
   width: number,
   height: number,
   cell: number,
-  focused: boolean,
+  { crosshair, revealElapsed }: PaintOptions,
 ) {
   const dpr = window.devicePixelRatio || 1
   const cssWidth = width * cell
@@ -172,29 +207,55 @@ function paint(
   ctx.fillStyle = color('--board-bg')
   ctx.fillRect(0, 0, cssWidth, cssHeight)
 
+  if (crosshair) {
+    ctx.fillStyle = color('--board-crosshair')
+    ctx.fillRect(0, crosshair.row * cell, cssWidth, cell)
+    ctx.fillRect(crosshair.col * cell, 0, cell, cssHeight)
+  }
+
+  const lastDiagonal = Math.max(1, width + height - 2)
+  const revealAt = (row: number, col: number) =>
+    revealElapsed === null
+      ? 0
+      : smoothstep((revealElapsed - ((row + col) / lastDiagonal) * REVEAL_SWEEP_MS) / REVEAL_CELL_MS)
+
   ctx.strokeStyle = mark
   ctx.lineWidth = Math.max(1, cell * 0.08)
   ctx.lineCap = 'round'
   const inset = cell * 0.3
   state.cells.forEach((c, i) => {
-    const x = (i % width) * cell
-    const y = Math.floor(i / width) * cell
+    const col = i % width
+    const row = Math.floor(i / width)
+    const x = col * cell
+    const y = row * cell
+    const t = revealAt(row, col)
     if (c === 'filled') {
-      ctx.fillStyle = state.palette?.[i] ?? fill
+      ctx.fillStyle = fill
       ctx.fillRect(x, y, cell, cell)
-    } else if (c === 'marked' && !state.palette) {
+      const revealed = state.palette?.[i]
+      if (revealed && t > 0) {
+        ctx.globalAlpha = t
+        ctx.fillStyle = revealed
+        ctx.fillRect(x, y, cell, cell)
+        ctx.globalAlpha = 1
+      }
+    } else if (c === 'marked' && t < 1) {
+      ctx.globalAlpha = 1 - t
       ctx.beginPath()
       ctx.moveTo(x + inset, y + inset)
       ctx.lineTo(x + cell - inset, y + cell - inset)
       ctx.moveTo(x + cell - inset, y + inset)
       ctx.lineTo(x + inset, y + cell - inset)
       ctx.stroke()
+      ctx.globalAlpha = 1
     }
   })
 
   // Lines straddle cell boundaries; every fifth is thicker, and the border sits fully inside.
+  // Interior lines fade out during the reveal so the picture reads as one image.
   const line = color('--board-line')
   const major = color('--board-line-major')
+  ctx.globalAlpha = revealElapsed === null ? 1 : 1 - smoothstep(revealElapsed / REVEAL_MS)
   for (let c = 1; c < width; c++) {
     const thick = c % 5 === 0
     ctx.fillStyle = thick ? major : line
@@ -205,14 +266,15 @@ function paint(
     ctx.fillStyle = thick ? major : line
     ctx.fillRect(0, r * cell - (thick ? 1 : 0.5), cssWidth, thick ? 2 : 1)
   }
-  ctx.strokeStyle = major
-  ctx.lineWidth = 2
-  ctx.strokeRect(1, 1, cssWidth - 2, cssHeight - 2)
+  ctx.globalAlpha = 1
+  ctx.strokeStyle = color('--board-border')
+  ctx.lineWidth = 3
+  ctx.strokeRect(1.5, 1.5, cssWidth - 3, cssHeight - 3)
 
-  if (focused && !state.solved) {
+  if (state.focused && !state.solved) {
     const { row, col } = state.cursor
     ctx.strokeStyle = color('--board-cursor')
-    ctx.lineWidth = 2
-    ctx.strokeRect(col * cell + 1.5, row * cell + 1.5, cell - 3, cell - 3)
+    ctx.lineWidth = 3
+    ctx.strokeRect(col * cell + 2, row * cell + 2, cell - 4, cell - 4)
   }
 }

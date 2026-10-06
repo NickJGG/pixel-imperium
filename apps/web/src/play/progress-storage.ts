@@ -23,3 +23,20 @@ export function saveProgress(puzzleId: string, cells: readonly Cell[]): void {
     localStorage.setItem(key(puzzleId), cells.map(c => encode[c]).join(''))
   } catch {}
 }
+
+const solvedKey = (puzzleId: string) => `pixel-imperium:solved:${puzzleId}`
+
+/** Lets the library tell a finished grid from one in progress without the puzzle's clues. */
+export function loadSolved(puzzleId: string): boolean {
+  try {
+    return localStorage.getItem(solvedKey(puzzleId)) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function saveSolved(puzzleId: string): void {
+  try {
+    localStorage.setItem(solvedKey(puzzleId), '1')
+  } catch {}
+}

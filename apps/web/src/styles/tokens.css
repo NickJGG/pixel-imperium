@@ -1,0 +1,101 @@
+/*
+ * Design tokens — "Night Market": chunky outlines, solid offset shadows, hot pink (--a1)
+ * and cyan (--a2) accents. Dark is the signature theme; light keeps the same accents on
+ * lavender. The canvas reads the --board-* values at draw time, so it follows the theme.
+ *
+ * Dark values appear twice: once for the system preference (unless light is forced)
+ * and once for an explicit data-theme="dark".
+ */
+:root {
+  color-scheme: light;
+
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-ui: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+  --font-pixel: 'Silkscreen', ui-monospace, monospace;
+
+  --r-xl: 14px;
+  --r-lg: 10px;
+  --r-md: 8px;
+  --r-sm: 6px;
+  --r-pill: 999px;
+  --bw: 2px;
+  --sh: 4px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-7: 28px;
+
+  --a1: #ff4fa3;
+  --on-a1: #1a0614;
+  --a2: #3de7e0;
+  --on-a2: #06201f;
+  --bad: #ff9a3d;
+  --on-bad: #1f0e00;
+
+  --bg: #f1ecff;
+  --surface: #ffffff;
+  --text: #191331;
+  --text-muted: #5b5280;
+  --line: #191331;
+  --shadow: #191331;
+  --brand-bg: #191331;
+  --brand-text: #f1ecff;
+  --blank-border: #cfc6ec;
+
+  --board-bg: #ffffff;
+  --board-fill: #191331;
+  --board-mark: #9a92bd;
+  --board-line: #e3ddf5;
+  --board-line-major: #191331;
+  --board-border: var(--line);
+  --board-cursor: #ff4fa3;
+  --board-crosshair: rgba(61, 231, 224, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --bg: #191331;
+    --surface: #251d45;
+    --text: #f4f0ff;
+    --text-muted: #b3aacf;
+    --line: #f4f0ff;
+    --shadow: #05030c;
+    --brand-bg: #f4f0ff;
+    --brand-text: #191331;
+    --blank-border: #4a4170;
+
+    --board-bg: #1e1739;
+    --board-fill: #f4f0ff;
+    --board-mark: #7f76a8;
+    --board-line: #3a3160;
+    --board-line-major: #9c93c4;
+    --board-crosshair: rgba(61, 231, 224, 0.14);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #191331;
+  --surface: #251d45;
+  --text: #f4f0ff;
+  --text-muted: #b3aacf;
+  --line: #f4f0ff;
+  --shadow: #05030c;
+  --brand-bg: #f4f0ff;
+  --brand-text: #191331;
+  --blank-border: #4a4170;
+
+  --board-bg: #1e1739;
+  --board-fill: #f4f0ff;
+  --board-mark: #7f76a8;
+  --board-line: #3a3160;
+  --board-line-major: #9c93c4;
+  --board-crosshair: rgba(61, 231, 224, 0.14);
+}

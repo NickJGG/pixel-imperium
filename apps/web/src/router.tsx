@@ -1,5 +1,6 @@
 import { Link, Outlet, createRootRoute, createRoute, createRouter } from '@tanstack/react-router'
 import { fetchPuzzle, fetchPuzzles } from './api.ts'
+import { AppHeader } from './AppHeader.tsx'
 import { PuzzleList } from './list/PuzzleList.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
 import styles from './App.module.css'
@@ -7,11 +8,7 @@ import styles from './App.module.css'
 const rootRoute = createRootRoute({
   component: () => (
     <div className={styles.app}>
-      <header className={styles.header}>
-        <Link to="/" className={styles.brand}>
-          Pixel Imperium
-        </Link>
-      </header>
+      <AppHeader />
       <Outlet />
     </div>
   ),

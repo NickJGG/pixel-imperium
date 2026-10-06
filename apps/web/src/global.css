@@ -1,3 +1,5 @@
+@import './styles/tokens.css';
+
 *,
 *::before,
 *::after {
@@ -12,7 +14,73 @@ body,
 }
 
 body {
-  font-family: system-ui, sans-serif;
-  background: #f4f4f2;
-  color: #1b1f2a;
+  font-family: var(--font-ui);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+a {
+  color: var(--a2);
+}
+
+/* The house button: outlined, with a solid offset shadow that presses in. */
+button {
+  font: 700 15px var(--font-ui);
+  color: var(--text);
+  background: var(--surface);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh) var(--sh) 0 var(--shadow);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+}
+
+button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--shadow);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:focus-visible {
+  outline: 3px solid var(--a2);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:hover:not(:disabled),
+  button:active:not(:disabled) {
+    transform: none;
+  }
 }

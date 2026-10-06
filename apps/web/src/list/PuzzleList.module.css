@@ -1,8 +1,144 @@
-.list {
-  padding: 16px;
+.page {
+  flex: 1;
   overflow-y: auto;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-7) 56px;
+}
+
+.heading {
+  margin: 0 0 var(--space-6);
+  font-size: 40px;
+}
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-6);
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: calc(var(--sh) + 1px) calc(var(--sh) + 1px) 0 var(--shadow);
+  overflow: hidden;
+  transition: transform 120ms;
+}
+
+.card:hover {
+  transform: translate(-2px, -2px);
+}
+
+.thumb {
+  aspect-ratio: 5 / 4;
+  display: grid;
+  place-items: center;
+  border-bottom: var(--bw) solid var(--line);
+  background: color-mix(in srgb, var(--a2) 10%, var(--surface));
+}
+
+.thumb.started {
+  background: color-mix(in srgb, var(--a1) 14%, var(--surface));
+}
+
+.thumb.solved {
+  background: color-mix(in srgb, var(--a2) 22%, var(--surface));
+}
+
+/* An empty grid of the puzzle's dimensions, drawn as a background so a 50 by 50 grid stays cheap. */
+.blank {
+  width: min(70%, calc(62% * 4 / 5 * var(--w) / var(--h)));
+  aspect-ratio: var(--w) / var(--h);
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(to right, var(--blank-border) 1.5px, transparent 1.5px),
+    linear-gradient(to bottom, var(--blank-border) 1.5px, transparent 1.5px);
+  background-size: calc(100% / var(--w)) calc(100% / var(--h));
+  border: 1.5px solid var(--blank-border);
+  border-radius: 3px;
+}
+
+.sticker {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  padding: 4px 9px;
+  font: 700 11px var(--font-mono);
+  text-transform: uppercase;
+  background: var(--a1);
+  color: var(--on-a1);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-pill);
+  transform: rotate(4deg);
+}
+
+.sticker.solved {
+  background: var(--a2);
+  color: var(--on-a2);
+}
+
+.info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 14px var(--space-4);
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .size {
-  color: #6b6f78;
+  font: 700 13px var(--font-mono);
+  color: var(--text-muted);
+}
+
+@media (max-width: 760px) {
+  .page {
+    padding: var(--space-2) var(--space-4) 40px;
+  }
+
+  .heading {
+    font-size: 30px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 10px var(--space-3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+
+  .card:hover {
+    transform: none;
+  }
 }
