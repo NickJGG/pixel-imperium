@@ -21,10 +21,18 @@ export function lineImpossible(line: readonly Cell[], clues: readonly number[]):
 
 /**
  * For each clue, whether the player has provably completed it (for clue fading): some
- * run bounded by marks or edges must be that clue in every valid completion of the line.
+ * run bounded by marks, edges, or cells that can't be filled must be that clue in every
+ * valid completion of the line.
  */
 export function completedClues(line: readonly Cell[], clues: readonly number[]): boolean[] {
   const result = Array<boolean>(clues.length).fill(false)
+  const solverLine = toSolverLine(line)
+  const sealedAt = (j: number): boolean => {
+    if (j < 0 || j >= line.length || line[j] === 'marked') return true
+    const probe = solverLine.slice()
+    probe[j] = 'filled'
+    return !lineFeasible(probe, clues)
+  }
   let i = 0
   while (i < line.length) {
     if (line[i] !== 'filled') {
@@ -34,10 +42,9 @@ export function completedClues(line: readonly Cell[], clues: readonly number[]):
     const start = i
     while (i < line.length && line[i] === 'filled') i++
     const length = i - start
-    const sealed = (start === 0 || line[start - 1] === 'marked') && (i === line.length || line[i] === 'marked')
-    if (!sealed) continue
+    if (!sealedAt(start - 1) || !sealedAt(i)) continue
 
-    // The sealing marks are excluded, so the two sides are independent.
+    // The sealing cells are excluded, so the two sides are independent.
     const left = line.slice(0, Math.max(0, start - 1))
     const right = line.slice(i + 1)
     let match = -1
