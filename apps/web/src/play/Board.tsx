@@ -27,6 +27,9 @@ export function Board({ store, cellSize }: { store: PlayStore; cellSize: number 
   const pointerId = useRef<number | null>(null)
   const heldKey = useRef<string | null>(null)
   const revealStart = useRef<number | null>(null)
+  const disarmContextMenu = useRef<(() => void) | null>(null)
+
+  useEffect(() => () => disarmContextMenu.current?.(), [])
 
   useEffect(() => {
     const canvas = canvasRef.current!
@@ -79,13 +82,34 @@ export function Board({ store, cellSize }: { store: PlayStore; cellSize: number 
     }
   }
 
+  // On Windows, contextmenu fires on mouseup at whatever is under the cursor, and pointer capture
+  // doesn't retarget it, so a right-drag released off the board would open the menu there.
+  // The next pointerdown disarms the block in case no contextmenu arrives.
+  const armContextMenuBlock = () => {
+    disarmContextMenu.current?.()
+    const block = (e: Event) => {
+      e.preventDefault()
+      disarm()
+    }
+    const disarm = () => {
+      window.removeEventListener('contextmenu', block, true)
+      window.removeEventListener('pointerdown', disarm, true)
+      disarmContextMenu.current = null
+    }
+    window.addEventListener('contextmenu', block, true)
+    window.addEventListener('pointerdown', disarm, true)
+    disarmContextMenu.current = disarm
+  }
+
   const onPointerDown = (e: PointerEvent<HTMLCanvasElement>) => {
     if (pointerId.current !== null) return
     let tool: Tool
     if (e.pointerType === 'mouse') {
       if (e.button === 0) tool = 'fill'
-      else if (e.button === 2) tool = 'mark'
-      else return
+      else if (e.button === 2) {
+        tool = 'mark'
+        armContextMenuBlock()
+      } else return
     } else {
       tool = store.getState().mode
     }
