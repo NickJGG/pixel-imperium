@@ -14,16 +14,7 @@
  * key derived per-line work.
  */
 import { type Cell, type Clues, satisfiesClues } from '@pixel-imperium/nonogram'
-import {
-  clearReplay,
-  loadPalette,
-  loadProgress,
-  loadReplay,
-  savePalette,
-  saveProgress,
-  saveReplay,
-  saveSolved,
-} from './progress-storage.ts'
+import { type ProgressStorage, signedOutStorage } from './progress-storage.ts'
 
 export type Tool = 'fill' | 'mark'
 
@@ -99,8 +90,18 @@ export function crosshairOf(state: PlayState): Pos | null {
   return state.hover ?? (state.focused ? state.cursor : null)
 }
 
+export interface PlayStoreOptions {
+  /** Marks lines with no clues as part of the initial, non-undoable state. */
+  autoMarkEmptyLines?: boolean
+  storage?: ProgressStorage
+  /** Called after each edit is persisted. */
+  onSave?: (() => void) | undefined
+}
+
 export class PlayStore {
   readonly puzzle: PlayPuzzle
+  private readonly storage: ProgressStorage
+  private readonly onSave: (() => void) | undefined
   private cells: Cell[]
   private undoStack: Change[][] = []
   private redoStack: Change[][] = []
@@ -109,11 +110,12 @@ export class PlayStore {
   private state: PlayState
   private listeners = new Set<() => void>()
 
-  /** `autoMarkEmptyLines` marks lines with no clues as part of the initial, non-undoable state. */
-  constructor(puzzle: PlayPuzzle, { autoMarkEmptyLines = false } = {}) {
+  constructor(puzzle: PlayPuzzle, { autoMarkEmptyLines = false, storage = signedOutStorage, onSave }: PlayStoreOptions = {}) {
     this.puzzle = puzzle
+    this.storage = storage
+    this.onSave = onSave
     const { id, width, height } = puzzle
-    this.cells = loadProgress(id, width * height) ?? Array<Cell>(width * height).fill('empty')
+    this.cells = storage.loadProgress(id, width * height) ?? Array<Cell>(width * height).fill('empty')
     if (autoMarkEmptyLines) autoMark(this.cells, puzzle)
     const solved = this.checkSolved()
     this.state = {
@@ -125,8 +127,8 @@ export class PlayStore {
       canUndo: false,
       canRedo: false,
       solved,
-      replaying: !solved && loadReplay(id),
-      palette: solved ? loadPalette(id, width * height) : null,
+      replaying: !solved && storage.loadReplay(id),
+      palette: solved ? storage.loadPalette(id, width * height) : null,
     }
   }
 
@@ -244,7 +246,7 @@ export class PlayStore {
     this.undoStack.push(changes)
     this.redoStack = []
     if (!this.state.solved) return this.commit()
-    saveReplay(this.puzzle.id)
+    this.storage.saveReplay(this.puzzle.id)
     this.commit({ replaying: true, palette: null })
   }
 
@@ -270,8 +272,10 @@ export class PlayStore {
     this.emit({ mode })
   }
 
+  /** Stores the server's reveal colors; for an account, the server recorded the solve as verified. */
   setPalette(palette: readonly (string | null)[]): void {
-    savePalette(this.puzzle.id, palette)
+    this.storage.savePalette(this.puzzle.id, palette)
+    if (this.storage.userId !== null) this.storage.saveSolved(this.puzzle.id, 'verified')
     this.emit({ palette })
   }
 
@@ -288,17 +292,19 @@ export class PlayStore {
   /** Persists and checks for the win after a completed edit. */
   private commit(patch: Partial<PlayState> = {}): void {
     const { id, width, height } = this.puzzle
-    saveProgress(id, this.cells)
-    if (!this.checkSolved()) return this.emit({ ...patch, solved: false })
-    clearReplay(id)
+    this.storage.saveProgress(id, this.cells)
+    const solved = this.checkSolved()
+    if (solved) this.storage.clearReplay(id)
+    this.onSave?.()
+    if (!solved) return this.emit({ ...patch, solved: false })
     // A re-solve already has its reveal colors from the first solve.
-    this.emit({ solved: true, replaying: false, palette: this.state.palette ?? loadPalette(id, width * height) })
+    this.emit({ solved: true, replaying: false, palette: this.state.palette ?? this.storage.loadPalette(id, width * height) })
   }
 
   private checkSolved(): boolean {
     const { id, width, height, clues } = this.puzzle
     const solved = satisfiesClues({ width, height, cells: this.cells }, clues)
-    if (solved) saveSolved(id)
+    if (solved && this.storage.loadSolved(id) !== 'verified') this.storage.saveSolved(id, 'local')
     return solved
   }
 

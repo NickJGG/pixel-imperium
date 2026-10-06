@@ -1,6 +1,8 @@
 import { Link, Outlet, createRootRoute, createRoute, createRouter } from '@tanstack/react-router'
+import { accountReady } from './account.ts'
 import { fetchPuzzle, fetchPuzzles } from './api.ts'
 import { AppHeader } from './AppHeader.tsx'
+import { ImportPrompt } from './ImportPrompt.tsx'
 import { PuzzleList } from './list/PuzzleList.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
 import styles from './App.module.css'
@@ -10,6 +12,7 @@ const rootRoute = createRootRoute({
     <div className={styles.app}>
       <AppHeader />
       <Outlet />
+      <ImportPrompt />
     </div>
   ),
   errorComponent: ({ error }) => (
@@ -25,14 +28,14 @@ const listRoute = createRoute({
   path: '/',
   validateSearch: (search: Record<string, unknown>): { filter?: 'open' | 'solved' } =>
     search.filter === 'open' || search.filter === 'solved' ? { filter: search.filter } : {},
-  loader: fetchPuzzles,
+  loader: async () => (await Promise.all([fetchPuzzles(), accountReady]))[0],
   component: PuzzleList,
 })
 
 const playRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/play/$id',
-  loader: ({ params }) => fetchPuzzle(params.id),
+  loader: async ({ params }) => (await Promise.all([fetchPuzzle(params.id), accountReady]))[0],
   component: PlayPage,
 })
 

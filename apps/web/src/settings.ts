@@ -1,15 +1,18 @@
-/** Player preferences, persisted to localStorage; the theme is applied as `data-theme` on <html>. */
+/**
+ * Player preferences, persisted to localStorage; the theme is applied as `data-theme` on <html>.
+ * For an account, the assists also sync to the server (see `account.ts`); the theme stays per device.
+ */
 import { useSyncExternalStore } from 'react'
+import type { Assists } from '@pixel-imperium/protocol'
 
 export type Theme = 'auto' | 'light' | 'dark'
 
-export interface Settings {
+export interface Settings extends Assists {
   theme: Theme
-  fadeClues: boolean
-  impossibleLines: boolean
-  autoMarkEmptyLines: boolean
-  crosshair: boolean
-  lockLine: boolean
+}
+
+export function assistsOf({ fadeClues, impossibleLines, autoMarkEmptyLines, crosshair, lockLine }: Settings): Assists {
+  return { fadeClues, impossibleLines, autoMarkEmptyLines, crosshair, lockLine }
 }
 
 const defaults: Settings = {

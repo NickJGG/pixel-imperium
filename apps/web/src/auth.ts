@@ -5,6 +5,6 @@ const client = createAuthClient({
   plugins: [inferAdditionalFields({ user: { handle: { type: 'string', required: true } } })],
 })
 
-export const { useSession, signIn, signOut } = client
+export const { useSession, getSession, signIn, signOut } = client
 
 export type Provider = 'google' | 'discord'

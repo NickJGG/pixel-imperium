@@ -197,6 +197,13 @@
   color: var(--text-muted);
 }
 
+.note {
+  margin-top: -8px;
+  padding: 0 var(--space-4) 14px;
+  font: 700 12px var(--font-mono);
+  color: var(--text-muted);
+}
+
 @media (max-width: 760px) {
   .page {
     padding: var(--space-2) var(--space-4) 40px;

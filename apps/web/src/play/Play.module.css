@@ -76,6 +76,11 @@
   stroke-linejoin: round;
 }
 
+.note {
+  font: 700 12px var(--font-mono);
+  color: var(--text-muted);
+}
+
 .solvedPill {
   font-size: 13px;
   text-transform: uppercase;

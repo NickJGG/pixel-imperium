@@ -1,88 +1,151 @@
+/**
+ * Per-puzzle play data in localStorage, namespaced by player: signed-out keys are
+ * `pixel-imperium:<kind>:<id>`, an account's cache is `pixel-imperium:u:<userId>:<kind>:<id>`.
+ * Storage can be missing or throw (private mode, blocked site data); data is then just not kept.
+ */
 import type { Cell } from '@pixel-imperium/nonogram'
+import type { SolveStatus } from '@pixel-imperium/protocol'
 
 const encode: Record<Cell, string> = { empty: '.', filled: '#', marked: 'x' }
 const decode: Record<string, Cell> = { '.': 'empty', '#': 'filled', x: 'marked' }
 
-const key = (puzzleId: string) => `pixel-imperium:progress:${puzzleId}`
+export const encodeCells = (cells: readonly Cell[]): string => cells.map(c => encode[c]).join('')
 
-/** Storage can be missing or throw (private mode, blocked site data); progress is then just not kept. */
-export function loadProgress(puzzleId: string, length: number): Cell[] | null {
-  let raw: string | null
+const KINDS = ['progress', 'solved', 'replay', 'palette', 'updated'] as const
+type Kind = (typeof KINDS)[number]
+
+/** `local`: solved on this device, not (yet) confirmed by the server for an account. */
+export type SolveMark = 'local' | SolveStatus
+
+const solveMarks: Record<string, SolveMark> = { '1': 'local', verified: 'verified', unverified: 'unverified' }
+
+function read(key: string): string | null {
   try {
-    raw = localStorage.getItem(key(puzzleId))
+    return localStorage.getItem(key)
   } catch {
     return null
   }
-  if (raw === null || raw.length !== length) return null
-  const cells = Array.from(raw, ch => decode[ch])
-  return cells.every(c => c !== undefined) ? (cells as Cell[]) : null
 }
 
-export function saveProgress(puzzleId: string, cells: readonly Cell[]): void {
+function write(key: string, value: string | null): void {
   try {
-    localStorage.setItem(key(puzzleId), cells.map(c => encode[c]).join(''))
+    if (value === null) localStorage.removeItem(key)
+    else localStorage.setItem(key, value)
   } catch {}
 }
 
-const solvedKey = (puzzleId: string) => `pixel-imperium:solved:${puzzleId}`
-
-/** Lets the library tell a finished grid from one in progress without the puzzle's clues. */
-export function loadSolved(puzzleId: string): boolean {
+function allKeys(): string[] {
   try {
-    return localStorage.getItem(solvedKey(puzzleId)) === '1'
+    return Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i)).filter(k => k !== null)
   } catch {
-    return false
+    return []
   }
 }
 
-export function saveSolved(puzzleId: string): void {
-  try {
-    localStorage.setItem(solvedKey(puzzleId), '1')
-  } catch {}
-}
+export class ProgressStorage {
+  private readonly prefix: string
 
-const replayKey = (puzzleId: string) => `pixel-imperium:replay:${puzzleId}`
+  constructor(readonly userId: string | null) {
+    this.prefix = userId === null ? 'pixel-imperium:' : `pixel-imperium:u:${userId}:`
+  }
 
-/** Set while a solved puzzle has been cleared to play again; the solved flag stays. */
-export function loadReplay(puzzleId: string): boolean {
-  try {
-    return localStorage.getItem(replayKey(puzzleId)) === '1'
-  } catch {
-    return false
+  private key(kind: Kind, puzzleId: string): string {
+    return `${this.prefix}${kind}:${puzzleId}`
+  }
+
+  loadProgress(puzzleId: string, length: number): Cell[] | null {
+    const raw = this.loadCells(puzzleId)
+    if (raw === null || raw.length !== length) return null
+    const cells = Array.from(raw, ch => decode[ch])
+    return cells.every(c => c !== undefined) ? (cells as Cell[]) : null
+  }
+
+  /** The grid as stored, `.#x` encoded. */
+  loadCells(puzzleId: string): string | null {
+    return read(this.key('progress', puzzleId))
+  }
+
+  saveProgress(puzzleId: string, cells: readonly Cell[]): void {
+    this.saveCells(puzzleId, encodeCells(cells), new Date().toISOString())
+  }
+
+  saveCells(puzzleId: string, cells: string, updatedAt: string): void {
+    write(this.key('progress', puzzleId), cells)
+    write(this.key('updated', puzzleId), updatedAt)
+  }
+
+  /** When the grid last changed, for last-write-wins sync. */
+  loadUpdatedAt(puzzleId: string): string | null {
+    return read(this.key('updated', puzzleId))
+  }
+
+  /** Lets the library tell a finished grid from one in progress without the puzzle's clues. */
+  loadSolved(puzzleId: string): SolveMark | null {
+    return solveMarks[read(this.key('solved', puzzleId)) ?? ''] ?? null
+  }
+
+  saveSolved(puzzleId: string, mark: SolveMark): void {
+    write(this.key('solved', puzzleId), mark === 'local' ? '1' : mark)
+  }
+
+  /** Set while a solved puzzle has been cleared to play again; the solved flag stays. */
+  loadReplay(puzzleId: string): boolean {
+    return read(this.key('replay', puzzleId)) === '1'
+  }
+
+  saveReplay(puzzleId: string): void {
+    write(this.key('replay', puzzleId), '1')
+  }
+
+  clearReplay(puzzleId: string): void {
+    write(this.key('replay', puzzleId), null)
+  }
+
+  /** The server's reveal colors, kept so the library can draw solved art without re-solving. */
+  loadPalette(puzzleId: string, length: number): (string | null)[] | null {
+    let palette: unknown
+    try {
+      palette = JSON.parse(read(this.key('palette', puzzleId)) ?? 'null')
+    } catch {
+      return null
+    }
+    return Array.isArray(palette) &&
+      palette.length === length &&
+      palette.every(c => c === null || typeof c === 'string')
+      ? palette
+      : null
+  }
+
+  savePalette(puzzleId: string, palette: readonly (string | null)[]): void {
+    write(this.key('palette', puzzleId), JSON.stringify(palette))
+  }
+
+  /** Every puzzle with a saved grid or solve. */
+  puzzleIds(): string[] {
+    const ids = new Set<string>()
+    for (const k of allKeys()) {
+      for (const kind of ['progress', 'solved'] as const) {
+        const start = `${this.prefix}${kind}:`
+        if (k.startsWith(start)) ids.add(k.slice(start.length))
+      }
+    }
+    return [...ids]
+  }
+
+  /** Removes every puzzle's data, leaving other keys (settings, other namespaces, metadata) alone. */
+  clear(): void {
+    const starts = KINDS.map(kind => `${this.prefix}${kind}:`)
+    for (const k of allKeys()) if (starts.some(s => k.startsWith(s))) write(k, null)
+  }
+
+  /** Namespace-wide values outside any puzzle, such as the sync's dirty set. */
+  loadMeta(name: string): string | null {
+    return read(`${this.prefix}meta:${name}`)
+  }
+
+  saveMeta(name: string, value: string | null): void {
+    write(`${this.prefix}meta:${name}`, value)
   }
 }
 
-export function saveReplay(puzzleId: string): void {
-  try {
-    localStorage.setItem(replayKey(puzzleId), '1')
-  } catch {}
-}
-
-export function clearReplay(puzzleId: string): void {
-  try {
-    localStorage.removeItem(replayKey(puzzleId))
-  } catch {}
-}
-
-const paletteKey =(puzzleId: string) => `pixel-imperium:palette:${puzzleId}`
-
-/** The server's reveal colors, kept so the library can draw solved art without re-solving. */
-export function loadPalette(puzzleId: string, length: number): (string | null)[] | null {
-  let palette: unknown
-  try {
-    palette = JSON.parse(localStorage.getItem(paletteKey(puzzleId)) ?? 'null')
-  } catch {
-    return null
-  }
-  return Array.isArray(palette) &&
-    palette.length === length &&
-    palette.every(c => c === null || typeof c === 'string')
-    ? palette
-    : null
-}
-
-export function savePalette(puzzleId: string, palette: readonly (string | null)[]): void {
-  try {
-    localStorage.setItem(paletteKey(puzzleId), JSON.stringify(palette))
-  } catch {}
-}
+export const signedOutStorage = new ProgressStorage(null)

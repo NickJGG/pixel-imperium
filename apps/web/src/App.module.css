@@ -78,6 +78,53 @@
   object-fit: cover;
 }
 
+.dialog {
+  width: min(440px, calc(100% - 2 * var(--space-4)));
+  padding: var(--space-6);
+  background: var(--surface);
+  color: var(--text);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: calc(var(--sh) + 1px) calc(var(--sh) + 1px) 0 var(--shadow);
+}
+
+.dialog::backdrop {
+  background: rgb(10 6 24 / 0.5);
+}
+
+.dialog h2 {
+  margin: 0 0 var(--space-3);
+  font-size: 24px;
+}
+
+.dialog p {
+  margin: 0 0 var(--space-4);
+  line-height: 1.45;
+}
+
+.dialog [role='alert'] {
+  color: var(--bad);
+  font-weight: 700;
+}
+
+.dialogActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.dialogActions .primary {
+  background: var(--a2);
+  color: var(--on-a2);
+}
+
+.dialogActions .ghost {
+  margin-right: auto;
+  background: transparent;
+  box-shadow: none;
+}
+
 .message {
   padding: var(--space-4);
 }

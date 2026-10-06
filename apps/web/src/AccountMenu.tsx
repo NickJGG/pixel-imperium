@@ -1,5 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
-import { type Provider, signIn, signOut, useSession } from './auth.ts'
+import { useRouter } from '@tanstack/react-router'
+import { signOutAccount } from './account.ts'
+import { type Provider, signIn, useSession } from './auth.ts'
 import styles from './App.module.css'
 
 const providers: { id: Provider; label: string }[] = [
@@ -10,6 +12,7 @@ const providers: { id: Provider; label: string }[] = [
 /** "Sign in" with a provider menu when signed out; avatar and handle with a Sign out menu when signed in. */
 export function AccountMenu() {
   const { data, isPending } = useSession()
+  const router = useRouter()
   if (isPending) return null
 
   if (!data) {
@@ -46,7 +49,7 @@ export function AccountMenu() {
         </>
       }
     >
-      <button type="button" role="menuitem" onClick={() => void signOut()}>
+      <button type="button" role="menuitem" onClick={() => void signOutAccount().then(() => router.invalidate())}>
         Sign out
       </button>
     </Menu>

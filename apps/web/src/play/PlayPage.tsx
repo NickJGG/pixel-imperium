@@ -2,6 +2,7 @@ import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
 import type { PuzzleClues } from '@pixel-imperium/protocol'
+import { type AccountState, useAccount } from '../account.ts'
 import { submitSolve } from '../api.ts'
 import { getSettings, updateSettings, useSettings } from '../settings.ts'
 import { AssistChips } from './AssistChips.tsx'
@@ -17,20 +18,29 @@ const route = getRouteApi('/play/$id')
 
 export function PlayPage() {
   const puzzle = route.useLoaderData()
-  return <Play key={puzzle.id} puzzle={puzzle} />
+  const account = useAccount()
+  return <Play key={`${account.generation}:${puzzle.id}`} puzzle={puzzle} account={account} />
 }
 
 function useStoreValue<T>(store: PlayStore, select: (s: PlayState) => T): T {
   return useSyncExternalStore(store.subscribe, () => select(store.getState()))
 }
 
-function Play({ puzzle }: { puzzle: PuzzleClues }) {
-  const [store] = useState(() => new PlayStore(puzzle, { autoMarkEmptyLines: getSettings().autoMarkEmptyLines }))
+function Play({ puzzle, account: { storage, sync } }: { puzzle: PuzzleClues; account: AccountState }) {
+  const [store] = useState(
+    () =>
+      new PlayStore(puzzle, {
+        autoMarkEmptyLines: getSettings().autoMarkEmptyLines,
+        storage,
+        onSave: sync ? () => sync.markDirty(puzzle.id) : undefined,
+      }),
+  )
   const canUndo = useStoreValue(store, s => s.canUndo)
   const canRedo = useStoreValue(store, s => s.canRedo)
   const mode = useStoreValue(store, s => s.mode)
   const solved = useStoreValue(store, s => s.solved)
   const replaying = useStoreValue(store, s => s.replaying)
+  const unverified = !solved && storage.loadSolved(puzzle.id) === 'unverified'
   const revealed = useStoreValue(store, s => s.palette !== null)
   const cells = useStoreValue(store, s => s.cells)
   const percent = useMemo(() => progressPercent(cells, puzzle.filledCount, false), [cells, puzzle.filledCount])
@@ -107,6 +117,7 @@ function Play({ puzzle }: { puzzle: PuzzleClues }) {
         ) : (
           percent > 0 && <span className={styles.hotPill}>{percent}%</span>
         )}
+        {unverified && <span className={styles.note}>Imported — replay to verify</span>}
       </div>
       <div ref={stageRef} className={styles.stage}>
         {cellSize > 0 && (

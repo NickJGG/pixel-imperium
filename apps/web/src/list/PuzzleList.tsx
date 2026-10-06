@@ -3,7 +3,8 @@ import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
 import type { PuzzleSummary } from '@pixel-imperium/protocol'
 import { LoopIcon } from '../play/ClearButton.tsx'
-import { loadPalette, loadProgress, loadReplay, loadSolved } from '../play/progress-storage.ts'
+import { useAccount } from '../account.ts'
+import type { ProgressStorage } from '../play/progress-storage.ts'
 import { PixelArt } from './PixelArt.tsx'
 import styles from './PuzzleList.module.css'
 
@@ -23,16 +24,25 @@ const EMPTY: Record<NonNullable<Filter>, string> = {
 }
 
 type Status =
-  /** `replay` is the replay's percent while a solved puzzle is being played again. */
-  | { kind: 'solved'; palette: (string | null)[] | null; replay: number | null }
+  /**
+   * `replay` is the replay's percent while a solved puzzle is being played again;
+   * `unverified` marks an imported solve the server could not check.
+   */
+  | { kind: 'solved'; palette: (string | null)[] | null; replay: number | null; unverified: boolean }
   | { kind: 'started'; percent: number }
   | { kind: 'new' }
 
-function statusOf(p: PuzzleSummary): Status {
+function statusOf(p: PuzzleSummary, storage: ProgressStorage): Status {
   const length = p.width * p.height
-  const percent = progressPercent(loadProgress(p.id, length) ?? [], p.filledCount, false)
-  if (loadSolved(p.id)) {
-    return { kind: 'solved', palette: loadPalette(p.id, length), replay: loadReplay(p.id) ? percent : null }
+  const percent = progressPercent(storage.loadProgress(p.id, length) ?? [], p.filledCount, false)
+  const solved = storage.loadSolved(p.id)
+  if (solved) {
+    return {
+      kind: 'solved',
+      palette: storage.loadPalette(p.id, length),
+      replay: storage.loadReplay(p.id) ? percent : null,
+      unverified: solved === 'unverified',
+    }
   }
   return percent > 0 ? { kind: 'started', percent } : { kind: 'new' }
 }
@@ -41,9 +51,10 @@ export function PuzzleList() {
   const puzzles = route.useLoaderData()
   const { filter } = route.useSearch()
   const navigate = route.useNavigate()
+  const { storage } = useAccount()
 
   const shown = puzzles
-    .map(p => ({ p, status: statusOf(p) }))
+    .map(p => ({ p, status: statusOf(p, storage) }))
     .filter(({ status }) => !filter || (filter === 'solved') === (status.kind === 'solved'))
 
   return (
@@ -100,6 +111,9 @@ export function PuzzleList() {
                     {p.width}×{p.height}
                   </span>
                 </div>
+                {status.kind === 'solved' && status.unverified && (
+                  <span className={styles.note}>Imported — replay to verify</span>
+                )}
               </Link>
             </li>
           ))}

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cluesFromSolution } from '@pixel-imperium/nonogram'
-import { loadPalette, loadReplay, loadSolved } from './progress-storage.ts'
+import { stubStorage } from '../test-storage.ts'
+import { ProgressStorage, signedOutStorage as storage } from './progress-storage.ts'
 import { PlayStore, type Pos, type Tool, crosshairOf } from './store.ts'
 
 // 4×3 plus sign with a tail:
@@ -205,15 +206,6 @@ describe('PlayStore clear', () => {
   })
 })
 
-function stubStorage() {
-  const data = new Map<string, string>()
-  vi.stubGlobal('localStorage', {
-    getItem: (k: string) => data.get(k) ?? null,
-    setItem: (k: string, v: string) => void data.set(k, v),
-    removeItem: (k: string) => void data.delete(k),
-  })
-}
-
 function solve(store: PlayStore) {
   drag(store, 'fill', [at(0, 1), at(2, 1)])
   drag(store, 'fill', [at(1, 0), at(1, 2)])
@@ -226,9 +218,9 @@ describe('PlayStore persistence', () => {
   it('records the solve so the library can show it', () => {
     const s = makeStore()
     drag(s, 'fill', [at(0, 1), at(2, 1)])
-    expect(loadSolved('test')).toBe(false)
+    expect(storage.loadSolved('test')).toBeNull()
     drag(s, 'fill', [at(1, 0), at(1, 2)])
-    expect(loadSolved('test')).toBe(true)
+    expect(storage.loadSolved('test')).toBe('local')
   })
 
   const palette = Array.from({ length: 12 }, (_, i) => (solution[i] ? '#f0f' : null))
@@ -237,7 +229,7 @@ describe('PlayStore persistence', () => {
     const s = makeStore()
     solve(s)
     s.setPalette(palette)
-    expect(loadPalette('test', 12)).toEqual(palette)
+    expect(storage.loadPalette('test', 12)).toEqual(palette)
   })
 
   it('clearing a solved puzzle starts a replay that keeps the solve', () => {
@@ -247,8 +239,8 @@ describe('PlayStore persistence', () => {
     s.clear({ autoMarkEmptyLines: false })
     expect(s.getState()).toMatchObject({ solved: false, replaying: true, palette: null })
     expect(render(s)).toEqual(['....', '....', '....'])
-    expect(loadSolved('test')).toBe(true)
-    expect(loadReplay('test')).toBe(true)
+    expect(storage.loadSolved('test')).toBe('local')
+    expect(storage.loadReplay('test')).toBe(true)
     expect(makeStore().getState().replaying).toBe(true)
   })
 
@@ -259,7 +251,7 @@ describe('PlayStore persistence', () => {
     s.clear({ autoMarkEmptyLines: false })
     s.undo()
     expect(s.getState()).toMatchObject({ solved: true, replaying: false, palette })
-    expect(loadReplay('test')).toBe(false)
+    expect(storage.loadReplay('test')).toBe(false)
   })
 
   it('solving a replay again ends it', () => {
@@ -268,7 +260,7 @@ describe('PlayStore persistence', () => {
     s.clear({ autoMarkEmptyLines: false })
     solve(s)
     expect(s.getState()).toMatchObject({ solved: true, replaying: false })
-    expect(loadReplay('test')).toBe(false)
+    expect(storage.loadReplay('test')).toBe(false)
   })
 
   it('loads the stored palette when it opens already solved', () => {
@@ -276,5 +268,49 @@ describe('PlayStore persistence', () => {
     solve(s)
     s.setPalette(palette)
     expect(makeStore().getState().palette).toEqual(palette)
+  })
+})
+
+describe('PlayStore with an account', () => {
+  beforeEach(stubStorage)
+  afterEach(() => vi.unstubAllGlobals())
+
+  const account = new ProgressStorage('u1')
+  const palette = Array.from({ length: 12 }, (_, i) => (solution[i] ? '#f0f' : null))
+  const accountStore = (onSave?: () => void) =>
+    new PlayStore(
+      { id: 'test', width: 4, height: 3, clues: cluesFromSolution(4, 3, solution) },
+      { storage: account, onSave },
+    )
+
+  it("keeps its data apart from signed-out play's", () => {
+    solve(accountStore())
+    expect(account.loadSolved('test')).toBe('local')
+    expect(storage.loadSolved('test')).toBeNull()
+    expect(makeStore().getState().solved).toBe(false)
+  })
+
+  it('reports each saved edit', () => {
+    const onSave = vi.fn()
+    const s = accountStore(onSave)
+    drag(s, 'fill', [at(0, 1)])
+    s.undo()
+    expect(onSave).toHaveBeenCalledTimes(2)
+  })
+
+  it('marks the solve verified once the server reveals it, and a replay keeps that', () => {
+    const s = accountStore()
+    solve(s)
+    s.setPalette(palette)
+    expect(account.loadSolved('test')).toBe('verified')
+    s.clear({ autoMarkEmptyLines: false })
+    solve(s)
+    expect(account.loadSolved('test')).toBe('verified')
+  })
+
+  it('marks a re-solved unverified solve as awaiting the server', () => {
+    account.saveSolved('test', 'unverified')
+    solve(accountStore())
+    expect(account.loadSolved('test')).toBe('local')
   })
 })

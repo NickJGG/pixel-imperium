@@ -3,6 +3,7 @@
  * generator emits for our config; keep them in step when changing `auth.ts` options.
  * Puzzle ids reference `data/puzzles.json`, so they carry no foreign key.
  */
+import type { Assists } from '@pixel-imperium/protocol'
 import { sql } from 'drizzle-orm'
 import { boolean, index, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
@@ -110,14 +111,6 @@ export const progress = pgTable(
   },
   t => [primaryKey({ columns: [t.userId, t.puzzleId] })],
 )
-
-export interface Assists {
-  fadeClues: boolean
-  impossibleLines: boolean
-  autoMarkEmptyLines: boolean
-  crosshair: boolean
-  lockLine: boolean
-}
 
 export const userSettings = pgTable('user_settings', {
   userId: text('user_id')

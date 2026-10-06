@@ -1,10 +1,24 @@
 import { Hono } from 'hono'
 import { satisfiesClues } from '@pixel-imperium/nonogram'
-import type { ApiError, PuzzleClues, PuzzleSummary, SolveResponse } from '@pixel-imperium/protocol'
-import { eq } from 'drizzle-orm'
+import type {
+  ApiError,
+  Assists,
+  ImportItem,
+  ImportOutcome,
+  ImportResponse,
+  MyProgress,
+  PutProgressResponse,
+  PuzzleClues,
+  PuzzleRecord,
+  PuzzleSummary,
+  SolveResponse,
+  SolveStatus,
+} from '@pixel-imperium/protocol'
+import { eq, lt } from 'drizzle-orm'
 import type { Auth } from './auth.ts'
 import type { Db } from './db/index.ts'
-import { solve } from './db/schema.ts'
+import { progress, solve, userSettings } from './db/schema.ts'
+import { parseCells, planImport } from './import.ts'
 import type { Puzzle } from './puzzles.ts'
 
 export interface AppDeps {
@@ -14,9 +28,37 @@ export interface AppDeps {
 
 type SessionUser = Auth['$Infer']['Session']['user']
 
+const ASSIST_KEYS = ['fadeClues', 'impossibleLines', 'autoMarkEmptyLines', 'crosshair', 'lockLine'] as const
+
+function parseAssists(value: unknown): Assists | null {
+  if (!value || typeof value !== 'object') return null
+  const assists = Object.fromEntries(ASSIST_KEYS.map(k => [k, (value as Record<string, unknown>)[k]]))
+  return Object.values(assists).every(v => typeof v === 'boolean') ? (assists as unknown as Assists) : null
+}
+
+function parseImportItem(value: unknown): ImportItem | null {
+  if (!value || typeof value !== 'object') return null
+  const { id, cells, solved, replaying } = value as Record<string, unknown>
+  if (typeof id !== 'string' || typeof solved !== 'boolean' || typeof replaying !== 'boolean') return null
+  if (cells !== undefined && typeof cells !== 'string') return null
+  return { id, solved, replaying, ...(cells !== undefined && { cells }) }
+}
+
 export function createApp(puzzles: readonly Puzzle[], { db, auth }: AppDeps) {
   const byId = new Map(puzzles.map(p => [p.id, p]))
   const notFound = (id: string): ApiError => ({ error: `no puzzle '${id}'` })
+
+  /** A verified solve upgrades an unverified one; nothing ever downgrades or re-dates a solve. */
+  const recordSolve = (tx: Pick<Db, 'insert'>, userId: string, puzzleId: string, status: SolveStatus) => {
+    const insert = tx.insert(solve).values({ userId, puzzleId, verified: status === 'verified' })
+    return status === 'verified'
+      ? insert.onConflictDoUpdate({
+          target: [solve.userId, solve.puzzleId],
+          set: { verified: true, solvedAt: new Date() },
+          setWhere: eq(solve.verified, false),
+        })
+      : insert.onConflictDoNothing()
+  }
 
   return new Hono<{ Variables: { user: SessionUser | null } }>()
     .basePath('/api')
@@ -24,6 +66,10 @@ export function createApp(puzzles: readonly Puzzle[], { db, auth }: AppDeps) {
     .use(async (c, next) => {
       const session = await auth.api.getSession({ headers: c.req.raw.headers })
       c.set('user', session?.user ?? null)
+      await next()
+    })
+    .use('/me/*', async (c, next) => {
+      if (!c.get('user')) return c.json<ApiError>({ error: 'not signed in' }, 401)
       await next()
     })
     .get('/puzzles', c =>
@@ -55,16 +101,89 @@ export function createApp(puzzles: readonly Puzzle[], { db, auth }: AppDeps) {
 
       const solved = satisfiesClues({ width: p.width, height: p.height, cells }, p.clues)
       const user = c.get('user')
-      if (solved && user) {
-        await db
-          .insert(solve)
-          .values({ userId: user.id, puzzleId: p.id, verified: true })
-          .onConflictDoUpdate({
-            target: [solve.userId, solve.puzzleId],
-            set: { verified: true, solvedAt: new Date() },
-            setWhere: eq(solve.verified, false),
-          })
-      }
+      if (solved && user) await recordSolve(db, user.id, p.id, 'verified')
       return c.json<SolveResponse>(solved ? { solved: true, palette: p.palette } : { solved: false })
+    })
+    .get('/me/progress', async c => {
+      const userId = c.get('user')!.id
+      const [solves, grids, [settings]] = await Promise.all([
+        db.select().from(solve).where(eq(solve.userId, userId)),
+        db.select().from(progress).where(eq(progress.userId, userId)),
+        db.select().from(userSettings).where(eq(userSettings.userId, userId)),
+      ])
+      const records: Record<string, PuzzleRecord> = {}
+      const record = (id: string) => (records[id] ??= { solved: null, progress: null, palette: null })
+      for (const s of solves) {
+        const r = record(s.puzzleId)
+        r.solved = s.verified ? 'verified' : 'unverified'
+        if (s.verified) r.palette = byId.get(s.puzzleId)?.palette ?? null
+      }
+      for (const g of grids) {
+        record(g.puzzleId).progress = { cells: g.cells, replaying: g.replaying, updatedAt: g.updatedAt.toISOString() }
+      }
+      return c.json<MyProgress>({ puzzles: records, assists: settings?.assists ?? null })
+    })
+    .put('/me/progress/:id', async c => {
+      const p = byId.get(c.req.param('id'))
+      if (!p) return c.json(notFound(c.req.param('id')), 404)
+
+      const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
+      const updatedAt = new Date(typeof body?.updatedAt === 'string' ? body.updatedAt : NaN)
+      if (!body || !parseCells(body.cells, p) || typeof body.replaying !== 'boolean' || isNaN(updatedAt.getTime())) {
+        return c.json<ApiError>(
+          { error: `expected { cells: ${p.width * p.height} of '.#x', replaying: boolean, updatedAt: ISO date }` },
+          400,
+        )
+      }
+
+      // A client clock running ahead must not lock out every later write.
+      const at = new Date(Math.min(updatedAt.getTime(), Date.now()))
+      const values = { cells: body.cells as string, replaying: body.replaying, updatedAt: at }
+      const applied = await db
+        .insert(progress)
+        .values({ userId: c.get('user')!.id, puzzleId: p.id, ...values })
+        .onConflictDoUpdate({
+          target: [progress.userId, progress.puzzleId],
+          set: values,
+          setWhere: lt(progress.updatedAt, at),
+        })
+        .returning({ puzzleId: progress.puzzleId })
+      return c.json<PutProgressResponse>({ applied: applied.length > 0 })
+    })
+    .put('/me/settings', async c => {
+      const body = (await c.req.json().catch(() => null)) as { assists?: unknown } | null
+      const assists = parseAssists(body?.assists)
+      if (!assists) return c.json<ApiError>({ error: `assists must have boolean ${ASSIST_KEYS.join(', ')}` }, 400)
+      await db
+        .insert(userSettings)
+        .values({ userId: c.get('user')!.id, assists })
+        .onConflictDoUpdate({ target: userSettings.userId, set: { assists } })
+      return c.body(null, 204)
+    })
+    .post('/me/import', async c => {
+      const body = (await c.req.json().catch(() => null)) as { puzzles?: unknown } | null
+      const items = body?.puzzles
+      if (!Array.isArray(items)) return c.json<ApiError>({ error: 'puzzles must be an array' }, 400)
+
+      const userId = c.get('user')!.id
+      const results: Record<string, ImportOutcome> = {}
+      await db.transaction(async tx => {
+        for (const raw of items) {
+          const item = parseImportItem(raw)
+          if (!item) continue
+          const p = byId.get(item.id)
+          const plan = p ? planImport(p, item) : { solve: null, progress: null }
+          if (plan.solve) await recordSolve(tx, userId, item.id, plan.solve)
+          // The account's own grid wins over an imported one.
+          if (plan.progress) {
+            await tx
+              .insert(progress)
+              .values({ userId, puzzleId: item.id, ...plan.progress, updatedAt: new Date() })
+              .onConflictDoNothing()
+          }
+          results[item.id] = plan.solve ?? (plan.progress ? 'progress' : 'ignored')
+        }
+      })
+      return c.json<ImportResponse>({ results })
     })
 }

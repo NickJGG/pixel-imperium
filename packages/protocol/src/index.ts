@@ -26,3 +26,66 @@ export type SolveResponse = { solved: true; palette: (string | null)[] } | { sol
 export interface ApiError {
   error: string
 }
+
+/** Play assists synced to an account; the theme stays per device. */
+export interface Assists {
+  fadeClues: boolean
+  impossibleLines: boolean
+  autoMarkEmptyLines: boolean
+  crosshair: boolean
+  lockLine: boolean
+}
+
+export type SolveStatus = 'verified' | 'unverified'
+
+/**
+ * A saved grid; `cells` is row-major `.#x` (empty, filled, marked).
+ * `PUT /api/me/progress/:id` takes one and keeps it only if `updatedAt` is newer than the stored copy.
+ */
+export interface SavedProgress {
+  cells: string
+  replaying: boolean
+  updatedAt: string
+}
+
+export interface PutProgressResponse {
+  applied: boolean
+}
+
+export interface PuzzleRecord {
+  solved: SolveStatus | null
+  progress: SavedProgress | null
+  /** Reveal colors, present only for a verified solve. */
+  palette: (string | null)[] | null
+}
+
+/** `GET /api/me/progress`; `assists` is `null` until the account first saves them. */
+export interface MyProgress {
+  puzzles: Record<string, PuzzleRecord>
+  assists: Assists | null
+}
+
+/** `PUT /api/me/settings`. */
+export interface PutSettingsRequest {
+  assists: Assists
+}
+
+/** One puzzle's signed-out data; `cells` as in `SavedProgress`. */
+export interface ImportItem {
+  id: string
+  cells?: string
+  solved: boolean
+  replaying: boolean
+}
+
+/** `POST /api/me/import`. */
+export interface ImportRequest {
+  puzzles: ImportItem[]
+}
+
+/** What each item became: a solve, just a saved grid, or nothing (unknown puzzle, nothing usable). */
+export type ImportOutcome = SolveStatus | 'progress' | 'ignored'
+
+export interface ImportResponse {
+  results: Record<string, ImportOutcome>
+}
