@@ -1,1 +1,607 @@
-[]
+[
+  {
+    "id": "gull",
+    "title": "Gull",
+    "palette": { "w": "#f2ede0", "g": "#9aa3ab", "k": "#2e2a26", "y": "#e8b923" },
+    "rows": [
+      "..www.....",
+      ".wwkww....",
+      "yyywww....",
+      "...wwww...",
+      "...wwwggg.",
+      "...wwwwggg",
+      "....wwwwgg",
+      ".....www..",
+      ".....y.y..",
+      "....yy.yy."
+    ]
+  },
+  {
+    "id": "sea-serpent",
+    "title": "Sea Serpent",
+    "palette": { "g": "#3f8a3e", "k": "#2e2a26", "l": "#2f86c0" },
+    "rows": [
+      "..ggg..........",
+      ".gkggg.........",
+      "gg..gg.........",
+      "....gg...ggg...",
+      "....gg..ggggg..",
+      "....gg..gg.gg..",
+      "ll.ggll.ggl.gg.",
+      ".lll..ll..ll..g",
+      "l...ll..ll..ll.",
+      "lllllllllllllll"
+    ]
+  },
+  {
+    "id": "trident",
+    "title": "Trident",
+    "palette": { "y": "#c9a227", "k": "#5b3a1e", "b": "#8a5a34" },
+    "rows": [
+      ".y..y..y..",
+      "yy.yyy.yy.",
+      ".y..y..y..",
+      ".y..y..y..",
+      ".yy.y.yy..",
+      "..yyyyy...",
+      "....y.....",
+      "...kkk....",
+      "....b.....",
+      "....b.....",
+      "....b.....",
+      "....b.....",
+      "....b.....",
+      "...bbb....",
+      "....b....."
+    ]
+  },
+  {
+    "id": "lighthouse",
+    "title": "Lighthouse",
+    "palette": { "k": "#3a3536", "y": "#ffd34a", "r": "#c8312b", "w": "#f3eee4", "s": "#8f969e" },
+    "rows": [
+      "....kk....",
+      "...kkkk...",
+      "y..kyyk..y",
+      ".yykyykyy.",
+      "y..kkkk..y",
+      "...r..r...",
+      "...rrrr...",
+      "...w..w...",
+      "..ww..ww..",
+      "..rrrrrr..",
+      "..r....r..",
+      "..wwwwww..",
+      "..w.kk.w..",
+      ".ss.kk.ss.",
+      "ssssssssss"
+    ]
+  },
+  {
+    "id": "seahorse",
+    "title": "Seahorse",
+    "palette": { "y": "#e0a030", "k": "#2e2a26" },
+    "rows": [
+      "...yyy....",
+      "..yyyyy...",
+      "..yykyyyyy",
+      "..yyyy....",
+      "...yyy....",
+      ".yyyyy....",
+      "yy.yyyy...",
+      "...yyyyy..",
+      "...yyyyy..",
+      "....yyyy..",
+      ".....yyy..",
+      "......yy..",
+      "...yy.yy..",
+      "..y..yyy..",
+      "...yyyy..."
+    ]
+  },
+  {
+    "id": "lobster",
+    "title": "Lobster",
+    "palette": { "r": "#c8312b", "k": "#2e2a26" },
+    "rows": [
+      ".r......r.",
+      "rr......rr",
+      "r.r....r.r",
+      "rrr....rrr",
+      ".r......r.",
+      "..r.rr.r..",
+      "...rrrr...",
+      "...rkkr...",
+      "..rrrrrr..",
+      "...rrrr...",
+      "..rrrrrr..",
+      "...rrrr...",
+      "...rrrr...",
+      "..rrrrrr..",
+      ".rr.rr.rr."
+    ]
+  },
+  {
+    "id": "fish",
+    "title": "Fish",
+    "palette": { "b": "#3f7cac", "w": "#cfe3ef", "k": "#2e2a26" },
+    "rows": [
+      "......bbb......",
+      "....bbb.bbbb..b",
+      "..bbbbb.bbbb.bb",
+      ".bkbbb..bbbbbbb",
+      "bbbbbb.bbbb.bb.",
+      ".bbbbb.bbbb.bbb",
+      "..wwwww.www..bb",
+      "....www.www...b",
+      "......bbb......",
+      ".......b......."
+    ]
+  },
+  {
+    "id": "seal",
+    "title": "Seal",
+    "palette": { "g": "#7e7774", "k": "#2e2a26", "r": "#585250", "b": "#c8312b", "w": "#f3eee4" },
+    "rows": [
+      "..ggg.....bb...",
+      ".gkggg...bwwb..",
+      "ggggggg..bwwb..",
+      "..gggggg..bb...",
+      "...gggggg......",
+      "...ggggggg.....",
+      "...g.gggggggg..",
+      "..gg.ggggggggg.",
+      ".gg...gggg..ggg",
+      "rrr.rrrrrrr..rr"
+    ]
+  },
+  {
+    "id": "swordfish",
+    "title": "Swordfish",
+    "palette": { "b": "#22689f", "w": "#cfe3ef", "s": "#8f969e", "k": "#2e2a26", "l": "#7ab8e9" },
+    "rows": [
+      "........b......",
+      ".......bb......",
+      "......bbbb...bb",
+      ".....bbbbbbbbb.",
+      "ssssbkbbbbbbbb.",
+      ".....wwwwwwbbb.",
+      "......wwwwww.bb",
+      "........b......",
+      "..l....l....l..",
+      "ll.lll.ll.lll.l"
+    ]
+  },
+  {
+    "id": "anchor",
+    "title": "Anchor",
+    "palette": { "s": "#5d6670" },
+    "rows": [
+      "....ss....",
+      "...s..s...",
+      "...s..s...",
+      "....ss....",
+      ".ssssssss.",
+      "....ss....",
+      "....ss....",
+      "....ss....",
+      "....ss....",
+      "s...ss...s",
+      "ss..ss..ss",
+      ".s..ss..s.",
+      ".ss.ss.ss.",
+      "..ssssss..",
+      "....ss...."
+    ]
+  },
+  {
+    "id": "squid",
+    "title": "Squid",
+    "palette": { "p": "#d97a6c", "k": "#2e2a26" },
+    "rows": [
+      "....pp....",
+      "...pppp...",
+      "..pppppp..",
+      ".pppppppp.",
+      "pp.pppp.pp",
+      "..pppppp..",
+      "..pppppp..",
+      "..pkppkp..",
+      "..pppppp..",
+      ".p.p..p.p.",
+      ".p.p..p.p.",
+      "p..p..p..p",
+      "p.p....p.p",
+      "..p....p..",
+      ".p......p."
+    ]
+  },
+  {
+    "id": "dolphin",
+    "title": "Dolphin",
+    "palette": { "g": "#6e8fa8", "w": "#dfe8ee", "k": "#2e2a26", "l": "#4a8fd1" },
+    "rows": [
+      "......ggg......",
+      "....gggggg.....",
+      "..gggggggggg...",
+      ".ggkgg.gg.ggg..",
+      "ggggg......ggg.",
+      ".www........gg.",
+      "..w.........ggg",
+      "...........g.gg",
+      "ll.lll...lll..l",
+      "lllllllllllllll"
+    ]
+  },
+  {
+    "id": "jellyfish",
+    "title": "Jellyfish",
+    "palette": { "l": "#c9a3d9", "m": "#a06bb5" },
+    "rows": [
+      "...llll...",
+      ".llllllll.",
+      "lllmllmlll",
+      "llllllllll",
+      "mmmmmmmmmm",
+      ".l.m..m.l.",
+      ".l.m..m.l.",
+      "l..m..m..l",
+      "l...m.m..l",
+      ".l..m..m.l",
+      ".l..m..m..",
+      "..l.m..m.l",
+      "..l..m.m.l",
+      ".l...m..m.",
+      ".l...m..m."
+    ]
+  },
+  {
+    "id": "fishing-boat",
+    "title": "Fishing Boat",
+    "palette": { "k": "#5b3a1e", "w": "#f3eee4", "r": "#c8312b", "b": "#2f86c0" },
+    "rows": [
+      "......k........",
+      ".w.w..kw.......",
+      "..w...k.w......",
+      "......kww.w....",
+      "...r..k.ww.w...",
+      "..rrr.kwww.ww..",
+      ".rrrr.k.......b",
+      "bbbbbbbbbbbbbb.",
+      ".bb.bbb.bbb.bb.",
+      "..bbbbbbbbbbb.."
+    ]
+  },
+  {
+    "id": "crab",
+    "title": "Crab",
+    "palette": { "r": "#c8312b", "k": "#2e2a26" },
+    "rows": [
+      ".rr.........rr.",
+      "r.r.........r.r",
+      "rrr.........rrr",
+      ".r....k.k....r.",
+      ".r....r.r....r.",
+      "..r.rrrrrrrrr..",
+      ".rrr.rrrrr.rrr.",
+      "r.rrrrr.rrr.r.r",
+      ".r.r.......r.r.",
+      "r..r.......r..r"
+    ]
+  },
+  {
+    "id": "whale",
+    "title": "Whale",
+    "palette": { "b": "#2f5f8a", "w": "#cfe3ef", "l": "#7ab8e9", "k": "#2e2a26" },
+    "rows": [
+      "..l.l..........",
+      "...l...........",
+      "..lll..........",
+      ".bbbbbbb.......",
+      "bbkbbbbbbb...bb",
+      "bbbbbbbbbbb.bb.",
+      "wwwwwbbbbbbbb..",
+      ".wwwwwbbbbbbb..",
+      "..wwwwbbbbbb...",
+      "....bbbbb......"
+    ]
+  },
+  {
+    "id": "conch",
+    "title": "Conch",
+    "palette": { "p": "#f0b98a" },
+    "rows": [
+      "....p.....",
+      "...pp.....",
+      "...ppp....",
+      "..p.ppp...",
+      "..pp.ppp..",
+      ".ppp..ppp.",
+      ".pppp..ppp",
+      "pp.ppp..pp",
+      "pp..ppp.pp",
+      "ppp..ppppp",
+      ".ppp.pppp.",
+      "..pp.ppp..",
+      "...p.pp...",
+      ".....p....",
+      "....pp...."
+    ]
+  },
+  {
+    "id": "scallop",
+    "title": "Scallop",
+    "palette": { "p": "#f0b98a" },
+    "rows": [
+      "......ppp......",
+      "...p.ppppp.p...",
+      "..pp.pp.pp.pp..",
+      ".ppp.pp.pp.ppp.",
+      ".pp.ppp.ppp.pp.",
+      "ppp.pp...pp.ppp",
+      "pp..pp.p.pp..pp",
+      "pp.ppp.p.ppp.pp",
+      ".p.pp..p..pp.p.",
+      ".p.pp.ppp.pp.p.",
+      "..p.p.ppp.p.p..",
+      "...pp.ppp.pp...",
+      "....ppppppp....",
+      "...ppp...ppp...",
+      "..ppppppppppp.."
+    ]
+  },
+  {
+    "id": "octopus",
+    "title": "Octopus",
+    "palette": { "p": "#9b4f96", "w": "#f3eee4", "k": "#2e2a26" },
+    "rows": [
+      ".....ppppp.....",
+      "...ppppppppp...",
+      "..ppppppppppp..",
+      "..ppppppppppp..",
+      "..ppwkpppwkpp..",
+      "..ppwkpppwkpp..",
+      "..ppppppppppp..",
+      "...ppppppppp...",
+      "..ppppppppppp..",
+      ".pp.pp.p.pp.pp.",
+      "pp..p..p..p..pp",
+      "p..pp..p..pp..p",
+      "p.pp..pp...pp.p",
+      ".pp..pp....pp..",
+      "....pp.....p..."
+    ]
+  },
+  {
+    "id": "compass",
+    "title": "Compass Rose",
+    "palette": { "n": "#17436f", "k": "#c9a227", "w": "#f3eee4", "r": "#c8312b" },
+    "rows": [
+      ".......r.......",
+      "......rrr......",
+      "......rrr......",
+      "..kk..rrr..kk..",
+      "...kk.rrr.kk...",
+      "....kkrrrkk....",
+      ".....nnnnn.....",
+      ".nnnnnnwnnnnnn.",
+      ".....nnnnn.....",
+      "....kknnnkk....",
+      "...kk.nnn.kk...",
+      "..kk..nnn..kk..",
+      "......nnn......",
+      ".......n.......",
+      "..............."
+    ]
+  },
+  {
+    "id": "great-wave",
+    "title": "Great Wave",
+    "palette": { "b": "#22689f", "w": "#f3f5f8", "l": "#17436f" },
+    "rows": [
+      "......bbbbb....",
+      "....bbbbbbbbb..",
+      "...bbbbwwwwbbb.",
+      "..bbbbw....wbbw",
+      "..bbbw......ww.",
+      ".bbbbw.........",
+      ".bbbb......w...",
+      "bbbbb.....www..",
+      "bbbbb....wbbbw.",
+      "bbbbbb..wbbbbbw",
+      "bbbbbbbbbbbbbbb",
+      ".bbbbb.bbbbbb..",
+      "l..ll.....lll.l",
+      ".ll..lll.l...l.",
+      "ll.lll..ll.ll.l"
+    ]
+  },
+  {
+    "id": "pelican",
+    "title": "Pelican",
+    "palette": { "w": "#f3eee4", "k": "#2e2a26", "y": "#e8b923", "o": "#f08a24", "g": "#8f969e" },
+    "rows": [
+      "..www..........",
+      ".wwwww.........",
+      ".wwkwwyyyyyy...",
+      ".wwwwyyyyyyyyy.",
+      "..www.yyyyyyy..",
+      "..www..oooo....",
+      "..www...oo.....",
+      "..wwww.........",
+      "..wwwwww.......",
+      ".wwwwwwwww.....",
+      ".wwwwwwwgggg...",
+      "..wwwwwwwgggg..",
+      "...wwwwwwww....",
+      "....y..y.......",
+      "...yy.yy......."
+    ]
+  },
+  {
+    "id": "pufferfish",
+    "title": "Pufferfish",
+    "palette": { "y": "#e3c25a", "k": "#8a5a34", "s": "#d3bc7b" },
+    "rows": [
+      ".....k...k.....",
+      "...k..k.k..k...",
+      "...k.yyyyy.k...",
+      "....yy.yyyy....",
+      ".k.yykyy.yyy.yy",
+      "..yyyyyyyyy.yyy",
+      "kk.yy.yy.yyyyy.",
+      "..yyyyyy..y.yyy",
+      ".k.yyy.yy.yy.yy",
+      "....yyyyyyy....",
+      "...k.yyyyy.k...",
+      "...k..k.k..k...",
+      ".....k...k.....",
+      "..s.ss...ss.s..",
+      "sssssssssssssss"
+    ]
+  },
+  {
+    "id": "turtle",
+    "title": "Turtle",
+    "palette": { "l": "#8bb64f", "g": "#3f7432" },
+    "rows": [
+      "......lll......",
+      ".....lllll.....",
+      "......lll......",
+      "ll...ggggg...ll",
+      "lll.g..gg.g.lll",
+      ".llgg.....ggll.",
+      "...g.ggggg.g...",
+      "...g.ggggg.g...",
+      "...g.ggggg.g...",
+      "...g.ggggg.g...",
+      ".llgg.....ggll.",
+      "lll.g.ggg.g.lll",
+      "ll...ggggg...ll",
+      ".......l.......",
+      ".......l......."
+    ]
+  },
+  {
+    "id": "coral",
+    "title": "Coral Reef",
+    "palette": { "p": "#e8737a", "o": "#f08a24", "s": "#d3bc7b" },
+    "rows": [
+      ".p...p.....p...",
+      ".p.p.p..p..p.p.",
+      ".ppp.p..p.pp.p.",
+      "..p...p.p..ppp.",
+      "..p...ppp...p..",
+      "..pp...p...pp..",
+      "...ppp.p.ppp...",
+      ".....ppppp.....",
+      ".......p.......",
+      "......ppp......",
+      "...oo.ppp......",
+      "..oooo.p...oo..",
+      "...oo..p..oooo.",
+      "..ssssssssssss.",
+      "sssssssssssssss"
+    ]
+  },
+  {
+    "id": "starfish",
+    "title": "Starfish",
+    "palette": { "o": "#e07a1f", "d": "#b5541a" },
+    "rows": [
+      ".......o.......",
+      "......ooo......",
+      ".....ooooo.....",
+      ".....ooooo.....",
+      "ooooooodooooooo",
+      ".oooooodoooooo.",
+      "..oooodddoooo..",
+      "...ooodddooo...",
+      "....ooooooo....",
+      "....ooooooo....",
+      "...oooo.oooo...",
+      "...ooo...ooo...",
+      "..ooo.....ooo..",
+      "..oo.......oo..",
+      ".o...........o."
+    ]
+  },
+  {
+    "id": "narwhal",
+    "title": "Narwhal",
+    "palette": { "s": "#efe0c0", "g": "#8a9aa8", "k": "#2e2a26", "d": "#5f6d88" },
+    "rows": [
+      "sss............",
+      "..sss..........",
+      "....sss........",
+      "......gggggg...",
+      ".....gkgggggg..",
+      ".....gggg.ggggg",
+      "......dggggg.gg",
+      ".......dddgg..g",
+      "..........gg...",
+      ".........g.g..."
+    ]
+  },
+  {
+    "id": "heron",
+    "title": "Heron",
+    "palette": { "g": "#8f969e", "k": "#2e2a26", "y": "#e8b923", "l": "#2f86c0" },
+    "rows": [
+      "...gg.....",
+      "..gkgg....",
+      "yyygg.....",
+      "....ggg...",
+      "....g.....",
+      "....gg....",
+      ".....ggg..",
+      "....gggggg",
+      "....gggggg",
+      ".....ggggg",
+      "......gg..",
+      "......g.g.",
+      "......g.g.",
+      "ll.l..g.gl",
+      ".ll.lll.l."
+    ]
+  },
+  {
+    "id": "shark",
+    "title": "Shark",
+    "palette": { "g": "#7e8c99", "w": "#f3eee4", "k": "#2e2a26", "l": "#2f86c0" },
+    "rows": [
+      ".......g.......",
+      "......gg.......",
+      ".....ggg.....g.",
+      "...ggggggggg..g",
+      ".gggkgggggggggg",
+      "gggggggggggggg.",
+      ".w.w.w.ggg.g.gg",
+      "..w.w...g.....g",
+      "..l............",
+      "l.ll..lll.ll.l."
+    ]
+  },
+  {
+    "id": "palm-isle",
+    "title": "Palm Isle",
+    "palette": { "g": "#3f8a3e", "b": "#8a5a34", "y": "#e3c25a", "l": "#2f86c0" },
+    "rows": [
+      "....gg...gg....",
+      "..gggggggggggg.",
+      ".gg...gbg...gg.",
+      "g....g.b.g...gg",
+      ".......b.......",
+      "........b......",
+      "........b......",
+      "........b......",
+      ".......b.......",
+      ".......b.......",
+      ".....yyyyyy....",
+      "...yyyyyyyyyy..",
+      "ll..........lll",
+      ".llll....llll..",
+      "lllllllllllllll"
+    ]
+  }
+]
