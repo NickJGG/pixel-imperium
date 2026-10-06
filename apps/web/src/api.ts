@@ -1,5 +1,7 @@
 import type {
   Assists,
+  Campaign,
+  CampaignSummary,
   HandleAvailability,
   HandleRejection,
   ImportRequest,
@@ -10,7 +12,6 @@ import type {
   PutHandleResponse,
   PutSettingsRequest,
   PuzzleClues,
-  PuzzleSummary,
   SavedProgress,
   SolveRequest,
   SolveResponse,
@@ -29,7 +30,15 @@ const jsonInit = (method: string, body: unknown, init?: RequestInit): RequestIni
   ...init,
 })
 
-export const fetchPuzzles = () => getJson<PuzzleSummary[]>('/api/puzzles')
+export const fetchCampaigns = () => getJson<CampaignSummary[]>('/api/campaigns')
+
+/** `null` when no campaign has the id. */
+export async function fetchCampaign(id: string): Promise<Campaign | null> {
+  const res = await fetch(`/api/campaigns/${encodeURIComponent(id)}`)
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  return (await res.json()) as Campaign
+}
 
 export const fetchPuzzle = (id: string) => getJson<PuzzleClues>(`/api/puzzles/${encodeURIComponent(id)}`)
 

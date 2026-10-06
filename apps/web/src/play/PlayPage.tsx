@@ -1,9 +1,11 @@
 import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
-import type { PuzzleClues } from '@pixel-imperium/protocol'
+import type { Campaign, Province, PuzzleClues } from '@pixel-imperium/protocol'
 import { type AccountState, useAccount } from '../account.ts'
 import { submitSolve } from '../api.ts'
+import { campaignProgress, isOpen } from '../campaign/progress.ts'
+import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { getSettings, updateSettings, useSettings } from '../settings.ts'
 import { AssistChips } from './AssistChips.tsx'
 import { Board } from './Board.tsx'
@@ -17,16 +19,41 @@ import styles from './Play.module.css'
 const route = getRouteApi('/play/$id')
 
 export function PlayPage() {
-  const puzzle = route.useLoaderData()
+  const { puzzle, campaign } = route.useLoaderData()
   const account = useAccount()
-  return <Play key={`${account.generation}:${puzzle.id}`} puzzle={puzzle} account={account} />
+  const province = campaign.provinces.find(p => p.id === puzzle.provinceId)!
+  const progress = campaignProgress(campaign, account.storage)
+  if (!isOpen(progress.provinces[campaign.provinces.indexOf(province)]!.state)) {
+    return <LockedProvince campaign={campaign} province={province} progress={progress} />
+  }
+  return (
+    <Play
+      key={`${account.generation}:${puzzle.id}`}
+      puzzle={puzzle}
+      campaign={campaign}
+      province={province}
+      account={account}
+    />
+  )
 }
 
 function useStoreValue<T>(store: PlayStore, select: (s: PlayState) => T): T {
   return useSyncExternalStore(store.subscribe, () => select(store.getState()))
 }
 
-function Play({ puzzle, account: { storage, sync } }: { puzzle: PuzzleClues; account: AccountState }) {
+function Play({
+  puzzle,
+  campaign,
+  province,
+  account: { storage, sync },
+}: {
+  puzzle: PuzzleClues
+  campaign: Campaign
+  province: Province
+  account: AccountState
+}) {
+  const isConquered = () =>
+    campaignProgress(campaign, storage).provinces[campaign.provinces.indexOf(province)]!.state === 'conquered'
   const [store] = useState(
     () =>
       new PlayStore(puzzle, {
@@ -39,6 +66,8 @@ function Play({ puzzle, account: { storage, sync } }: { puzzle: PuzzleClues; acc
   const canRedo = useStoreValue(store, s => s.canRedo)
   const mode = useStoreValue(store, s => s.mode)
   const solved = useStoreValue(store, s => s.solved)
+  const [conqueredBefore] = useState(isConquered)
+  const conquest = solved && !conqueredBefore && isConquered()
   const replaying = useStoreValue(store, s => s.replaying)
   const unverified = !solved && storage.loadSolved(puzzle.id) === 'unverified'
   const revealed = useStoreValue(store, s => s.palette !== null)
@@ -143,12 +172,21 @@ function Play({ puzzle, account: { storage, sync } }: { puzzle: PuzzleClues; acc
       {solved ? (
         <div className={styles.dock}>
           <ClearButton store={store} solved />
-          <Link to="/" className={styles.linkButton}>
-            More puzzles
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-          </Link>
+          {conquest ? (
+            <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} className={styles.linkButton}>
+              Province conquered
+              <ArrowIcon />
+            </Link>
+          ) : (
+            <Link
+              to="/c/$campaignId/$provinceId"
+              params={{ campaignId: campaign.id, provinceId: province.id }}
+              className={styles.linkButton}
+            >
+              Back to {province.name}
+              <ArrowIcon />
+            </Link>
+          )}
         </div>
       ) : (
         <>
@@ -191,6 +229,14 @@ function Play({ puzzle, account: { storage, sync } }: { puzzle: PuzzleClues; acc
         </>
       )}
     </main>
+  )
+}
+
+function ArrowIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
   )
 }
 

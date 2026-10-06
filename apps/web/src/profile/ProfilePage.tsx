@@ -1,8 +1,6 @@
-import type { CSSProperties } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { useAccount } from '../account.ts'
-import { PixelArt } from '../list/PixelArt.tsx'
-import list from '../list/PuzzleList.module.css'
+import list from '../campaign/Campaign.module.css'
 import styles from './Profile.module.css'
 
 const route = getRouteApi('/u/$handle')
@@ -38,38 +36,7 @@ export function ProfilePage() {
         </div>
       </header>
 
-      {profile.gallery.length === 0 ? (
-        <p className={list.empty}>Nothing solved yet.</p>
-      ) : (
-        <ul className={list.grid}>
-          {profile.gallery.map(item => (
-            <li key={item.puzzleId}>
-              <Link to="/play/$id" params={{ id: item.puzzleId }} className={list.card}>
-                <div className={`${list.thumb} ${item.palette ? list.solved : list.new}`}>
-                  {item.palette ? (
-                    <PixelArt title={item.title} width={item.width} height={item.height} palette={item.palette} />
-                  ) : (
-                    <div
-                      className={`${list.box} ${list.blank}`}
-                      style={{ '--w': item.width, '--h': item.height } as CSSProperties}
-                      role="img"
-                      aria-label={`${item.title}, hidden until you solve it`}
-                    />
-                  )}
-                </div>
-                <div className={list.info}>
-                  <span className={list.title}>{item.title}</span>
-                  <span className={list.size}>
-                    {item.width}×{item.height}
-                  </span>
-                </div>
-                {!item.verified && <span className={list.note}>Imported — replay to verify</span>}
-                {item.verified && !item.palette && <span className={list.note}>Solve it to see the picture</span>}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+      {profile.verifiedSolves === 0 && <p className={list.empty}>Nothing solved yet.</p>}
     </main>
   )
 }

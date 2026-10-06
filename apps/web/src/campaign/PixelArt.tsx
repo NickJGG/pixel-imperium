@@ -1,5 +1,5 @@
 import { type CSSProperties, useEffect, useRef } from 'react'
-import styles from './PuzzleList.module.css'
+import styles from './Campaign.module.css'
 
 interface Props {
   title: string

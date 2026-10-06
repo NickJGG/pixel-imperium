@@ -1,9 +1,11 @@
 import { Link, Outlet, createRootRoute, createRoute, createRouter, notFound } from '@tanstack/react-router'
 import { accountReady, useAccount } from './account.ts'
-import { fetchProfile, fetchPuzzle, fetchPuzzles } from './api.ts'
+import { fetchCampaign, fetchCampaigns, fetchProfile, fetchPuzzle } from './api.ts'
 import { AppHeader } from './AppHeader.tsx'
+import { CampaignPage } from './campaign/CampaignPage.tsx'
+import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
+import { ProvincePage } from './campaign/ProvincePage.tsx'
 import { ImportPrompt } from './ImportPrompt.tsx'
-import { PuzzleList } from './list/PuzzleList.tsx'
 import { HandlePicker } from './me/HandlePicker.tsx'
 import { SettingsPage } from './me/SettingsPage.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
@@ -26,26 +28,71 @@ const rootRoute = createRootRoute({
   errorComponent: ({ error }) => (
     <main className={styles.message}>
       <p>Something went wrong: {error instanceof Error ? error.message : String(error)}</p>
-      <Link to="/">Back to puzzles</Link>
+      <Link to="/">Back to the map</Link>
     </main>
   ),
 })
 
-const listRoute = createRoute({
+async function loadCampaign(id: string) {
+  const [campaign] = await Promise.all([fetchCampaign(id), accountReady])
+  if (!campaign) throw notFound()
+  rememberCampaign(campaign.id)
+  return campaign
+}
+
+const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  validateSearch: (search: Record<string, unknown>): { filter?: 'open' | 'solved' } =>
-    search.filter === 'open' || search.filter === 'solved' ? { filter: search.filter } : {},
-  loader: async () => (await Promise.all([fetchPuzzles(), accountReady]))[0],
-  component: PuzzleList,
+  loader: async () => {
+    const id = pickCampaign(await fetchCampaigns())
+    return id === null ? null : loadCampaign(id)
+  },
+  component: () => {
+    const campaign = homeRoute.useLoaderData()
+    if (!campaign) return <main className={styles.message}>No campaigns yet.</main>
+    return <CampaignPage campaign={campaign} />
+  },
+})
+
+const campaignRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/c/$campaignId',
+  loader: ({ params }) => loadCampaign(params.campaignId),
+  component: () => <CampaignPage campaign={campaignRoute.useLoaderData()} />,
+  notFoundComponent: () => <Missing what="campaign" />,
+})
+
+const provinceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/c/$campaignId/$provinceId',
+  loader: async ({ params }) => {
+    const campaign = await loadCampaign(params.campaignId)
+    const province = campaign.provinces.find(p => p.id === params.provinceId)
+    if (!province) throw notFound()
+    return { campaign, province }
+  },
+  component: () => <ProvincePage {...provinceRoute.useLoaderData()} />,
+  notFoundComponent: () => <Missing what="province" />,
 })
 
 const playRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/play/$id',
-  loader: async ({ params }) => (await Promise.all([fetchPuzzle(params.id), accountReady]))[0],
+  loader: async ({ params }) => {
+    const puzzle = await fetchPuzzle(params.id)
+    return { puzzle, campaign: await loadCampaign(puzzle.campaignId) }
+  },
   component: PlayPage,
 })
+
+function Missing({ what }: { what: string }) {
+  return (
+    <main className={styles.message}>
+      <p>There's no such {what}.</p>
+      <Link to="/">Back to the map</Link>
+    </main>
+  )
+}
 
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -61,7 +108,7 @@ const profileRoute = createRoute({
     return (
       <main className={styles.message}>
         <p>No player goes by @{handle}.</p>
-        <Link to="/">Back to puzzles</Link>
+        <Link to="/">Back to the map</Link>
       </main>
     )
   },
@@ -77,7 +124,7 @@ const settingsRoute = createRoute({
 })
 
 export const router = createRouter({
-  routeTree: rootRoute.addChildren([listRoute, playRoute, profileRoute, settingsRoute]),
+  routeTree: rootRoute.addChildren([homeRoute, campaignRoute, provinceRoute, playRoute, profileRoute, settingsRoute]),
 })
 
 declare module '@tanstack/react-router' {
