@@ -1,15 +1,10 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
-import { useRouter } from '@tanstack/react-router'
+import { Link, useRouter } from '@tanstack/react-router'
 import { signOutAccount } from './account.ts'
-import { type Provider, signIn, useSession } from './auth.ts'
+import { PROVIDERS, signIn, useSession } from './auth.ts'
 import styles from './App.module.css'
 
-const providers: { id: Provider; label: string }[] = [
-  { id: 'google', label: 'Google' },
-  { id: 'discord', label: 'Discord' },
-]
-
-/** "Sign in" with a provider menu when signed out; avatar and handle with a Sign out menu when signed in. */
+/** "Sign in" with a provider menu when signed out; avatar and handle with an account menu when signed in. */
 export function AccountMenu() {
   const { data, isPending } = useSession()
   const router = useRouter()
@@ -18,7 +13,7 @@ export function AccountMenu() {
   if (!data) {
     return (
       <Menu label="Sign in" trigger="Sign in">
-        {providers.map(p => (
+        {PROVIDERS.map(p => (
           <button
             key={p.id}
             type="button"
@@ -49,6 +44,12 @@ export function AccountMenu() {
         </>
       }
     >
+      <Link to="/u/$handle" params={{ handle }} role="menuitem">
+        Profile
+      </Link>
+      <Link to="/settings" role="menuitem">
+        Settings
+      </Link>
       <button type="button" role="menuitem" onClick={() => void signOutAccount().then(() => router.invalidate())}>
         Sign out
       </button>
@@ -78,7 +79,11 @@ function Menu({ label, trigger, children }: { label: string; trigger: ReactNode;
         {trigger}
       </button>
       {open && (
-        <div className={styles.menu} role="menu">
+        <div
+          className={styles.menu}
+          role="menu"
+          onClick={e => (e.target as Element).closest('[role="menuitem"]') && setOpen(false)}
+        >
           {children}
         </div>
       )}

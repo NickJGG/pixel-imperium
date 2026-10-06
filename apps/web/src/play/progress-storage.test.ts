@@ -41,6 +41,17 @@ describe('ProgressStorage', () => {
     expect(data.get('pixel-imperium:settings')).toBe('{}')
   })
 
+  it('forgets an account namespace entirely, leaving everything else', () => {
+    account.saveCells('a', '#', '2026-01-01T00:00:00.000Z')
+    account.saveMeta('dirty', '[]')
+    new ProgressStorage('u2').saveSolved('a', 'verified')
+    signedOutStorage.saveSolved('c', 'local')
+
+    account.forget()
+    expect([...data.keys()].sort()).toEqual(['pixel-imperium:solved:c', 'pixel-imperium:u:u2:solved:a'])
+    expect(() => signedOutStorage.forget()).toThrow()
+  })
+
   it('treats a throwing storage as empty', () => {
     vi.stubGlobal('localStorage', {
       get length(): number {

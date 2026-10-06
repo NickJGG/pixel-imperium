@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "handle_confirmed" boolean DEFAULT false NOT NULL;

@@ -4,9 +4,9 @@
  * (`accountReady`); offline, the last signed-in account keeps playing from its cache.
  */
 import { useSyncExternalStore } from 'react'
-import type { Assists, ImportItem } from '@pixel-imperium/protocol'
-import { fetchMyProgress, importProgress, putProgress, putSettings, submitSolve } from './api.ts'
-import { getSession, signOut } from './auth.ts'
+import type { Assists, HandleProblem, ImportItem } from '@pixel-imperium/protocol'
+import { fetchMyProgress, importProgress, putHandle, putProgress, putSettings, submitSolve } from './api.ts'
+import { deleteUser, getSession, refreshSession, signOut } from './auth.ts'
 import { ProgressStorage, signedOutStorage } from './play/progress-storage.ts'
 import { assistsOf, getSettings, subscribeSettings, updateSettings } from './settings.ts'
 import { ProgressSync } from './sync.ts'
@@ -17,7 +17,6 @@ interface Account {
 }
 
 export interface ImportOffer {
-  handle: string
   solved: number
   inProgress: number
 }
@@ -29,9 +28,12 @@ export interface AccountState {
   /** Bumped whenever the cache is replaced, so live play remounts from it. */
   generation: number
   importOffer: ImportOffer | null
+  /** The account still has the provisional handle it got at sign-up and should pick its own. */
+  needsHandle: boolean
 }
 
-let state: AccountState = { account: null, storage: signedOutStorage, sync: null, generation: 0, importOffer: null }
+const SIGNED_OUT = { account: null, storage: signedOutStorage, sync: null, importOffer: null, needsHandle: false }
+let state: AccountState = { ...SIGNED_OUT, generation: 0 }
 const listeners = new Set<() => void>()
 
 function setState(patch: Partial<AccountState>): void {
@@ -141,6 +143,7 @@ async function start(): Promise<void> {
   } else {
     account = data && { userId: data.user.id, handle: data.user.handle }
     sessionId = data?.session.id ?? null
+    setState({ needsHandle: data ? !data.user.handleConfirmed : false })
     cacheAccount(account)
   }
   if (!account) return
@@ -153,7 +156,7 @@ async function start(): Promise<void> {
 
   const counts = signedOutCounts()
   if (counts.solved + counts.inProgress > 0 && storage.loadMeta('import-deferred') !== sessionId) {
-    setState({ importOffer: { handle: account.handle, ...counts } })
+    setState({ importOffer: counts })
   }
 }
 
@@ -189,13 +192,41 @@ export function discardImport(): void {
   setState({ importOffer: null })
 }
 
-/** Sends any unsynced play first; the account's cache stays on the device for its next sign-in. */
-export async function signOutAccount(): Promise<void> {
-  await state.sync?.flush()
+/** Sets and confirms the account's handle; resolves to why the server refused it, if it did. */
+export async function saveHandle(handle: string): Promise<HandleProblem | null> {
+  const result = await putHandle(handle)
+  if ('reason' in result) return result.reason
+  const account = state.account && { ...state.account, handle: result.handle }
+  cacheAccount(account)
+  setState({ account, needsHandle: false })
+  refreshSession()
+  return null
+}
+
+function reset(): void {
   stopListening()
-  await signOut()
   cacheAccount(null)
   sessionId = null
   syncedAssists = ''
-  setState({ account: null, storage: signedOutStorage, sync: null, importOffer: null, generation: state.generation + 1 })
+  setState({ ...SIGNED_OUT, generation: state.generation + 1 })
+}
+
+/**
+ * Deletes the account on the server, then everything it left on this device.
+ * `'reauthenticate'` when the session is too old to authorize it; signing in again refreshes it.
+ */
+export async function deleteAccount(): Promise<'deleted' | 'reauthenticate'> {
+  const { error } = await deleteUser()
+  if (error?.code === 'SESSION_EXPIRED') return 'reauthenticate'
+  if (error) throw new Error(error.message ?? error.statusText)
+  state.storage.forget()
+  reset()
+  return 'deleted'
+}
+
+/** Sends any unsynced play first; the account's cache stays on the device for its next sign-in. */
+export async function signOutAccount(): Promise<void> {
+  await state.sync?.flush()
+  await signOut()
+  reset()
 }

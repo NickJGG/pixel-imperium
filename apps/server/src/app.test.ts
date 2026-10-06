@@ -1,7 +1,16 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-import type { ImportResponse, MyProgress, PuzzleClues, PuzzleSummary, SolveResponse } from '@pixel-imperium/protocol'
+import type {
+  HandleAvailability,
+  ImportResponse,
+  MyProgress,
+  Profile,
+  PuzzleClues,
+  PuzzleSummary,
+  SolveResponse,
+} from '@pixel-imperium/protocol'
+import { eq } from 'drizzle-orm'
 import { createApp } from './app.ts'
-import { solve as solveTable } from './db/schema.ts'
+import { account, progress as progressTable, session, solve as solveTable, user, userSettings } from './db/schema.ts'
 import { parseSeedPuzzle } from './puzzles.ts'
 import { createTestDeps, signedInUser, truncateAll } from './test-db.ts'
 
@@ -152,6 +161,7 @@ describe('/api/me', () => {
     ['PUT', '/api/me/progress/diag'],
     ['PUT', '/api/me/settings'],
     ['POST', '/api/me/import'],
+    ['PUT', '/api/me/handle'],
   ])('%s %s 401s without a session', async (method, path) => {
     const res = await app.request(path, { method, body: method === 'GET' ? null : '{}' })
     expect(res.status).toBe(401)
@@ -282,5 +292,148 @@ describe('POST /api/me/import', () => {
   it('400s without a puzzles array', async () => {
     const { cookie } = await signedInUser(db, auth)
     expect((await send('POST', '/api/me/import', { puzzles: 'all' }, cookie)).status).toBe(400)
+  })
+})
+
+describe('handles', () => {
+  const available = async (handle: string, cookie?: string) =>
+    (await (
+      await app.request(`/api/handles/${handle}/available`, { headers: cookie ? { cookie } : {} })
+    ).json()) as HandleAvailability
+  const rename = (cookie: string, handle: unknown) => send('PUT', '/api/me/handle', { handle }, cookie)
+
+  it('reports free, taken (ignoring case), and invalid handles', async () => {
+    await signedInUser(db, auth, 'pixel_fan')
+    expect(await available('someone_new')).toEqual({ available: true })
+    expect(await available('Pixel_Fan')).toEqual({ available: false, reason: 'taken' })
+    expect(await available('ab')).toEqual({ available: false, reason: 'length' })
+    expect(await available('admin')).toEqual({ available: false, reason: 'reserved' })
+  })
+
+  it("counts the player's own handle as available", async () => {
+    const { cookie } = await signedInUser(db, auth, 'pixel_fan')
+    expect(await available('PIXEL_FAN', cookie)).toEqual({ available: true })
+  })
+
+  it('renames and confirms the handle', async () => {
+    const { id, cookie } = await signedInUser(db, auth, 'pixel_fan')
+    expect(await (await rename(cookie, 'New_Name')).json()).toEqual({ handle: 'New_Name' })
+    const rows = await db.select({ handle: user.handle, confirmed: user.handleConfirmed }).from(user).where(eq(user.id, id))
+    expect(rows).toEqual([{ handle: 'New_Name', confirmed: true }])
+  })
+
+  it("409s on another player's handle in any case, but allows recasing one's own", async () => {
+    await signedInUser(db, auth, 'pixel_fan')
+    const { cookie } = await signedInUser(db, auth, 'other')
+    const res = await rename(cookie, 'PIXEL_fan')
+    expect(res.status).toBe(409)
+    expect(await res.json()).toMatchObject({ reason: 'taken' })
+    expect((await rename(cookie, 'OTHER')).status).toBe(200)
+  })
+
+  it.each([
+    ['too short', 'ab'],
+    ['bad characters', 'no spaces'],
+    ['reserved', 'settings'],
+    ['blocked', 'shithead'],
+    ['not a string', 42],
+  ])('400s on %s', async (_, handle) => {
+    const { cookie } = await signedInUser(db, auth)
+    expect((await rename(cookie, handle)).status).toBe(400)
+  })
+})
+
+describe('GET /api/users/:handle', () => {
+  const dot = parseSeedPuzzle({ id: 'dot', title: 'Dot', palette: { g: '#0f0' }, rows: ['g'] })
+  const profileApp = createApp([diagonal, dot], { db, auth })
+  const profile = async (handle: string, cookie?: string) =>
+    (await (await profileApp.request(`/api/users/${handle}`, { headers: cookie ? { cookie } : {} })).json()) as Profile
+
+  /** Verified `diag`, unverified `dot`, and a verified solve of a puzzle no longer in the seed. */
+  async function owner() {
+    const o = await signedInUser(db, auth, 'Owner')
+    await db.insert(solveTable).values([
+      { userId: o.id, puzzleId: 'diag', verified: true, solvedAt: new Date('2026-01-01') },
+      { userId: o.id, puzzleId: 'dot', verified: false, solvedAt: new Date('2026-01-02') },
+      { userId: o.id, puzzleId: 'retired', verified: true, solvedAt: new Date('2026-01-03') },
+    ])
+    return o
+  }
+
+  const diagItem = { puzzleId: 'diag', title: 'Diagonal', width: 2, height: 2, verified: true }
+  const dotItem = { puzzleId: 'dot', title: 'Dot', width: 1, height: 1, verified: false }
+
+  it('shows anonymous viewers verified solves of known puzzles, without palettes or private fields', async () => {
+    await owner()
+    const body = await profile('owner')
+    expect(body).toEqual<Profile>({
+      handle: 'Owner',
+      image: null,
+      joinedAt: expect.any(String),
+      verifiedSolves: 1,
+      gallery: [{ ...diagItem, palette: null }],
+    })
+    expect(JSON.stringify(body)).not.toContain('@example.com')
+  })
+
+  it('reveals only the pictures the viewer has verifiably solved', async () => {
+    await owner()
+    const viewer = await signedInUser(db, auth, 'viewer')
+    expect((await profile('owner', viewer.cookie)).gallery).toEqual([{ ...diagItem, palette: null }])
+
+    await db.insert(solveTable).values({ userId: viewer.id, puzzleId: 'diag', verified: false })
+    expect((await profile('owner', viewer.cookie)).gallery[0]?.palette).toBeNull()
+
+    await db.update(solveTable).set({ verified: true }).where(eq(solveTable.userId, viewer.id))
+    expect((await profile('owner', viewer.cookie)).gallery[0]?.palette).toEqual(['#f00', null, null, '#00f'])
+  })
+
+  it('shows the owner their unverified solves too, newest first, with palettes for verified ones only', async () => {
+    const o = await owner()
+    const body = await profile('OWNER', o.cookie)
+    expect(body.verifiedSolves).toBe(1)
+    expect(body.gallery).toEqual([
+      { ...dotItem, palette: null },
+      { ...diagItem, palette: ['#f00', null, null, '#00f'] },
+    ])
+  })
+
+  it('404s on an unknown handle', async () => {
+    expect((await profileApp.request('/api/users/nobody')).status).toBe(404)
+  })
+})
+
+describe('account deletion', () => {
+  it('removes the user and every row that belongs to them', async () => {
+    const { id, cookie } = await signedInUser(db, auth)
+    const bystander = await signedInUser(db, auth, 'bystander')
+    for (const u of [id, bystander.id]) {
+      await db.insert(account).values({ id: `acct-${u}`, accountId: u, providerId: 'google', userId: u, updatedAt: new Date() })
+      await db.insert(solveTable).values({ userId: u, puzzleId: 'diag', verified: true })
+      await db.insert(progressTable).values({ userId: u, puzzleId: 'diag', cells: '#..#', updatedAt: new Date() })
+      await db.insert(userSettings).values({
+        userId: u,
+        assists: { fadeClues: true, impossibleLines: true, autoMarkEmptyLines: true, crosshair: true, lockLine: true },
+      })
+    }
+
+    const res = await app.request('/api/auth/delete-user', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: 'http://localhost', cookie },
+      body: '{}',
+    })
+    expect(res.status).toBe(200)
+
+    for (const [table, column] of [
+      [user, user.id],
+      [session, session.userId],
+      [account, account.userId],
+      [solveTable, solveTable.userId],
+      [progressTable, progressTable.userId],
+      [userSettings, userSettings.userId],
+    ] as const) {
+      expect(await db.$count(table, eq(column, id))).toBe(0)
+      expect(await db.$count(table, eq(column, bystander.id))).toBe(1)
+    }
   })
 })

@@ -25,13 +25,16 @@ export function createAuth(db: Db, env: AuthEnv) {
       ...(env.discord && { discord: env.discord }),
     },
     account: {
-      accountLinking: { enabled: true, trustedProviders: ['google', 'discord'] },
+      // Linking from settings is an explicit, signed-in action, so the providers' emails may differ.
+      accountLinking: { enabled: true, trustedProviders: ['google', 'discord'], allowDifferentEmails: true },
     },
     user: {
       additionalFields: {
         // Not required at the API layer: the create hook below always fills it.
         handle: { type: 'string', required: false, input: false },
+        handleConfirmed: { type: 'boolean', required: false, input: false, defaultValue: false },
       },
+      deleteUser: { enabled: true },
     },
     databaseHooks: {
       user: {

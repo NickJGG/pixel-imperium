@@ -138,6 +138,12 @@ export class ProgressStorage {
     for (const k of allKeys()) if (starts.some(s => k.startsWith(s))) write(k, null)
   }
 
+  /** Removes the whole account namespace, metadata included. */
+  forget(): void {
+    if (this.userId === null) throw new Error('the signed-out namespace shares its prefix with every other key')
+    for (const k of allKeys()) if (k.startsWith(this.prefix)) write(k, null)
+  }
+
   /** Namespace-wide values outside any puzzle, such as the sync's dirty set. */
   loadMeta(name: string): string | null {
     return read(`${this.prefix}meta:${name}`)

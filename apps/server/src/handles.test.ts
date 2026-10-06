@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isReserved, isValidHandle, provisionalHandle, slugify } from './handles.ts'
+import { handleProblem, isReserved, isValidHandle, provisionalHandle, slugify } from './handles.ts'
 
 describe('slugify', () => {
   it.each([
@@ -33,6 +33,17 @@ describe('isReserved / isValidHandle', () => {
   ])('%j valid: %s', (handle, valid) => {
     expect(isValidHandle(handle)).toBe(valid)
   })
+
+  it.each([
+    ['ab', 'length'],
+    ['dash-ed', 'characters'],
+    ['Admin', 'reserved'],
+    ['FUCKyou', 'blocked'],
+    ['s_h_i_t', 'blocked'],
+    ['nick', null],
+  ])('%j problem: %s', (handle, problem) => {
+    expect(handleProblem(handle)).toBe(problem)
+  })
 })
 
 describe('provisionalHandle', () => {
@@ -57,5 +68,9 @@ describe('provisionalHandle', () => {
 
   it('skips reserved names', async () => {
     expect(await provisionalHandle('Admin', takenAmong())).toBe('admin2')
+  })
+
+  it('falls back to player for a blocked name', async () => {
+    expect(await provisionalHandle('Shit Head', takenAmong())).toBe('player')
   })
 })

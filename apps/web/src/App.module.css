@@ -66,6 +66,22 @@
   box-shadow: none;
 }
 
+.menu a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  font: 700 15px var(--font-ui);
+  color: var(--text);
+  text-decoration: none;
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.menu a:hover {
+  background: color-mix(in srgb, var(--a2) 18%, var(--surface));
+}
+
 .avatar {
   display: inline-grid;
   place-items: center;

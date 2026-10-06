@@ -89,3 +89,42 @@ export type ImportOutcome = SolveStatus | 'progress' | 'ignored'
 export interface ImportResponse {
   results: Record<string, ImportOutcome>
 }
+
+/** Why a handle can't be used: wrong length, characters other than `a-z0-9_`, reserved, blocklisted, or held by another account. */
+export type HandleProblem = 'length' | 'characters' | 'reserved' | 'blocked' | 'taken'
+
+/** `GET /api/handles/:handle/available`; the signed-in player's own handle counts as available. */
+export type HandleAvailability = { available: true } | { available: false; reason: HandleProblem }
+
+/** `PUT /api/me/handle` sets and confirms the handle; it answers `HandleRejection` with 400 or 409. */
+export interface PutHandleRequest {
+  handle: string
+}
+
+export interface PutHandleResponse {
+  handle: string
+}
+
+export interface HandleRejection extends ApiError {
+  reason: HandleProblem
+}
+
+/** A solved puzzle on a profile; `palette` only when the viewer has a verified solve of it too. */
+export interface GalleryItem {
+  puzzleId: string
+  title: string
+  width: number
+  height: number
+  palette: (string | null)[] | null
+  /** Always true for other viewers: unverified solves are shown to their owner only. */
+  verified: boolean
+}
+
+/** `GET /api/users/:handle`, public. Newest solves first. */
+export interface Profile {
+  handle: string
+  image: string | null
+  joinedAt: string
+  verifiedSolves: number
+  gallery: GalleryItem[]
+}

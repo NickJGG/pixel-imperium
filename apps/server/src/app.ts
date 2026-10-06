@@ -3,10 +3,15 @@ import { satisfiesClues } from '@pixel-imperium/nonogram'
 import type {
   ApiError,
   Assists,
+  GalleryItem,
+  HandleAvailability,
+  HandleRejection,
   ImportItem,
   ImportOutcome,
   ImportResponse,
   MyProgress,
+  Profile,
+  PutHandleResponse,
   PutProgressResponse,
   PuzzleClues,
   PuzzleRecord,
@@ -14,10 +19,11 @@ import type {
   SolveResponse,
   SolveStatus,
 } from '@pixel-imperium/protocol'
-import { eq, lt } from 'drizzle-orm'
+import { and, desc, eq, lt, sql } from 'drizzle-orm'
 import type { Auth } from './auth.ts'
 import type { Db } from './db/index.ts'
-import { progress, solve, userSettings } from './db/schema.ts'
+import { progress, solve, user, userSettings } from './db/schema.ts'
+import { handleProblem } from './handles.ts'
 import { parseCells, planImport } from './import.ts'
 import type { Puzzle } from './puzzles.ts'
 
@@ -42,6 +48,13 @@ function parseImportItem(value: unknown): ImportItem | null {
   if (typeof id !== 'string' || typeof solved !== 'boolean' || typeof replaying !== 'boolean') return null
   if (cells !== undefined && typeof cells !== 'string') return null
   return { id, solved, replaying, ...(cells !== undefined && { cells }) }
+}
+
+const handleIs = (handle: string) => sql`lower(${user.handle}) = ${handle.toLowerCase()}`
+
+/** Postgres `unique_violation`, which drizzle wraps as the cause of its own error. */
+function isUniqueViolation(e: unknown): boolean {
+  return (e as { code?: unknown } | null)?.code === '23505' || (e instanceof Error && isUniqueViolation(e.cause))
 }
 
 export function createApp(puzzles: readonly Puzzle[], { db, auth }: AppDeps) {
@@ -103,6 +116,61 @@ export function createApp(puzzles: readonly Puzzle[], { db, auth }: AppDeps) {
       const user = c.get('user')
       if (solved && user) await recordSolve(db, user.id, p.id, 'verified')
       return c.json<SolveResponse>(solved ? { solved: true, palette: p.palette } : { solved: false })
+    })
+    .get('/handles/:handle/available', async c => {
+      const handle = c.req.param('handle')
+      const problem = handleProblem(handle)
+      const [holder] = problem ? [] : await db.select({ id: user.id }).from(user).where(handleIs(handle))
+      const reason = problem ?? (holder && holder.id !== c.get('user')?.id ? 'taken' : null)
+      return c.json<HandleAvailability>(reason ? { available: false, reason } : { available: true })
+    })
+    .get('/users/:handle', async c => {
+      const [owner] = await db.select().from(user).where(handleIs(c.req.param('handle')))
+      if (!owner) return c.json<ApiError>({ error: `no player '${c.req.param('handle')}'` }, 404)
+
+      const viewer = c.get('user')
+      const isOwner = viewer?.id === owner.id
+      const [solves, viewerSolves] = await Promise.all([
+        db
+          .select()
+          .from(solve)
+          .where(and(eq(solve.userId, owner.id), isOwner ? undefined : eq(solve.verified, true)))
+          .orderBy(desc(solve.solvedAt)),
+        viewer
+          ? db
+              .select({ puzzleId: solve.puzzleId })
+              .from(solve)
+              .where(and(eq(solve.userId, viewer.id), eq(solve.verified, true)))
+          : [],
+      ])
+      // Spoiler rule: a picture is revealed only to viewers who have verifiably solved it themselves.
+      const revealed = new Set(viewerSolves.map(s => s.puzzleId))
+      const gallery = solves.flatMap((s): GalleryItem[] => {
+        const p = byId.get(s.puzzleId)
+        if (!p) return []
+        const { id, title, width, height } = p
+        return [{ puzzleId: id, title, width, height, palette: revealed.has(id) ? p.palette : null, verified: s.verified }]
+      })
+      return c.json<Profile>({
+        handle: owner.handle,
+        image: owner.image,
+        joinedAt: owner.createdAt.toISOString(),
+        verifiedSolves: gallery.filter(g => g.verified).length,
+        gallery,
+      })
+    })
+    .put('/me/handle', async c => {
+      const body = (await c.req.json().catch(() => null)) as { handle?: unknown } | null
+      const handle = typeof body?.handle === 'string' ? body.handle : ''
+      const problem = handleProblem(handle)
+      if (problem) return c.json<HandleRejection>({ error: `handle rejected: ${problem}`, reason: problem }, 400)
+      try {
+        await db.update(user).set({ handle, handleConfirmed: true }).where(eq(user.id, c.get('user')!.id))
+      } catch (e) {
+        if (!isUniqueViolation(e)) throw e
+        return c.json<HandleRejection>({ error: 'handle rejected: taken', reason: 'taken' }, 409)
+      }
+      return c.json<PutHandleResponse>({ handle })
     })
     .get('/me/progress', async c => {
       const userId = c.get('user')!.id

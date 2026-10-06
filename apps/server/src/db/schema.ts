@@ -21,6 +21,8 @@ export const user = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
     handle: text('handle').notNull(),
+    /** False until the player accepts or changes the provisional handle given at sign-up. */
+    handleConfirmed: boolean('handle_confirmed').default(false).notNull(),
   },
   t => [uniqueIndex('user_handle_lower_idx').on(sql`lower(${t.handle})`)],
 )

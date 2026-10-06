@@ -1,8 +1,13 @@
 import type {
   Assists,
+  HandleAvailability,
+  HandleRejection,
   ImportRequest,
   ImportResponse,
   MyProgress,
+  Profile,
+  PutHandleRequest,
+  PutHandleResponse,
   PutSettingsRequest,
   PuzzleClues,
   PuzzleSummary,
@@ -46,3 +51,21 @@ export async function putSettings(assists: Assists): Promise<void> {
 
 export const importProgress = (body: ImportRequest) =>
   getJson<ImportResponse>('/api/me/import', jsonInit('POST', body))
+
+/** `null` when no account has the handle. */
+export async function fetchProfile(handle: string): Promise<Profile | null> {
+  const res = await fetch(`/api/users/${encodeURIComponent(handle)}`)
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  return (await res.json()) as Profile
+}
+
+export const checkHandle = (handle: string, signal: AbortSignal) =>
+  getJson<HandleAvailability>(`/api/handles/${encodeURIComponent(handle)}/available`, { signal })
+
+/** Resolves to the rejection when the server refuses the handle; rejects only on failures worth retrying. */
+export async function putHandle(handle: string): Promise<PutHandleResponse | HandleRejection> {
+  const res = await fetch('/api/me/handle', jsonInit('PUT', { handle } satisfies PutHandleRequest))
+  if (!res.ok && res.status !== 400 && res.status !== 409) throw new Error(`${res.status} ${res.statusText}`)
+  return (await res.json()) as PutHandleResponse | HandleRejection
+}

@@ -1,0 +1,155 @@
+.page {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  /* Centres a 640px column while the scrollbar stays at the window edge. */
+  padding: var(--space-4) max(var(--space-4), calc((100% - 640px) / 2)) 56px;
+}
+
+.heading {
+  margin: 0;
+  font-size: 40px;
+}
+
+.card {
+  padding: var(--space-6);
+  background: var(--surface);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: calc(var(--sh) + 1px) calc(var(--sh) + 1px) 0 var(--shadow);
+}
+
+.card h1 {
+  margin: 0 0 var(--space-3);
+  font-size: 32px;
+}
+
+.card h2 {
+  margin: 0 0 var(--space-3);
+  font-size: 22px;
+}
+
+.card p {
+  margin: 0 0 var(--space-4);
+  line-height: 1.45;
+}
+
+.card code {
+  font: 700 14px var(--font-mono);
+}
+
+.danger {
+  border-color: var(--bad);
+}
+
+.hint,
+.bad {
+  font: 700 13px var(--font-mono);
+}
+
+.hint {
+  color: var(--text-muted);
+}
+
+.bad {
+  color: var(--bad);
+}
+
+.card .hint,
+.card .bad {
+  min-height: 1.45em;
+  margin: var(--space-2) 0 0;
+}
+
+.card input {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  font: 700 16px var(--font-mono);
+  color: var(--text);
+  background: var(--bg);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.handleForm label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-weight: 700;
+}
+
+.handleInput {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.handleInput > span {
+  font: 700 18px var(--font-mono);
+  color: var(--text-muted);
+}
+
+.handleInput input {
+  flex: 1;
+}
+
+.primary {
+  background: var(--a2);
+  color: var(--on-a2);
+}
+
+.destructive {
+  background: var(--bad);
+  color: var(--on-bad);
+}
+
+.providers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.providers li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.providers li > span {
+  display: flex;
+  flex-direction: column;
+}
+
+.providers .hint {
+  margin: 0;
+  min-height: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+@media (max-width: 760px) {
+  .heading {
+    font-size: 30px;
+  }
+
+  .card {
+    padding: var(--space-4);
+  }
+}
