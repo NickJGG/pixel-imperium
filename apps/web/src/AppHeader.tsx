@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
+import { AccountMenu } from './AccountMenu.tsx'
 import { type Theme, updateSettings, useSettings } from './settings.ts'
 import styles from './App.module.css'
 
@@ -34,14 +35,17 @@ export function AppHeader() {
         <span className={styles.pixels} aria-hidden="true" />
         Pixel Imperium
       </Link>
-      <button
-        type="button"
-        aria-label={`Theme: ${themeLabel[theme]}. Switch to ${themeLabel[nextTheme[theme]]}.`}
-        onClick={() => updateSettings({ theme: nextTheme[theme] })}
-      >
-        {themeIcon[theme]}
-        <span className={styles.themeLabel}>{themeLabel[theme]}</span>
-      </button>
+      <div className={styles.actions}>
+        <button
+          type="button"
+          aria-label={`Theme: ${themeLabel[theme]}. Switch to ${themeLabel[nextTheme[theme]]}.`}
+          onClick={() => updateSettings({ theme: nextTheme[theme] })}
+        >
+          {themeIcon[theme]}
+          <span className={styles.themeLabel}>{themeLabel[theme]}</span>
+        </button>
+        <AccountMenu />
+      </div>
     </header>
   )
 }

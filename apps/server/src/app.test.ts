@@ -1,16 +1,22 @@
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import type { PuzzleClues, PuzzleSummary, SolveResponse } from '@pixel-imperium/protocol'
 import { createApp } from './app.ts'
+import { solve as solveTable } from './db/schema.ts'
 import { parseSeedPuzzle } from './puzzles.ts'
+import { createTestDeps, signedInUser, truncateAll } from './test-db.ts'
 
 // A deliberately ambiguous puzzle: the anti-diagonal satisfies the same clues as the stored diagonal.
 const diagonal = parseSeedPuzzle({ id: 'diag', title: 'Diagonal', palette: { r: '#f00', b: '#00f' }, rows: ['r.', '.b'] })
-const app = createApp([diagonal])
+const { db, auth } = await createTestDeps()
+const app = createApp([diagonal], { db, auth })
 
-function solve(cells: unknown, id = 'diag') {
+beforeEach(() => truncateAll(db))
+afterAll(() => db.$client.end())
+
+function solve(cells: unknown, id = 'diag', cookie?: string) {
   return app.request(`/api/puzzles/${id}/solve`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...(cookie && { cookie }) },
     body: JSON.stringify({ cells }),
   })
 }
@@ -75,5 +81,53 @@ describe('POST /api/puzzles/:id/solve', () => {
 
   it('404s on unknown id', async () => {
     expect((await solve(['filled'], 'nope')).status).toBe(404)
+  })
+})
+
+describe('solve records', () => {
+  const solution = ['filled', 'empty', 'empty', 'filled']
+  const rows = () => db.select().from(solveTable)
+
+  it('records a verified solve for a signed-in player', async () => {
+    const { id, cookie } = await signedInUser(db, auth)
+    expect(await (await solve(solution, 'diag', cookie)).json()).toMatchObject({ solved: true })
+    expect(await rows()).toMatchObject([{ userId: id, puzzleId: 'diag', verified: true }])
+  })
+
+  it('records nothing when signed out', async () => {
+    await signedInUser(db, auth)
+    await solve(solution)
+    expect(await rows()).toEqual([])
+  })
+
+  it('records nothing for a wrong grid', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    await solve(['filled', 'filled', 'empty', 'empty'], 'diag', cookie)
+    expect(await rows()).toEqual([])
+  })
+
+  it('upgrades an unverified solve', async () => {
+    const { id, cookie } = await signedInUser(db, auth)
+    await db.insert(solveTable).values({ userId: id, puzzleId: 'diag', verified: false })
+    await solve(solution, 'diag', cookie)
+    expect(await rows()).toMatchObject([{ userId: id, puzzleId: 'diag', verified: true }])
+  })
+
+  it('keeps the first solve time on a repeat solve', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    await solve(solution, 'diag', cookie)
+    const [first] = await rows()
+    await solve(solution, 'diag', cookie)
+    expect(await rows()).toEqual([first])
+  })
+})
+
+describe('sign-up handle', () => {
+  it('provisions a unique handle from the OAuth name', async () => {
+    const { internalAdapter } = await auth.$context
+    const oauth = { method: 'oauth', oauth: { providerId: 'google' } }
+    const a = await internalAdapter.createUser({ name: 'Pixel Fan', email: 'a@example.com' }, oauth)
+    const b = await internalAdapter.createUser({ name: 'PIXEL fan', email: 'b@example.com' }, oauth)
+    expect([a.handle, b.handle]).toEqual(['pixel_fan', 'pixel_fan2'])
   })
 })

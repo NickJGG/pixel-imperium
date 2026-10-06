@@ -1,14 +1,31 @@
 import { Hono } from 'hono'
 import { satisfiesClues } from '@pixel-imperium/nonogram'
 import type { ApiError, PuzzleClues, PuzzleSummary, SolveResponse } from '@pixel-imperium/protocol'
+import { eq } from 'drizzle-orm'
+import type { Auth } from './auth.ts'
+import type { Db } from './db/index.ts'
+import { solve } from './db/schema.ts'
 import type { Puzzle } from './puzzles.ts'
 
-export function createApp(puzzles: readonly Puzzle[]) {
+export interface AppDeps {
+  db: Db
+  auth: Auth
+}
+
+type SessionUser = Auth['$Infer']['Session']['user']
+
+export function createApp(puzzles: readonly Puzzle[], { db, auth }: AppDeps) {
   const byId = new Map(puzzles.map(p => [p.id, p]))
   const notFound = (id: string): ApiError => ({ error: `no puzzle '${id}'` })
 
-  return new Hono()
+  return new Hono<{ Variables: { user: SessionUser | null } }>()
     .basePath('/api')
+    .on(['GET', 'POST'], '/auth/*', c => auth.handler(c.req.raw))
+    .use(async (c, next) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers })
+      c.set('user', session?.user ?? null)
+      await next()
+    })
     .get('/puzzles', c =>
       c.json(
         puzzles.map(
@@ -37,6 +54,17 @@ export function createApp(puzzles: readonly Puzzle[]) {
       }
 
       const solved = satisfiesClues({ width: p.width, height: p.height, cells }, p.clues)
+      const user = c.get('user')
+      if (solved && user) {
+        await db
+          .insert(solve)
+          .values({ userId: user.id, puzzleId: p.id, verified: true })
+          .onConflictDoUpdate({
+            target: [solve.userId, solve.puzzleId],
+            set: { verified: true, solvedAt: new Date() },
+            setWhere: eq(solve.verified, false),
+          })
+      }
       return c.json<SolveResponse>(solved ? { solved: true, palette: p.palette } : { solved: false })
     })
 }
