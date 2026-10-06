@@ -1,0 +1,149 @@
+/* Portrait: as wide as the page allows on a phone, capped by the viewport's height on a desktop. */
+.map {
+  width: min(100%, 560px, calc(72dvh * var(--w) / var(--h)));
+  margin: 0 auto;
+}
+
+.frame {
+  position: relative;
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: calc(var(--sh) + 1px) calc(var(--sh) + 1px) 0 var(--shadow);
+  background: var(--board-bg);
+  overflow: hidden;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity 400ms;
+}
+
+.overlay[data-hidden] {
+  opacity: 0;
+}
+
+.overlay svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.overlay path {
+  fill: none;
+  stroke-linecap: square;
+  vector-effect: non-scaling-stroke;
+}
+
+.overlay path[data-state='active'] {
+  stroke: var(--a1);
+  stroke-width: 3;
+}
+
+.overlay path[data-state='next'] {
+  stroke: rgba(244, 240, 255, 0.55);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+}
+
+.label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  white-space: nowrap;
+  font: 400 11px var(--font-pixel);
+  border-radius: var(--r-pill);
+}
+
+.label[data-state='active'] {
+  background: var(--a1);
+  color: var(--on-a1);
+  border: var(--bw) solid var(--on-a1);
+}
+
+.label[data-state='next'] {
+  color: rgba(244, 240, 255, 0.8);
+  background: rgba(16, 12, 32, 0.6);
+}
+
+.count {
+  font: 700 12px var(--font-mono);
+}
+
+.banner {
+  position: absolute;
+  left: var(--space-3);
+  right: var(--space-3);
+  bottom: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  color: var(--text);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh) var(--sh) 0 var(--shadow);
+  animation: rise 500ms ease-out both;
+}
+
+.banner p {
+  margin: 0;
+  font-style: italic;
+}
+
+.banner p + p {
+  margin-top: var(--space-2);
+}
+
+.banner strong {
+  font-style: normal;
+}
+
+.banner .closing {
+  font: 800 22px var(--font-display);
+  text-align: center;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Hidden, except while a keyboard user is inside it, since its links are the map's only focus stops. */
+.list:not(:focus-within) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.list ol {
+  margin: var(--space-4) 0 0;
+  padding-left: var(--space-6);
+  line-height: 1.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay {
+    transition: none;
+  }
+
+  .banner {
+    animation: none;
+  }
+}

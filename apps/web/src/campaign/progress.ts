@@ -41,8 +41,19 @@ export function provinceStates(
 
 export const UNLOCK_ALL = import.meta.env.VITE_UNLOCK_ALL === '1'
 
-/** The player's own view: every kind of solve on this device counts. */
-export const campaignProgress = (campaign: Pick<Campaign, 'provinces'>, storage: ProgressStorage) =>
-  provinceStates(campaign, id => storage.loadSolved(id) !== null, { unlockAll: UNLOCK_ALL })
+/**
+ * The player's own view: every kind of solve on this device counts. Solves in the `unsolved`
+ * provinces (indices) are ignored, giving the map as it stood before they were conquered.
+ */
+export function campaignProgress(
+  campaign: Pick<Campaign, 'provinces'>,
+  storage: ProgressStorage,
+  unsolved: readonly number[] = [],
+): CampaignProgress {
+  const ignored = new Set(unsolved.flatMap(i => campaign.provinces[i]!.puzzles.map(p => p.id)))
+  return provinceStates(campaign, id => !ignored.has(id) && storage.loadSolved(id) !== null, {
+    unlockAll: UNLOCK_ALL,
+  })
+}
 
 export const isOpen = (state: ProvinceState) => state === 'active' || state === 'conquered'

@@ -44,21 +44,25 @@ const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   loader: async () => {
-    const id = pickCampaign(await fetchCampaigns())
-    return id === null ? null : loadCampaign(id)
+    const campaigns = await fetchCampaigns()
+    const id = pickCampaign(campaigns)
+    return id === null ? null : { campaign: await loadCampaign(id), campaigns }
   },
   component: () => {
-    const campaign = homeRoute.useLoaderData()
-    if (!campaign) return <main className={styles.message}>No campaigns yet.</main>
-    return <CampaignPage campaign={campaign} />
+    const data = homeRoute.useLoaderData()
+    if (!data) return <main className={styles.message}>No campaigns yet.</main>
+    return <CampaignPage {...data} />
   },
 })
 
 const campaignRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/c/$campaignId',
-  loader: ({ params }) => loadCampaign(params.campaignId),
-  component: () => <CampaignPage campaign={campaignRoute.useLoaderData()} />,
+  loader: async ({ params }) => {
+    const [campaign, campaigns] = await Promise.all([loadCampaign(params.campaignId), fetchCampaigns()])
+    return { campaign, campaigns }
+  },
+  component: () => <CampaignPage {...campaignRoute.useLoaderData()} />,
   notFoundComponent: () => <Missing what="campaign" />,
 })
 
@@ -97,10 +101,17 @@ function Missing({ what }: { what: string }) {
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/u/$handle',
-  loader: async ({ params }) => {
-    const profile = await fetchProfile(params.handle)
+  validateSearch: (search: Record<string, unknown>): { c?: string } =>
+    typeof search.c === 'string' ? { c: search.c } : {},
+  loaderDeps: ({ search }) => ({ c: search.c }),
+  loader: async ({ params, deps }) => {
+    const [profile, campaigns] = await Promise.all([fetchProfile(params.handle), fetchCampaigns()])
     if (!profile) throw notFound()
-    return profile
+    // The switcher offers the campaigns the player has started; a newcomer gets the default campaign.
+    const started = campaigns.filter(c => profile.campaigns.some(pc => pc.id === c.id))
+    const id = started.find(c => c.id === deps.c)?.id ?? profile.campaigns[0]?.id ?? campaigns[0]?.id
+    const campaign = id === undefined ? null : await fetchCampaign(id)
+    return { profile, campaign, started }
   },
   component: ProfilePage,
   notFoundComponent: () => {

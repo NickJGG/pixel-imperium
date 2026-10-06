@@ -19,6 +19,10 @@
   object-fit: cover;
 }
 
+.switcher {
+  margin-bottom: var(--space-4);
+}
+
 .meta {
   margin: var(--space-1) 0 0;
   font: 700 14px var(--font-mono);
