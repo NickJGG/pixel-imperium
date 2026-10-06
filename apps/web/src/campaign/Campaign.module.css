@@ -21,6 +21,46 @@
   font-size: 40px;
 }
 
+.goal {
+  margin: var(--space-2) 0 0;
+  font-size: 17px;
+  color: var(--text-muted);
+}
+
+.continue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 52px;
+  padding: 0 var(--space-6);
+  font: 700 17px var(--font-ui);
+  color: var(--on-a2);
+  text-decoration: none;
+  background: var(--a2);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh) var(--sh) 0 var(--shadow);
+}
+
+.continue:hover {
+  transform: translate(-1px, -1px);
+}
+
+.continueCount {
+  font: 700 15px var(--font-mono);
+  opacity: 0.8;
+}
+
+.continue svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .back {
   display: inline-block;
   margin-bottom: var(--space-3);
@@ -236,6 +276,15 @@
     font-size: 30px;
   }
 
+  .goal {
+    font-size: 15px;
+  }
+
+  .continue {
+    width: 100%;
+    justify-content: center;
+  }
+
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
@@ -258,7 +307,8 @@
     transition: none;
   }
 
-  .card:hover {
+  .card:hover,
+  .continue:hover {
     transform: none;
   }
 }

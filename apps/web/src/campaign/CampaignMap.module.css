@@ -74,6 +74,27 @@
   border: var(--bw) solid var(--on-a1);
 }
 
+a.label {
+  pointer-events: auto;
+  text-decoration: none;
+  box-shadow: 2px 2px 0 var(--shadow);
+  transition: transform 120ms;
+}
+
+a.label:hover {
+  transform: translate(calc(-50% - 1px), calc(-50% - 1px));
+}
+
+.overlay[data-hidden] a.label {
+  pointer-events: none;
+}
+
+.go {
+  width: 8px;
+  height: 8px;
+  fill: currentColor;
+}
+
 .label[data-state='next'] {
   color: rgba(244, 240, 255, 0.8);
   background: rgba(16, 12, 32, 0.6);
@@ -139,8 +160,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .overlay {
+  .overlay,
+  a.label {
     transition: none;
+  }
+
+  a.label:hover {
+    transform: translate(-50%, -50%);
   }
 
   .banner {

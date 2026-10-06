@@ -35,11 +35,34 @@ function CampaignView({ campaign, campaigns }: Props) {
 
   const showClosing = progress.conquered && swept
   const announced = swept ? conquests.map(i => campaign.provinces[i]!) : []
+  const activeIndex = progress.provinces.findIndex(p => p.state === 'active')
+  const active = activeIndex === -1 ? undefined : { ...progress.provinces[activeIndex]!, ...campaign.provinces[activeIndex]! }
+  const started = progress.provinces.some(p => p.solved > 0)
 
   return (
     <main className={styles.page}>
       <div className={styles.sec}>
-        <h1 className={styles.heading}>{campaign.name}</h1>
+        <div>
+          <h1 className={styles.heading}>{campaign.name}</h1>
+          {!progress.provinces.some(p => p.state === 'conquered') && (
+            <p className={styles.goal}>Solve every puzzle in a province to conquer it and march on the next.</p>
+          )}
+        </div>
+        {active && (
+          <Link
+            to="/c/$campaignId/$provinceId"
+            params={{ campaignId: campaign.id, provinceId: active.id }}
+            className={styles.continue}
+          >
+            {started ? 'Continue' : 'Start'}: {active.name}
+            <span className={styles.continueCount}>
+              {active.solved}/{active.total}
+            </span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </Link>
+        )}
         {campaigns.length > 1 && (
           <nav className={styles.switcher} aria-label="Campaigns">
             {campaigns.map(c => (

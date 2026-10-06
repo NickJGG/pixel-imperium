@@ -1,4 +1,14 @@
-import { type CSSProperties, type MouseEvent, type ReactNode, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  type MouseEvent,
+  type ReactNode,
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { mapGeometry } from './map-geometry.ts'
@@ -11,6 +21,8 @@ const SWEEP_MS = 1200
 const SETTLE_MS = 500
 const CELL_MS = 150
 const FADE_MS = 300
+/** The least gap, in px, between a label and the map's edge. */
+const LABEL_INSET = 4
 
 interface Props {
   campaign: Campaign
@@ -29,6 +41,7 @@ export function CampaignMap({ campaign, progress, from, onSwept, linked = false,
   const { map, provinces } = campaign
   const geometry = useMemo(() => mapGeometry(map, provinces.length), [map, provinces.length])
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const overlayRef = useRef<HTMLDivElement>(null)
   const [sweeping, setSweeping] = useState(from !== undefined)
   const navigate = useNavigate()
   const finish = useEffectEvent(() => {
@@ -82,6 +95,27 @@ export function CampaignMap({ campaign, progress, from, onSwept, linked = false,
     return () => cancelAnimationFrame(raf)
   }, [map, geometry, progress, from])
 
+  // Labels centre on their anchor, which can sit near the map's edge; slide them back inside.
+  // Re-measured on every render, as a label's width changes with its count and the font loading.
+  useLayoutEffect(() => {
+    const overlay = overlayRef.current!
+    const labels = [...overlay.querySelectorAll<HTMLElement>('[data-anchor]')]
+    const fit = () => {
+      const { clientWidth: w, clientHeight: h } = overlay
+      const place = (at: number, size: number, max: number) =>
+        Math.max(size / 2 + LABEL_INSET, Math.min(at, max - size / 2 - LABEL_INSET))
+      for (const label of labels) {
+        const [x, y] = label.dataset.anchor!.split(' ').map(Number)
+        label.style.left = `${place((x! / map.width) * w, label.offsetWidth, w)}px`
+        label.style.top = `${place((y! / map.height) * h, label.offsetHeight, h)}px`
+      }
+    }
+    fit()
+    const observer = new ResizeObserver(fit)
+    for (const el of [overlay, ...labels]) observer.observe(el)
+    return () => observer.disconnect()
+  })
+
   const openAt = (e: MouseEvent): number | null => {
     if (!linked) return null
     const rect = canvasRef.current!.getBoundingClientRect()
@@ -120,27 +154,49 @@ export function CampaignMap({ campaign, progress, from, onSwept, linked = false,
           role="img"
           aria-label={`Map of ${campaign.name}`}
         />
-        <div className={styles.overlay} data-hidden={sweeping || undefined} aria-hidden="true">
+        <div ref={overlayRef} className={styles.overlay} data-hidden={sweeping || undefined} aria-hidden="true">
           <svg viewBox={`0 0 ${map.width} ${map.height}`} preserveAspectRatio="none">
             {marked.map(m => (
               <path key={m.province.id} d={m.outline} data-state={m.state} />
             ))}
           </svg>
-          {marked.map(m => (
-            <span
-              key={m.province.id}
-              className={styles.label}
-              data-state={m.state}
-              style={{ left: `${(m.anchor.x / map.width) * 100}%`, top: `${(m.anchor.y / map.height) * 100}%` }}
-            >
-              {m.province.name}
-              {m.state === 'active' && (
-                <span className={styles.count}>
-                  {m.solved}/{m.total}
-                </span>
-              )}
-            </span>
-          ))}
+          {marked.map(m => {
+            const label = {
+              className: styles.label,
+              'data-state': m.state,
+              'data-anchor': `${m.anchor.x} ${m.anchor.y}`,
+            }
+            const content = (
+              <>
+                {m.province.name}
+                {m.state === 'active' && (
+                  <span className={styles.count}>
+                    {m.solved}/{m.total}
+                  </span>
+                )}
+              </>
+            )
+            // Out of the tab order: keyboard users reach the province through the list below.
+            return linked && m.state === 'active' ? (
+              <Link
+                key={m.province.id}
+                {...label}
+                to="/c/$campaignId/$provinceId"
+                params={{ campaignId: campaign.id, provinceId: m.province.id }}
+                tabIndex={-1}
+                onClick={e => e.stopPropagation()}
+              >
+                {content}
+                <svg className={styles.go} viewBox="0 0 8 8">
+                  <path d="M2 1l4 3-4 3z" />
+                </svg>
+              </Link>
+            ) : (
+              <span key={m.province.id} {...label}>
+                {content}
+              </span>
+            )
+          })}
         </div>
         {children}
       </div>
