@@ -5,7 +5,7 @@
   "closingLine": "",
   "puzzlesPerProvince": 30,
   "provinces": [
-    { "id": "marches", "name": "The Marches", "theme": "Farmland and villages", "flavour": "", "minSize": 5, "maxSize": 10 },
+    { "id": "marches", "name": "The Marches", "theme": "Farmland and villages", "flavour": "The fields are yours. Past the last fence, the gulls are calling.", "minSize": 5, "maxSize": 10 },
     { "id": "coast", "name": "The Coast", "theme": "Ports and the sea", "flavour": "", "minSize": 10, "maxSize": 15 },
     { "id": "wildwood", "name": "The Wildwood", "theme": "Frontier forest", "flavour": "", "minSize": 15, "maxSize": 20 },
     { "id": "forge", "name": "The Forge", "theme": "Mountains and craft", "flavour": "", "minSize": 20, "maxSize": 25 },

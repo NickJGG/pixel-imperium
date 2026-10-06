@@ -1,1 +1,447 @@
-[]
+[
+  {
+    "id": "well",
+    "title": "Well",
+    "palette": { "r": "#8c3b25", "b": "#5b3a1e", "s": "#8f8a80" },
+    "rows": [
+      "rrrrr",
+      ".b.b.",
+      ".b.b.",
+      "sssss",
+      "sssss"
+    ]
+  },
+  {
+    "id": "haystack",
+    "title": "Haystack",
+    "palette": { "y": "#e3c25a", "d": "#b8913a" },
+    "rows": [
+      "..y..",
+      ".yyy.",
+      ".ydy.",
+      "yyyyy",
+      "ydyyd"
+    ]
+  },
+  {
+    "id": "mushroom",
+    "title": "Mushroom",
+    "palette": { "r": "#c8312b", "w": "#f2ead8" },
+    "rows": [
+      ".rrr.",
+      "rrwrr",
+      "rrrrr",
+      "..w..",
+      ".www."
+    ]
+  },
+  {
+    "id": "daisy",
+    "title": "Daisy",
+    "palette": { "p": "#f4f1ea", "y": "#e8b923", "g": "#4f8a2b" },
+    "rows": [
+      ".ppp.",
+      "ppypp",
+      ".ppp.",
+      "g.g.g",
+      ".ggg."
+    ]
+  },
+  {
+    "id": "apple",
+    "title": "Apple",
+    "palette": { "r": "#c8312b", "b": "#5b3a1e", "g": "#4f8a2b" },
+    "rows": [
+      "..bg.",
+      ".rrr.",
+      "rrrrr",
+      "rrrrr",
+      ".rrr."
+    ]
+  },
+  {
+    "id": "cottage",
+    "title": "Cottage",
+    "palette": { "r": "#a34a2a", "w": "#efe3c8", "b": "#5b3a1e" },
+    "rows": [
+      "..r..",
+      ".rrr.",
+      "rrrrr",
+      ".wbw.",
+      ".wbw."
+    ]
+  },
+  {
+    "id": "milk-pail",
+    "title": "Milk Pail",
+    "palette": { "b": "#6e6e6e", "s": "#b9c0c8", "m": "#f6f3ec" },
+    "rows": [
+      "..b..",
+      ".b.b.",
+      "smmms",
+      ".sss.",
+      ".sss."
+    ]
+  },
+  {
+    "id": "oak",
+    "title": "Oak",
+    "palette": { "g": "#3f7d2c", "b": "#6b4423" },
+    "rows": [
+      ".ggg.",
+      "ggggg",
+      ".ggg.",
+      "..b..",
+      "..b.."
+    ]
+  },
+  {
+    "id": "fence",
+    "title": "Fence",
+    "palette": { "p": "#8a5a2b", "g": "#5c9a35" },
+    "rows": [
+      ".p..p..p..",
+      "pppppppppp",
+      ".p..p..p..",
+      "pppppppppp",
+      "gpggpggpgg"
+    ]
+  },
+  {
+    "id": "scarecrow",
+    "title": "Scarecrow",
+    "palette": { "y": "#c9a13b", "s": "#e8d3a8", "b": "#5b6fa8", "k": "#8a5a2b" },
+    "rows": [
+      ".yyy.",
+      "yyyyy",
+      ".sss.",
+      "..b..",
+      "bbbbb",
+      ".bbb.",
+      ".bbb.",
+      ".bbb.",
+      "..k..",
+      "..k.."
+    ]
+  },
+  {
+    "id": "pitchfork",
+    "title": "Pitchfork",
+    "palette": { "s": "#9aa3ad", "b": "#8a5a2b" },
+    "rows": [
+      "s.s.s",
+      "s.s.s",
+      "s.s.s",
+      "sssss",
+      "..b..",
+      "..b..",
+      "..b..",
+      "..b..",
+      "..b..",
+      "..b.."
+    ]
+  },
+  {
+    "id": "pig",
+    "title": "Pig",
+    "palette": { "p": "#eaa0a8", "d": "#c9707d" },
+    "rows": [
+      "..pppppd..",
+      ".pppppppp.",
+      "pppppppppd",
+      ".pppppppp.",
+      ".p.p..p.p."
+    ]
+  },
+  {
+    "id": "sheep",
+    "title": "Sheep",
+    "palette": { "w": "#f2ede2", "k": "#2e2a26" },
+    "rows": [
+      ".wwwww....",
+      "wwwwwwwkk.",
+      "wwwwwwwkkk",
+      ".wwwwwww..",
+      ".k.k.k.k.."
+    ]
+  },
+  {
+    "id": "hay-wagon",
+    "title": "Hay Wagon",
+    "palette": { "h": "#e3c25a", "b": "#8a5a2b", "k": "#3b2a1a" },
+    "rows": [
+      "..hhhhhh..",
+      "bbbbbbbbbb",
+      ".bbbbbbbb.",
+      ".kk....kk.",
+      ".kk....kk."
+    ]
+  },
+  {
+    "id": "cheese",
+    "title": "Cheese",
+    "palette": { "y": "#f0d36a", "o": "#e3b83a" },
+    "rows": [
+      "........yy",
+      "......yyyy",
+      "....yyyyyy",
+      "..yyyyyyyy",
+      "yyyyyyyyyy",
+      "oooooooooo",
+      "oo.oooo.oo",
+      "oooo.ooooo",
+      "o.ooooo.oo",
+      "oooooooooo"
+    ]
+  },
+  {
+    "id": "barn",
+    "title": "Barn",
+    "palette": { "r": "#a8322b", "w": "#f2ead8", "g": "#5c9a35" },
+    "rows": [
+      "....ww....",
+      "...wrrw...",
+      "..wrrrrw..",
+      ".wrrwwrrw.",
+      "wrrrwwrrrw",
+      ".rrrrrrrr.",
+      ".rwwwwwwr.",
+      ".rwrwwrwr.",
+      ".rwwrrwwr.",
+      "gggggggggg"
+    ]
+  },
+  {
+    "id": "farmhouse",
+    "title": "Farmhouse",
+    "palette": { "k": "#6b4423", "r": "#a34a2a", "w": "#efe3c8", "b": "#7fb3d5", "d": "#5b3a1e", "g": "#5c9a35" },
+    "rows": [
+      ".......k..",
+      "....rr.k..",
+      "...rrrrk..",
+      "..rrrrrr..",
+      ".rrrrrrrr.",
+      "rrrrrrrrrr",
+      ".wwwwwwww.",
+      ".wbwwwddw.",
+      ".wwwwwddw.",
+      "gggggggggg"
+    ]
+  },
+  {
+    "id": "pumpkin",
+    "title": "Pumpkin",
+    "palette": { "o": "#e07a1f", "d": "#b85c14", "g": "#4f8a2b" },
+    "rows": [
+      "....gg....",
+      ".....g....",
+      "..odoodo..",
+      ".oodoodoo.",
+      "ooodoodooo",
+      "ooodoodooo",
+      "ooodoodooo",
+      "ooodoodooo",
+      ".oodoodoo.",
+      "..odoodo.."
+    ]
+  },
+  {
+    "id": "beehive",
+    "title": "Beehive",
+    "palette": { "y": "#e3b04a", "d": "#b8862a", "b": "#6b4423" },
+    "rows": [
+      "....yy....",
+      "...yyyy...",
+      "..dddddd..",
+      "..yyyyyy..",
+      ".dddddddd.",
+      ".yyyyyyyy.",
+      "dddddddddd",
+      "yyyy..yyyy",
+      "dddd..dddd",
+      "bbbbbbbbbb"
+    ]
+  },
+  {
+    "id": "turnip",
+    "title": "Turnip",
+    "palette": { "p": "#9b4f96", "w": "#f2ead8", "g": "#4f8a2b" },
+    "rows": [
+      "g...g",
+      ".g.g.",
+      "ppppp",
+      ".www.",
+      "..w.."
+    ]
+  },
+  {
+    "id": "corn",
+    "title": "Corn",
+    "palette": { "y": "#f0c63a", "g": "#5c9a35" },
+    "rows": [
+      "..y..",
+      ".yyy.",
+      ".yyy.",
+      ".yyy.",
+      "gyyyg",
+      "gyyyg",
+      "ggygg",
+      ".ggg.",
+      "..g..",
+      "..g.."
+    ]
+  },
+  {
+    "id": "orchard-tree",
+    "title": "Orchard Tree",
+    "palette": { "g": "#3f7d2c", "r": "#c8312b", "b": "#6b4423" },
+    "rows": [
+      "..gggggg..",
+      ".ggrggggg.",
+      "gggggggrgg",
+      "grgggggggg",
+      "ggggrggggg",
+      ".ggggggrg.",
+      "..gggggg..",
+      "....bb....",
+      "....bb....",
+      "...bbbb..."
+    ]
+  },
+  {
+    "id": "chapel",
+    "title": "Chapel",
+    "palette": { "y": "#d9a62b", "r": "#6e4a8a", "s": "#d8d2c4", "b": "#7fb3d5", "d": "#5b3a1e", "g": "#5c9a35" },
+    "rows": [
+      "..y.......",
+      ".yyy......",
+      "..y.......",
+      ".rrr......",
+      "rrrrr.....",
+      ".sbsrrrrr.",
+      ".sssrrrrrr",
+      ".sdsssbss.",
+      ".sdssssss.",
+      "gggggggggg"
+    ]
+  },
+  {
+    "id": "cow",
+    "title": "Cow",
+    "palette": { "h": "#d9cfb8", "k": "#2e2a26", "w": "#f4f1ea", "b": "#1a1a1a", "p": "#e8a3a8", "d": "#9c4f5a" },
+    "rows": [
+      ".h......h.",
+      ".hkwwwwkh.",
+      "kkkwwwwkkk",
+      "..wbwwbw..",
+      "..wwwwkw..",
+      "..wwwkkw..",
+      ".pppppppp.",
+      ".pdppppdp.",
+      ".pppppppp.",
+      "..pppppp.."
+    ]
+  },
+  {
+    "id": "windmill",
+    "title": "Windmill",
+    "palette": { "s": "#8a5a2b", "r": "#d8cbb0", "h": "#5b3a1e", "w": "#4a2f18", "g": "#5c9a35" },
+    "rows": [
+      "ss......ss",
+      "sss....sss",
+      ".sss..sss.",
+      "..sshhss..",
+      "...rhhr...",
+      "..ssrrss..",
+      ".sssrrsss.",
+      "sss.rr.sss",
+      "ss.rwwr.ss",
+      "gggggggggg"
+    ]
+  },
+  {
+    "id": "watering-can",
+    "title": "Watering Can",
+    "palette": { "h": "#6b7a86", "c": "#5f9a6e", "s": "#4f8a5c" },
+    "rows": [
+      "...hhh....",
+      "..h...h...",
+      ".cccccc...",
+      ".cccccc..s",
+      ".cccccc.ss",
+      ".ccccccss.",
+      ".cccccc...",
+      ".cccccc...",
+      ".cccccc...",
+      "..cccc...."
+    ]
+  },
+  {
+    "id": "goose",
+    "title": "Goose",
+    "palette": { "w": "#f2ede2", "k": "#2e2a26", "o": "#e07a1f" },
+    "rows": [
+      "..www.....",
+      "ookww.....",
+      "..www.....",
+      "..ww......",
+      "..ww......",
+      "..www...ww",
+      "..wwwwwwww",
+      "...wwwwww.",
+      "....wwww..",
+      "....oo.oo."
+    ]
+  },
+  {
+    "id": "wheat-sheaf",
+    "title": "Wheat Sheaf",
+    "palette": { "y": "#e3c25a", "b": "#8a5a2b", "s": "#c9a13b" },
+    "rows": [
+      "..y.yy.y..",
+      ".yy.yy.yy.",
+      ".yyyyyyyy.",
+      "..yyyyyy..",
+      "...ssss...",
+      "...bbbb...",
+      "...ssss...",
+      "..ssssss..",
+      ".ss.ss.ss.",
+      "ss..ss..ss"
+    ]
+  },
+  {
+    "id": "horseshoe",
+    "title": "Horseshoe",
+    "palette": { "s": "#8f969e", "k": "#4a4f56" },
+    "rows": [
+      ".ss....ss.",
+      ".sk....ks.",
+      "ss......ss",
+      "sk......ks",
+      "ss......ss",
+      "sk......ks",
+      "sss....sss",
+      ".sss..sss.",
+      "..sskkss..",
+      "...ssss..."
+    ]
+  },
+  {
+    "id": "hen",
+    "title": "Hen",
+    "palette": { "r": "#c8312b", "w": "#efe6d4", "y": "#e8b923", "k": "#2e2a26", "o": "#e07a1f" },
+    "rows": [
+      "..rr......",
+      "..www.....",
+      "yywkw....w",
+      "..www...ww",
+      "..wwwwwwww",
+      "..wwwwwwww",
+      "...wwwwww.",
+      "....wwww..",
+      ".....o.o..",
+      "....oo.oo."
+    ]
+  }
+]

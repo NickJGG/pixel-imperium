@@ -275,7 +275,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 52px;
+  min-height: 44px;
   padding: 0 var(--space-6);
   font: 700 17px var(--font-ui);
   color: var(--on-a2);
@@ -288,6 +288,13 @@
 
 .linkButton:hover {
   transform: translate(-1px, -1px);
+}
+
+.linkButton.secondary {
+  padding: 0 var(--space-4);
+  font-size: 15px;
+  color: var(--text);
+  background: var(--surface);
 }
 
 .linkButton svg {

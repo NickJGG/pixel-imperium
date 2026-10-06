@@ -4,7 +4,7 @@ import { progressPercent } from '@pixel-imperium/nonogram'
 import type { Campaign, Province, PuzzleClues } from '@pixel-imperium/protocol'
 import { type AccountState, useAccount } from '../account.ts'
 import { submitSolve } from '../api.ts'
-import { campaignProgress, isOpen } from '../campaign/progress.ts'
+import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { getSettings, updateSettings, useSettings } from '../settings.ts'
 import { AssistChips } from './AssistChips.tsx'
@@ -68,6 +68,7 @@ function Play({
   const solved = useStoreValue(store, s => s.solved)
   const [conqueredBefore] = useState(isConquered)
   const conquest = solved && !conqueredBefore && isConquered()
+  const next = solved ? nextPuzzle(province.puzzles, puzzle.id, id => storage.loadSolved(id) !== null) : null
   const replaying = useStoreValue(store, s => s.replaying)
   const unverified = !solved && storage.loadSolved(puzzle.id) === 'unverified'
   const revealed = useStoreValue(store, s => s.palette !== null)
@@ -178,14 +179,22 @@ function Play({
               <ArrowIcon />
             </Link>
           ) : (
-            <Link
-              to="/c/$campaignId/$provinceId"
-              params={{ campaignId: campaign.id, provinceId: province.id }}
-              className={styles.linkButton}
-            >
-              Back to {province.name}
-              <ArrowIcon />
-            </Link>
+            <>
+              <Link
+                to="/c/$campaignId/$provinceId"
+                params={{ campaignId: campaign.id, provinceId: province.id }}
+                className={next ? `${styles.linkButton} ${styles.secondary}` : styles.linkButton}
+              >
+                Back to {province.name}
+                {!next && <ArrowIcon />}
+              </Link>
+              {next && (
+                <Link to="/play/$id" params={{ id: next.id }} className={styles.linkButton}>
+                  Next puzzle
+                  <ArrowIcon />
+                </Link>
+              )}
+            </>
           )}
         </div>
       ) : (

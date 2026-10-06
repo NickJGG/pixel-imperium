@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { stubStorage } from '../test-storage.ts'
-import { campaignProgress, provinceStates } from './progress.ts'
+import { campaignProgress, nextPuzzle, provinceStates } from './progress.ts'
 
 const puzzle = (id: string) => ({ id, title: id, width: 5, height: 5, filledCount: 1 })
 
@@ -69,5 +69,25 @@ describe('campaignProgress', () => {
       'active',
       'next',
     ])
+  })
+})
+
+describe('nextPuzzle', () => {
+  const puzzles = ['p1', 'p2', 'p3', 'p4'].map(puzzle)
+  const next = (current: string, solved: string[]) => nextPuzzle(puzzles, current, id => solved.includes(id))?.id
+
+  it('offers the following puzzle', () => {
+    expect(next('p1', ['p1'])).toBe('p2')
+  })
+
+  it('skips solved puzzles and wraps around', () => {
+    expect(next('p2', ['p2', 'p3'])).toBe('p4')
+    expect(next('p3', ['p2', 'p3', 'p4'])).toBe('p1')
+  })
+
+  it('offers the following puzzle once everything is solved, and none after the last', () => {
+    const all = ['p1', 'p2', 'p3', 'p4']
+    expect(next('p2', all)).toBe('p3')
+    expect(next('p4', all)).toBeUndefined()
   })
 })

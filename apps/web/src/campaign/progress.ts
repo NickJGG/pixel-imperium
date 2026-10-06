@@ -56,4 +56,18 @@ export function campaignProgress(
   })
 }
 
-export const isOpen = (state: ProvinceState) => state === 'active' || state === 'conquered'
+/**
+ * The puzzle to offer after `currentId`: the next unsolved one in province order, wrapping
+ * around, or the following one when everything is solved; `null` past the last solved puzzle.
+ */
+export function nextPuzzle<P extends { id: string }>(
+  puzzles: readonly P[],
+  currentId: string,
+  isSolved: (puzzleId: string) => boolean,
+): P | null {
+  const i = puzzles.findIndex(p => p.id === currentId)
+  const rest = [...puzzles.slice(i + 1), ...puzzles.slice(0, i)]
+  return rest.find(p => !isSolved(p.id)) ?? puzzles[i + 1] ?? null
+}
+
+export const isOpen =(state: ProvinceState) => state === 'active' || state === 'conquered'
