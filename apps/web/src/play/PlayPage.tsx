@@ -3,7 +3,7 @@ import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
 import type { PuzzleClues } from '@pixel-imperium/protocol'
 import { submitSolve } from '../api.ts'
-import { getSettings, useSettings } from '../settings.ts'
+import { getSettings, updateSettings, useSettings } from '../settings.ts'
 import { AssistChips } from './AssistChips.tsx'
 import { Board } from './Board.tsx'
 import { ColClues, RowClues } from './Clues.tsx'
@@ -136,6 +136,18 @@ function Play({ puzzle }: { puzzle: PuzzleClues }) {
                   {m === 'fill' ? 'Fill' : 'Mark'}
                 </button>
               ))}
+            </div>
+            <div className={styles.modeToggle}>
+              <button
+                type="button"
+                aria-pressed={settings.lockLine}
+                onClick={() => updateSettings({ lockLine: !settings.lockLine })}
+              >
+                <svg viewBox="0 0 10 10" aria-hidden="true" style={{ width: 13, height: 13, strokeWidth: 2.4 }}>
+                  <path d="M1 5h8" />
+                </svg>
+                Lock line
+              </button>
             </div>
             <button type="button" aria-label="Undo" disabled={!canUndo} onClick={() => store.undo()}>
               <svg viewBox="0 0 24 24" aria-hidden="true">

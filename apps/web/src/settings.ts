@@ -9,6 +9,7 @@ export interface Settings {
   impossibleLines: boolean
   autoMarkEmptyLines: boolean
   crosshair: boolean
+  lockLine: boolean
 }
 
 const defaults: Settings = {
@@ -17,6 +18,7 @@ const defaults: Settings = {
   impossibleLines: true,
   autoMarkEmptyLines: true,
   crosshair: true,
+  lockLine: false,
 }
 
 const KEY = 'pixel-imperium:settings'

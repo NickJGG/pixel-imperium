@@ -1,7 +1,7 @@
 import { type Settings, updateSettings, useSettings } from '../settings.ts'
 import styles from './Play.module.css'
 
-type AssistKey = Exclude<keyof Settings, 'theme'>
+type AssistKey = Exclude<keyof Settings, 'theme' | 'lockLine'>
 
 const assists: { key: AssistKey; label: string; title?: string }[] = [
   { key: 'fadeClues', label: 'Fade done clues' },

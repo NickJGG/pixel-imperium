@@ -152,9 +152,21 @@ export class PlayStore {
     if (target.row === s.last.row && target.col === s.last.col) return
 
     let { row, col } = s.last
+    const dRow = Math.abs(target.row - row)
+    const dCol = Math.abs(target.col - col)
+    const stepRow = Math.sign(target.row - row)
+    const stepCol = Math.sign(target.col - col)
+    let err = dCol - dRow
     while (row !== target.row || col !== target.col) {
-      row += Math.sign(target.row - row)
-      col += Math.sign(target.col - col)
+      const e2 = 2 * err
+      if (e2 > -dRow) {
+        err -= dRow
+        col += stepCol
+      }
+      if (e2 < dCol) {
+        err += dCol
+        row += stepRow
+      }
       this.apply({ row, col })
     }
     s.last = target

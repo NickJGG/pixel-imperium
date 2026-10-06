@@ -119,7 +119,8 @@ export function Board({ store, cellSize }: { store: PlayStore; cellSize: number 
     e.currentTarget.setPointerCapture(e.pointerId)
     pointerId.current = e.pointerId
     store.setHover(null)
-    store.beginStroke(posFrom(e), tool, { lockAxis: true })
+    const lockAxis = e.pointerType === 'mouse' ? e.shiftKey : getSettings().lockLine
+    store.beginStroke(posFrom(e), tool, { lockAxis })
   }
 
   const onPointerMove = (e: PointerEvent<HTMLCanvasElement>) => {

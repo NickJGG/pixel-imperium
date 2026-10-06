@@ -56,6 +56,16 @@ describe('PlayStore strokes', () => {
     expect(render(s)).toEqual(['##..', '.#..', '....'])
   })
 
+  it('without axis lock fills a fast slanted jump along a straight line', () => {
+    const s = makeStore()
+    drag(s, 'fill', [at(0, 0), at(1, 3)], false)
+    expect(render(s)).toEqual(['##..', '..##', '....'])
+
+    const d = makeStore()
+    drag(d, 'fill', [at(0, 0), at(2, 2)], false)
+    expect(render(d)).toEqual(['#...', '.#..', '..#.'])
+  })
+
   it('erases when the first cell already holds the tool state', () => {
     const s = makeStore()
     drag(s, 'fill', [at(0, 0), at(0, 3)])
