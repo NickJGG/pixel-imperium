@@ -144,6 +144,40 @@
   color: var(--on-a2);
 }
 
+.sticker.split {
+  display: inline-flex;
+  padding: 0;
+  overflow: hidden;
+}
+
+.split > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+}
+
+.split > span:first-child {
+  background: var(--a2);
+  color: var(--on-a2);
+}
+
+.split > span:last-child {
+  background: var(--a1);
+  color: var(--on-a1);
+  border-left: var(--bw) solid var(--line);
+}
+
+.split svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .info {
   display: flex;
   justify-content: space-between;

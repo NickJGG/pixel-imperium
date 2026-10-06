@@ -7,11 +7,23 @@
  * empty; starting on the other state does nothing. So marks never overwrite fills
  * and vice versa.
  *
+ * Solving locks the grid. Only `clear()` unlocks it, as a replay: the puzzle stays solved
+ * in storage, with a replay flag until it is solved again.
+ *
  * `cells` in the published state is a new array only when a cell changed, so it can
  * key derived per-line work.
  */
 import { type Cell, type Clues, satisfiesClues } from '@pixel-imperium/nonogram'
-import { loadPalette, loadProgress, savePalette, saveProgress, saveSolved } from './progress-storage.ts'
+import {
+  clearReplay,
+  loadPalette,
+  loadProgress,
+  loadReplay,
+  savePalette,
+  saveProgress,
+  saveReplay,
+  saveSolved,
+} from './progress-storage.ts'
 
 export type Tool = 'fill' | 'mark'
 
@@ -38,6 +50,8 @@ export interface PlayState {
   canUndo: boolean
   canRedo: boolean
   solved: boolean
+  /** A solved puzzle cleared to play again and not yet re-solved. */
+  replaying: boolean
   /** Row-major reveal colors from the server, `null` until a confirmed solve. */
   palette: readonly (string | null)[] | null
 }
@@ -62,6 +76,23 @@ interface ActiveStroke {
 
 const toolState: Record<Tool, Cell> = { fill: 'filled', mark: 'marked' }
 
+/** Marks every empty cell in a line with no clues. */
+function autoMark(cells: Cell[], { width, clues }: PlayPuzzle): void {
+  cells.forEach((c, i) => {
+    if (c !== 'empty') return
+    const row = Math.floor(i / width)
+    const col = i % width
+    if (clues.rows[row]!.length === 0 || clues.cols[col]!.length === 0) cells[i] = 'marked'
+  })
+}
+
+/** The grid a puzzle opens with when there is no saved progress. */
+export function freshCells(puzzle: PlayPuzzle, autoMarkEmptyLines: boolean): Cell[] {
+  const cells = Array<Cell>(puzzle.width * puzzle.height).fill('empty')
+  if (autoMarkEmptyLines) autoMark(cells, puzzle)
+  return cells
+}
+
 /** The cell the crosshair assist follows: the hovered cell, else the keyboard cursor while focused. */
 export function crosshairOf(state: PlayState): Pos | null {
   if (state.solved) return null
@@ -81,16 +112,9 @@ export class PlayStore {
   /** `autoMarkEmptyLines` marks lines with no clues as part of the initial, non-undoable state. */
   constructor(puzzle: PlayPuzzle, { autoMarkEmptyLines = false } = {}) {
     this.puzzle = puzzle
-    const { id, width, height, clues } = puzzle
+    const { id, width, height } = puzzle
     this.cells = loadProgress(id, width * height) ?? Array<Cell>(width * height).fill('empty')
-    if (autoMarkEmptyLines) {
-      this.cells.forEach((c, i) => {
-        if (c !== 'empty') return
-        const row = Math.floor(i / width)
-        const col = i % width
-        if (clues.rows[row]!.length === 0 || clues.cols[col]!.length === 0) this.cells[i] = 'marked'
-      })
-    }
+    if (autoMarkEmptyLines) autoMark(this.cells, puzzle)
     const solved = this.checkSolved()
     this.state = {
       cells: this.cells.slice(),
@@ -101,6 +125,7 @@ export class PlayStore {
       canUndo: false,
       canRedo: false,
       solved,
+      replaying: !solved && loadReplay(id),
       palette: solved ? loadPalette(id, width * height) : null,
     }
   }
@@ -205,6 +230,24 @@ export class PlayStore {
     this.commit()
   }
 
+  /** Resets to the fresh grid as one undo step; on a solved puzzle this starts a replay. */
+  clear({ autoMarkEmptyLines }: { autoMarkEmptyLines: boolean }): void {
+    this.endStroke()
+    const changes: Change[] = []
+    freshCells(this.puzzle, autoMarkEmptyLines).forEach((to, index) => {
+      const from = this.cells[index]!
+      if (from !== to) changes.push({ index, from, to })
+    })
+    if (changes.length === 0) return
+    for (const c of changes) this.cells[c.index] = c.to
+    this.cellsChanged = true
+    this.undoStack.push(changes)
+    this.redoStack = []
+    if (!this.state.solved) return this.commit()
+    saveReplay(this.puzzle.id)
+    this.commit({ replaying: true, palette: null })
+  }
+
   moveCursor(dRow: number, dCol: number): void {
     const { cursor } = this.state
     const next = this.clamp({ row: cursor.row + dRow, col: cursor.col + dCol })
@@ -243,12 +286,15 @@ export class PlayStore {
   }
 
   /** Persists and checks for the win after a completed edit. */
-  private commit(): void {
-    saveProgress(this.puzzle.id, this.cells)
-    this.emit({ solved: this.checkSolved() })
+  private commit(patch: Partial<PlayState> = {}): void {
+    const { id, width, height } = this.puzzle
+    saveProgress(id, this.cells)
+    if (!this.checkSolved()) return this.emit({ ...patch, solved: false })
+    clearReplay(id)
+    // A re-solve already has its reveal colors from the first solve.
+    this.emit({ solved: true, replaying: false, palette: this.state.palette ?? loadPalette(id, width * height) })
   }
 
-  /** Solving locks the grid, so the solved flag is only ever set, never cleared. */
   private checkSolved(): boolean {
     const { id, width, height, clues } = this.puzzle
     const solved = satisfiesClues({ width, height, cells: this.cells }, clues)

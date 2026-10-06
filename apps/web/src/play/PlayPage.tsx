@@ -6,10 +6,11 @@ import { submitSolve } from '../api.ts'
 import { getSettings, updateSettings, useSettings } from '../settings.ts'
 import { AssistChips } from './AssistChips.tsx'
 import { Board } from './Board.tsx'
+import { ClearButton, LoopIcon } from './ClearButton.tsx'
 import { ColClues, RowClues } from './Clues.tsx'
 import { CLUE_SLOT, fitCellSize } from './layout.ts'
 import { createLineHints } from './line-hints.ts'
-import { type PlayState, PlayStore, crosshairOf } from './store.ts'
+import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
 import styles from './Play.module.css'
 
 const route = getRouteApi('/play/$id')
@@ -29,10 +30,13 @@ function Play({ puzzle }: { puzzle: PuzzleClues }) {
   const canRedo = useStoreValue(store, s => s.canRedo)
   const mode = useStoreValue(store, s => s.mode)
   const solved = useStoreValue(store, s => s.solved)
+  const replaying = useStoreValue(store, s => s.replaying)
   const revealed = useStoreValue(store, s => s.palette !== null)
   const cells = useStoreValue(store, s => s.cells)
   const percent = useMemo(() => progressPercent(cells, puzzle.filledCount, false), [cells, puzzle.filledCount])
   const settings = useSettings()
+  const fresh = useMemo(() => freshCells(puzzle, settings.autoMarkEmptyLines), [puzzle, settings.autoMarkEmptyLines])
+  const canClear = useMemo(() => cells.some((c, i) => c !== fresh[i]), [cells, fresh])
   const crossRow = useStoreValue(store, s => (settings.crosshair ? (crosshairOf(s)?.row ?? null) : null))
   const crossCol = useStoreValue(store, s => (settings.crosshair ? (crosshairOf(s)?.col ?? null) : null))
 
@@ -92,6 +96,14 @@ function Play({ puzzle }: { puzzle: PuzzleClues }) {
           <span className={styles.solvedPill} role="status">
             Solved!
           </span>
+        ) : replaying ? (
+          <span className={styles.replayPill} title="Replaying">
+            <span>Solved</span>
+            <span>
+              <LoopIcon />
+              {percent}%
+            </span>
+          </span>
         ) : (
           percent > 0 && <span className={styles.hotPill}>{percent}%</span>
         )}
@@ -119,6 +131,7 @@ function Play({ puzzle }: { puzzle: PuzzleClues }) {
       </div>
       {solved ? (
         <div className={styles.dock}>
+          <ClearButton store={store} solved />
           <Link to="/" className={styles.linkButton}>
             More puzzles
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -161,6 +174,7 @@ function Play({ puzzle }: { puzzle: PuzzleClues }) {
                 <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
               </svg>
             </button>
+            <ClearButton store={store} solved={false} disabled={!canClear} />
           </div>
           <AssistChips />
         </>

@@ -41,7 +41,30 @@ export function saveSolved(puzzleId: string): void {
   } catch {}
 }
 
-const paletteKey = (puzzleId: string) => `pixel-imperium:palette:${puzzleId}`
+const replayKey = (puzzleId: string) => `pixel-imperium:replay:${puzzleId}`
+
+/** Set while a solved puzzle has been cleared to play again; the solved flag stays. */
+export function loadReplay(puzzleId: string): boolean {
+  try {
+    return localStorage.getItem(replayKey(puzzleId)) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function saveReplay(puzzleId: string): void {
+  try {
+    localStorage.setItem(replayKey(puzzleId), '1')
+  } catch {}
+}
+
+export function clearReplay(puzzleId: string): void {
+  try {
+    localStorage.removeItem(replayKey(puzzleId))
+  } catch {}
+}
+
+const paletteKey =(puzzleId: string) => `pixel-imperium:palette:${puzzleId}`
 
 /** The server's reveal colors, kept so the library can draw solved art without re-solving. */
 export function loadPalette(puzzleId: string, length: number): (string | null)[] | null {

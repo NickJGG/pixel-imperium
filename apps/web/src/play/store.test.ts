@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cluesFromSolution } from '@pixel-imperium/nonogram'
-import { loadPalette, loadSolved } from './progress-storage.ts'
+import { loadPalette, loadReplay, loadSolved } from './progress-storage.ts'
 import { PlayStore, type Pos, type Tool, crosshairOf } from './store.ts'
 
 // 4×3 plus sign with a tail:
@@ -179,11 +179,38 @@ describe('PlayStore assists', () => {
   })
 })
 
+describe('PlayStore clear', () => {
+  it('empties the grid as one undo step', () => {
+    const s = makeStore()
+    drag(s, 'fill', [at(0, 0), at(0, 2)])
+    drag(s, 'mark', [at(2, 0), at(2, 3)])
+    s.clear({ autoMarkEmptyLines: false })
+    expect(render(s)).toEqual(['....', '....', '....'])
+    s.undo()
+    expect(render(s)).toEqual(['###.', '....', 'xxxx'])
+  })
+
+  it('re-applies auto-marks when the setting is on', () => {
+    const sparse = ['.#..', '##..', '....'].flatMap(row => Array.from(row, ch => ch === '#'))
+    const s = new PlayStore({ id: 'sparse', width: 4, height: 3, clues: cluesFromSolution(4, 3, sparse) })
+    drag(s, 'fill', [at(0, 0), at(0, 1)])
+    s.clear({ autoMarkEmptyLines: true })
+    expect(render(s)).toEqual(['..xx', '..xx', 'xxxx'])
+  })
+
+  it('does nothing on an already fresh grid', () => {
+    const s = makeStore()
+    s.clear({ autoMarkEmptyLines: false })
+    expect(s.getState().canUndo).toBe(false)
+  })
+})
+
 function stubStorage() {
   const data = new Map<string, string>()
   vi.stubGlobal('localStorage', {
     getItem: (k: string) => data.get(k) ?? null,
     setItem: (k: string, v: string) => void data.set(k, v),
+    removeItem: (k: string) => void data.delete(k),
   })
 }
 
@@ -211,6 +238,37 @@ describe('PlayStore persistence', () => {
     solve(s)
     s.setPalette(palette)
     expect(loadPalette('test', 12)).toEqual(palette)
+  })
+
+  it('clearing a solved puzzle starts a replay that keeps the solve', () => {
+    const s = makeStore()
+    solve(s)
+    s.setPalette(palette)
+    s.clear({ autoMarkEmptyLines: false })
+    expect(s.getState()).toMatchObject({ solved: false, replaying: true, palette: null })
+    expect(render(s)).toEqual(['....', '....', '....'])
+    expect(loadSolved('test')).toBe(true)
+    expect(loadReplay('test')).toBe(true)
+    expect(makeStore().getState().replaying).toBe(true)
+  })
+
+  it('undoing a replay restores the solve and its palette', () => {
+    const s = makeStore()
+    solve(s)
+    s.setPalette(palette)
+    s.clear({ autoMarkEmptyLines: false })
+    s.undo()
+    expect(s.getState()).toMatchObject({ solved: true, replaying: false, palette })
+    expect(loadReplay('test')).toBe(false)
+  })
+
+  it('solving a replay again ends it', () => {
+    const s = makeStore()
+    solve(s)
+    s.clear({ autoMarkEmptyLines: false })
+    solve(s)
+    expect(s.getState()).toMatchObject({ solved: true, replaying: false })
+    expect(loadReplay('test')).toBe(false)
   })
 
   it('loads the stored palette when it opens already solved', () => {

@@ -39,6 +39,78 @@
   color: var(--on-a2);
 }
 
+.replayPill {
+  display: inline-flex;
+  font: 700 12px var(--font-mono);
+  text-transform: uppercase;
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.replayPill > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+}
+
+.replayPill > span:first-child {
+  background: var(--a2);
+  color: var(--on-a2);
+}
+
+.replayPill > span:last-child {
+  background: var(--a1);
+  color: var(--on-a1);
+  border-left: var(--bw) solid var(--line);
+}
+
+.replayPill svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.solvedPill {
+  padding: 5px 10px;
+  font: 700 12px var(--font-mono);
+  background: var(--surface);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-pill);
+}
+
+.hotPill {
+  background: var(--a2);
+  color: var(--on-a2);
+}
+
+.replayPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font: 700 12px var(--font-mono);
+  background: var(--a1);
+  color: var(--on-a1);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-pill);
+}
+
+.replayPill svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .solvedPill {
   font-size: 13px;
   text-transform: uppercase;
@@ -256,6 +328,36 @@
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.confirm {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 4px 4px 4px var(--space-3);
+  border: var(--bw) dashed var(--line);
+  border-radius: var(--r-md);
+}
+
+.confirm span {
+  font-weight: 800;
+}
+
+.confirm button {
+  min-height: 36px;
+  box-shadow: 2px 2px 0 var(--shadow);
+}
+
+.confirm .danger {
+  background: var(--bad);
+  color: var(--on-bad);
+}
+
+.confirm .ghost {
+  background: transparent;
+  box-shadow: none;
 }
 
 .chips {

@@ -2,7 +2,8 @@ import type { CSSProperties } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
 import type { PuzzleSummary } from '@pixel-imperium/protocol'
-import { loadPalette, loadProgress, loadSolved } from '../play/progress-storage.ts'
+import { LoopIcon } from '../play/ClearButton.tsx'
+import { loadPalette, loadProgress, loadReplay, loadSolved } from '../play/progress-storage.ts'
 import { PixelArt } from './PixelArt.tsx'
 import styles from './PuzzleList.module.css'
 
@@ -21,12 +22,18 @@ const EMPTY: Record<NonNullable<Filter>, string> = {
   solved: 'Nothing solved yet.',
 }
 
-type Status = { kind: 'solved'; palette: (string | null)[] | null } | { kind: 'started'; percent: number } | { kind: 'new' }
+type Status =
+  /** `replay` is the replay's percent while a solved puzzle is being played again. */
+  | { kind: 'solved'; palette: (string | null)[] | null; replay: number | null }
+  | { kind: 'started'; percent: number }
+  | { kind: 'new' }
 
 function statusOf(p: PuzzleSummary): Status {
   const length = p.width * p.height
-  if (loadSolved(p.id)) return { kind: 'solved', palette: loadPalette(p.id, length) }
   const percent = progressPercent(loadProgress(p.id, length) ?? [], p.filledCount, false)
+  if (loadSolved(p.id)) {
+    return { kind: 'solved', palette: loadPalette(p.id, length), replay: loadReplay(p.id) ? percent : null }
+  }
   return percent > 0 ? { kind: 'started', percent } : { kind: 'new' }
 }
 
@@ -74,9 +81,19 @@ export function PuzzleList() {
                     />
                   )}
                 </div>
-                <span className={`${styles.sticker} ${styles[status.kind]}`}>
-                  {status.kind === 'solved' ? 'Solved' : status.kind === 'started' ? `${status.percent}%` : 'New'}
-                </span>
+                {status.kind === 'solved' && status.replay !== null ? (
+                  <span className={`${styles.sticker} ${styles.split}`} title="Replaying">
+                    <span>Solved</span>
+                    <span>
+                      <LoopIcon />
+                      {status.replay}%
+                    </span>
+                  </span>
+                ) : (
+                  <span className={`${styles.sticker} ${styles[status.kind]}`}>
+                    {status.kind === 'solved' ? 'Solved' : status.kind === 'started' ? `${status.percent}%` : 'New'}
+                  </span>
+                )}
                 <div className={styles.info}>
                   <span className={styles.title}>{p.title}</span>
                   <span className={styles.size}>
