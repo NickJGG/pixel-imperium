@@ -18,7 +18,9 @@ function solve(cells: unknown, id = 'diag') {
 describe('GET /api/puzzles', () => {
   it('lists summaries', async () => {
     const res = await app.request('/api/puzzles')
-    expect(await res.json()).toEqual<PuzzleSummary[]>([{ id: 'diag', title: 'Diagonal', width: 2, height: 2 }])
+    expect(await res.json()).toEqual<PuzzleSummary[]>([
+      { id: 'diag', title: 'Diagonal', width: 2, height: 2, filledCount: 2 },
+    ])
   })
 })
 
@@ -31,6 +33,7 @@ describe('GET /api/puzzles/:id', () => {
       title: 'Diagonal',
       width: 2,
       height: 2,
+      filledCount: 2,
       clues: { rows: [[1], [1]], cols: [[1], [1]] },
     })
     expect(body).not.toHaveProperty('palette')

@@ -37,13 +37,14 @@ describe('parseSeedPuzzle', () => {
     expect(() => parseSeedPuzzle({ id: 'x', title: 'X', palette: { a: '#000' }, rows: ['ab'] })).toThrow(/'b'/)
   })
 
-  it('derives clues and a row-major palette', () => {
+  it('derives clues, the filled count and a row-major palette', () => {
     expect(parseSeedPuzzle({ id: 'x', title: 'X', palette: { a: '#111', b: '#222' }, rows: ['ab.', '..a'] })).toEqual({
       id: 'x',
       title: 'X',
       width: 3,
       height: 2,
       clues: { rows: [[2], [1]], cols: [[1], [1], [1]] },
+      filledCount: 3,
       palette: ['#111', '#222', null, null, null, '#111'],
     })
   })

@@ -11,7 +11,7 @@
  * key derived per-line work.
  */
 import { type Cell, type Clues, satisfiesClues } from '@pixel-imperium/nonogram'
-import { loadProgress, saveProgress, saveSolved } from './progress-storage.ts'
+import { loadPalette, loadProgress, savePalette, saveProgress, saveSolved } from './progress-storage.ts'
 
 export type Tool = 'fill' | 'mark'
 
@@ -91,6 +91,7 @@ export class PlayStore {
         if (clues.rows[row]!.length === 0 || clues.cols[col]!.length === 0) this.cells[i] = 'marked'
       })
     }
+    const solved = this.checkSolved()
     this.state = {
       cells: this.cells.slice(),
       cursor: { row: 0, col: 0 },
@@ -99,8 +100,8 @@ export class PlayStore {
       focused: false,
       canUndo: false,
       canRedo: false,
-      solved: this.checkSolved(),
-      palette: null,
+      solved,
+      palette: solved ? loadPalette(id, width * height) : null,
     }
   }
 
@@ -215,6 +216,7 @@ export class PlayStore {
   }
 
   setPalette(palette: readonly (string | null)[]): void {
+    savePalette(this.puzzle.id, palette)
     this.emit({ palette })
   }
 

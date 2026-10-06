@@ -40,3 +40,26 @@ export function saveSolved(puzzleId: string): void {
     localStorage.setItem(solvedKey(puzzleId), '1')
   } catch {}
 }
+
+const paletteKey = (puzzleId: string) => `pixel-imperium:palette:${puzzleId}`
+
+/** The server's reveal colors, kept so the library can draw solved art without re-solving. */
+export function loadPalette(puzzleId: string, length: number): (string | null)[] | null {
+  let palette: unknown
+  try {
+    palette = JSON.parse(localStorage.getItem(paletteKey(puzzleId)) ?? 'null')
+  } catch {
+    return null
+  }
+  return Array.isArray(palette) &&
+    palette.length === length &&
+    palette.every(c => c === null || typeof c === 'string')
+    ? palette
+    : null
+}
+
+export function savePalette(puzzleId: string, palette: readonly (string | null)[]): void {
+  try {
+    localStorage.setItem(paletteKey(puzzleId), JSON.stringify(palette))
+  } catch {}
+}

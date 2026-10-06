@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { canFitCluesInRegion, completedClues, lineImpossible } from './progress.ts'
+import type { Cell } from './grid.ts'
+import { canFitCluesInRegion, completedClues, lineImpossible, progressPercent } from './progress.ts'
 import { line } from './test-helpers.ts'
 
 describe('lineImpossible', () => {
@@ -62,5 +63,21 @@ describe('completedClues', () => {
     ['nothing filled', 'x..x.', [1, 1], [false, false]],
   ])('%s: %s %j', (_, s, clues, expected) => {
     expect(completedClues(line(s), clues)).toEqual(expected)
+  })
+})
+
+describe('progressPercent', () => {
+  const grid = (filled: number, length = 225) =>
+    Array.from({ length }, (_, i): Cell => (i < filled ? 'filled' : i % 2 ? 'marked' : 'empty'))
+
+  it.each<[string, number, number, boolean, number]>([
+    ['nothing filled, marks ignored', 0, 100, false, 0],
+    ['one cell rounds up to 1', 1, 225, false, 1],
+    ['half', 50, 100, false, 50],
+    ['exact count but unsolved', 100, 100, false, 99],
+    ['overfill', 120, 100, false, 99],
+    ['solved', 100, 100, true, 100],
+  ])('%s', (_, filled, filledCount, solved, expected) => {
+    expect(progressPercent(grid(filled), filledCount, solved)).toBe(expected)
   })
 })

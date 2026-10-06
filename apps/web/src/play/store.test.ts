@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cluesFromSolution } from '@pixel-imperium/nonogram'
-import { loadSolved } from './progress-storage.ts'
+import { loadPalette, loadSolved } from './progress-storage.ts'
 import { PlayStore, type Pos, type Tool, crosshairOf } from './store.ts'
 
 // 4×3 plus sign with a tail:
@@ -169,21 +169,44 @@ describe('PlayStore assists', () => {
   })
 })
 
-describe('PlayStore solved flag', () => {
+function stubStorage() {
+  const data = new Map<string, string>()
+  vi.stubGlobal('localStorage', {
+    getItem: (k: string) => data.get(k) ?? null,
+    setItem: (k: string, v: string) => void data.set(k, v),
+  })
+}
+
+function solve(store: PlayStore) {
+  drag(store, 'fill', [at(0, 1), at(2, 1)])
+  drag(store, 'fill', [at(1, 0), at(1, 2)])
+}
+
+describe('PlayStore persistence', () => {
+  beforeEach(stubStorage)
+  afterEach(() => vi.unstubAllGlobals())
+
   it('records the solve so the library can show it', () => {
-    const data = new Map<string, string>()
-    vi.stubGlobal('localStorage', {
-      getItem: (k: string) => data.get(k) ?? null,
-      setItem: (k: string, v: string) => void data.set(k, v),
-    })
-    try {
-      const s = makeStore()
-      drag(s, 'fill', [at(0, 1), at(2, 1)])
-      expect(loadSolved('test')).toBe(false)
-      drag(s, 'fill', [at(1, 0), at(1, 2)])
-      expect(loadSolved('test')).toBe(true)
-    } finally {
-      vi.unstubAllGlobals()
-    }
+    const s = makeStore()
+    drag(s, 'fill', [at(0, 1), at(2, 1)])
+    expect(loadSolved('test')).toBe(false)
+    drag(s, 'fill', [at(1, 0), at(1, 2)])
+    expect(loadSolved('test')).toBe(true)
+  })
+
+  const palette = Array.from({ length: 12 }, (_, i) => (solution[i] ? '#f0f' : null))
+
+  it('persists the palette', () => {
+    const s = makeStore()
+    solve(s)
+    s.setPalette(palette)
+    expect(loadPalette('test', 12)).toEqual(palette)
+  })
+
+  it('loads the stored palette when it opens already solved', () => {
+    const s = makeStore()
+    solve(s)
+    s.setPalette(palette)
+    expect(makeStore().getState().palette).toEqual(palette)
   })
 })

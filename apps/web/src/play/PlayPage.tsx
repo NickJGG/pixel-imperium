@@ -1,5 +1,6 @@
 import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
+import { progressPercent } from '@pixel-imperium/nonogram'
 import type { PuzzleClues } from '@pixel-imperium/protocol'
 import { submitSolve } from '../api.ts'
 import { getSettings, useSettings } from '../settings.ts'
@@ -30,6 +31,7 @@ function Play({ puzzle }: { puzzle: PuzzleClues }) {
   const solved = useStoreValue(store, s => s.solved)
   const revealed = useStoreValue(store, s => s.palette !== null)
   const cells = useStoreValue(store, s => s.cells)
+  const percent = useMemo(() => progressPercent(cells, puzzle.filledCount, false), [cells, puzzle.filledCount])
   const settings = useSettings()
   const crossRow = useStoreValue(store, s => (settings.crosshair ? (crosshairOf(s)?.row ?? null) : null))
   const crossCol = useStoreValue(store, s => (settings.crosshair ? (crosshairOf(s)?.col ?? null) : null))
@@ -69,7 +71,7 @@ function Play({ puzzle }: { puzzle: PuzzleClues }) {
 
   // The local check already won; the server only supplies the reveal colors, so failures are ignored.
   useEffect(() => {
-    if (!solved) return
+    if (!solved || store.getState().palette) return
     const abort = new AbortController()
     const cells = store.getState().cells.map(c => (c === 'filled' ? 'filled' : 'empty'))
     submitSolve(puzzle.id, { cells }, abort.signal).then(
@@ -86,10 +88,12 @@ function Play({ puzzle }: { puzzle: PuzzleClues }) {
         <span className={styles.pill}>
           {puzzle.width}×{puzzle.height}
         </span>
-        {solved && (
+        {solved ? (
           <span className={styles.solvedPill} role="status">
             Solved!
           </span>
+        ) : (
+          percent > 0 && <span className={styles.hotPill}>{percent}%</span>
         )}
       </div>
       <div ref={stageRef} className={styles.stage}>

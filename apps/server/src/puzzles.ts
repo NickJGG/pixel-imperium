@@ -18,6 +18,7 @@ export interface Puzzle {
   width: number
   height: number
   clues: Clues
+  filledCount: number
   /** Row-major hex colors, `null` for empty cells. */
   palette: (string | null)[]
 }
@@ -43,7 +44,8 @@ export function parseSeedPuzzle(seed: SeedPuzzle): Puzzle {
   }
 
   const clues = cluesFromSolution(width, height, colors.map(c => c !== null))
-  return { id, title, width, height, clues, palette: colors }
+  const filledCount = colors.filter(c => c !== null).length
+  return { id, title, width, height, clues, filledCount, palette: colors }
 }
 
 export const SEED_PATH = new URL('../data/puzzles.json', import.meta.url)

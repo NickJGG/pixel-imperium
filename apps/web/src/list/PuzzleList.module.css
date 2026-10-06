@@ -7,9 +7,48 @@
   padding: var(--space-4) var(--space-7) 56px;
 }
 
+.sec {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
 .heading {
-  margin: 0 0 var(--space-6);
+  margin: 0;
   font-size: 40px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.filters button {
+  padding: 0 18px;
+  font-size: 14px;
+  background: transparent;
+  border-radius: var(--r-pill);
+  box-shadow: none;
+}
+
+.filters button:hover:not(:disabled),
+.filters button:active:not(:disabled) {
+  transform: none;
+}
+
+.filters button[aria-pressed='true'] {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.empty {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text-muted);
 }
 
 .grid {
@@ -45,7 +84,10 @@
   display: grid;
   place-items: center;
   border-bottom: var(--bw) solid var(--line);
-  background: color-mix(in srgb, var(--a2) 10%, var(--surface));
+}
+
+.thumb.new {
+  background: color-mix(in srgb, var(--bg) 60%, var(--surface));
 }
 
 .thumb.started {
@@ -56,10 +98,14 @@
   background: color-mix(in srgb, var(--a2) 22%, var(--surface));
 }
 
-/* An empty grid of the puzzle's dimensions, drawn as a background so a 50 by 50 grid stays cheap. */
-.blank {
+/* Fits a --w by --h picture inside the thumb. */
+.box {
   width: min(70%, calc(62% * 4 / 5 * var(--w) / var(--h)));
   aspect-ratio: var(--w) / var(--h);
+}
+
+/* An empty grid of the puzzle's dimensions, drawn as a background so a 50 by 50 grid stays cheap. */
+.blank {
   background-color: var(--surface);
   background-image:
     linear-gradient(to right, var(--blank-border) 1.5px, transparent 1.5px),
@@ -69,6 +115,11 @@
   border-radius: 3px;
 }
 
+.art {
+  display: block;
+  image-rendering: pixelated;
+}
+
 .sticker {
   position: absolute;
   top: var(--space-3);
@@ -76,11 +127,16 @@
   padding: 4px 9px;
   font: 700 11px var(--font-mono);
   text-transform: uppercase;
-  background: var(--a1);
-  color: var(--on-a1);
+  background: var(--surface);
+  color: var(--text);
   border: var(--bw) solid var(--line);
   border-radius: var(--r-pill);
   transform: rotate(4deg);
+}
+
+.sticker.started {
+  background: var(--a1);
+  color: var(--on-a1);
 }
 
 .sticker.solved {

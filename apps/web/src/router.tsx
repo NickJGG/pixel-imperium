@@ -23,6 +23,8 @@ const rootRoute = createRootRoute({
 const listRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  validateSearch: (search: Record<string, unknown>): { filter?: 'open' | 'solved' } =>
+    search.filter === 'open' || search.filter === 'solved' ? { filter: search.filter } : {},
   loader: fetchPuzzles,
   component: PuzzleList,
 })

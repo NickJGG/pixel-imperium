@@ -10,13 +10,17 @@ export function createApp(puzzles: readonly Puzzle[]) {
   return new Hono()
     .basePath('/api')
     .get('/puzzles', c =>
-      c.json(puzzles.map(({ id, title, width, height }): PuzzleSummary => ({ id, title, width, height }))),
+      c.json(
+        puzzles.map(
+          ({ id, title, width, height, filledCount }): PuzzleSummary => ({ id, title, width, height, filledCount }),
+        ),
+      ),
     )
     .get('/puzzles/:id', c => {
       const p = byId.get(c.req.param('id'))
       if (!p) return c.json(notFound(c.req.param('id')), 404)
-      const { id, title, width, height, clues } = p
-      return c.json<PuzzleClues>({ id, title, width, height, clues })
+      const { id, title, width, height, filledCount, clues } = p
+      return c.json<PuzzleClues>({ id, title, width, height, filledCount, clues })
     })
     .post('/puzzles/:id/solve', async c => {
       const p = byId.get(c.req.param('id'))

@@ -1,6 +1,6 @@
 /**
- * Assist logic over a player's in-progress line, where `marked` means "known empty"
- * and `empty` means "not yet decided".
+ * Assist and progress logic over a player's in-progress cells, where `marked` means
+ * "known empty" and `empty` means "not yet decided".
  */
 import type { Cell } from './grid.ts'
 import { lineFeasible, type SolverCell } from './solver.ts'
@@ -54,4 +54,15 @@ export function completedClues(line: readonly Cell[], clues: readonly number[]):
     if (match !== -1) result[match] = true
   }
   return result
+}
+
+/**
+ * Whole-grid progress for display: 100 only once solved, otherwise 1–99 as soon as one
+ * cell is filled, so a started puzzle never reads 0% and a full-but-wrong one never 100%.
+ */
+export function progressPercent(cells: readonly Cell[], filledCount: number, solved: boolean): number {
+  if (solved) return 100
+  const filled = cells.filter(c => c === 'filled').length
+  if (filled === 0) return 0
+  return Math.min(Math.max(Math.floor((filled / filledCount) * 100), 1), 99)
 }

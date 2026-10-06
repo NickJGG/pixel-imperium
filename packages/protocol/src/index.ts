@@ -6,6 +6,8 @@ export interface PuzzleSummary {
   title: string
   width: number
   height: number
+  /** Filled cells in the solution; derivable from the clues, so it leaks nothing. */
+  filledCount: number
 }
 
 /** `GET /api/puzzles/:id`. Never includes the solution or palette. */
