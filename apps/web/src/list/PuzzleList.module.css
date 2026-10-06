@@ -1,0 +1,8 @@
+.list {
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.size {
+  color: #6b6f78;
+}
