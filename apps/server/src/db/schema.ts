@@ -94,7 +94,21 @@ export const solve = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     puzzleId: text('puzzle_id').notNull(),
     verified: boolean('verified').notNull(),
+    /** Decided when the row is first inserted, from whether a hint came first; never changed after. */
+    foil: boolean('foil').default(false).notNull(),
     solvedAt: timestamp('solved_at').defaultNow().notNull(),
+  },
+  t => [primaryKey({ columns: [t.userId, t.puzzleId] })],
+)
+
+/** A hint given to the player on the puzzle, before or after solving it. */
+export const hint = pgTable(
+  'hint',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    puzzleId: text('puzzle_id').notNull(),
   },
   t => [primaryKey({ columns: [t.userId, t.puzzleId] })],
 )

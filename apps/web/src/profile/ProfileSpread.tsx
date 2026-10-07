@@ -17,11 +17,11 @@ export function ProfileSpread() {
   const { storage } = useAccount()
   const index = campaign.provinces.indexOf(province)
   const { state, solved, stickers } = useMemo(() => {
-    const ids = profile.campaigns.find(c => c.id === campaign.id)?.verifiedPuzzleIds ?? []
-    const verified = new Set(ids)
+    const entry = profile.campaigns.find(c => c.id === campaign.id) ?? { verifiedPuzzleIds: [], foilPuzzleIds: [] }
+    const verified = new Set(entry.verifiedPuzzleIds)
     return {
       ...provinceStates(campaign, id => verified.has(id)).provinces[index]!,
-      stickers: new Map(profileStickers(campaign, ids, storage).map(s => [s.puzzle.id, s])),
+      stickers: new Map(profileStickers(campaign, entry, storage).map(s => [s.puzzle.id, s])),
     }
   }, [profile, campaign, index, storage])
 

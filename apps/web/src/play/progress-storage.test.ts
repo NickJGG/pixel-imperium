@@ -24,6 +24,24 @@ describe('ProgressStorage', () => {
     expect(account.loadUpdatedAt('a')).toMatch(/^\d{4}-\d\d-\d\dT/)
   })
 
+  it('round-trips foil and hint use, both off until saved', () => {
+    expect([account.loadFoil('a'), account.loadHinted('a')]).toEqual([false, false])
+    account.saveFoil('a', true)
+    account.saveHinted('b')
+    expect([account.loadFoil('a'), account.loadHinted('b')]).toEqual([true, true])
+    expect(signedOutStorage.loadFoil('a')).toBe(false)
+    account.saveFoil('a', false)
+    expect(account.loadFoil('a')).toBe(false)
+  })
+
+  it('lists a puzzle with only a hint, and clears foil and hints', () => {
+    account.saveHinted('a')
+    account.saveFoil('b', true)
+    expect(account.puzzleIds()).toEqual(['a'])
+    account.clear()
+    expect([account.loadHinted('a'), account.loadFoil('b')]).toEqual([false, false])
+  })
+
   it('lists and clears only its own puzzles', () => {
     account.saveCells('a', '#', '2026-01-01T00:00:00.000Z')
     account.saveSolved('b', 'unverified')

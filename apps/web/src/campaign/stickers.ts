@@ -1,4 +1,4 @@
-import type { Campaign, PuzzleSummary } from '@pixel-imperium/protocol'
+import type { Campaign, ProfileCampaign, PuzzleSummary } from '@pixel-imperium/protocol'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 
 export interface StickerEntry {
@@ -9,6 +9,7 @@ export interface StickerEntry {
   number: number
   palette: (string | null)[] | null
   unverified: boolean
+  foil: boolean
 }
 
 /**
@@ -26,6 +27,7 @@ export function latestStickers(campaign: Pick<Campaign, 'provinces'>, storage: P
         number: i + 1,
         palette: storage.loadPalette(puzzle.id, puzzle.width * puzzle.height),
         unverified: mark === 'unverified',
+        foil: storage.loadFoil(puzzle.id),
       }
       return [{ entry, at: storage.loadUpdatedAt(puzzle.id) ?? '' }]
     }),
@@ -34,18 +36,19 @@ export function latestStickers(campaign: Pick<Campaign, 'provinces'>, storage: P
 }
 
 /**
- * A player's verified stickers in the campaign, in `verifiedIds` order (latest first on a Profile). Art comes
- * from the viewer's own `storage`, so stickers the viewer hasn't collected have a `null` palette.
+ * A player's verified stickers in the campaign, in `verifiedPuzzleIds` order (latest first on a Profile), foil as
+ * theirs are. Art comes from the viewer's own `storage`, so stickers the viewer hasn't collected have a `null` palette.
  */
 export function profileStickers(
   campaign: Pick<Campaign, 'provinces'>,
-  verifiedIds: readonly string[],
+  { verifiedPuzzleIds, foilPuzzleIds }: Pick<ProfileCampaign, 'verifiedPuzzleIds' | 'foilPuzzleIds'>,
   storage: ProgressStorage,
 ): StickerEntry[] {
+  const foil = new Set(foilPuzzleIds)
   const slots = new Map(
     campaign.provinces.flatMap((province, index) => province.puzzles.map((puzzle, i) => [puzzle.id, { puzzle, index, i }] as const)),
   )
-  return verifiedIds.flatMap(id => {
+  return verifiedPuzzleIds.flatMap(id => {
     const slot = slots.get(id)
     if (!slot) return []
     const { puzzle, index, i } = slot
@@ -56,6 +59,7 @@ export function profileStickers(
         number: i + 1,
         palette: storage.loadPalette(puzzle.id, puzzle.width * puzzle.height),
         unverified: false,
+        foil: foil.has(id),
       },
     ]
   })

@@ -7,6 +7,7 @@ import type {
   CampaignSummary,
   HandleAvailability,
   HandleRejection,
+  HintResponse,
   ImportItem,
   ImportOutcome,
   ImportResponse,
@@ -24,8 +25,9 @@ import type {
 import { and, desc, eq, lt, sql } from 'drizzle-orm'
 import type { Auth } from './auth.ts'
 import type { Db } from './db/index.ts'
-import { progress, solve, user, userSettings } from './db/schema.ts'
+import { hint, progress, solve, user, userSettings } from './db/schema.ts'
 import { handleProblem } from './handles.ts'
+import { hintFor, rateLimiter } from './hints.ts'
 import { parseCells, planImport } from './import.ts'
 import type { Campaign } from './campaigns.ts'
 
@@ -46,10 +48,11 @@ function parseAssists(value: unknown): Assists | null {
 
 function parseImportItem(value: unknown): ImportItem | null {
   if (!value || typeof value !== 'object') return null
-  const { id, cells, solved, replaying } = value as Record<string, unknown>
+  const { id, cells, solved, replaying, hinted } = value as Record<string, unknown>
   if (typeof id !== 'string' || typeof solved !== 'boolean' || typeof replaying !== 'boolean') return null
   if (cells !== undefined && typeof cells !== 'string') return null
-  return { id, solved, replaying, ...(cells !== undefined && { cells }) }
+  if (hinted !== undefined && typeof hinted !== 'boolean') return null
+  return { id, solved, replaying, ...(cells !== undefined && { cells }), ...(hinted && { hinted }) }
 }
 
 const handleIs = (handle: string) => sql`lower(${user.handle}) = ${handle.toLowerCase()}`
@@ -89,9 +92,12 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
   )
   const notFound = (id: string): ApiError => ({ error: `no puzzle '${id}'` })
 
-  /** A verified solve upgrades an unverified one; nothing ever downgrades or re-dates a solve. */
-  const recordSolve = (tx: Pick<Db, 'insert'>, userId: string, puzzleId: string, status: SolveStatus) => {
-    const insert = tx.insert(solve).values({ userId, puzzleId, verified: status === 'verified' })
+  /**
+   * A verified solve upgrades an unverified one; nothing ever downgrades or re-dates a solve.
+   * `foil` counts only for the first solve, so an upgrade never makes one foil.
+   */
+  const recordSolve = (tx: Pick<Db, 'insert'>, userId: string, puzzleId: string, status: SolveStatus, foil: boolean) => {
+    const insert = tx.insert(solve).values({ userId, puzzleId, verified: status === 'verified', foil })
     return status === 'verified'
       ? insert.onConflictDoUpdate({
           target: [solve.userId, solve.puzzleId],
@@ -100,6 +106,8 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         })
       : insert.onConflictDoNothing()
   }
+
+  const hintAllowed = rateLimiter(60, 60_000)
 
   return new Hono<{ Variables: { user: SessionUser | null } }>()
     .basePath('/api')
@@ -143,10 +151,38 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         return c.json<ApiError>({ error: `cells must be ${p.width * p.height} of 'filled' | 'empty'` }, 400)
       }
 
-      const solved = satisfiesClues({ width: p.width, height: p.height, cells }, p.clues)
+      if (!satisfiesClues({ width: p.width, height: p.height, cells }, p.clues)) {
+        return c.json<SolveResponse>({ solved: false })
+      }
       const user = c.get('user')
-      if (solved && user) await recordSolve(db, user.id, p.id, 'verified')
-      return c.json<SolveResponse>(solved ? { solved: true, palette: p.palette } : { solved: false })
+      let foil: boolean | null = null
+      if (user) {
+        const hinted = await db.$count(hint, and(eq(hint.userId, user.id), eq(hint.puzzleId, p.id)))
+        await recordSolve(db, user.id, p.id, 'verified', hinted === 0)
+        const [row] = await db
+          .select({ foil: solve.foil })
+          .from(solve)
+          .where(and(eq(solve.userId, user.id), eq(solve.puzzleId, p.id)))
+        foil = row!.foil
+      }
+      return c.json<SolveResponse>({ solved: true, palette: p.palette, foil })
+    })
+    .post('/puzzles/:id/hint', async c => {
+      const p = byId.get(c.req.param('id'))
+      if (!p) return c.json(notFound(c.req.param('id')), 404)
+      const user = c.get('user')
+      if (!hintAllowed(user?.id ?? c.req.header('x-forwarded-for') ?? 'anonymous')) {
+        return c.json<ApiError>({ error: 'too many hints; try again in a minute' }, 429)
+      }
+
+      const body = (await c.req.json().catch(() => null)) as { cells?: unknown } | null
+      const cells = parseCells(body?.cells, p)
+      if (!cells) return c.json<ApiError>({ error: `cells must be ${p.width * p.height} of '.#x'` }, 400)
+
+      const nudge = hintFor(p, cells)
+      if (!nudge) return c.json<ApiError>({ error: 'nothing to hint: the grid is solved' }, 409)
+      if (user) await db.insert(hint).values({ userId: user.id, puzzleId: p.id }).onConflictDoNothing()
+      return c.json<HintResponse>(nudge)
     })
     .get('/handles/:handle/available', async c => {
       const handle = c.req.param('handle')
@@ -160,19 +196,20 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
       if (!owner) return c.json<ApiError>({ error: `no player '${c.req.param('handle')}'` }, 404)
 
       const solves = await db
-        .select({ puzzleId: solve.puzzleId })
+        .select({ puzzleId: solve.puzzleId, foil: solve.foil })
         .from(solve)
         .where(and(eq(solve.userId, owner.id), eq(solve.verified, true)))
         .orderBy(desc(solve.solvedAt))
       // Insertion order follows the newest solve, so the most recently played campaign comes first.
       const byCampaign = new Map<string, ProfileCampaign>()
       let verifiedSolves = 0
-      for (const { puzzleId } of solves) {
+      for (const { puzzleId, foil } of solves) {
         const p = byId.get(puzzleId)
         if (!p) continue
         verifiedSolves++
-        const entry = byCampaign.get(p.campaignId) ?? { id: p.campaignId, verifiedPuzzleIds: [] }
+        const entry = byCampaign.get(p.campaignId) ?? { id: p.campaignId, verifiedPuzzleIds: [], foilPuzzleIds: [] }
         entry.verifiedPuzzleIds.push(puzzleId)
+        if (foil) entry.foilPuzzleIds.push(puzzleId)
         byCampaign.set(p.campaignId, entry)
       }
       return c.json<Profile>({
@@ -198,18 +235,22 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
     })
     .get('/me/progress', async c => {
       const userId = c.get('user')!.id
-      const [solves, grids, [settings]] = await Promise.all([
+      const [solves, grids, hints, [settings]] = await Promise.all([
         db.select().from(solve).where(eq(solve.userId, userId)),
         db.select().from(progress).where(eq(progress.userId, userId)),
+        db.select({ puzzleId: hint.puzzleId }).from(hint).where(eq(hint.userId, userId)),
         db.select().from(userSettings).where(eq(userSettings.userId, userId)),
       ])
       const records: Record<string, PuzzleRecord> = {}
-      const record = (id: string) => (records[id] ??= { solved: null, progress: null, palette: null })
+      const record = (id: string) =>
+        (records[id] ??= { solved: null, progress: null, palette: null, foil: false, hinted: false })
       for (const s of solves) {
         const r = record(s.puzzleId)
         r.solved = s.verified ? 'verified' : 'unverified'
+        r.foil = s.foil
         if (s.verified) r.palette = byId.get(s.puzzleId)?.palette ?? null
       }
+      for (const { puzzleId } of hints) record(puzzleId).hinted = true
       for (const g of grids) {
         record(g.puzzleId).progress = { cells: g.cells, replaying: g.replaying, updatedAt: g.updatedAt.toISOString() }
       }
@@ -265,7 +306,8 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
           if (!item) continue
           const p = byId.get(item.id)
           const plan = p ? planImport(p, item) : { solve: null, progress: null }
-          if (plan.solve) await recordSolve(tx, userId, item.id, plan.solve)
+          if (plan.solve) await recordSolve(tx, userId, item.id, plan.solve, false)
+          if (p && item.hinted) await tx.insert(hint).values({ userId, puzzleId: item.id }).onConflictDoNothing()
           // The account's own grid wins over an imported one.
           if (plan.progress) {
             await tx

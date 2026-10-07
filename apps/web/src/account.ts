@@ -162,7 +162,10 @@ async function start(): Promise<void> {
 
 export const accountReady: Promise<void> = start()
 
-/** Moves signed-out play into the account (the server decides what counts), then clears it from the device. */
+/**
+ * Moves signed-out play into the account (the server decides what counts, and never makes it foil),
+ * then clears it from the device.
+ */
 export async function acceptImport(): Promise<void> {
   const { sync } = state
   if (!sync) return
@@ -173,6 +176,7 @@ export async function acceptImport(): Promise<void> {
       solved: signedOutStorage.loadSolved(id) !== null,
       replaying: signedOutStorage.loadReplay(id),
       ...(cells !== null && { cells }),
+      ...(signedOutStorage.loadHinted(id) && { hinted: true }),
     }
   })
   await importProgress({ puzzles })

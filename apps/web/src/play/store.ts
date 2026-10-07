@@ -8,12 +8,13 @@
  * and vice versa.
  *
  * Solving locks the grid. Only `clear()` unlocks it, as a replay: the puzzle stays solved
- * in storage, with a replay flag until it is solved again.
+ * in storage, with a replay flag until it is solved again. The first solve settles foil.
  *
  * `cells` in the published state is a new array only when a cell changed, so it can
  * key derived per-line work.
  */
 import { type Cell, type Clues, satisfiesClues } from '@pixel-imperium/nonogram'
+import type { HintResponse } from '@pixel-imperium/protocol'
 import { type ProgressStorage, signedOutStorage } from './progress-storage.ts'
 
 export type Tool = 'fill' | 'mark'
@@ -45,6 +46,10 @@ export interface PlayState {
   replaying: boolean
   /** Row-major reveal colors from the server, `null` until a confirmed solve. */
   palette: readonly (string | null)[] | null
+  /** The hint on show, until the next edit. */
+  hint: HintResponse | null
+  /** A hint has been used on this puzzle, ever. */
+  hinted: boolean
 }
 
 interface Change {
@@ -129,6 +134,8 @@ export class PlayStore {
       solved,
       replaying: !solved && storage.loadReplay(id),
       palette: solved ? storage.loadPalette(id, width * height) : null,
+      hint: null,
+      hinted: storage.loadHinted(id),
     }
   }
 
@@ -272,11 +279,20 @@ export class PlayStore {
     this.emit({ mode })
   }
 
-  /** Stores the server's reveal colors; for an account, the server recorded the solve as verified. */
-  setPalette(palette: readonly (string | null)[]): void {
+  /**
+   * Stores the server's reveal colors; for an account, the server recorded the solve as verified
+   * and says whether it is foil, which overrides the device's guess.
+   */
+  setPalette(palette: readonly (string | null)[], foil: boolean | null = null): void {
     this.storage.savePalette(this.puzzle.id, palette)
     if (this.storage.userId !== null) this.storage.saveSolved(this.puzzle.id, 'verified')
+    if (foil !== null) this.storage.saveFoil(this.puzzle.id, foil)
     this.emit({ palette })
+  }
+
+  showHint(hint: HintResponse): void {
+    this.storage.saveHinted(this.puzzle.id)
+    this.emit({ hint, hinted: true })
   }
 
   private apply(pos: Pos): void {
@@ -296,16 +312,24 @@ export class PlayStore {
     const solved = this.checkSolved()
     if (solved) this.storage.clearReplay(id)
     this.onSave?.()
-    if (!solved) return this.emit({ ...patch, solved: false })
+    if (!solved) return this.emit({ hint: null, ...patch, solved: false })
     // A re-solve already has its reveal colors from the first solve.
-    this.emit({ solved: true, replaying: false, palette: this.state.palette ?? this.storage.loadPalette(id, width * height) })
+    this.emit({
+      hint: null,
+      solved: true,
+      replaying: false,
+      palette: this.state.palette ?? this.storage.loadPalette(id, width * height),
+    })
   }
 
   private checkSolved(): boolean {
     const { id, width, height, clues } = this.puzzle
     const solved = satisfiesClues({ width, height, cells: this.cells }, clues)
-    if (solved && this.storage.loadSolved(id) !== 'verified') this.storage.saveSolved(id, 'local')
-    return solved
+    if (!solved) return false
+    const before = this.storage.loadSolved(id)
+    if (before === null) this.storage.saveFoil(id, !this.storage.loadHinted(id))
+    if (before !== 'verified') this.storage.saveSolved(id, 'local')
+    return true
   }
 
   private emit(patch: Partial<PlayState>): void {

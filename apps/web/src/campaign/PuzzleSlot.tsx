@@ -13,7 +13,7 @@ type Status =
    * `replay` is the replay's percent while a solved puzzle is being played again;
    * `unverified` marks an imported solve the server could not check.
    */
-  | { kind: 'solved'; palette: (string | null)[] | null; replay: number | null; unverified: boolean }
+  | { kind: 'solved'; palette: (string | null)[] | null; replay: number | null; unverified: boolean; foil: boolean }
   | { kind: 'started'; percent: number }
   | { kind: 'new' }
 
@@ -27,6 +27,7 @@ function statusOf(p: PuzzleSummary, storage: ProgressStorage): Status {
       palette: storage.loadPalette(p.id, length),
       replay: storage.loadReplay(p.id) ? percent : null,
       unverified: solved === 'unverified',
+      foil: storage.loadFoil(p.id),
     }
   }
   return percent > 0 ? { kind: 'started', percent } : { kind: 'new' }
@@ -50,7 +51,7 @@ export function PuzzleSlot({ puzzle: p, number, storage, next = false }: Props) 
   const size = `${p.width}×${p.height}`
   const label =
     status.kind === 'solved'
-      ? `${number}: ${p.title}, ${status.unverified ? 'imported, replay to verify' : 'solved'}${status.replay === null ? '' : `, replaying ${status.replay}%`}`
+      ? `${number}: ${p.title}, ${status.unverified ? 'imported, replay to verify' : status.foil ? 'foil' : 'solved'}${status.replay === null ? '' : `, replaying ${status.replay}%`}`
       : `${number}: ${size}${status.kind === 'started' ? `, ${status.percent}% done` : ''}${next ? ', up next' : ''}`
 
   return (
@@ -69,6 +70,7 @@ export function PuzzleSlot({ puzzle: p, number, storage, next = false }: Props) 
             height={p.height}
             palette={status.palette ?? Array<null>(p.width * p.height).fill(null)}
             gold={gold}
+            foil={status.foil}
             unverified={status.unverified}
             tilt={tiltOf(p.id)}
           />

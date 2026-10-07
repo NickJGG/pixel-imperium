@@ -77,6 +77,8 @@
   --board-border: var(--ink);
   --board-cursor: var(--pink);
   --board-crosshair: rgba(61, 231, 224, 0.14);
+  --board-mistake: var(--red);
+  --board-reveal: var(--cyan);
 
   /* Pre-album names, kept until every page is restyled. */
   --bg: var(--desk);
@@ -129,6 +131,7 @@
     --board-line: #dde4f6;
     --board-line-major: #13306b;
     --board-crosshair: rgba(61, 231, 224, 0.2);
+  --board-reveal: var(--cyan-dk);
   }
 }
 
@@ -161,4 +164,5 @@
   --board-line: #dde4f6;
   --board-line-major: #13306b;
   --board-crosshair: rgba(61, 231, 224, 0.2);
+  --board-reveal: var(--cyan-dk);
 }

@@ -29,12 +29,12 @@ export function ProfilePage() {
   const { account, storage } = useAccount()
   const album = useMemo(() => {
     if (!campaign) return null
-    const ids = profile.campaigns.find(c => c.id === campaign.id)?.verifiedPuzzleIds ?? []
-    const verified = new Set(ids)
+    const entry = profile.campaigns.find(c => c.id === campaign.id) ?? { verifiedPuzzleIds: [], foilPuzzleIds: [] }
+    const verified = new Set(entry.verifiedPuzzleIds)
     return {
       verified,
       progress: provinceStates(campaign, id => verified.has(id)),
-      stickers: profileStickers(campaign, ids, storage),
+      stickers: profileStickers(campaign, entry, storage),
       crests: crestsOf(campaign, storage),
     }
   }, [profile, campaign, storage])
@@ -46,6 +46,9 @@ export function ProfilePage() {
   const showcase = album?.stickers.slice(0, SHOWCASE.length) ?? []
   const total = campaign?.provinces.reduce((n, p) => n + p.puzzles.length, 0) ?? 0
   const complete = album?.progress.provinces.filter(p => p.state === 'conquered').length ?? 0
+  const foil = album
+    ? album.stickers.filter(s => s.foil).length
+    : profile.campaigns.reduce((n, c) => n + c.foilPuzzleIds.length, 0)
 
   return (
     <main className={cover.page}>
@@ -76,9 +79,9 @@ export function ProfilePage() {
               <dt>{campaign ? `stickers of ${total}` : 'stickers'}</dt>
               <dd>{album ? album.stickers.length : profile.verifiedSolves}</dd>
             </div>
-            <div title="Foil arrives with hints">
+            <div>
               <dt>foil</dt>
-              <dd>–</dd>
+              <dd>{foil}</dd>
             </div>
             {campaign && (
               <div>
@@ -201,6 +204,7 @@ export function ProfileSticker({ sticker: s, tilt }: { sticker: StickerEntry; ti
       width={puzzle.width}
       height={puzzle.height}
       palette={s.palette}
+      foil={s.foil}
       gold={s.number === GOLD_SLOT}
       tilt={lean}
     />

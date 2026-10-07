@@ -40,7 +40,10 @@ describe('latestStickers', () => {
       number: 2,
       palette: ['#fff'],
       unverified: false,
+      foil: false,
     })
+    storage.saveFoil('b2', true)
+    expect(latestStickers(campaign, storage)[0]?.foil).toBe(true)
   })
 
   it('falls back to the latest stickers with art for the showcase, fewer signed out', () => {
@@ -58,13 +61,14 @@ describe('profileStickers', () => {
   beforeEach(() => stubStorage())
   afterEach(() => vi.unstubAllGlobals())
 
-  it("keeps the profile's order, with art only where the viewer has it", () => {
+  it("keeps the profile's order and foil, with art only where the viewer has it", () => {
     const viewer = new ProgressStorage(null)
     viewer.savePalette('a2', ['#fff'])
-    const stickers = profileStickers(campaign, ['b1', 'gone', 'a2'], viewer)
-    expect(stickers.map(s => [s.puzzle.id, s.province, s.number, s.palette])).toEqual([
-      ['b1', 1, 1, null],
-      ['a2', 0, 2, ['#fff']],
+    viewer.saveFoil('b1', true)
+    const stickers = profileStickers(campaign, { verifiedPuzzleIds: ['b1', 'gone', 'a2'], foilPuzzleIds: ['a2'] }, viewer)
+    expect(stickers.map(s => [s.puzzle.id, s.province, s.number, s.palette, s.foil])).toEqual([
+      ['b1', 1, 1, null, false],
+      ['a2', 0, 2, ['#fff'], true],
     ])
   })
 })

@@ -8,7 +8,7 @@ function fakeApi(progress: MyProgress = { puzzles: {}, assists: null }) {
   return {
     fetchProgress: vi.fn<SyncApi['fetchProgress']>(async () => progress),
     putProgress: vi.fn<SyncApi['putProgress']>(async () => ({ applied: true })),
-    solve: vi.fn<SyncApi['solve']>(async () => ({ solved: true, palette: ['#f00', null] })),
+    solve: vi.fn<SyncApi['solve']>(async () => ({ solved: true, palette: ['#f00', null], foil: true })),
   }
 }
 
@@ -91,8 +91,10 @@ describe('ProgressSync', () => {
           solved: 'verified',
           progress: { cells: '#x', replaying: true, updatedAt: '2026-01-02T00:00:00.000Z' },
           palette: ['#f00', null],
+          foil: true,
+          hinted: false,
         },
-        c: { solved: 'unverified', progress: null, palette: null },
+        c: { solved: 'unverified', progress: null, palette: null, foil: false, hinted: true },
       },
       assists: null,
     })
@@ -107,6 +109,8 @@ describe('ProgressSync', () => {
     expect(storage.loadSolved('b')).toBe('verified')
     expect(storage.loadPalette('b', 2)).toEqual(['#f00', null])
     expect(storage.loadSolved('c')).toBe('unverified')
+    expect([storage.loadFoil('b'), storage.loadHinted('b')]).toEqual([true, false])
+    expect([storage.loadFoil('c'), storage.loadHinted('c')]).toEqual([false, true])
   })
 
   it('pull sends local changes first and keeps the cache when offline', async () => {
@@ -134,6 +138,7 @@ describe('ProgressSync', () => {
     expect(api.solve).toHaveBeenCalledExactlyOnceWith('a', { cells: ['filled', 'empty'] })
     expect(storage.loadSolved('a')).toBe('verified')
     expect(storage.loadPalette('a', 2)).toEqual(['#f00', null])
+    expect(storage.loadFoil('a')).toBe(true)
     expect(storage.loadSolved('b')).toBe('unverified')
   })
 })

@@ -263,6 +263,31 @@ describe('PlayStore persistence', () => {
     expect(storage.loadReplay('test')).toBe(false)
   })
 
+  it('makes a first solve foil only without a hint, and never changes it after', () => {
+    solve(makeStore())
+    expect(storage.loadFoil('test')).toBe(true)
+    const replay = makeStore()
+    replay.clear({ autoMarkEmptyLines: false })
+    replay.showHint({ kind: 'reveal', index: 1 })
+    solve(replay)
+    expect(storage.loadFoil('test')).toBe(true)
+
+    storage.clear()
+    const hinted = makeStore()
+    hinted.showHint({ kind: 'mistake', index: 0 })
+    expect(hinted.getState()).toMatchObject({ hint: { kind: 'mistake', index: 0 }, hinted: true })
+    solve(hinted)
+    expect(storage.loadFoil('test')).toBe(false)
+    expect(makeStore().getState().hinted).toBe(true)
+  })
+
+  it('drops the hint on show at the next edit', () => {
+    const s = makeStore()
+    s.showHint({ kind: 'reveal', index: 1 })
+    drag(s, 'fill', [at(0, 1)])
+    expect(s.getState()).toMatchObject({ hint: null, hinted: true })
+  })
+
   it('loads the stored palette when it opens already solved', () => {
     const s = makeStore()
     solve(s)
@@ -308,9 +333,18 @@ describe('PlayStore with an account', () => {
     expect(account.loadSolved('test')).toBe('verified')
   })
 
-  it('marks a re-solved unverified solve as awaiting the server', () => {
+  it('marks a re-solved unverified solve as awaiting the server, never foil', () => {
     account.saveSolved('test', 'unverified')
     solve(accountStore())
     expect(account.loadSolved('test')).toBe('local')
+    expect(account.loadFoil('test')).toBe(false)
+  })
+
+  it("takes the server's word on foil", () => {
+    const s = accountStore()
+    solve(s)
+    expect(account.loadFoil('test')).toBe(true)
+    s.setPalette(palette, false)
+    expect(account.loadFoil('test')).toBe(false)
   })
 })

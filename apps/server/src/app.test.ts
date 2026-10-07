@@ -3,6 +3,7 @@ import type {
   Campaign,
   CampaignSummary,
   HandleAvailability,
+  HintResponse,
   ImportResponse,
   MyProgress,
   Profile,
@@ -11,7 +12,15 @@ import type {
 } from '@pixel-imperium/protocol'
 import { eq } from 'drizzle-orm'
 import { createApp } from './app.ts'
-import { account, progress as progressTable, session, solve as solveTable, user, userSettings } from './db/schema.ts'
+import {
+  account,
+  hint as hintTable,
+  progress as progressTable,
+  session,
+  solve as solveTable,
+  user,
+  userSettings,
+} from './db/schema.ts'
 import { buildCampaign } from './campaigns.ts'
 import type { SeedPuzzle } from './puzzles.ts'
 import { createTestDeps, signedInUser, truncateAll } from './test-db.ts'
@@ -132,7 +141,7 @@ describe('GET /api/puzzles/:id', () => {
 describe('POST /api/puzzles/:id/solve', () => {
   it('returns the palette for the stored solution', async () => {
     const res = await solve(['filled', 'empty', 'empty', 'filled'])
-    expect(await res.json()).toEqual<SolveResponse>({ solved: true, palette: ['#f00', null, null, '#00f'] })
+    expect(await res.json()).toEqual<SolveResponse>({ solved: true, palette: ['#f00', null, null, '#00f'], foil: null })
   })
 
   it('accepts an alternate valid solution', async () => {
@@ -201,6 +210,106 @@ describe('solve records', () => {
   })
 })
 
+describe('POST /api/puzzles/:id/hint', () => {
+  const hintFor = (cells: unknown, cookie?: string, id = 'diag') =>
+    app.request(`/api/puzzles/${id}/hint`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...(cookie && { cookie }) },
+      body: JSON.stringify({ cells }),
+    })
+
+  it('points out a wrong cell first, fills or marks alike', async () => {
+    expect(await (await hintFor('##..')).json()).toEqual<HintResponse>({ kind: 'mistake', index: 1 })
+    expect(await (await hintFor('x...')).json()).toEqual<HintResponse>({ kind: 'mistake', index: 0 })
+  })
+
+  it('reveals a cell still to fill when nothing is wrong', async () => {
+    expect(await (await hintFor('#x..')).json()).toEqual<HintResponse>({ kind: 'reveal', index: 3 })
+  })
+
+  it('409s on a grid with nothing left to hint', async () => {
+    expect((await hintFor('#xx#')).status).toBe(409)
+  })
+
+  it.each([
+    ['wrong length', '#..'],
+    ['bad cell', '#..o'],
+    ['not a string', ['filled']],
+  ])('400s on %s', async (_, cells) => {
+    expect((await hintFor(cells)).status).toBe(400)
+  })
+
+  it('404s on unknown id', async () => {
+    expect((await hintFor('#', undefined, 'nope')).status).toBe(404)
+  })
+
+  it('records the hint for a signed-in player only', async () => {
+    const { id, cookie } = await signedInUser(db, auth)
+    await hintFor('....')
+    expect(await db.select().from(hintTable)).toEqual([])
+    await hintFor('....', cookie)
+    await hintFor('#...', cookie)
+    expect(await db.select().from(hintTable)).toEqual([{ userId: id, puzzleId: 'diag' }])
+    expect((await getProgress(cookie)).puzzles.diag).toMatchObject({ hinted: true })
+  })
+
+  it('429s past the rate limit', async () => {
+    const limited = createApp([fixture('main', { first: [diagonal] })], { db, auth })
+    const statuses = []
+    for (let i = 0; i < 61; i++) {
+      statuses.push((await limited.request('/api/puzzles/diag/hint', { method: 'POST', body: '{"cells":"...."}' })).status)
+    }
+    expect(statuses.slice(0, 60).every(s => s === 200)).toBe(true)
+    expect(statuses.at(-1)).toBe(429)
+  })
+})
+
+describe('foil', () => {
+  const solution = ['filled', 'empty', 'empty', 'filled']
+  const solveFoil = async (cookie: string) => ((await (await solve(solution, 'diag', cookie)).json()) as { foil: boolean }).foil
+  const hinting = (cookie: string) => send('POST', '/api/puzzles/diag/hint', { cells: '....' }, cookie)
+
+  it('is foil on a first solve with no hint', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    expect(await solveFoil(cookie)).toBe(true)
+    expect((await getProgress(cookie)).puzzles.diag?.foil).toBe(true)
+  })
+
+  it('is regular after a hint', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    await hinting(cookie)
+    expect(await solveFoil(cookie)).toBe(false)
+  })
+
+  it('stays as first decided on a re-solve, hint or not', async () => {
+    const regular = await signedInUser(db, auth, 'regular')
+    await hinting(regular.cookie)
+    await solveFoil(regular.cookie)
+    expect(await solveFoil(regular.cookie)).toBe(false)
+
+    const shiny = await signedInUser(db, auth, 'shiny')
+    await solveFoil(shiny.cookie)
+    await hinting(shiny.cookie)
+    expect(await solveFoil(shiny.cookie)).toBe(true)
+  })
+
+  it('never comes from an import, even once verified', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    await send('POST', '/api/me/import', { puzzles: [{ id: 'diag', solved: true, replaying: true }] }, cookie)
+    expect(await solveFoil(cookie)).toBe(false)
+
+    const fresh = await signedInUser(db, auth, 'fresh')
+    await send('POST', '/api/me/import', { puzzles: [{ id: 'diag', cells: '#xx#', solved: true, replaying: false }] }, fresh.cookie)
+    expect((await getProgress(fresh.cookie)).puzzles.diag).toMatchObject({ solved: 'verified', foil: false })
+  })
+
+  it('is ruled out by a hint used before signing in', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    await send('POST', '/api/me/import', { puzzles: [{ id: 'diag', cells: '#...', solved: false, replaying: false, hinted: true }] }, cookie)
+    expect(await solveFoil(cookie)).toBe(false)
+  })
+})
+
 describe('sign-up handle', () => {
   it('provisions a unique handle from the OAuth name', async () => {
     const { internalAdapter } = await auth.$context
@@ -253,8 +362,10 @@ describe('/api/me', () => {
           solved: 'verified',
           progress: { cells: '#..#', replaying: false, updatedAt: '2026-01-01T00:00:00.000Z' },
           palette: ['#f00', null, null, '#00f'],
+          foil: false,
+          hinted: false,
         },
-        other: { solved: 'unverified', progress: null, palette: null },
+        other: { solved: 'unverified', progress: null, palette: null, foil: false, hinted: false },
       },
       assists,
     })
@@ -330,6 +441,8 @@ describe('POST /api/me/import', () => {
         solved: 'verified',
         progress: expect.objectContaining({ cells: '#xx#', replaying: false }),
         palette: ['#f00', null, null, '#00f'],
+        foil: false,
+        hinted: false,
       },
     })
   })
@@ -434,7 +547,7 @@ describe('GET /api/users/:handle', () => {
     image: null,
     joinedAt: expect.any(String),
     verifiedSolves: 1,
-    campaigns: [{ id: 'alpha', verifiedPuzzleIds: ['diag'] }],
+    campaigns: [{ id: 'alpha', verifiedPuzzleIds: ['diag'], foilPuzzleIds: [] }],
   }
 
   it('shows verified solves of known puzzles by campaign, without private fields', async () => {
@@ -453,9 +566,15 @@ describe('GET /api/users/:handle', () => {
     const o = await owner()
     await db.update(solveTable).set({ verified: true }).where(eq(solveTable.userId, o.id))
     expect((await profile('owner')).campaigns).toEqual([
-      { id: 'beta', verifiedPuzzleIds: ['dot'] },
-      { id: 'alpha', verifiedPuzzleIds: ['diag'] },
+      { id: 'beta', verifiedPuzzleIds: ['dot'], foilPuzzleIds: [] },
+      { id: 'alpha', verifiedPuzzleIds: ['diag'], foilPuzzleIds: [] },
     ])
+  })
+
+  it('lists foil stickers among the verified ones', async () => {
+    await owner()
+    await db.update(solveTable).set({ foil: true }).where(eq(solveTable.puzzleId, 'diag'))
+    expect((await profile('owner')).campaigns).toEqual([{ id: 'alpha', verifiedPuzzleIds: ['diag'], foilPuzzleIds: ['diag'] }])
   })
 
   it('404s on an unknown handle', async () => {

@@ -49,6 +49,7 @@ function Cover({ campaign, campaigns }: Props) {
   const next = continueAt(campaign, progress, isSolved)
   const solved = progress.provinces.reduce((n, p) => n + p.solved, 0)
   const total = progress.provinces.reduce((n, p) => n + p.total, 0)
+  const foil = latest.filter(s => s.foil && !s.unverified).length
   const showcase = showcaseFallback(latest, account !== null)
   const claim = unseen.length > 0 ? campaign.provinces[unseen.at(-1)!]! : undefined
 
@@ -80,7 +81,7 @@ function Cover({ campaign, campaigns }: Props) {
               <strong>
                 {solved} <em>/ {total}</em>
               </strong>
-              stickers collected
+              stickers collected{foil > 0 && ` · ${foil} foil`}
             </p>
             <div className={styles.bar} aria-hidden="true">
               {progress.provinces.map((p, i) => (
@@ -238,6 +239,7 @@ function StickerLink({ sticker: s, tilt, style }: { sticker: StickerEntry; tilt?
         palette={s.palette ?? Array<null>(puzzle.width * puzzle.height).fill(null)}
         gold={s.number === GOLD_SLOT}
         unverified={s.unverified}
+        foil={s.foil}
         tilt={tilt ?? tiltOf(puzzle.id)}
       />
     </Link>

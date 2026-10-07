@@ -1,7 +1,7 @@
 import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
-import { progressPercent } from '@pixel-imperium/nonogram'
-import type { Campaign, Province, PuzzleClues } from '@pixel-imperium/protocol'
+import { type Cell, progressPercent } from '@pixel-imperium/nonogram'
+import type { Campaign, HintResponse, Province, PuzzleClues } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
 import { SoundIcon } from '../album/icons.tsx'
 import { Slot } from '../album/Slot.tsx'
@@ -19,6 +19,7 @@ import { AssistChips } from './AssistChips.tsx'
 import { Board, REVEAL_MS } from './Board.tsx'
 import { ClearButton, LoopIcon } from './ClearButton.tsx'
 import { ColClues, RowClues } from './Clues.tsx'
+import { HintButton } from './HintButton.tsx'
 import { CLUE_SLOT, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, fitPlay } from './layout.ts'
 import { createLineHints } from './line-hints.ts'
 import { SidePage } from './SidePage.tsx'
@@ -90,6 +91,10 @@ function Play({
   const next = solved ? nextPuzzle(province.puzzles, puzzle.id, id => storage.loadSolved(id) !== null) : null
   const replaying = useStoreValue(store, s => s.replaying)
   const unverified = !solved && storage.loadSolved(puzzle.id) === 'unverified'
+  const [firstSolve] = useState(() => storage.loadSolved(puzzle.id) === null)
+  const hint = useStoreValue(store, s => s.hint)
+  const hinted = useStoreValue(store, s => s.hinted)
+  const [hintFailed, setHintFailed] = useState(false)
   const palette = useStoreValue(store, s => s.palette)
   const cells = useStoreValue(store, s => s.cells)
   const percent = useMemo(() => progressPercent(cells, puzzle.filledCount, false), [cells, puzzle.filledCount])
@@ -142,7 +147,7 @@ function Play({
     const abort = new AbortController()
     const cells = store.getState().cells.map(c => (c === 'filled' ? 'filled' : 'empty'))
     submitSolve(puzzle.id, { cells }, abort.signal).then(
-      res => (res.solved ? store.setPalette(res.palette) : setRevealFailed(true)),
+      res => (res.solved ? store.setPalette(res.palette, res.foil) : setRevealFailed(true)),
       () => !abort.signal.aborted && setRevealFailed(true),
     )
     return () => abort.abort()
@@ -209,12 +214,15 @@ function Play({
   const done = solved && !hideSticker
   const left = province.puzzles.filter(p => storage.loadSolved(p.id) === null).length
   const art = palette ?? Array<null>(puzzle.width * puzzle.height).fill(null)
+  // Read at each render: the first solve settles it, and an account's server answer can overrule the device.
+  const foil = storage.loadFoil(puzzle.id)
   const sticker = (
     <Sticker
       title={puzzle.title}
       width={puzzle.width}
       height={puzzle.height}
       palette={art}
+      foil={foil}
       gold={number === GOLD_SLOT}
       tilt={tiltOf(puzzle.id)}
     />
@@ -234,6 +242,10 @@ function Play({
         ) : moment === 'kept' ? (
           <Dymo tone="pink" className={styles.tag}>
             Sticker kept
+          </Dymo>
+        ) : moment === 'landed' && foil ? (
+          <Dymo tone="pink" className={styles.tag}>
+            +1 foil
           </Dymo>
         ) : (
           unverified && <Dymo className={styles.tag}>Imported: replay to verify</Dymo>
@@ -308,7 +320,7 @@ function Play({
                 <>
                   <p role="status">
                     {moment === 'landed'
-                      ? `Sticker #${number} added to ${province.name}. ${left === 0 ? 'Page complete.' : `${left} to go.`}`
+                      ? `${foil ? 'Foil sticker' : 'Sticker'} #${number} added to ${province.name}. ${left === 0 ? 'Page complete.' : `${left} to go.`}`
                       : moment === 'kept'
                         ? `Solved again. Sticker #${number} stays where it is.`
                         : `Sticker #${number} is in the album.`}
@@ -335,6 +347,24 @@ function Play({
           ) : (
             // Kept through the fly-in so the board doesn't resize under the sticker.
             <div className={styles.tools} inert={solved}>
+              {hint ? (
+                <p className={styles.hintLine} role="status">
+                  <Dymo tone="pink">{hintText(hint, cells, puzzle.width)}</Dymo>
+                </p>
+              ) : hintFailed ? (
+                <p className={styles.hintLine} role="status">
+                  Couldn't reach the album for a hint. Try again in a moment.
+                </p>
+              ) : (
+                firstSolve && (
+                  <p className={styles.hintLine}>
+                    <span className={styles.foilNote} data-lost={hinted || undefined}>
+                      <i aria-hidden="true" />
+                      {hinted ? 'Hint used: regular sticker' : 'No hints yet: this one will be foil'}
+                    </span>
+                  </p>
+                )
+              )}
               <div className={styles.dock}>
                 <div className={`${styles.seg} ${styles.touchOnly}`} role="group" aria-label="Touch tool">
                   {(['fill', 'mark'] as const).map(m => (
@@ -381,6 +411,7 @@ function Play({
                   </svg>
                 </button>
                 <ClearButton store={store} solved={false} disabled={!canClear} />
+                <HintButton store={store} confirmFirst={firstSolve && !hinted} onError={setHintFailed} />
               </div>
               <AssistChips />
             </div>
@@ -411,6 +442,12 @@ function Play({
       )}
     </main>
   )
+}
+
+function hintText({ kind, index }: HintResponse, cells: readonly Cell[], width: number): string {
+  const where = `row ${Math.floor(index / width) + 1}, column ${(index % width) + 1}`
+  if (kind === 'reveal') return `Hint: ${where} is filled`
+  return `Hint: ${where} shouldn't be ${cells[index] === 'marked' ? 'crossed' : 'filled'}`
 }
 
 function ArrowIcon() {

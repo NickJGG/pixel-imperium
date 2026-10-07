@@ -4,6 +4,8 @@ import type {
   CampaignSummary,
   HandleAvailability,
   HandleRejection,
+  HintRequest,
+  HintResponse,
   ImportRequest,
   ImportResponse,
   MyProgress,
@@ -50,6 +52,14 @@ export async function fetchPuzzle(id: string): Promise<PuzzleClues | null> {
 
 export const submitSolve = (id: string, body: SolveRequest, signal: AbortSignal | null = null) =>
   getJson<SolveResponse>(`/api/puzzles/${encodeURIComponent(id)}/solve`, jsonInit('POST', body, { signal }))
+
+/** `null` when the grid has nothing left to hint. */
+export async function requestHint(id: string, body: HintRequest): Promise<HintResponse | null> {
+  const res = await fetch(`/api/puzzles/${encodeURIComponent(id)}/hint`, jsonInit('POST', body))
+  if (res.status === 409) return null
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  return (await res.json()) as HintResponse
+}
 
 export const fetchMyProgress = () => getJson<MyProgress>('/api/me/progress')
 

@@ -63,8 +63,22 @@ export interface SolveRequest {
   cells: ('filled' | 'empty')[]
 }
 
-/** On success, `palette` is row-major hex colors, `null` for empty cells. */
-export type SolveResponse = { solved: true; palette: (string | null)[] } | { solved: false }
+/**
+ * On success, `palette` is row-major hex colors, `null` for empty cells. `foil` is the account's
+ * sticker as recorded, `null` when signed out (the device decides).
+ */
+export type SolveResponse = { solved: true; palette: (string | null)[]; foil: boolean | null } | { solved: false }
+
+/** `POST /api/puzzles/:id/hint`; `cells` as in `SavedProgress`. */
+export interface HintRequest {
+  cells: string
+}
+
+/**
+ * A row-major cell index: a cell that disagrees with the solution, or, when there are none, a cell
+ * still to fill. Answers 409 when the grid has nothing left to hint.
+ */
+export type HintResponse = { kind: 'mistake' | 'reveal'; index: number }
 
 export interface ApiError {
   error: string
@@ -100,6 +114,9 @@ export interface PuzzleRecord {
   progress: SavedProgress | null
   /** Reveal colors, present only for a verified solve. */
   palette: (string | null)[] | null
+  foil: boolean
+  /** A hint was given on the puzzle, so a first solve won't be foil. */
+  hinted: boolean
 }
 
 /** `GET /api/me/progress`; `assists` is `null` until the account first saves them. */
@@ -119,6 +136,8 @@ export interface ImportItem {
   cells?: string
   solved: boolean
   replaying: boolean
+  /** A hint was used on this device; the solve itself is never foil either way. */
+  hinted?: boolean
 }
 
 /** `POST /api/me/import`. */
@@ -156,6 +175,8 @@ export interface HandleRejection extends ApiError {
 export interface ProfileCampaign {
   id: string
   verifiedPuzzleIds: string[]
+  /** The foil ones among `verifiedPuzzleIds`. */
+  foilPuzzleIds: string[]
 }
 
 /** `GET /api/users/:handle`, public, and counting only verified solves, even for the owner. */

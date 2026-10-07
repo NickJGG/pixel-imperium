@@ -11,7 +11,7 @@ const decode: Record<string, Cell> = { '.': 'empty', '#': 'filled', x: 'marked' 
 
 export const encodeCells = (cells: readonly Cell[]): string => cells.map(c => encode[c]).join('')
 
-const KINDS = ['progress', 'solved', 'replay', 'palette', 'updated'] as const
+const KINDS = ['progress', 'solved', 'replay', 'palette', 'updated', 'foil', 'hinted'] as const
 type Kind = (typeof KINDS)[number]
 
 /** `local`: solved on this device, not (yet) confirmed by the server for an account. */
@@ -120,11 +120,29 @@ export class ProgressStorage {
     write(this.key('palette', puzzleId), JSON.stringify(palette))
   }
 
-  /** Every puzzle with a saved grid or solve. */
+  /** Decided at the first solve and kept through replays. */
+  loadFoil(puzzleId: string): boolean {
+    return read(this.key('foil', puzzleId)) === '1'
+  }
+
+  saveFoil(puzzleId: string, foil: boolean): void {
+    write(this.key('foil', puzzleId), foil ? '1' : null)
+  }
+
+  /** A hint was given on the puzzle, so its first solve won't be foil. */
+  loadHinted(puzzleId: string): boolean {
+    return read(this.key('hinted', puzzleId)) === '1'
+  }
+
+  saveHinted(puzzleId: string): void {
+    write(this.key('hinted', puzzleId), '1')
+  }
+
+  /** Every puzzle with a saved grid, solve or hint. */
   puzzleIds(): string[] {
     const ids = new Set<string>()
     for (const k of allKeys()) {
-      for (const kind of ['progress', 'solved'] as const) {
+      for (const kind of ['progress', 'solved', 'hinted'] as const) {
         const start = `${this.prefix}${kind}:`
         if (k.startsWith(start)) ids.add(k.slice(start.length))
       }

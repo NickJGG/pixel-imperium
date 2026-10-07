@@ -296,6 +296,17 @@ function paint(
   ctx.lineWidth = 3
   ctx.strokeRect(1.5, 1.5, cssWidth - 3, cssHeight - 3)
 
+  if (state.hint && !state.solved) {
+    const x = (state.hint.index % width) * cell
+    const y = Math.floor(state.hint.index / width) * cell
+    ctx.strokeStyle = ctx.fillStyle = color(state.hint.kind === 'mistake' ? '--board-mistake' : '--board-reveal')
+    ctx.globalAlpha = 0.35
+    ctx.fillRect(x, y, cell, cell)
+    ctx.globalAlpha = 1
+    ctx.lineWidth = 4
+    ctx.strokeRect(x + 2, y + 2, cell - 4, cell - 4)
+  }
+
   if (state.focused && !state.solved) {
     const { row, col } = state.cursor
     ctx.strokeStyle = color('--board-cursor')

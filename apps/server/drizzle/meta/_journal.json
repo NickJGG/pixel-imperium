@@ -15,6 +15,13 @@
       "when": 1791313890809,
       "tag": "0001_handles",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791410149965,
+      "tag": "0002_hints_foil",
+      "breakpoints": true
     }
   ]
 }
