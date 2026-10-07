@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { type CSSProperties, useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { Campaign, CampaignSummary } from '@pixel-imperium/protocol'
 import { useAccount } from '../account.ts'
@@ -27,7 +27,8 @@ function CampaignView({ campaign, campaigns }: Props) {
     return {
       progress,
       conquests,
-      from: conquests.length > 0 ? campaignProgress(campaign, storage, conquests) : undefined,
+      from:
+        conquests.length > 0 ? conquests.map((_, k) => campaignProgress(campaign, storage, conquests.slice(k))) : undefined,
     }
   })
   const [swept, setSwept] = useState(!from)
@@ -35,6 +36,11 @@ function CampaignView({ campaign, campaigns }: Props) {
 
   const showClosing = progress.conquered && swept
   const announced = swept ? conquests.map(i => campaign.provinces[i]!) : []
+  const last = conquests.at(-1)
+  const { height, step } = campaign.journey
+  // Between the latest conquest and the province it opened, or at the Throne's foot for the finale.
+  const atFoot = showClosing || last === undefined
+  const bannerAt = atFoot ? undefined : ({ '--y': (last * step + height + (last + 1) * step) / 2 } as CSSProperties)
   const activeIndex = progress.provinces.findIndex(p => p.state === 'active')
   const active = activeIndex === -1 ? undefined : { ...progress.provinces[activeIndex]!, ...campaign.provinces[activeIndex]! }
   const started = progress.provinces.some(p => p.solved > 0)
@@ -80,7 +86,7 @@ function CampaignView({ campaign, campaigns }: Props) {
       </div>
       <Journey campaign={campaign} progress={progress} from={from} onSwept={() => setSwept(true)} linked>
         {(showClosing || announced.length > 0) && (
-          <div className={mapStyles.banner} role="status">
+          <div className={`${mapStyles.banner} ${atFoot ? mapStyles.foot : ''}`} style={bannerAt} role="status">
             {announced.map(p => (
               <p key={p.id}>
                 <strong>{p.name} conquered.</strong> {p.flavour}

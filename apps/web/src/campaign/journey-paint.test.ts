@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CampaignJourney } from '@pixel-imperium/protocol'
-import { fadesOf, paintJourney } from './journey-paint.ts'
+import { fadesOf, litUntil, paintJourney, sweepMix } from './journey-paint.ts'
 import type { CampaignProgress, ProvinceState } from './progress.ts'
 
 // Three 30×30 Maps, overlapping by 15 rows, joined by a straight Road down column 15.
@@ -47,5 +47,43 @@ describe('paintJourney', () => {
   it('cuts the Journey at `rows`', () => {
     const px = paintJourney(journey, progressOf('active', 'next', 'locked'), { cols: 20, rows: 25 })
     expect(px.length).toBe(20 * 25 * 4)
+  })
+})
+
+describe('conquest beats', () => {
+  const before = progressOf('active', 'next', 'locked')
+  const after = progressOf('conquered', 'active', 'next')
+  const anim = (beats: { sweep?: number; march?: number; reveal?: number }) => ({
+    from: before,
+    c: 0,
+    sweep: 0,
+    march: 0,
+    reveal: 0,
+    shimmer: 0,
+    ...beats,
+  })
+
+  it('marches the lit Road from one Landmark to the next', () => {
+    expect(litUntil(journey, after, anim({ march: 0 }))).toBe(15)
+    expect(litUntil(journey, after, anim({ march: 0.5 }))).toBe(22)
+    expect(litUntil(journey, after, anim({ march: 1 }))).toBe(30)
+    expect(litUntil(journey, after)).toBe(30)
+  })
+
+  it('sweeps colour out from the Landmark, finishing everywhere', () => {
+    expect(sweepMix(0, 0)).toBe(0)
+    expect(sweepMix(0.5, 0.3)).toBe(1)
+    expect(sweepMix(0.5, 0.6)).toBe(0)
+    expect(sweepMix(0.5, 0.5)).toBeCloseTo(0.5)
+    expect(sweepMix(1, 1)).toBe(1)
+  })
+
+  it('paints the conquered Map grey before the sweep and in colour after it', () => {
+    const at = (sweep: number) =>
+      rgbaAt(paintJourney(journey, after, { cols: width, anim: anim({ sweep }) }), width, 5, 5)
+    const [r, g, b] = at(0)
+    expect(r).toBe(g)
+    expect(g).toBe(b)
+    expect(at(1).slice(0, 3)).toEqual([255, 0, 0])
   })
 })

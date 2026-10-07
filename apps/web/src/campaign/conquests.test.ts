@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { stubStorage } from '../test-storage.ts'
-import { markConquestsSeen, unseenConquests } from './conquests.ts'
+import { isConquestSeen, markConquestsSeen, unseenConquests } from './conquests.ts'
 import { campaignProgress } from './progress.ts'
 
 const puzzle = (id: string) => ({ id, title: id, width: 5, height: 5, filledCount: 1 })
@@ -29,6 +29,14 @@ describe('conquests', () => {
     markConquestsSeen(campaign, [0], storage)
     storage.saveSolved('b1', 'local')
     expect(unseenConquests(campaign, campaignProgress(campaign, storage), storage)).toEqual([1])
+  })
+
+  it('tells whether one conquest has been seen', () => {
+    const storage = new ProgressStorage(null)
+    expect(isConquestSeen(campaign, 0, storage)).toBe(false)
+    markConquestsSeen(campaign, [0], storage)
+    expect(isConquestSeen(campaign, 0, storage)).toBe(true)
+    expect(isConquestSeen(campaign, 1, storage)).toBe(false)
   })
 
   it('rebuilds the map as it was before unseen conquests', () => {

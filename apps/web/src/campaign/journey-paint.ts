@@ -2,9 +2,13 @@
  * The Journey's pixels for a player's progress: a conquered province's Map in its art colours, the
  * active one in greyscale, the rest under fog, each faded at its edges and laid over the Map above
  * it. The Road runs on top, lit up to the furthest province reached, with a marker at each Landmark.
+ *
+ * A conquest plays in beats, each running 0 → 1: its Map sweeps into colour outward from its
+ * Landmark, the Road marches on to the next Landmark, the next Map comes out of the fog, and once
+ * the last province falls a bright band shimmers down the whole Road.
  */
 import type { CampaignJourney } from '@pixel-imperium/protocol'
-import { mapFade } from './map-geometry.ts'
+import { mapFade, reachFrom } from './map-geometry.ts'
 import type { CampaignProgress, ProvinceState } from './progress.ts'
 
 export type Look = 'colour' | 'mono' | 'fog'
@@ -44,19 +48,58 @@ export function fadesOf(journey: CampaignJourney, cols: number): number[][] {
   return fades
 }
 
+const reachCache = new WeakMap<CampaignJourney, number[][]>()
+
+function reachesOf(journey: CampaignJourney): number[][] {
+  let reaches = reachCache.get(journey)
+  if (!reaches) {
+    reaches = journey.maps.map(({ landmark }) => reachFrom(journey.width, journey.height, landmark))
+    reachCache.set(journey, reaches)
+  }
+  return reaches
+}
+
+/** Conquest of province `c` mid-play; `from` is the Journey before it. */
+export interface ConquestAnim {
+  from: CampaignProgress
+  c: number
+  sweep: number
+  march: number
+  reveal: number
+  shimmer: number
+}
+
+/**
+ * How far the sweep has turned a cell `reach` from the Landmark to colour, 0 to 1, over a 0.2
+ * band: (sweep × 1.2 − reach) / 0.2, written so the far edge lands on exactly 1.
+ */
+export const sweepMix = (sweep: number, reach: number) => Math.max(0, Math.min(1, sweep * 6 - reach * 5))
+
+const reachedStop = ({ roadStops }: CampaignJourney, progress: CampaignProgress) =>
+  roadStops[Math.max(0, progress.provinces.findLastIndex(p => p.state === 'active' || p.state === 'conquered'))]!
+
+/** The last lit Road index: at the furthest province reached, or on its way there while marching. */
+export function litUntil(journey: CampaignJourney, progress: CampaignProgress, anim?: ConquestAnim): number {
+  const to = reachedStop(journey, progress)
+  if (!anim) return to
+  const from = reachedStop(journey, anim.from)
+  return Math.floor(from + (to - from) * anim.march)
+}
+
 const ROAD = { core: '#ffd34a', edge: '#6b4226', dimCore: '#9a92bd', dimEdge: '#4a4170' }
 const MARKER = { conquered: '#ffd34a', active: '#ff4fa3', other: '#9a92bd', corner: '#1a0614' }
+const SHIMMER = { head: '#fffbe6', trail: '#ffe680', headLength: 3, trailLength: 8 }
 
 /**
  * `cols` wide (the middle of the journey) and `rows` tall, from the top; `rows` cuts the Journey
- * short, for a Profile.
+ * short, for a Profile. With `anim`, `progress` is the Journey once that conquest has played.
  */
 export function paintJourney(
   journey: CampaignJourney,
   progress: CampaignProgress,
-  { cols, rows = journeyHeight(journey) }: { cols: number; rows?: number },
+  { cols, rows = journeyHeight(journey), anim }: { cols: number; rows?: number; anim?: ConquestAnim | undefined },
 ): Pixels {
-  const { width, height, step, maps, road, roadStops } = journey
+  const { width, height, step, maps, road } = journey
   const x0 = cropStart(journey, cols)
   const fades = fadesOf(journey, cols)
   // Straight alpha, 0–1, so each Map composites over the ones above it.
@@ -65,13 +108,29 @@ export function paintJourney(
   maps.forEach(({ colors }, i) => {
     const look = lookOf(progress.provinces[i]!.state)
     const fade = fades[i]!
+    const reach = reachesOf(journey)[i]!
+    // How far each cell has come from its look before the conquest.
+    const mix = !anim
+      ? null
+      : i === anim.c
+        ? (src: number) => sweepMix(anim.sweep, reach[src]!)
+        : i === anim.c + 1
+          ? () => anim.reveal
+          : null
+    const before = anim && lookOf(anim.from.provinces[i]!.state)
     for (let y = 0; y < height && i * step + y < rows; y++) {
       for (let x = 0; x < cols; x++) {
         const src = y * width + x + x0
         const hex = colors[src]
         const a = fade[src]!
         if (!hex || a === 0) continue
-        const c = shade(parseHex(hex), look)
+        const rgb = parseHex(hex)
+        let c = shade(rgb, look)
+        const t = mix?.(src) ?? 1
+        if (t < 1) {
+          const b = shade(rgb, before!)
+          c = [b[0] + (c[0] - b[0]) * t, b[1] + (c[1] - b[1]) * t, b[2] + (c[2] - b[2]) * t]
+        }
         const o = ((i * step + y) * cols + x) * 4
         const under = buf[o + 3]! * (1 - a)
         const out = a + under
@@ -87,16 +146,22 @@ export function paintJourney(
     buf.set([...parseHex(hex), 1], (y * cols + x) * 4)
   }
 
-  const reached = progress.provinces.findLastIndex(p => p.state === 'active' || p.state === 'conquered')
-  const litUntil = roadStops[Math.max(0, reached)]!
+  const lit = litUntil(journey, progress, anim)
   for (const [k, { x, y }] of road.entries()) {
     for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const)
-      put(x + dx, y + dy, k <= litUntil ? ROAD.edge : ROAD.dimEdge)
+      put(x + dx, y + dy, k <= lit ? ROAD.edge : ROAD.dimEdge)
   }
-  for (const [k, { x, y }] of road.entries()) put(x, y, k <= litUntil ? ROAD.core : ROAD.dimCore)
+  const { headLength, trailLength } = SHIMMER
+  const head = anim?.shimmer ? anim.shimmer * (road.length + headLength + trailLength) : -Infinity
+  for (const [k, { x, y }] of road.entries()) {
+    const behind = head - k
+    const core = k <= lit ? ROAD.core : ROAD.dimCore
+    put(x, y, behind < 0 ? core : behind < headLength ? SHIMMER.head : behind < headLength + trailLength ? SHIMMER.trail : core)
+  }
 
   maps.forEach(({ landmark }, i) => {
-    const state = progress.provinces[i]!.state
+    const settled = !anim || (i === anim.c ? anim.sweep >= 1 : i !== anim.c + 1 || anim.reveal >= 1)
+    const state = (settled ? progress : anim.from).provinces[i]!.state
     const c = state === 'conquered' ? MARKER.conquered : state === 'active' ? MARKER.active : MARKER.other
     for (let dy = -1; dy <= 1; dy++)
       for (let dx = -1; dx <= 1; dx++)

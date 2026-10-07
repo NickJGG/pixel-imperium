@@ -11,7 +11,7 @@ import {
 import { Link, useNavigate } from '@tanstack/react-router'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { FADE } from './map-geometry.ts'
-import { cropStart, fadesOf, journeyHeight, paintJourney } from './journey-paint.ts'
+import { type ConquestAnim, type Look, cropStart, fadesOf, journeyHeight, paintJourney, paintMap } from './journey-paint.ts'
 import { type CampaignProgress, isOpen } from './progress.ts'
 import styles from './Journey.module.css'
 
@@ -19,48 +19,146 @@ import styles from './Journey.module.css'
 const PHONE = '(max-width: 760px)'
 /** The least gap, in px, between a label and the Journey's edge. */
 const LABEL_INSET = 4
+const BEAT_MS = { scroll: 700, sweep: 1300, march: 1000, reveal: 600, shimmer: 1600 }
+/** Where a conquered Map's foot settles before its conquest plays, as a fraction of the viewport. */
+const CONQUEST_AT = 0.45
 
-interface Props {
-  campaign: Campaign
-  /** Must keep its identity across renders; a new object repaints. */
-  progress: CampaignProgress
-  /** The Journey as it stood before the latest conquests; `onSwept` fires once they've been shown. */
-  from?: CampaignProgress | undefined
-  onSwept?: () => void
-  /** Clicking an open province opens it; off for someone else's Journey. */
-  linked?: boolean
-  /** The last province shown, by index; the Journey ends at the foot of its Map. */
-  cutAfter?: number | undefined
-  /** Shown over the Journey's foot. */
-  children?: ReactNode
-}
-
-export function Journey({ campaign, progress, from, onSwept, linked = false, cutAfter, children }: Props) {
-  const { journey, provinces } = campaign
-  const { width, height, step, maps } = journey
+/** How many of a `width`-wide picture's middle columns fit the screen. */
+function useCols(width: number): number {
   const phoneCols = Math.round((width * 2) / 3)
   const [cols, setCols] = useState(() => (matchMedia(PHONE).matches ? phoneCols : width))
-  const rows = cutAfter === undefined ? journeyHeight(journey) : cutAfter * step + height
-  const shown = cutAfter === undefined ? maps.length : cutAfter + 1
-  const x0 = cropStart(journey, cols)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const overlayRef = useRef<HTMLDivElement>(null)
-  const navigate = useNavigate()
-  const finish = useEffectEvent(() => onSwept?.())
-
   useEffect(() => {
     const query = matchMedia(PHONE)
     const update = () => setCols(query.matches ? phoneCols : width)
     query.addEventListener('change', update)
     return () => query.removeEventListener('change', update)
   }, [phoneCols, width])
+  return cols
+}
+
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
+
+function scrollerOf(el: HTMLElement): HTMLElement {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    if (/auto|scroll/.test(getComputedStyle(p).overflowY)) return p
+  }
+  return document.scrollingElement as HTMLElement
+}
+
+interface Props {
+  campaign: Campaign
+  /** Must keep its identity across renders; a new object repaints. */
+  progress: CampaignProgress
+  /**
+   * The Journey before each conquest not yet shown, oldest first; they play once, in order, then
+   * `onSwept` fires.
+   */
+  from?: readonly CampaignProgress[] | undefined
+  onSwept?: () => void
+  /** Clicking an open province opens it; off for someone else's Journey. */
+  linked?: boolean
+  /** The last province shown, by index; the Journey ends at the foot of its Map. */
+  cutAfter?: number | undefined
+  /** Laid over the Journey, such as the conquest banner; it places itself, in Journey rows via `--h`. */
+  children?: ReactNode
+}
+
+export function Journey({ campaign, progress, from, onSwept, linked = false, cutAfter, children }: Props) {
+  const { journey, provinces } = campaign
+  const { width, height, step, maps } = journey
+  const cols = useCols(width)
+  const rows = cutAfter === undefined ? journeyHeight(journey) : cutAfter * step + height
+  const shown = cutAfter === undefined ? maps.length : cutAfter + 1
+  const x0 = cropStart(journey, cols)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const [playing, setPlaying] = useState(() => from !== undefined && !reducedMotion())
+  // What the canvas shows while a conquest plays; the animation mutates it frame by frame.
+  const frame = useRef<{ progress: CampaignProgress; anim?: ConquestAnim } | null>(
+    playing ? { progress: from![0]! } : null,
+  )
+  const navigate = useNavigate()
+
+  const draw = useEffectEvent(() => {
+    const ctx = canvasRef.current?.getContext('2d')
+    if (!ctx) return
+    const { progress: shownProgress, anim } = frame.current ?? { progress }
+    ctx.putImageData(new ImageData(paintJourney(journey, shownProgress, { cols, rows, anim }), cols, rows), 0, 0)
+  })
+  const finish = useEffectEvent(() => onSwept?.())
+
+  useEffect(() => draw(), [journey, progress, cols, rows])
 
   useEffect(() => {
-    const ctx = canvasRef.current!.getContext('2d')
-    if (!ctx) return
-    ctx.putImageData(new ImageData(paintJourney(journey, progress, { cols, rows }), cols, rows), 0, 0)
-    if (from) finish()
-  }, [journey, progress, from, cols, rows])
+    if (!from) return
+    if (reducedMotion()) {
+      finish()
+      return
+    }
+    let cancelled = false
+    let raf = 0
+    let timer = 0
+    const wait = (ms: number) => new Promise<void>(resolve => (timer = window.setTimeout(resolve, ms)))
+    const tween = (ms: number, set: (k: number) => void) =>
+      new Promise<void>(resolve => {
+        let t0: number | undefined
+        const tick = (now: number) => {
+          t0 ??= now
+          const k = Math.min(1, (now - t0) / ms)
+          set(k)
+          draw()
+          if (k < 1) raf = requestAnimationFrame(tick)
+          else resolve()
+        }
+        raf = requestAnimationFrame(tick)
+      })
+    const easeInOut = (k: number) => (k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2)
+
+    /** Brings Map `c`'s foot a little above the middle of the screen. */
+    const scrollTo = async (c: number) => {
+      const canvas = canvasRef.current!
+      const scroller = scrollerOf(canvas)
+      const rect = canvas.getBoundingClientRect()
+      const view = scroller === document.scrollingElement ? 0 : scroller.getBoundingClientRect().top
+      const foot = rect.top + ((c * step + height) / rows) * rect.height - view
+      const by = foot - scroller.clientHeight * CONQUEST_AT
+      if (Math.abs(by) < 8) return
+      scroller.scrollTo({ top: scroller.scrollTop + by, behavior: 'smooth' })
+      await wait(BEAT_MS.scroll)
+    }
+
+    const history = [...from, progress]
+    frame.current = { progress: history[0]! }
+    draw()
+    void (async () => {
+      for (let k = 0; k < from.length && !cancelled; k++) {
+        const [before, after] = [history[k]!, history[k + 1]!]
+        const c = after.provinces.findIndex(
+          (p, i) => p.state === 'conquered' && before.provinces[i]!.state !== 'conquered',
+        )
+        await scrollTo(c)
+        if (cancelled) return
+        const anim: ConquestAnim = { from: before, c, sweep: 0, march: 0, reveal: 0, shimmer: 0 }
+        frame.current = { progress: after, anim }
+        await tween(BEAT_MS.sweep, t => (anim.sweep = t))
+        if (c + 1 < maps.length) {
+          await tween(BEAT_MS.march, t => (anim.march = easeInOut(t)))
+          await tween(BEAT_MS.reveal, t => (anim.reveal = t))
+        }
+        if (after.conquered && k === from.length - 1) await tween(BEAT_MS.shimmer, t => (anim.shimmer = t))
+      }
+      if (cancelled) return
+      frame.current = null
+      draw()
+      setPlaying(false)
+      finish()
+    })()
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(raf)
+      clearTimeout(timer)
+    }
+  }, [from, progress, maps.length, step, height, rows])
 
   // Labels centre above their Landmark, which can sit near the Journey's edge; slide them back inside.
   // Re-measured on every render, as a label's width changes with its count and the font loading.
@@ -123,7 +221,7 @@ export function Journey({ campaign, progress, from, onSwept, linked = false, cut
           role="img"
           aria-label={`Map of ${campaign.name}`}
         />
-        <div ref={overlayRef} className={styles.overlay} aria-hidden="true">
+        <div ref={overlayRef} className={styles.overlay} data-hidden={playing || undefined} aria-hidden="true">
           {provinces.slice(0, shown).map((province, i) => {
             const { state, solved, total } = progress.provinces[i]!
             const { landmark } = maps[i]!
@@ -200,5 +298,33 @@ function ProvinceList({ campaign, progress, linked }: { campaign: Campaign; prog
         )
       })}
     </ol>
+  )
+}
+
+/** Province `index`'s Map on its own, for the head of its page; cropped on phones like the Journey. */
+export function ProvinceMap({ campaign, index, look }: { campaign: Campaign; index: number; look: Look }) {
+  const { journey } = campaign
+  const cols = useCols(journey.width)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const ctx = canvasRef.current!.getContext('2d')
+    ctx?.putImageData(new ImageData(paintMap(journey, index, look, cols), cols, journey.height), 0, 0)
+  }, [journey, index, look, cols])
+
+  return (
+    <div
+      className={`${styles.journey} ${styles.header}`}
+      style={{ '--w': cols, '--h': journey.height, '--fade': FADE } as CSSProperties}
+    >
+      <canvas
+        ref={canvasRef}
+        width={cols}
+        height={journey.height}
+        className={styles.canvas}
+        role="img"
+        aria-label={`Map of ${campaign.provinces[index]!.name}`}
+      />
+    </div>
   )
 }

@@ -8,6 +8,10 @@
   margin-inline: calc((100% - var(--size)) / 2);
 }
 
+.header {
+  margin-bottom: var(--space-2);
+}
+
 .frame {
   position: relative;
   overflow: hidden;
@@ -97,7 +101,9 @@ a.label:hover {
   position: absolute;
   left: calc(var(--fade) / var(--w) * 100% + var(--space-3));
   right: calc(var(--fade) / var(--w) * 100% + var(--space-3));
-  bottom: calc(var(--fade) / var(--h) * 100% + var(--space-3));
+  /* Centred on Journey row --y; `translate` stays clear of the `rise` transform. */
+  top: calc(var(--y) / var(--h) * 100%);
+  translate: 0 -50%;
   padding: var(--space-3) var(--space-4);
   background: var(--surface);
   color: var(--text);
@@ -105,6 +111,12 @@ a.label:hover {
   border-radius: var(--r-md);
   box-shadow: var(--sh) var(--sh) 0 var(--shadow);
   animation: rise 500ms ease-out both;
+}
+
+.banner.foot {
+  top: auto;
+  bottom: calc(var(--fade) / var(--h) * 100% + var(--space-3));
+  translate: none;
 }
 
 .banner p {

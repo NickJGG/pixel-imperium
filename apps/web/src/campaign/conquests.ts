@@ -28,3 +28,6 @@ export function markConquestsSeen(campaign: Campaign, indices: readonly number[]
   for (const i of indices) seen.add(keyOf(campaign, i))
   storage.saveMeta(META, JSON.stringify([...seen]))
 }
+
+export const isConquestSeen = (campaign: Campaign, index: number, storage: ProgressStorage): boolean =>
+  loadSeen(storage).has(keyOf(campaign, index))
