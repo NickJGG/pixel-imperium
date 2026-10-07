@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { Campaign, CampaignSummary } from '@pixel-imperium/protocol'
 import { useAccount } from '../account.ts'
-import { CampaignMap } from './CampaignMap.tsx'
+import { Journey } from './Journey.tsx'
 import { markConquestsSeen, unseenConquests } from './conquests.ts'
 import { campaignProgress } from './progress.ts'
 import styles from './Campaign.module.css'
-import mapStyles from './CampaignMap.module.css'
+import mapStyles from './Journey.module.css'
 
 interface Props {
   campaign: Campaign
@@ -78,7 +78,7 @@ function CampaignView({ campaign, campaigns }: Props) {
           </nav>
         )}
       </div>
-      <CampaignMap campaign={campaign} progress={progress} from={from} onSwept={() => setSwept(true)} linked>
+      <Journey campaign={campaign} progress={progress} from={from} onSwept={() => setSwept(true)} linked>
         {(showClosing || announced.length > 0) && (
           <div className={mapStyles.banner} role="status">
             {announced.map(p => (
@@ -91,7 +91,7 @@ function CampaignView({ campaign, campaigns }: Props) {
             )}
           </div>
         )}
-      </CampaignMap>
+      </Journey>
     </main>
   )
 }

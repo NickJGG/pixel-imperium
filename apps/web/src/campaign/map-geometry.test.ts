@@ -1,45 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { mapGeometry } from './map-geometry.ts'
-
-// A 5×5 ring (region 0) around a single neutral cell, with region 1 filling the bottom row.
-const rows = ['00000', '00000', '00.00', '00000', '11111']
-const map = {
-  width: 5,
-  height: 5,
-  colors: rows.join('').split('').map(() => '#000000'),
-  regions: rows.join('').split('').map(c => (c === '.' ? null : Number(c))),
-}
-
-describe('mapGeometry', () => {
-  const { regions, reach } = mapGeometry(map, 2)
-
-  it('anchors a label inside its region, even when the centroid falls in a hole', () => {
-    const { x, y } = regions[0]!.anchor
-    expect(map.regions[Math.floor(y) * 5 + Math.floor(x)]).toBe(0)
-  })
-
-  it('outlines every border edge exactly once', () => {
-    // Region 1 is a 5×1 strip: 5 top + 5 bottom + 2 ends.
-    expect(regions[1]!.outline.match(/M/g)).toHaveLength(12)
-  })
-
-  it('sweeps outward from the anchor', () => {
-    const { x, y } = regions[1]!.anchor
-    const anchor = Math.floor(y) * 5 + Math.floor(x)
-    expect(reach[anchor]).toBe(0)
-    expect(Math.max(...[20, 21, 22, 23, 24].map(i => reach[i]!))).toBe(1)
-  })
-})
+import { edgeFade, mapFade, reachFrom } from './map-geometry.ts'
 
 describe('edge fade', () => {
   const size = 30
-  const blank = {
-    width: size,
-    height: size,
-    colors: new Array<string | null>(size * size).fill('#000000'),
-    regions: new Array<number | null>(size * size).fill(null),
-  }
-  const { edge } = mapGeometry(blank, 0)
+  const edge = edgeFade(size, size, 11)
 
   it('fades in whole quarter steps', () => {
     expect(edge.filter(a => ![0, 0.25, 0.5, 0.75, 1].includes(a))).toEqual([])
@@ -54,6 +18,51 @@ describe('edge fade', () => {
   })
 
   it('is the same every time', () => {
-    expect(mapGeometry(blank, 0).edge).toEqual(edge)
+    expect(edgeFade(size, size, 11)).toEqual(edge)
+  })
+
+  it('differs by seed', () => {
+    expect(edgeFade(size, size, 18)).not.toEqual(edge)
+  })
+})
+
+describe('crop window fade', () => {
+  const [width, height, cols] = [60, 30, 40]
+  const full = edgeFade(width, height, 11)
+  const cropped = mapFade(width, height, cols, 11)
+  const column = (x: number) => Array.from({ length: height }, (_, y) => cropped[y * width + x]!)
+
+  it('hides everything outside the window', () => {
+    for (const x of [0, 9, 50, 59]) expect(column(x)).toEqual(new Array(height).fill(0))
+  })
+
+  it('fades again at the window edges', () => {
+    for (const x of [10, 49]) expect(Math.max(...column(x))).toBeLessThan(1)
+  })
+
+  it('never shows more than the full fade', () => {
+    expect(cropped.every((a, i) => a <= full[i]!)).toBe(true)
+  })
+
+  it('leaves the middle solid', () => {
+    expect(column(30).slice(10, 20)).toEqual(new Array(10).fill(1))
+  })
+
+  it('is the full fade when nothing is cropped', () => {
+    expect(mapFade(width, height, width, 11)).toEqual(full)
+  })
+})
+
+describe('reachFrom', () => {
+  const reach = reachFrom(20, 10, { x: 5, y: 4 })
+
+  it('starts at the landmark and ends at the farthest cell', () => {
+    expect(reach[4 * 20 + 5]).toBe(0)
+    expect(reach[9 * 20 + 19]).toBe(1)
+  })
+
+  it('grows with distance', () => {
+    expect(reach[4 * 20 + 6]).toBeLessThan(reach[4 * 20 + 9]!)
+    expect(reach[5 * 20 + 5]).toBeLessThan(reach[8 * 20 + 5]!)
   })
 })

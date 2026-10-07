@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { useAccount } from '../account.ts'
-import { CampaignMap } from '../campaign/CampaignMap.tsx'
+import { Journey } from '../campaign/Journey.tsx'
 import { provinceStates } from '../campaign/progress.ts'
 import list from '../campaign/Campaign.module.css'
 import styles from './Profile.module.css'
@@ -18,7 +18,10 @@ export function ProfilePage() {
     const verified = new Set(profile.campaigns.find(c => c.id === campaign.id)?.verifiedPuzzleIds)
     return provinceStates(campaign, id => verified.has(id))
   }, [profile, campaign])
-  const own = account?.handle.toLowerCase() === profile.handle.toLowerCase()
+  // Cut after the province they're marching on, or show it all once nothing lies beyond.
+  const next = progress?.provinces.findIndex(p => p.state === 'next') ?? -1
+  const cutAfter = next === -1 ? undefined : next
+  const own =account?.handle.toLowerCase() === profile.handle.toLowerCase()
 
   return (
     <main className={list.page}>
@@ -59,7 +62,7 @@ export function ProfilePage() {
           ))}
         </nav>
       )}
-      {campaign && progress && <CampaignMap key={campaign.id} campaign={campaign} progress={progress} />}
+      {campaign && progress && <Journey key={campaign.id} campaign={campaign} progress={progress} cutAfter={cutAfter} />}
     </main>
   )
 }

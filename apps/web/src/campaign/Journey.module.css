@@ -1,13 +1,9 @@
 /*
- * The faded edge overhangs the column, so the solid part lines up with it; capped by the
- * viewport's height. A phone just scales the whole map into the column.
+ * The faded edge overhangs the column, so the solid part lines up with it. A phone just scales
+ * its cropped window into the column.
  */
-.map {
-  --size: min(
-    100% * var(--w) / (var(--w) - 2 * var(--fade)),
-    1400px,
-    calc(78dvh * var(--w) / var(--h))
-  );
+.journey {
+  --size: min(100% * var(--w) / (var(--w) - 2 * var(--fade)), 1400px);
   width: var(--size);
   margin-inline: calc((100% - var(--size)) / 2);
 }
@@ -21,6 +17,7 @@
   display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: var(--w) / var(--h);
   image-rendering: pixelated;
 }
 
@@ -35,53 +32,46 @@
   opacity: 0;
 }
 
-.overlay svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.overlay path {
-  fill: none;
-  stroke-linecap: square;
-  vector-effect: non-scaling-stroke;
-}
-
-.overlay path[data-state='active'] {
-  stroke: var(--a1);
-  stroke-width: 3;
-}
-
-.overlay path[data-state='next'] {
-  stroke: rgba(244, 240, 255, 0.55);
-  stroke-width: 2;
-  stroke-dasharray: 4 4;
-}
-
 .label {
   position: absolute;
   transform: translate(-50%, -50%);
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 8px;
+  padding: 5px 12px;
   white-space: nowrap;
-  font: 400 11px var(--font-pixel);
+  font: 400 14px var(--font-pixel);
+  border: var(--bw) solid var(--on-a1);
   border-radius: var(--r-pill);
+  box-shadow: 3px 3px 0 var(--on-a1);
 }
 
 .label[data-state='active'] {
   background: var(--a1);
   color: var(--on-a1);
-  border: var(--bw) solid var(--on-a1);
+}
+
+.label[data-state='conquered'] {
+  background: #ffd34a;
+  color: #1f0e00;
+}
+
+.label[data-state='next'] {
+  background: rgba(25, 19, 49, 0.8);
+  color: #f4f0ff;
+  border-style: dashed;
+  border-color: #f4f0ff;
+}
+
+.label[data-state='locked'] {
+  background: rgba(25, 19, 49, 0.8);
+  color: #b3aacf;
+  border-color: #5b5280;
 }
 
 a.label {
   pointer-events: auto;
   text-decoration: none;
-  box-shadow: 2px 2px 0 var(--shadow);
   transition: transform 120ms;
 }
 
@@ -97,11 +87,6 @@ a.label:hover {
   width: 8px;
   height: 8px;
   fill: currentColor;
-}
-
-.label[data-state='next'] {
-  color: rgba(244, 240, 255, 0.8);
-  background: rgba(16, 12, 32, 0.6);
 }
 
 .count {
@@ -164,9 +149,16 @@ a.label:hover {
 }
 
 @media (max-width: 760px) {
-  .map {
+  .journey {
     width: 100%;
     margin-inline: 0;
+  }
+
+  .label {
+    gap: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    box-shadow: 2px 2px 0 var(--on-a1);
   }
 }
 

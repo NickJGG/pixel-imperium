@@ -10,7 +10,7 @@ const campaign: Campaign = {
   id: 'k',
   name: 'K',
   closingLine: '',
-  map: { width: 0, height: 0, colors: [], regions: [] },
+  journey: { width: 0, height: 0, step: 0, maps: [], road: [], roadStops: [] },
   provinces: [
     { id: 'a', name: 'A', flavour: '', puzzles: [puzzle('a1')] },
     { id: 'b', name: 'B', flavour: '', puzzles: [puzzle('b1')] },

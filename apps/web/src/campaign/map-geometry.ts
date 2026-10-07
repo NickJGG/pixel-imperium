@@ -1,126 +1,14 @@
-/**
- * Static facts about a campaign map, derived once from its regions layer: where each province's
- * label sits, its outline, and the order the conquest sweep reaches its cells.
- */
-import type { CampaignMap } from '@pixel-imperium/protocol'
-
-export interface RegionGeometry {
-  /** The label's centre, in cells. */
-  anchor: { x: number; y: number }
-  /** An SVG path along the region's border, in cell units. */
-  outline: string
-}
-
-export interface MapGeometry {
-  regions: RegionGeometry[]
-  /**
-   * Per cell, 0 to 1: how far the sweep has to travel to reach it, outward from its region's
-   * anchor, or from the map's centre for neutral terrain.
-   */
-  reach: number[]
-  /**
-   * Per cell, the opacity of the map's edge fade: 0, .25, .5, .75 or 1, over the outer `FADE`
-   * cells, along a ragged line so the map bleeds into the page.
-   */
-  edge: number[]
-}
+/** Static facts about one province Map: its ragged edge fade and how far the conquest sweep has to travel. */
 
 /** How deep the edge fade reaches, in cells. */
 export const FADE = 6
 
-const NEIGHBOURS = [
-  [1, 0],
-  [-1, 0],
-  [0, 1],
-  [0, -1],
-  [1, 1],
-  [1, -1],
-  [-1, 1],
-  [-1, -1],
-] as const
-
-export function mapGeometry({ width, height, regions }: CampaignMap, provinceCount: number): MapGeometry {
-  const regionAt = (x: number, y: number) =>
-    x < 0 || y < 0 || x >= width || y >= height ? undefined : regions[y * width + x]
-
-  // Depth of each cell inside its region: steps to the nearest cell outside it (or the map's edge).
-  const depth = new Array<number>(width * height).fill(-1)
-  let frontier: number[] = []
-  for (let i = 0; i < depth.length; i++) {
-    const x = i % width
-    const y = Math.floor(i / width)
-    if (NEIGHBOURS.some(([dx, dy]) => regionAt(x + dx, y + dy) !== regions[i])) {
-      depth[i] = 0
-      frontier.push(i)
-    }
-  }
-  for (let d = 1; frontier.length > 0; d++) {
-    const next: number[] = []
-    for (const i of frontier) {
-      const x = i % width
-      const y = Math.floor(i / width)
-      for (const [dx, dy] of NEIGHBOURS) {
-        const j = (y + dy) * width + (x + dx)
-        if (regionAt(x + dx, y + dy) === regions[i] && depth[j] === -1) {
-          depth[j] = d
-          next.push(j)
-        }
-      }
-    }
-    frontier = next
-  }
-
-  const cellsOf = Array.from({ length: provinceCount }, () => [] as number[])
-  regions.forEach((r, i) => r !== null && cellsOf[r]?.push(i))
-
-  const reach = new Array<number>(width * height).fill(0)
-  const spread = (cells: number[], cx: number, cy: number) => {
-    const dist = cells.map(i => Math.hypot((i % width) + 0.5 - cx, Math.floor(i / width) + 0.5 - cy))
-    const max = Math.max(1e-9, ...dist)
-    cells.forEach((i, k) => (reach[i] = dist[k]! / max))
-  }
-
-  const geometry = cellsOf.map((cells): RegionGeometry => {
-    if (cells.length === 0) return { anchor: { x: width / 2, y: height / 2 }, outline: '' }
-    const cx = cells.reduce((s, i) => s + (i % width) + 0.5, 0) / cells.length
-    const cy = cells.reduce((s, i) => s + Math.floor(i / width) + 0.5, 0) / cells.length
-    // The deepest cell, nearest the centroid on ties, so a ring-shaped region labels its band, not its hole.
-    let best = cells[0]!
-    let bestKey = [-1, 0]
-    for (const i of cells) {
-      const key = [depth[i]!, -Math.hypot((i % width) + 0.5 - cx, Math.floor(i / width) + 0.5 - cy)]
-      if (key[0]! > bestKey[0]! || (key[0] === bestKey[0] && key[1]! > bestKey[1]!)) {
-        best = i
-        bestKey = key
-      }
-    }
-    const anchor = { x: (best % width) + 0.5, y: Math.floor(best / width) + 0.5 }
-    spread(cells, anchor.x, anchor.y)
-
-    let outline = ''
-    for (const i of cells) {
-      const x = i % width
-      const y = Math.floor(i / width)
-      const r = regions[i]
-      if (regionAt(x, y - 1) !== r) outline += `M${x} ${y}h1`
-      if (regionAt(x, y + 1) !== r) outline += `M${x} ${y + 1}h1`
-      if (regionAt(x - 1, y) !== r) outline += `M${x} ${y}v1`
-      if (regionAt(x + 1, y) !== r) outline += `M${x + 1} ${y}v1`
-    }
-    return { anchor, outline }
-  })
-
-  spread(
-    regions.flatMap((r, i) => (r === null ? [i] : [])),
-    width / 2,
-    height / 2,
-  )
-  return { regions: geometry, reach, edge: edgeFade(width, height) }
-}
-
-/** Distance from the nearest edge, shifted by smooth value noise plus a little per-cell grain. */
-function edgeFade(width: number, height: number): number[] {
-  let seed = 11
+/**
+ * Per cell, the opacity of the Map's edge fade: 0, .25, .5, .75 or 1, over the outer `FADE` cells,
+ * along a ragged line so the Map bleeds into the page. Distance from the nearest edge, shifted by
+ * smooth value noise plus a little per-cell grain; `seed` gives each Map its own ragged line.
+ */
+export function edgeFade(width: number, height: number, seed: number): number[] {
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647
   const LATTICE = 6
   const lw = Math.ceil(width / LATTICE) + 2
@@ -146,4 +34,31 @@ function edgeFade(width: number, height: number): number[] {
       (noise(x, y) * 0.8 + fine[i]! * 0.2 - 0.5) * FADE * 0.9
     return Math.round(Math.max(0, Math.min(1, d / FADE)) * 4) / 4
   })
+}
+
+/**
+ * The Map's fade when only the middle `cols` columns are shown: the full fade, faded again at the
+ * crop window's own edges, and 0 outside it. Still `width` × `height`.
+ */
+export function mapFade(width: number, height: number, cols: number, seed: number): number[] {
+  const full = edgeFade(width, height, seed)
+  if (cols >= width) return full
+  const x0 = Math.floor((width - cols) / 2)
+  const crop = edgeFade(cols, height, seed + 1000)
+  return full.map((a, i) => {
+    const cx = (i % width) - x0
+    return cx < 0 || cx >= cols ? 0 : Math.min(a, crop[Math.floor(i / width) * cols + cx]!)
+  })
+}
+
+/**
+ * Per cell, 0 to 1: how far the conquest sweep has to travel to reach it from the Landmark.
+ * Squashed horizontally, as a Map is much wider than it is tall.
+ */
+export function reachFrom(width: number, height: number, landmark: { x: number; y: number }): number[] {
+  const dist = Array.from({ length: width * height }, (_, i) =>
+    Math.hypot(((i % width) - landmark.x) / 1.6, Math.floor(i / width) - landmark.y),
+  )
+  const max = Math.max(1e-9, ...dist)
+  return dist.map(d => d / max)
 }
