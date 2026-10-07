@@ -1,15 +1,19 @@
-/* Portrait: as wide as the page allows on a phone, capped by the viewport's height on a desktop. */
+/*
+ * The faded edge overhangs the column, so the solid part lines up with it; capped by the
+ * viewport's height. A phone just scales the whole map into the column.
+ */
 .map {
-  width: min(100%, 560px, calc(72dvh * var(--w) / var(--h)));
-  margin: 0 auto;
+  --size: min(
+    100% * var(--w) / (var(--w) - 2 * var(--fade)),
+    1400px,
+    calc(78dvh * var(--w) / var(--h))
+  );
+  width: var(--size);
+  margin-inline: calc((100% - var(--size)) / 2);
 }
 
 .frame {
   position: relative;
-  border: var(--bw) solid var(--line);
-  border-radius: var(--r-lg);
-  box-shadow: calc(var(--sh) + 1px) calc(var(--sh) + 1px) 0 var(--shadow);
-  background: var(--board-bg);
   overflow: hidden;
 }
 
@@ -106,9 +110,9 @@ a.label:hover {
 
 .banner {
   position: absolute;
-  left: var(--space-3);
-  right: var(--space-3);
-  bottom: var(--space-3);
+  left: calc(var(--fade) / var(--w) * 100% + var(--space-3));
+  right: calc(var(--fade) / var(--w) * 100% + var(--space-3));
+  bottom: calc(var(--fade) / var(--h) * 100% + var(--space-3));
   padding: var(--space-3) var(--space-4);
   background: var(--surface);
   color: var(--text);
@@ -157,6 +161,13 @@ a.label:hover {
   margin: var(--space-4) 0 0;
   padding-left: var(--space-6);
   line-height: 1.8;
+}
+
+@media (max-width: 760px) {
+  .map {
+    width: 100%;
+    margin-inline: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,10 +1,10 @@
 .page {
   flex: 1;
   overflow-y: auto;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: var(--space-4) var(--space-7) 56px;
+  /* Clips the map's faded overhang rather than scrolling to it. */
+  overflow-x: clip;
+  /* Centres a 1200px column while the scrollbar stays at the window edge. */
+  padding: var(--space-4) max(var(--space-7), calc((100% - 1200px) / 2 + var(--space-7))) 56px;
 }
 
 .sec {

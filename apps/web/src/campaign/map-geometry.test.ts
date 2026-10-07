@@ -30,3 +30,30 @@ describe('mapGeometry', () => {
     expect(Math.max(...[20, 21, 22, 23, 24].map(i => reach[i]!))).toBe(1)
   })
 })
+
+describe('edge fade', () => {
+  const size = 30
+  const blank = {
+    width: size,
+    height: size,
+    colors: new Array<string | null>(size * size).fill('#000000'),
+    regions: new Array<number | null>(size * size).fill(null),
+  }
+  const { edge } = mapGeometry(blank, 0)
+
+  it('fades in whole quarter steps', () => {
+    expect(edge.filter(a => ![0, 0.25, 0.5, 0.75, 1].includes(a))).toEqual([])
+  })
+
+  it('leaves the middle solid', () => {
+    for (let y = 10; y < size - 10; y++) for (let x = 10; x < size - 10; x++) expect(edge[y * size + x]).toBe(1)
+  })
+
+  it('fades the corners', () => {
+    for (const i of [0, size - 1, size * (size - 1), size * size - 1]) expect(edge[i]).toBeLessThan(1)
+  })
+
+  it('is the same every time', () => {
+    expect(mapGeometry(blank, 0).edge).toEqual(edge)
+  })
+})

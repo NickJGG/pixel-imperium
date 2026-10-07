@@ -27,11 +27,12 @@ function shade([r, g, b]: readonly number[], look: Look): [number, number, numbe
 
 const parseHex = (hex: string) => [1, 3, 5].map(k => parseInt(hex.slice(k, k + 2), 16))
 
-export function paint(map: CampaignMap, progress: CampaignProgress): Pixels {
+/** `edge` is each cell's opacity, so the map's edges fade into the page. */
+export function paint(map: CampaignMap, progress: CampaignProgress, edge: readonly number[]): Pixels {
   const out = new Uint8ClampedArray(map.width * map.height * 4)
   map.colors.forEach((hex, i) => {
     if (hex === null) return
-    out.set([...shade(parseHex(hex), lookOf(map.regions[i]!, progress)), 255], i * 4)
+    out.set([...shade(parseHex(hex), lookOf(map.regions[i]!, progress)), edge[i]! * 255], i * 4)
   })
   return out
 }

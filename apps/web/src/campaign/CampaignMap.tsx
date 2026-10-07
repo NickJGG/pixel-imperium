@@ -11,7 +11,7 @@ import {
 } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import type { Campaign } from '@pixel-imperium/protocol'
-import { mapGeometry } from './map-geometry.ts'
+import { FADE, mapGeometry } from './map-geometry.ts'
 import { type Pixels, paint } from './map-paint.ts'
 import { type CampaignProgress, isOpen } from './progress.ts'
 import styles from './CampaignMap.module.css'
@@ -54,14 +54,14 @@ export function CampaignMap({ campaign, progress, from, onSwept, linked = false,
     if (!ctx) return
     const put = (pixels: Pixels) =>
       ctx.putImageData(new ImageData(pixels, map.width, map.height), 0, 0)
-    const target = paint(map, progress)
+    const target = paint(map, progress, geometry.edge)
     if (!from || matchMedia('(prefers-reduced-motion: reduce)').matches) {
       put(target)
       if (from) finish()
       return
     }
 
-    const start = paint(map, from)
+    const start = paint(map, from, geometry.edge)
     const changed: { i: number; delay: number; duration: number }[] = []
     for (let i = 0; i < map.colors.length; i++) {
       const o = i * 4
@@ -132,7 +132,7 @@ export function CampaignMap({ campaign, progress, from, onSwept, linked = false,
   })
 
   return (
-    <div className={styles.map} style={{ '--w': map.width, '--h': map.height } as CSSProperties}>
+    <div className={styles.map} style={{ '--w': map.width, '--h': map.height, '--fade': FADE } as CSSProperties}>
       <div
         className={styles.frame}
         onClick={e => {
