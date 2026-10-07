@@ -12,7 +12,7 @@ import { useAccount } from '../account.ts'
 import { unseenConquests } from './conquests.ts'
 import { campaignProgress, continueAt, isOpen } from './progress.ts'
 import { GOLD_SLOT } from './PuzzleSlot.tsx'
-import { type StickerEntry, latestStickers, showcaseFallback } from './stickers.ts'
+import { SHOWCASE_SIZE, type StickerEntry, coverStickers, latestStickers, showcaseOf } from './stickers.ts'
 import styles from './Cover.module.css'
 
 interface Props {
@@ -50,7 +50,7 @@ function Cover({ campaign, campaigns }: Props) {
   const solved = progress.provinces.reduce((n, p) => n + p.solved, 0)
   const total = progress.provinces.reduce((n, p) => n + p.total, 0)
   const foil = latest.filter(s => s.foil && !s.unverified).length
-  const showcase = showcaseFallback(latest, account !== null)
+  const showcase = showcaseOf(coverStickers(latest), storage.loadShowcase(), account ? SHOWCASE_SIZE : 2).stickers
   const claim = unseen.length > 0 ? campaign.provinces[unseen.at(-1)!]! : undefined
 
   return (

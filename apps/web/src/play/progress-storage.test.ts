@@ -34,6 +34,16 @@ describe('ProgressStorage', () => {
     expect(account.loadFoil('a')).toBe(false)
   })
 
+  it('round-trips the showcase in order, and keeps it through a clear', () => {
+    expect(account.loadShowcase()).toEqual([])
+    account.saveShowcase(['b', 'a'])
+    account.clear()
+    expect(account.loadShowcase()).toEqual(['b', 'a'])
+    expect(signedOutStorage.loadShowcase()).toEqual([])
+    account.saveShowcase([])
+    expect(account.loadShowcase()).toEqual([])
+  })
+
   it('lists a puzzle with only a hint, and clears foil and hints', () => {
     account.saveHinted('a')
     account.saveFoil('b', true)

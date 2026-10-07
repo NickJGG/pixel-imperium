@@ -95,6 +95,7 @@ export class ProgressSync {
       if (foil) this.storage.saveFoil(id, true)
       if (hinted) this.storage.saveHinted(id)
     }
+    this.storage.saveShowcase(data.showcase)
     return data
   }
 

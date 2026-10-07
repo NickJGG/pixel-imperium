@@ -23,6 +23,8 @@ export const user = pgTable(
     handle: text('handle').notNull(),
     /** False until the player accepts or changes the provisional handle given at sign-up. */
     handleConfirmed: boolean('handle_confirmed').default(false).notNull(),
+    /** Up to three verified puzzle ids, biggest sticker first; app data, so not in `auth.ts`. */
+    showcase: text('showcase').array().default(sql`'{}'::text[]`).notNull(),
   },
   t => [uniqueIndex('user_handle_lower_idx').on(sql`lower(${t.handle})`)],
 )

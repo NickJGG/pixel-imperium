@@ -123,6 +123,15 @@ export interface PuzzleRecord {
 export interface MyProgress {
   puzzles: Record<string, PuzzleRecord>
   assists: Assists | null
+  showcase: string[]
+}
+
+/**
+ * `PUT /api/me/showcase`: up to three distinct puzzle ids, each a verified solve of the player, biggest
+ * sticker first. Answers 400 otherwise, and echoes the request on success.
+ */
+export interface Showcase {
+  puzzleIds: string[]
 }
 
 /** `PUT /api/me/settings`. */
@@ -187,4 +196,6 @@ export interface Profile {
   verifiedSolves: number
   /** Most recently solved in first. */
   campaigns: ProfileCampaign[]
+  /** Puzzle ids the player picked, biggest first; empty when they haven't, and the album falls back. */
+  showcase: string[]
 }

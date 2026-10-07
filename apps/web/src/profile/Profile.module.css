@@ -78,8 +78,77 @@
   letter-spacing: 0;
 }
 
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
 .settings {
   min-height: 38px;
+}
+
+.editor {
+  gap: var(--space-4);
+}
+
+.hint {
+  margin: 0;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 14px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A sticker to tap, not a pill: no paper, no press shadow. */
+.pick {
+  --btn-bg: transparent;
+  --btn-edge: transparent;
+
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 0;
+  padding: 4px;
+  border-radius: var(--r-md);
+}
+
+.pick > :first-child {
+  width: 100%;
+}
+
+.pick[aria-pressed='true'] {
+  --btn-bg: color-mix(in srgb, var(--cyan) 22%, transparent);
+  outline: 3px solid var(--cyan);
+  outline-offset: 0;
+}
+
+.pick:disabled {
+  opacity: 0.4;
+}
+
+.order {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font: 400 12px/1 var(--font-display);
+  color: var(--on-pink);
+  background: var(--pink);
+  box-shadow: 0 2px 0 var(--pink-dk);
+  transform: rotate(-8deg);
 }
 
 /* Clips the map's faded overhang to the column. */

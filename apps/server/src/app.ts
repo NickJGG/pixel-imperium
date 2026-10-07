@@ -19,10 +19,11 @@ import type {
   PuzzleClues,
   PuzzleRecord,
   PuzzleSummary,
+  Showcase,
   SolveResponse,
   SolveStatus,
 } from '@pixel-imperium/protocol'
-import { and, desc, eq, lt, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm'
 import type { Auth } from './auth.ts'
 import type { Db } from './db/index.ts'
 import { hint, progress, solve, user, userSettings } from './db/schema.ts'
@@ -53,6 +54,15 @@ function parseImportItem(value: unknown): ImportItem | null {
   if (cells !== undefined && typeof cells !== 'string') return null
   if (hinted !== undefined && typeof hinted !== 'boolean') return null
   return { id, solved, replaying, ...(cells !== undefined && { cells }), ...(hinted && { hinted }) }
+}
+
+const SHOWCASE_SIZE = 3
+
+/** Distinct puzzle ids, at most `SHOWCASE_SIZE`; whether they're the player's verified solves is checked separately. */
+function parseShowcase(value: unknown): string[] | null {
+  const ids = (value as { puzzleIds?: unknown } | null)?.puzzleIds
+  if (!Array.isArray(ids) || ids.length > SHOWCASE_SIZE || !ids.every(id => typeof id === 'string')) return null
+  return new Set(ids).size === ids.length ? ids : null
 }
 
 const handleIs = (handle: string) => sql`lower(${user.handle}) = ${handle.toLowerCase()}`
@@ -212,12 +222,14 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         if (foil) entry.foilPuzzleIds.push(puzzleId)
         byCampaign.set(p.campaignId, entry)
       }
+      const verified = new Set(solves.map(s => s.puzzleId))
       return c.json<Profile>({
         handle: owner.handle,
         image: owner.image,
         joinedAt: owner.createdAt.toISOString(),
         verifiedSolves,
         campaigns: [...byCampaign.values()],
+        showcase: owner.showcase.filter(id => verified.has(id) && byId.has(id)),
       })
     })
     .put('/me/handle', async c => {
@@ -235,11 +247,12 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
     })
     .get('/me/progress', async c => {
       const userId = c.get('user')!.id
-      const [solves, grids, hints, [settings]] = await Promise.all([
+      const [solves, grids, hints, [settings], [me]] = await Promise.all([
         db.select().from(solve).where(eq(solve.userId, userId)),
         db.select().from(progress).where(eq(progress.userId, userId)),
         db.select({ puzzleId: hint.puzzleId }).from(hint).where(eq(hint.userId, userId)),
         db.select().from(userSettings).where(eq(userSettings.userId, userId)),
+        db.select({ showcase: user.showcase }).from(user).where(eq(user.id, userId)),
       ])
       const records: Record<string, PuzzleRecord> = {}
       const record = (id: string) =>
@@ -254,7 +267,28 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
       for (const g of grids) {
         record(g.puzzleId).progress = { cells: g.cells, replaying: g.replaying, updatedAt: g.updatedAt.toISOString() }
       }
-      return c.json<MyProgress>({ puzzles: records, assists: settings?.assists ?? null })
+      const showcase = (me?.showcase ?? []).filter(id => records[id]?.solved === 'verified' && byId.has(id))
+      return c.json<MyProgress>({ puzzles: records, assists: settings?.assists ?? null, showcase })
+    })
+    .put('/me/showcase', async c => {
+      const puzzleIds = parseShowcase(await c.req.json().catch(() => null))
+      if (!puzzleIds) {
+        return c.json<ApiError>({ error: `puzzleIds must be at most ${SHOWCASE_SIZE} distinct puzzle ids` }, 400)
+      }
+      const userId = c.get('user')!.id
+      const known = puzzleIds.every(id => byId.has(id))
+      const owned =
+        known && puzzleIds.length > 0
+          ? await db.$count(
+              solve,
+              and(eq(solve.userId, userId), eq(solve.verified, true), inArray(solve.puzzleId, puzzleIds)),
+            )
+          : 0
+      if (!known || owned !== puzzleIds.length) {
+        return c.json<ApiError>({ error: 'every showcase sticker must be a verified solve of yours' }, 400)
+      }
+      await db.update(user).set({ showcase: puzzleIds }).where(eq(user.id, userId))
+      return c.json<Showcase>({ puzzleIds })
     })
     .put('/me/progress/:id', async c => {
       const p = byId.get(c.req.param('id'))

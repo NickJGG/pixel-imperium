@@ -162,6 +162,20 @@ export class ProgressStorage {
     for (const k of allKeys()) if (k.startsWith(this.prefix)) write(k, null)
   }
 
+  /** The account's showcase picks as last pulled; signed out, always empty. */
+  loadShowcase(): string[] {
+    try {
+      const ids: unknown = JSON.parse(this.loadMeta('showcase') ?? '[]')
+      return Array.isArray(ids) ? ids.filter(id => typeof id === 'string') : []
+    } catch {
+      return []
+    }
+  }
+
+  saveShowcase(puzzleIds: readonly string[]): void {
+    this.saveMeta('showcase', puzzleIds.length > 0 ? JSON.stringify(puzzleIds) : null)
+  }
+
   /** Namespace-wide values outside any puzzle, such as the sync's dirty set. */
   loadMeta(name: string): string | null {
     return read(`${this.prefix}meta:${name}`)

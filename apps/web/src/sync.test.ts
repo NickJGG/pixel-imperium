@@ -4,7 +4,7 @@ import { ProgressStorage } from './play/progress-storage.ts'
 import { ProgressSync, SYNC_DELAY_MS, type SyncApi } from './sync.ts'
 import { stubStorage } from './test-storage.ts'
 
-function fakeApi(progress: MyProgress = { puzzles: {}, assists: null }) {
+function fakeApi(progress: MyProgress = { puzzles: {}, assists: null, showcase: [] }) {
   return {
     fetchProgress: vi.fn<SyncApi['fetchProgress']>(async () => progress),
     putProgress: vi.fn<SyncApi['putProgress']>(async () => ({ applied: true })),
@@ -97,6 +97,7 @@ describe('ProgressSync', () => {
         c: { solved: 'unverified', progress: null, palette: null, foil: false, hinted: true },
       },
       assists: null,
+      showcase: ['b'],
     })
     storage.saveCells('stale', '#', '2026-01-01T00:00:00.000Z')
     const data = await new ProgressSync(storage, api).pull()
@@ -111,6 +112,7 @@ describe('ProgressSync', () => {
     expect(storage.loadSolved('c')).toBe('unverified')
     expect([storage.loadFoil('b'), storage.loadHinted('b')]).toEqual([true, false])
     expect([storage.loadFoil('c'), storage.loadHinted('c')]).toEqual([false, true])
+    expect(storage.loadShowcase()).toEqual(['b'])
   })
 
   it('pull sends local changes first and keeps the cache when offline', async () => {

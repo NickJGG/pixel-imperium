@@ -15,6 +15,7 @@ import type {
   PutSettingsRequest,
   PuzzleClues,
   SavedProgress,
+  Showcase,
   SolveRequest,
   SolveResponse,
 } from '@pixel-imperium/protocol'
@@ -73,6 +74,9 @@ export async function putSettings(assists: Assists): Promise<void> {
   const res = await fetch('/api/me/settings', jsonInit('PUT', { assists } satisfies PutSettingsRequest))
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
 }
+
+export const putShowcase = (puzzleIds: string[]) =>
+  getJson<Showcase>('/api/me/showcase', jsonInit('PUT', { puzzleIds } satisfies Showcase))
 
 export const importProgress = (body: ImportRequest) =>
   getJson<ImportResponse>('/api/me/import', jsonInit('POST', body))

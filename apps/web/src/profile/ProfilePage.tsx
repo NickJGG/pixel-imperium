@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { Nameplate } from '../album/Nameplate.tsx'
 import { PageThumb } from '../album/PageThumb.tsx'
@@ -8,8 +8,9 @@ import { useAccount } from '../account.ts'
 import { Journey } from '../campaign/Journey.tsx'
 import { isOpen, provinceStates } from '../campaign/progress.ts'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
-import { type StickerEntry, crestsOf, profileStickers } from '../campaign/stickers.ts'
+import { type StickerEntry, crestsOf, profileStickers, showcaseOf } from '../campaign/stickers.ts'
 import cover from '../campaign/Cover.module.css'
+import { ShowcaseEditor } from './ShowcaseEditor.tsx'
 import styles from './Profile.module.css'
 
 const route = getRouteApi('/u/$handle')
@@ -39,11 +40,14 @@ export function ProfilePage() {
     }
   }, [profile, campaign, storage])
   const own = account?.handle.toLowerCase() === profile.handle.toLowerCase()
+  /** The picks being edited, previewed on the cover; `null` when not editing. */
+  const [editing, setEditing] = useState<string[] | null>(null)
 
   // Cut after the province they're marching on, or show it all once nothing lies beyond.
   const next = album?.progress.provinces.findIndex(p => p.state === 'next') ?? -1
   const cutAfter = next === -1 ? undefined : next
-  const showcase = album?.stickers.slice(0, SHOWCASE.length) ?? []
+  const stickers = album?.stickers ?? []
+  const { stickers: showcase, picked } = showcaseOf(stickers, editing ?? profile.showcase, editing ? 0 : SHOWCASE.length)
   const total = campaign?.provinces.reduce((n, p) => n + p.puzzles.length, 0) ?? 0
   const complete = album?.progress.provinces.filter(p => p.state === 'conquered').length ?? 0
   const foil = album
@@ -66,10 +70,14 @@ export function ProfilePage() {
                   </li>
                 ))}
               </ul>
-              <p className={styles.caption}>Latest stickers · @{profile.handle}</p>
+              <p className={styles.caption}>
+                {editing
+                  ? 'Your picks'
+                  : `${picked ? 'Showcase · picked by' : 'Latest stickers ·'} @${profile.handle}`}
+              </p>
             </>
           ) : (
-            <p className={styles.caption}>No stickers yet.</p>
+            <p className={styles.caption}>{editing ? 'Tap stickers to pick them.' : 'No stickers yet.'}</p>
           )}
         </section>
 
@@ -97,11 +105,22 @@ export function ProfilePage() {
             </div>
           </dl>
           {own && (
-            <div>
+            <div className={styles.actions}>
+              {stickers.length > 0 && !editing && (
+                <button
+                  type="button"
+                  onClick={() => setEditing(showcaseOf(stickers, profile.showcase, 0).stickers.map(s => s.puzzle.id))}
+                >
+                  Edit showcase
+                </button>
+              )}
               <Link to="/settings" className={`${cover.pill} ${styles.settings}`}>
                 Settings
               </Link>
             </div>
+          )}
+          {own && editing && (
+            <ShowcaseEditor stickers={stickers} picks={editing} onChange={setEditing} onClose={() => setEditing(null)} />
           )}
 
           {started.length > 1 && campaign && (

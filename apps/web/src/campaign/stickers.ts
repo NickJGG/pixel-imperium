@@ -65,10 +65,27 @@ export function profileStickers(
   })
 }
 
-/** What the cover shows until a showcase is chosen: the latest stickers with art, three for an account, two signed out. */
-export function showcaseFallback(latest: readonly StickerEntry[], signedIn: boolean): StickerEntry[] {
-  return latest.filter(s => !s.unverified && s.palette !== null).slice(0, signedIn ? 3 : 2)
+/** A showcase holds at most this many; the first is the big one. */
+export const SHOWCASE_SIZE = 3
+
+/**
+ * The showcase on a cover: the player's `picks` found among their verified `stickers`, in pick order, or,
+ * with none of them here, the first `fallback` stickers (latest first) in their place.
+ */
+export function showcaseOf(
+  stickers: readonly StickerEntry[],
+  picks: readonly string[],
+  fallback = SHOWCASE_SIZE,
+): { stickers: StickerEntry[]; picked: boolean } {
+  const byId = new Map(stickers.map(s => [s.puzzle.id, s]))
+  const picked = picks.flatMap(id => byId.get(id) ?? [])
+  return picked.length > 0
+    ? { stickers: picked, picked: true }
+    : { stickers: stickers.slice(0, fallback), picked: false }
 }
+
+/** Of the device's latest stickers, those a cover can show: verified, with art. */
+export const coverStickers = (latest: readonly StickerEntry[]) => latest.filter(s => !s.unverified && s.palette !== null)
 
 /** A Crest: a province's last (gold) puzzle's picture, round on its Landmark. */
 export interface CrestArt {

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { stubStorage } from '../test-storage.ts'
-import { crestsOf, latestStickers, profileStickers, showcaseFallback } from './stickers.ts'
+import { coverStickers, crestsOf, latestStickers, profileStickers, showcaseOf } from './stickers.ts'
 
 const puzzle = (id: string) => ({ id, title: id, width: 1, height: 1, filledCount: 1 })
 
@@ -46,14 +46,37 @@ describe('latestStickers', () => {
     expect(latestStickers(campaign, storage)[0]?.foil).toBe(true)
   })
 
-  it('falls back to the latest stickers with art for the showcase, fewer signed out', () => {
-    solve('a1', '2026-01-04T00:00:00.000Z')
-    solve('a2', '2026-01-03T00:00:00.000Z', 'unverified')
-    solve('a3', '2026-01-02T00:00:00.000Z')
-    solve('b1', '2026-01-01T00:00:00.000Z')
-    const latest = latestStickers(campaign, storage)
-    expect(showcaseFallback(latest, true).map(s => s.puzzle.id)).toEqual(['a1', 'a3', 'b1'])
-    expect(showcaseFallback(latest, false).map(s => s.puzzle.id)).toEqual(['a1', 'a3'])
+})
+
+describe('showcaseOf', () => {
+  beforeEach(() => stubStorage())
+  afterEach(() => vi.unstubAllGlobals())
+
+  const storage = new ProgressStorage('u1')
+  const ids = ({ stickers, picked }: ReturnType<typeof showcaseOf>) => [stickers.map(s => s.puzzle.id), picked]
+
+  beforeEach(() => {
+    for (const [id, at] of [['a1', '04'], ['a2', '03'], ['a3', '02'], ['b1', '01']] as const) {
+      storage.saveSolved(id, id === 'a2' ? 'unverified' : 'verified')
+      storage.saveCells(id, '#', `2026-01-${at}T00:00:00.000Z`)
+      if (id !== 'a2') storage.savePalette(id, ['#fff'])
+    }
+  })
+
+  it('keeps the picks in their order', () => {
+    const cover = coverStickers(latestStickers(campaign, storage))
+    expect(ids(showcaseOf(cover, ['b1', 'a1']))).toEqual([['b1', 'a1'], true])
+  })
+
+  it('drops picks it has no verified sticker for', () => {
+    const cover = coverStickers(latestStickers(campaign, storage))
+    expect(ids(showcaseOf(cover, ['a2', 'gone', 'a3']))).toEqual([['a3'], true])
+  })
+
+  it('falls back to the latest verified stickers with art, as many as asked', () => {
+    const cover = coverStickers(latestStickers(campaign, storage))
+    expect(ids(showcaseOf(cover, []))).toEqual([['a1', 'a3', 'b1'], false])
+    expect(ids(showcaseOf(cover, ['a2'], 2))).toEqual([['a1', 'a3'], false])
   })
 })
 

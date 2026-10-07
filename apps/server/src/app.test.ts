@@ -10,7 +10,7 @@ import type {
   PuzzleClues,
   SolveResponse,
 } from '@pixel-imperium/protocol'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { createApp } from './app.ts'
 import {
   account,
@@ -341,6 +341,7 @@ describe('/api/me', () => {
     ['PUT', '/api/me/settings'],
     ['POST', '/api/me/import'],
     ['PUT', '/api/me/handle'],
+    ['PUT', '/api/me/showcase'],
   ])('%s %s 401s without a session', async (method, path) => {
     const res = await app.request(path, { method, body: method === 'GET' ? null : '{}' })
     expect(res.status).toBe(401)
@@ -368,6 +369,7 @@ describe('/api/me', () => {
         other: { solved: 'unverified', progress: null, palette: null, foil: false, hinted: false },
       },
       assists,
+      showcase: [],
     })
   })
 
@@ -548,6 +550,7 @@ describe('GET /api/users/:handle', () => {
     joinedAt: expect.any(String),
     verifiedSolves: 1,
     campaigns: [{ id: 'alpha', verifiedPuzzleIds: ['diag'], foilPuzzleIds: [] }],
+    showcase: [],
   }
 
   it('shows verified solves of known puzzles by campaign, without private fields', async () => {
@@ -579,6 +582,72 @@ describe('GET /api/users/:handle', () => {
 
   it('404s on an unknown handle', async () => {
     expect((await profileApp.request('/api/users/nobody')).status).toBe(404)
+  })
+})
+
+describe('PUT /api/me/showcase', () => {
+  const puzzles = { one: [diagonal, dot, ...['a', 'b', 'c'].map(id => ({ ...dot, id }))] }
+  const showcaseApp = createApp([fixture('alpha', puzzles)], { db, auth })
+  const put = (puzzleIds: unknown, cookie: string) =>
+    showcaseApp.request('/api/me/showcase', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ puzzleIds }),
+    })
+  const showcaseOf = async (handle: string) =>
+    ((await (await showcaseApp.request(`/api/users/${handle}`)).json()) as Profile).showcase
+
+  async function player() {
+    const p = await signedInUser(db, auth, 'Picker')
+    await db.insert(solveTable).values(
+      ['diag', 'dot', 'a', 'b', 'c'].map(puzzleId => ({ userId: p.id, puzzleId, verified: true })),
+    )
+    return p
+  }
+
+  it('keeps the picks in order, on the profile and in progress', async () => {
+    const { cookie } = await player()
+    const res = await put(['dot', 'diag', 'b'], cookie)
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ puzzleIds: ['dot', 'diag', 'b'] })
+    expect(await showcaseOf('picker')).toEqual(['dot', 'diag', 'b'])
+    const progress = await showcaseApp.request('/api/me/progress', { headers: { cookie } })
+    expect(((await progress.json()) as MyProgress).showcase).toEqual(['dot', 'diag', 'b'])
+  })
+
+  it('can be emptied', async () => {
+    const { cookie } = await player()
+    await put(['dot'], cookie)
+    expect((await put([], cookie)).status).toBe(200)
+    expect(await showcaseOf('picker')).toEqual([])
+  })
+
+  it('400s on more than three, repeats, or a malformed body', async () => {
+    const { cookie } = await player()
+    for (const ids of [['diag', 'dot', 'a', 'b'], ['dot', 'dot'], 'dot', [1], undefined]) {
+      expect((await put(ids, cookie)).status).toBe(400)
+    }
+    expect(await showcaseOf('picker')).toEqual([])
+  })
+
+  it('400s on a sticker that is unverified, unknown, or not yours', async () => {
+    const { cookie, id } = await player()
+    await db.update(solveTable).set({ verified: false }).where(eq(solveTable.puzzleId, 'a'))
+    const other = await signedInUser(db, auth, 'other')
+    await db.insert(solveTable).values({ userId: other.id, puzzleId: 'diag', verified: true })
+    await db.delete(solveTable).where(and(eq(solveTable.userId, id), eq(solveTable.puzzleId, 'diag')))
+    for (const ids of [['dot', 'a'], ['dot', 'nope'], ['dot', 'diag']]) {
+      expect((await put(ids, cookie)).status).toBe(400)
+    }
+    expect(await showcaseOf('picker')).toEqual([])
+  })
+
+  it('leaves out a pick whose puzzle has been retired', async () => {
+    const { cookie } = await player()
+    await put(['dot', 'c'], cookie)
+    const retired = createApp([fixture('alpha', { one: [diagonal, dot] })], { db, auth })
+    const profile = (await (await retired.request('/api/users/picker')).json()) as Profile
+    expect(profile.showcase).toEqual(['dot'])
   })
 })
 
