@@ -8,13 +8,10 @@ export function HandlePicker() {
   if (!account) return null
   return (
     <main className={styles.page}>
-      <section className={styles.card}>
-        <h1>Pick your handle</h1>
-        <p>
-          It’s your public name here, and your profile lives at <code>/u/your_handle</code>. You can change it later
-          in settings.
-        </p>
-        <HandleForm current={account.handle} submitLabel="Continue" allowUnchanged />
+      <section className={`${styles.card} ${styles.picker}`}>
+        <h1 className={styles.srOnly}>Pick your handle</h1>
+        <HandleForm current={account.handle} submitLabel="Write it on the cover" allowUnchanged nameplate />
+        <p className={styles.hint}>It’s your public name here. You can change it later in Settings.</p>
       </section>
     </main>
   )

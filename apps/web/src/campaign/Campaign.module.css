@@ -267,6 +267,30 @@
   color: var(--text-muted);
 }
 
+.page > .chipRail {
+  display: none;
+}
+
+.indexed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-4);
+}
+
+@media (max-width: 720px) {
+  .page > .chipRail {
+    display: flex;
+  }
+
+  .indexed {
+    display: block;
+  }
+
+  .indexed > .edgeRail {
+    display: none;
+  }
+}
+
 @media (max-width: 760px) {
   .page {
     padding: var(--space-2) var(--space-4) 40px;

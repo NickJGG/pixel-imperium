@@ -1,0 +1,25 @@
+.nameplate {
+  display: inline-grid;
+  gap: 2px;
+  justify-self: start;
+  max-width: 100%;
+  padding: 10px 14px;
+  background: var(--sticker);
+  border-radius: var(--r-md);
+  transform: rotate(-2deg);
+  box-shadow: 0 3px 0 var(--shade);
+}
+
+.nameplate small {
+  font: 600 11px var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #4d6196;
+}
+
+.nameplate b {
+  overflow-wrap: anywhere;
+  font: 400 22px/1.1 var(--font-display);
+  letter-spacing: -0.04em;
+  color: #2348e8;
+}

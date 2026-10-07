@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { stubStorage } from '../test-storage.ts'
-import { campaignProgress, nextPuzzle, provinceStates } from './progress.ts'
+import { campaignProgress, continueAt, nextPuzzle, provinceStates } from './progress.ts'
 
 const puzzle = (id: string) => ({ id, title: id, width: 5, height: 5, filledCount: 1 })
 
@@ -89,5 +89,30 @@ describe('nextPuzzle', () => {
     const all = ['p1', 'p2', 'p3', 'p4']
     expect(next('p2', all)).toBe('p3')
     expect(next('p4', all)).toBeUndefined()
+  })
+})
+
+describe('continueAt', () => {
+  const at = (solved: string[], opts?: { unlockAll?: boolean }) => {
+    const isSolved = (id: string) => solved.includes(id)
+    const target = continueAt(campaign, provinceStates(campaign, isSolved, opts), isSolved)
+    return target && { puzzle: target.puzzle.id, number: target.number, fresh: target.fresh }
+  }
+
+  it('starts a new player on the first puzzle', () => {
+    expect(at([])).toEqual({ puzzle: 'a1', number: 1, fresh: true })
+  })
+
+  it('picks the lowest unsolved puzzle in the active province', () => {
+    expect(at(['a2'])).toEqual({ puzzle: 'a1', number: 1, fresh: false })
+    expect(at(['a1', 'a2'])).toEqual({ puzzle: 'b1', number: 1, fresh: false })
+  })
+
+  it('takes the first open province when unlocking all', () => {
+    expect(at(['a1', 'a2', 'c1'], { unlockAll: true })?.puzzle).toBe('b1')
+  })
+
+  it('has nowhere to go once the campaign is conquered', () => {
+    expect(at(['a1', 'a2', 'b1', 'c1', 'd1'])).toBeNull()
   })
 })

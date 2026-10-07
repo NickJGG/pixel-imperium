@@ -3,7 +3,7 @@
  * every puzzle in it is solved, the first unconquered one is active, the one after it is next
  * (named on the map, still locked) and the rest are locked.
  */
-import type { Campaign } from '@pixel-imperium/protocol'
+import type { Campaign, Province, PuzzleSummary } from '@pixel-imperium/protocol'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 
 export type ProvinceState = 'locked' | 'next' | 'active' | 'conquered'
@@ -70,4 +70,27 @@ export function nextPuzzle<P extends { id: string }>(
   return rest.find(p => !isSolved(p.id)) ?? puzzles[i + 1] ?? null
 }
 
-export const isOpen =(state: ProvinceState) => state === 'active' || state === 'conquered'
+export interface ContinueAt {
+  province: Province
+  puzzle: PuzzleSummary
+  /** 1-based slot number on the province's pages. */
+  number: number
+  /** Nothing solved yet anywhere in the campaign. */
+  fresh: boolean
+}
+
+/** Where Continue goes: the lowest unsolved puzzle in the first active province; `null` once all is conquered. */
+export function continueAt(
+  campaign: Pick<Campaign, 'provinces'>,
+  progress: CampaignProgress,
+  isSolved: (puzzleId: string) => boolean,
+): ContinueAt | null {
+  const index = progress.provinces.findIndex(p => p.state === 'active')
+  const province = campaign.provinces[index]
+  const number = province ? province.puzzles.findIndex(p => !isSolved(p.id)) + 1 : 0
+  if (!province || number === 0) return null
+  const fresh = progress.provinces.every(p => p.solved === 0)
+  return { province, puzzle: province.puzzles[number - 1]!, number, fresh }
+}
+
+export const isOpen = (state: ProvinceState) => state === 'active' || state === 'conquered'

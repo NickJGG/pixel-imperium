@@ -1,7 +1,7 @@
 import { Link, Outlet, createRootRoute, createRoute, createRouter, notFound } from '@tanstack/react-router'
 import { accountReady, useAccount } from './account.ts'
 import { fetchCampaign, fetchCampaigns, fetchProfile, fetchPuzzle } from './api.ts'
-import { AppHeader } from './AppHeader.tsx'
+import { AppHeader, ThumbBar } from './AppHeader.tsx'
 import { CampaignPage } from './campaign/CampaignPage.tsx'
 import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
 import { ProvincePage } from './campaign/ProvincePage.tsx'
@@ -18,6 +18,7 @@ function Root() {
     <div className={styles.app}>
       <AppHeader />
       {needsHandle ? <HandlePicker /> : <Outlet />}
+      <ThumbBar />
       <ImportPrompt />
     </div>
   )
@@ -36,7 +37,7 @@ const rootRoute = createRootRoute({
 async function loadCampaign(id: string) {
   const [campaign] = await Promise.all([fetchCampaign(id), accountReady])
   if (!campaign) throw notFound()
-  rememberCampaign(campaign.id)
+  rememberCampaign(campaign)
   return campaign
 }
 

@@ -1,63 +1,97 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
 import { signOutAccount } from './account.ts'
+import { AlbumIcon, SettingsIcon, SignOutIcon } from './album/icons.tsx'
 import { PROVIDERS, signIn, useSession } from './auth.ts'
 import styles from './App.module.css'
 
-/** "Sign in" with a provider menu when signed out; avatar and handle with an account menu when signed in. */
+/** The avatar sticker and its menu sheet when signed in; a "Sign in" sheet when signed out. */
 export function AccountMenu() {
   const { data, isPending } = useSession()
   const router = useRouter()
   if (isPending) return null
-
-  if (!data) {
-    return (
-      <Menu label="Sign in" trigger="Sign in">
-        {PROVIDERS.map(p => (
-          <button
-            key={p.id}
-            type="button"
-            role="menuitem"
-            onClick={() => void signIn.social({ provider: p.id, callbackURL: window.location.href })}
-          >
-            {p.label}
-          </button>
-        ))}
-      </Menu>
-    )
-  }
+  if (!data) return <SignInMenu trigger="Sign in" triggerClassName={styles.signIn} />
 
   const { handle, image } = data.user
   return (
     <Menu
       label={`Account: @${handle}`}
+      triggerClassName={styles.avatar}
       trigger={
         <>
-          {image ? (
-            <img className={styles.avatar} src={image} alt="" referrerPolicy="no-referrer" />
-          ) : (
-            <span className={styles.avatar} aria-hidden="true">
-              {handle[0]?.toUpperCase()}
-            </span>
-          )}
+          <span className={styles.face}>
+            {image ? (
+              <img src={image} alt="" referrerPolicy="no-referrer" />
+            ) : (
+              <i aria-hidden="true">{handle[0]?.toUpperCase()}</i>
+            )}
+          </span>
           <span className={styles.handle}>@{handle}</span>
         </>
       }
     >
-      <Link to="/u/$handle" params={{ handle }} role="menuitem">
-        Profile
+      <Link to="/u/$handle" params={{ handle }} role="menuitem" className={styles.item}>
+        <span className={styles.ico}>
+          <AlbumIcon />
+        </span>
+        My album
       </Link>
-      <Link to="/settings" role="menuitem">
+      <Link to="/settings" role="menuitem" className={styles.item}>
+        <span className={styles.ico}>
+          <SettingsIcon />
+        </span>
         Settings
       </Link>
-      <button type="button" role="menuitem" onClick={() => void signOutAccount().then(() => router.invalidate())}>
+      <button
+        type="button"
+        role="menuitem"
+        className={styles.item}
+        onClick={() => void signOutAccount().then(() => router.invalidate())}
+      >
+        <span className={styles.ico}>
+          <SignOutIcon />
+        </span>
         Sign out
       </button>
     </Menu>
   )
 }
 
-function Menu({ label, trigger, children }: { label: string; trigger: ReactNode; children: ReactNode }) {
+interface SignInMenuProps {
+  trigger: ReactNode
+  triggerClassName: string | undefined
+  /** Opens above the trigger, for the thumb bar. */
+  up?: boolean
+}
+
+export function SignInMenu({ trigger, triggerClassName, up }: SignInMenuProps) {
+  return (
+    <Menu label="Sign in" trigger={trigger} triggerClassName={triggerClassName} up={up}>
+      <h2>Keep your album safe</h2>
+      <p>Sign in to earn foil and keep your stickers on any device.</p>
+      {PROVIDERS.map(p => (
+        <button
+          key={p.id}
+          type="button"
+          role="menuitem"
+          onClick={() => void signIn.social({ provider: p.id, callbackURL: window.location.href })}
+        >
+          Sign in with {p.label}
+        </button>
+      ))}
+    </Menu>
+  )
+}
+
+interface MenuProps {
+  label: string
+  trigger: ReactNode
+  triggerClassName: string | undefined
+  up?: boolean | undefined
+  children: ReactNode
+}
+
+function Menu({ label, trigger, triggerClassName, up, children }: MenuProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -75,12 +109,19 @@ function Menu({ label, trigger, children }: { label: string; trigger: ReactNode;
 
   return (
     <div ref={rootRef} className={styles.menuRoot}>
-      <button type="button" aria-label={label} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(o => !o)}>
+      <button
+        type="button"
+        className={triggerClassName}
+        aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(o => !o)}
+      >
         {trigger}
       </button>
       {open && (
         <div
-          className={styles.menu}
+          className={`${styles.menu} ${up ? styles.up : ''}`}
           role="menu"
           onClick={e => (e.target as Element).closest('[role="menuitem"]') && setOpen(false)}
         >

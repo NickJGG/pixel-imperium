@@ -1,51 +1,117 @@
 import type { ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
-import { AccountMenu } from './AccountMenu.tsx'
+import { Link, useRouterState } from '@tanstack/react-router'
+import { useAccount } from './account.ts'
+import { AccountMenu, SignInMenu } from './AccountMenu.tsx'
+import { AlbumIcon, AutoIcon, DayIcon, NightIcon, PlayIcon, ProfileIcon, SoundIcon } from './album/icons.tsx'
+import { useCurrentCampaign } from './campaign/last-campaign.ts'
+import { type ContinueAt, campaignProgress, continueAt } from './campaign/progress.ts'
 import { type Theme, updateSettings, useSettings } from './settings.ts'
 import styles from './App.module.css'
 
-const nextTheme: Record<Theme, Theme> = { auto: 'light', light: 'dark', dark: 'auto' }
-const themeLabel: Record<Theme, string> = { auto: 'Auto', light: 'Light', dark: 'Dark' }
+const nextTheme: Record<Theme, Theme> = { dark: 'light', light: 'auto', auto: 'dark' }
+const themeLabel: Record<Theme, string> = { dark: 'Night', light: 'Day', auto: 'Auto' }
+const themeIcon: Record<Theme, ReactNode> = { dark: <NightIcon />, light: <DayIcon />, auto: <AutoIcon /> }
 
-const themeIcon: Record<Theme, ReactNode> = {
-  auto: (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="8" />
-      <path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" />
-    </svg>
-  ),
-  light: (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-    </svg>
-  ),
-  dark: (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />
-    </svg>
-  ),
+/** The next puzzle in the campaign last shown, recomputed on every navigation since solves land between them. */
+function useContinue(): ContinueAt | null {
+  const campaign = useCurrentCampaign()
+  const { storage } = useAccount()
+  useRouterState({ select: s => s.location.href })
+  if (!campaign) return null
+  return continueAt(campaign, campaignProgress(campaign, storage), id => storage.loadSolved(id) !== null)
 }
 
+/** The cobalt spine bar across the top. On phones it compacts and Continue moves to the `ThumbBar`. */
 export function AppHeader() {
-  const { theme } = useSettings()
+  const { theme, sound } = useSettings()
+  const next = useContinue()
   return (
-    <header className={styles.header}>
-      <Link to="/" className={styles.brand}>
-        <span className={styles.pixels} aria-hidden="true" />
-        Pixel Imperium
+    <header className={styles.spine}>
+      <Link to="/" className={styles.logo}>
+        <span>Pixel</span> Imperium
       </Link>
-      <div className={styles.actions}>
+      {next && (
+        <span className={styles.continue}>
+          <span className={styles.nextUp}>
+            {next.fresh ? (
+              `Your album starts in ${next.province.name}`
+            ) : (
+              <>
+                Next up: #{next.number} {next.puzzle.title}
+              </>
+            )}
+          </span>
+          <Link to="/play/$id" params={{ id: next.puzzle.id }} className={styles.pill}>
+            {next.fresh ? 'Start' : 'Continue'}
+          </Link>
+        </span>
+      )}
+      <span className={styles.tools}>
         <button
           type="button"
+          className={styles.round}
+          aria-label={sound ? 'Sound on. Turn it off.' : 'Sound off. Turn it on.'}
+          aria-pressed={sound}
+          onClick={() => updateSettings({ sound: !sound })}
+        >
+          <SoundIcon on={sound} />
+        </button>
+        <button
+          type="button"
+          className={styles.round}
           aria-label={`Theme: ${themeLabel[theme]}. Switch to ${themeLabel[nextTheme[theme]]}.`}
           onClick={() => updateSettings({ theme: nextTheme[theme] })}
         >
           {themeIcon[theme]}
-          <span className={styles.themeLabel}>{themeLabel[theme]}</span>
         </button>
         <AccountMenu />
-      </div>
+      </span>
     </header>
+  )
+}
+
+/** The phone's bottom bar: Album, a raised Continue, and Profile. Hidden while playing and on wider screens. */
+export function ThumbBar() {
+  const next = useContinue()
+  const { account } = useAccount()
+  const playing = useRouterState({ select: s => s.location.pathname.startsWith('/play/') })
+  if (playing) return null
+
+  return (
+    <nav className={styles.thumbBar} aria-label="Album navigation">
+      <Link to="/" className={styles.thumbItem}>
+        <AlbumIcon />
+        Album
+      </Link>
+      {next ? (
+        <Link
+          to="/play/$id"
+          params={{ id: next.puzzle.id }}
+          className={styles.fab}
+          aria-label={next.fresh ? 'Start' : `Continue: #${next.number} ${next.puzzle.title}`}
+        >
+          <PlayIcon />
+        </Link>
+      ) : (
+        <span />
+      )}
+      {account ? (
+        <Link to="/u/$handle" params={{ handle: account.handle }} className={styles.thumbItem}>
+          <ProfileIcon />
+          Profile
+        </Link>
+      ) : (
+        <SignInMenu
+          up
+          trigger={
+            <>
+              <ProfileIcon />
+              Profile
+            </>
+          }
+          triggerClassName={styles.thumbItem}
+        />
+      )}
+    </nav>
   )
 }

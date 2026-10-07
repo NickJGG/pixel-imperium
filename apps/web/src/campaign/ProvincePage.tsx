@@ -1,5 +1,7 @@
 import { Link } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import type { Campaign, Province } from '@pixel-imperium/protocol'
+import { ProvinceTabs } from '../album/ProvinceTabs.tsx'
 import { useAccount } from '../account.ts'
 import { isConquestSeen } from './conquests.ts'
 import { ProvinceMap } from './Journey.tsx'
@@ -17,7 +19,7 @@ export function ProvincePage({ campaign, province }: { campaign: Campaign; provi
 
   if (!isOpen(state)) return <LockedProvince campaign={campaign} province={province} progress={progress} />
   return (
-    <main className={styles.page}>
+    <Indexed campaign={campaign} province={province} progress={progress}>
       <BackToMap campaign={campaign} />
       <ProvinceMap campaign={campaign} index={index} look={claimed ? 'colour' : 'mono'} />
       <div className={styles.sec}>
@@ -37,7 +39,7 @@ export function ProvincePage({ campaign, province }: { campaign: Campaign; provi
           </li>
         ))}
       </ul>
-    </main>
+    </Indexed>
   )
 }
 
@@ -54,7 +56,7 @@ export function LockedProvince({
   const index = campaign.provinces.indexOf(province)
   const active = campaign.provinces.find((_, i) => progress.provinces[i]!.state === 'active')
   return (
-    <main className={styles.page}>
+    <Indexed campaign={campaign} province={province} progress={progress}>
       <BackToMap campaign={campaign} />
       <h1 className={styles.heading}>Not yet</h1>
       <p className={styles.empty}>
@@ -62,6 +64,29 @@ export function LockedProvince({
           ? `${province.name} opens once you conquer ${active.name}.`
           : 'This province is still in the fog. Conquer the provinces before it first.'}
       </p>
+    </Indexed>
+  )
+}
+
+/** A province's page with the album's index tabs: chips above it on phones, tabs off its right edge otherwise. */
+function Indexed({
+  campaign,
+  province,
+  progress,
+  children,
+}: {
+  campaign: Campaign
+  province: Province
+  progress: CampaignProgress
+  children: ReactNode
+}) {
+  return (
+    <main className={styles.page}>
+      <ProvinceTabs campaign={campaign} progress={progress} current={province.id} variant="chips" className={styles.chipRail} />
+      <div className={styles.indexed}>
+        <div>{children}</div>
+        <ProvinceTabs campaign={campaign} progress={progress} current={province.id} variant="edge" className={styles.edgeRail} />
+      </div>
     </main>
   )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import type { HandleProblem } from '@pixel-imperium/protocol'
 import { saveHandle } from '../account.ts'
+import { Nameplate } from '../album/Nameplate.tsx'
 import { checkHandle } from '../api.ts'
 import styles from './Me.module.css'
 
@@ -53,11 +54,13 @@ interface Props {
   submitLabel: string
   /** Lets the player keep `current` as is, confirming it. */
   allowUnchanged?: boolean
+  /** Shows the cover's nameplate above the field, written as the player types. */
+  nameplate?: boolean
   onSaved?: (handle: string) => void
 }
 
 /** A handle input with a live availability check, saving through `saveHandle`. */
-export function HandleForm({ current, submitLabel, allowUnchanged = false, onSaved }: Props) {
+export function HandleForm({ current, submitLabel, allowUnchanged = false, nameplate = false, onSaved }: Props) {
   const id = useId()
   const [value, setValue] = useState(current)
   const check = useHandleCheck(value)
@@ -85,8 +88,9 @@ export function HandleForm({ current, submitLabel, allowUnchanged = false, onSav
       : check.state === 'checking'
         ? 'Checking…'
         : check.state === 'available' && !unchanged
-          ? 'Available.'
+          ? `✓ Available. Your album will live at /u/${value}`
           : '')
+  const tone = check.state === 'unavailable' || error ? styles.bad : check.state === 'available' ? styles.good : styles.hint
   const blocked = check.state === 'unavailable' || check.state === 'checking' || (unchanged && !allowUnchanged)
 
   return (
@@ -97,7 +101,8 @@ export function HandleForm({ current, submitLabel, allowUnchanged = false, onSav
         if (!blocked && !saving) void submit()
       }}
     >
-      <label htmlFor={id}>Handle</label>
+      {nameplate && <Nameplate handle={value} className={styles.plate} />}
+      <label htmlFor={id}>{nameplate ? 'Pick a handle' : 'Handle'}</label>
       <div className={styles.handleInput}>
         <span aria-hidden="true">@</span>
         <input
@@ -114,17 +119,13 @@ export function HandleForm({ current, submitLabel, allowUnchanged = false, onSav
             setError(null)
           }}
         />
-        <button type="submit" className={styles.primary} disabled={blocked || saving}>
-          {saving ? 'Saving…' : submitLabel}
-        </button>
       </div>
-      <p
-        id={`${id}-status`}
-        className={check.state === 'unavailable' || error ? styles.bad : styles.hint}
-        aria-live="polite"
-      >
+      <p id={`${id}-status`} className={tone} aria-live="polite">
         {status}
       </p>
+      <button type="submit" data-variant="primary" disabled={blocked || saving}>
+        {saving ? 'Saving…' : submitLabel}
+      </button>
     </form>
   )
 }

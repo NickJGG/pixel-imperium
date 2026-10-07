@@ -60,7 +60,7 @@
 .card .hint,
 .card .bad {
   min-height: 1.45em;
-  margin: var(--space-2) 0 0;
+  margin: 0;
 }
 
 .card input {
@@ -74,25 +74,84 @@
   border-radius: var(--r-md);
 }
 
+.handleForm {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .handleForm label {
-  display: block;
-  margin-bottom: var(--space-2);
-  font-weight: 700;
+  font: 600 14px var(--font-ui);
+}
+
+.handleForm > button {
+  justify-self: end;
+}
+
+.handleForm .plate {
+  justify-self: center;
+  margin-bottom: var(--space-4);
 }
 
 .handleInput {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  min-height: 48px;
+  padding: 0 var(--space-3);
+  background: var(--card-2);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 3px 0 var(--line-soft);
 }
 
 .handleInput > span {
-  font: 700 18px var(--font-mono);
-  color: var(--text-muted);
+  font: 400 18px var(--font-display);
+  color: var(--ink-soft);
 }
 
-.handleInput input {
+.card .handleInput input {
   flex: 1;
+  min-height: 0;
+  padding: 10px 2px;
+  font: 400 18px var(--font-display);
+  letter-spacing: -0.03em;
+  background: transparent;
+  border: 0;
+  outline: 0;
+}
+
+.handleInput:has(input:focus-visible) {
+  outline: 3px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.good {
+  font: 600 13px var(--font-ui);
+  color: var(--ok);
+}
+
+.card .good {
+  min-height: 1.45em;
+  margin: 0;
+}
+
+.picker {
+  width: min(460px, 100%);
+  margin: var(--space-6) auto 0;
+  border: 0;
+  border-radius: var(--r-xl);
+  box-shadow: 0 6px 0 var(--shade);
+}
+
+.picker > .hint {
+  margin: var(--space-4) 0 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .primary {
