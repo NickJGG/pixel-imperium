@@ -8,7 +8,7 @@
     { "id": "marches", "name": "The Marches", "theme": "Farmland and villages", "flavour": "The fields are yours. Past the last fence, the gulls are calling.", "minSize": 5, "maxSize": 10 },
     { "id": "coast", "name": "The Coast", "theme": "Ports and the sea", "flavour": "The harbours fly your banner. Inland, the old trees close ranks.", "minSize": 10, "maxSize": 15 },
     { "id": "wildwood", "name": "The Wildwood", "theme": "Frontier forest", "flavour": "The old trees bow to you. Beyond them, the mountains ring with hammers.", "minSize": 15, "maxSize": 20 },
-    { "id": "forge", "name": "The Forge", "theme": "Mountains and craft", "flavour": "", "minSize": 20, "maxSize": 25 },
+    { "id": "forge", "name": "The Forge", "theme": "Mountains and craft", "flavour": "The forges burn in your name. Below the passes, the city walls catch the light.", "minSize": 20, "maxSize": 25 },
     { "id": "capital", "name": "The Capital", "theme": "The city", "flavour": "", "minSize": 25, "maxSize": 30 },
     { "id": "throne", "name": "The Throne", "theme": "Regalia and court", "flavour": "", "minSize": 30, "maxSize": 30 }
   ]
