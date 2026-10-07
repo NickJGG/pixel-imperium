@@ -1,6 +1,6 @@
 /**
  * Player preferences, persisted to localStorage; the theme is applied as `data-theme` on <html>.
- * For an account, the assists also sync to the server (see `account.ts`); the theme stays per device.
+ * For an account, the assists also sync to the server (see `account.ts`); the theme and sound stay per device.
  */
 import { useSyncExternalStore } from 'react'
 import type { Assists } from '@pixel-imperium/protocol'
@@ -9,6 +9,7 @@ export type Theme = 'auto' | 'light' | 'dark'
 
 export interface Settings extends Assists {
   theme: Theme
+  sound: boolean
 }
 
 export function assistsOf({ fadeClues, impossibleLines, autoMarkEmptyLines, crosshair, lockLine }: Settings): Assists {
@@ -16,7 +17,8 @@ export function assistsOf({ fadeClues, impossibleLines, autoMarkEmptyLines, cros
 }
 
 const defaults: Settings = {
-  theme: 'auto',
+  theme: 'dark',
+  sound: true,
   fadeClues: true,
   impossibleLines: true,
   autoMarkEmptyLines: true,
@@ -36,7 +38,7 @@ function load(): Settings {
   for (const k of Object.keys(defaults) as (keyof Settings)[]) {
     if (typeof saved[k] === typeof defaults[k]) Object.assign(settings, { [k]: saved[k] })
   }
-  if (!['auto', 'light', 'dark'].includes(settings.theme)) settings.theme = 'auto'
+  if (!['auto', 'light', 'dark'].includes(settings.theme)) settings.theme = defaults.theme
   return settings
 }
 

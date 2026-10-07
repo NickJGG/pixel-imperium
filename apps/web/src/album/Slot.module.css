@@ -1,0 +1,87 @@
+.slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  min-width: 0;
+  color: var(--ink);
+  border: 2px dashed color-mix(in srgb, var(--ink) 38%, transparent);
+  border-radius: var(--r-sm);
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--ink) 8%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--ink) 8%, transparent) 1px, transparent 1px);
+  background-size: calc(100% / var(--g, 10)) calc(100% / var(--g, 10));
+}
+
+.slot > b {
+  font: 400 13px var(--font-display);
+  opacity: 0.55;
+}
+
+.slot > small {
+  position: absolute;
+  bottom: 3px;
+  font: 700 9px var(--font-mono);
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.slot[data-started]::after {
+  content: attr(data-started);
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  padding: 1px 5px;
+  font: 700 10px var(--font-mono);
+  background: var(--pink);
+  color: var(--on-pink);
+  border-radius: var(--r-pill);
+}
+
+.gold {
+  border-color: var(--gold-dk);
+  background-color: color-mix(in srgb, var(--gold) 25%, transparent);
+}
+
+.next {
+  border-style: solid;
+  border-color: var(--pink);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--pink) 30%, transparent);
+  }
+}
+
+.locked {
+  opacity: 0.35;
+}
+
+.lock {
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+.filled {
+  border-color: transparent;
+  background: none;
+}
+
+.filled > * {
+  width: 100%;
+}
+
+@media (max-width: 460px) {
+  .slot > small {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .next {
+    animation: none;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--pink) 30%, transparent);
+  }
+}

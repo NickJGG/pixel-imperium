@@ -1,0 +1,35 @@
+.stamp {
+  display: inline-grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  padding: 8px;
+  text-align: center;
+  font: 400 12px/1.1 var(--font-display);
+  color: var(--pink);
+  border: 3px double currentColor;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sticker) 55%, transparent);
+  transform: rotate(var(--tilt));
+}
+
+.ok {
+  color: var(--ok);
+}
+
+.thunk {
+  animation: thunk 380ms cubic-bezier(0.3, 1.7, 0.5, 1) both;
+}
+
+@keyframes thunk {
+  from {
+    opacity: 0;
+    transform: rotate(var(--tilt)) scale(2.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thunk {
+    animation: none;
+  }
+}

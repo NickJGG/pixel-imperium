@@ -62,8 +62,9 @@
 }
 
 .menu button {
+  --btn-bg: transparent;
+  --btn-edge: transparent;
   justify-content: flex-start;
-  box-shadow: none;
 }
 
 .menu a {
@@ -131,14 +132,15 @@
 }
 
 .dialogActions .primary {
-  background: var(--a2);
-  color: var(--on-a2);
+  --btn-bg: var(--cyan);
+  --btn-ink: var(--on-cyan);
+  --btn-edge: var(--cyan-dk);
 }
 
 .dialogActions .ghost {
   margin-right: auto;
-  background: transparent;
-  box-shadow: none;
+  --btn-bg: transparent;
+  --btn-edge: transparent;
 }
 
 .message {

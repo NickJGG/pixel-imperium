@@ -21,6 +21,22 @@ Showing a solved puzzle in its palette colours.
 Clearing an already-solved puzzle to play it again; the puzzle stays solved.
 _Avoid_: Reset, restart
 
+**Sticker**:
+A solved puzzle's revealed picture as it appears in the album, one per solved **Puzzle**.
+_Avoid_: Card, badge, trophy
+
+**Foil**:
+A **Sticker** earned by solving a **Puzzle** the first time without any **Hint**.
+_Avoid_: Shiny, holo, rare, perfect
+
+**Hint**:
+A server-given nudge on a **Puzzle** in progress: one wrong cell pointed out, or one correct cell revealed.
+_Avoid_: Assist (assists are the free play settings and never cost **Foil**), clue, help
+
+**Crest**:
+A conquered **Province**'s hardest (last) **Puzzle**'s **Sticker**, shown round on that **Province**'s **Landmark**.
+_Avoid_: Emblem, badge, flag
+
 ### Players
 
 **Player**:
@@ -103,6 +119,9 @@ _Avoid_: Stop, node, pin
 - A **Campaign** has an ordered list of **Provinces**; the **Imperium**'s is four outer **Provinces**, then the **Capital**, then the **Throne**
 - A **Province** has its **Campaign**'s number of **Puzzles** (30 in the **Imperium**), ordered from easiest to hardest
 - Each **Province** unlocks on the **Conquest** of the one before it
+- A **Sticker** is **Foil** or not for good once its **Puzzle** is first solved; a **Replay** never changes it
+- Using one **Hint** on a **Puzzle** before its first solve rules out **Foil** for that **Puzzle**
+- A solve brought in by **Import** is never **Foil**, even once it becomes a **Verified solve**
 - Each **Province** has one **Map** with one **Landmark**; neighbouring **Maps** overlap where they fade
 
 ## Example dialogue

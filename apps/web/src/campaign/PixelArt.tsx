@@ -6,10 +6,11 @@ interface Props {
   width: number
   height: number
   palette: readonly (string | null)[]
+  className?: string | undefined
 }
 
 /** A solved puzzle's picture at one canvas pixel per cell; CSS scales it up unsmoothed. */
-export function PixelArt({ title, width, height, palette }: Props) {
+export function PixelArt({ title, width, height, palette, className = `${styles.box} ${styles.art}` }: Props) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -28,7 +29,7 @@ export function PixelArt({ title, width, height, palette }: Props) {
       ref={ref}
       width={width}
       height={height}
-      className={`${styles.box} ${styles.art}`}
+      className={className}
       style={{ '--w': width, '--h': height } as CSSProperties}
       role="img"
       aria-label={`${title}, solved`}

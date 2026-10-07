@@ -14,9 +14,11 @@ body,
 }
 
 body {
-  font-family: var(--font-ui);
-  background: var(--bg);
-  color: var(--text);
+  font: 500 17px/1.5 var(--font-ui);
+  background-color: var(--desk);
+  background-image: radial-gradient(var(--desk-dot) 1.5px, transparent 1.6px);
+  background-size: 18px 18px;
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -24,42 +26,82 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
 }
 
 a {
-  color: var(--a2);
+  color: var(--cyan);
 }
 
-/* The house button: outlined, with a solid offset shadow that presses in. */
+/*
+ * The house button: a pill sitting on a solid shadow that it drops onto when pressed. Bare buttons
+ * are paper; `data-variant` picks primary, cyan, danger or ghost. Variants only set the three
+ * --btn-* colours, so a module can recolour a button without restating the press.
+ */
 button {
-  font: 700 15px var(--font-ui);
-  color: var(--text);
-  background: var(--surface);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--r-md);
-  box-shadow: var(--sh) var(--sh) 0 var(--shadow);
+  --btn-bg: var(--card-2);
+  --btn-ink: var(--ink);
+  --btn-edge: var(--line-soft);
+
+  font: 600 16px var(--font-ui);
+  color: var(--btn-ink);
+  background: var(--btn-bg);
+  border: 0;
+  border-radius: var(--r-pill);
+  box-shadow: 0 var(--press) 0 var(--btn-edge);
   min-height: 44px;
-  padding: 0 var(--space-4);
+  padding: 0 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
+  white-space: nowrap;
   cursor: pointer;
+  transition:
+    transform 80ms linear,
+    box-shadow 80ms linear;
+}
+
+button[data-variant='primary'] {
+  --btn-bg: var(--pink);
+  --btn-ink: var(--on-pink);
+  --btn-edge: var(--pink-dk);
+}
+
+button[data-variant='cyan'] {
+  --btn-bg: var(--cyan);
+  --btn-ink: var(--on-cyan);
+  --btn-edge: var(--cyan-dk);
+}
+
+button[data-variant='danger'] {
+  --btn-bg: var(--red);
+  --btn-ink: var(--on-red);
+  --btn-edge: var(--red-dk);
+}
+
+button[data-variant='ghost'] {
+  --btn-bg: transparent;
+  --btn-edge: transparent;
+  padding: 0 var(--space-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 button:hover:not(:disabled) {
-  transform: translate(-1px, -1px);
+  transform: translateY(-1px);
+  box-shadow: 0 calc(var(--press) + 1px) 0 var(--btn-edge);
 }
 
 button:active:not(:disabled) {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--shadow);
+  transform: translateY(var(--press));
+  box-shadow: 0 0 0 transparent;
 }
 
 button:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: default;
 }
 
@@ -68,17 +110,21 @@ button svg {
   height: 18px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 2.4;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 :focus-visible {
-  outline: 3px solid var(--a2);
+  outline: 3px solid var(--cyan);
   outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none;
+  }
+
   button:hover:not(:disabled),
   button:active:not(:disabled) {
     transform: none;

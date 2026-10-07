@@ -96,13 +96,15 @@
 }
 
 .primary {
-  background: var(--a2);
-  color: var(--on-a2);
+  --btn-bg: var(--cyan);
+  --btn-ink: var(--on-cyan);
+  --btn-edge: var(--cyan-dk);
 }
 
 .destructive {
-  background: var(--bad);
-  color: var(--on-bad);
+  --btn-bg: var(--red);
+  --btn-ink: var(--on-red);
+  --btn-edge: var(--red-dk);
 }
 
 .providers {

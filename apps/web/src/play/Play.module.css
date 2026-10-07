@@ -237,10 +237,8 @@
 .modeToggle button {
   min-height: 48px;
   min-width: 92px;
-  border: 0;
+  --btn-edge: transparent;
   border-radius: 0;
-  box-shadow: none;
-  font-weight: 800;
   font-size: 16px;
 }
 
@@ -254,8 +252,8 @@
 }
 
 .modeToggle button[aria-pressed='true'] {
-  background: var(--a1);
-  color: var(--on-a1);
+  --btn-bg: var(--pink);
+  --btn-ink: var(--on-pink);
 }
 
 @media (any-pointer: coarse) {
@@ -324,17 +322,17 @@
 
 .confirm button {
   min-height: 36px;
-  box-shadow: 2px 2px 0 var(--shadow);
 }
 
 .confirm .danger {
-  background: var(--bad);
-  color: var(--on-bad);
+  --btn-bg: var(--red);
+  --btn-ink: var(--on-red);
+  --btn-edge: var(--red-dk);
 }
 
 .confirm .ghost {
-  background: transparent;
-  box-shadow: none;
+  --btn-bg: transparent;
+  --btn-edge: transparent;
 }
 
 .chips {
@@ -349,9 +347,9 @@
   min-height: 40px;
   padding: 0 14px;
   font-size: 13px;
-  background: transparent;
-  border-radius: var(--r-pill);
-  box-shadow: none;
+  --btn-bg: transparent;
+  --btn-edge: transparent;
+  border: 2px solid var(--line-soft);
 }
 
 .chips button:hover:not(:disabled),
@@ -360,8 +358,9 @@
 }
 
 .chips button[aria-pressed='true'] {
-  background: var(--a2);
-  color: var(--on-a2);
+  --btn-bg: var(--cyan);
+  --btn-ink: var(--on-cyan);
+  border-color: var(--cyan);
 }
 
 .chips svg {

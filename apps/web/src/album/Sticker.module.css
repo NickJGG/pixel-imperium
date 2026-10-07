@@ -1,0 +1,74 @@
+.sticker {
+  position: relative;
+  display: inline-block;
+  padding: 4px;
+  background: var(--sticker);
+  border-radius: var(--r-sm);
+  transform: rotate(var(--tilt, 0deg));
+  box-shadow:
+    0 2px 0 var(--shade),
+    0 6px 10px -4px var(--shade);
+  overflow: hidden;
+  line-height: 0;
+}
+
+.art {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.foil::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: color-dodge;
+  opacity: 0.75;
+  background: linear-gradient(115deg, transparent 20%, #ff9ad0 32%, #9ff 42%, #fff6a0 52%, #c8a0ff 62%, transparent 75%);
+  background-size: 300% 300%;
+  animation: shine 2.8s linear infinite;
+}
+
+@keyframes shine {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.gold {
+  background: linear-gradient(135deg, #ffe58a, var(--gold) 40%, #fff3b8 55%, var(--gold-dk));
+}
+
+.unverified {
+  background: transparent;
+  box-shadow: none;
+  outline: 2px dashed var(--ink-soft);
+  outline-offset: 2px;
+}
+
+.unverified .art {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+.round {
+  border-radius: 50%;
+}
+
+.round .art {
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foil::after {
+    animation: none;
+    background-position: 50% 0;
+  }
+}

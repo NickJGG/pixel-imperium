@@ -133,7 +133,7 @@ a.label:hover {
 }
 
 .banner .closing {
-  font: 800 22px var(--font-display);
+  font: 400 22px var(--font-display);
   text-align: center;
 }
 

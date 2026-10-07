@@ -1,0 +1,19 @@
+.dymo {
+  display: inline-block;
+  padding: 5px 10px 4px;
+  font: 400 12px var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--label-tape);
+  color: var(--on-label-tape);
+  border-radius: 3px;
+  transform: rotate(var(--tilt));
+  box-shadow:
+    inset 0 -2px 0 rgba(255, 255, 255, 0.08),
+    0 2px 0 var(--shade);
+}
+
+.pink {
+  background: var(--pink);
+  color: var(--on-pink);
+}

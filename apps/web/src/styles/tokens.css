@@ -1,26 +1,22 @@
 /*
- * Design tokens — "Night Market": chunky outlines, solid offset shadows, hot pink (--a1)
- * and cyan (--a2) accents. Dark is the signature theme; light keeps the same accents on
- * lavender. The canvas reads the --board-* values at draw time, so it follows the theme.
- *
- * Dark values appear twice: once for the system preference (unless light is forced)
- * and once for an explicit data-theme="dark".
+ * Design tokens — "Sticker Album": a cobalt cover on a desk, province pages on tinted paper,
+ * die-cut stickers, pink and cyan accents. Night is the main design and sits on bare :root;
+ * Day appears twice: once for the system preference (unless Night is forced) and once for
+ * an explicit data-theme="light". The canvas reads the --board-* values at draw time.
  */
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
-  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
-  --font-ui: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-display: 'Rubik Mono One', 'Arial Black', system-ui, sans-serif;
+  --font-ui: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
   --font-mono: 'Space Mono', ui-monospace, monospace;
-  --font-pixel: 'Silkscreen', ui-monospace, monospace;
 
-  --r-xl: 14px;
-  --r-lg: 10px;
-  --r-md: 8px;
+  --r-xl: 16px;
+  --r-lg: 14px;
+  --r-md: 10px;
   --r-sm: 6px;
   --r-pill: 999px;
-  --bw: 2px;
-  --sh: 4px;
+  --press: 4px;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -29,73 +25,140 @@
   --space-6: 24px;
   --space-7: 28px;
 
-  --a1: #ff4fa3;
-  --on-a1: #1a0614;
-  --a2: #3de7e0;
-  --on-a2: #06201f;
-  --bad: #ff9a3d;
-  --on-bad: #1f0e00;
+  --pink: #ff4fa3;
+  --pink-dk: #b8336e;
+  --on-pink: #1a0614;
+  --cyan: #3de7e0;
+  --cyan-dk: #1a9e98;
+  --on-cyan: #06201f;
+  --gold: #ffc92e;
+  --gold-dk: #c78a00;
+  --on-gold: #2a1a00;
+  --red: #e0475b;
+  --red-dk: #a8283a;
+  --on-red: #ffffff;
+  --ok: #5ec46f;
+  --on-cover: #ffffff;
+  --label-tape: #1b1b28;
+  --on-label-tape: #f4f4ff;
 
-  --bg: #f1ecff;
-  --surface: #ffffff;
-  --text: #191331;
-  --text-muted: #5b5280;
-  --line: #191331;
-  --shadow: #191331;
-  --brand-bg: #191331;
-  --brand-text: #f1ecff;
-  --blank-border: #cfc6ec;
+  --desk: #0b1230;
+  --desk-dot: rgba(120, 150, 255, 0.08);
+  --cover: #2442dc;
+  --cover-dk: #142a9a;
+  --ink: #e6edff;
+  --ink-soft: #a3b3de;
+  --sticker: #f6f7ff;
+  --card: #17224f;
+  --card-2: #22306a;
+  --line-soft: #36477f;
+  --shade: rgba(0, 0, 0, 0.5);
+  --tape: rgba(200, 212, 255, 0.2);
 
-  --board-bg: #ffffff;
-  --board-fill: #191331;
-  --board-mark: #9a92bd;
-  --board-line: #e3ddf5;
-  --board-line-major: #191331;
-  --board-border: var(--line);
-  --board-cursor: #ff4fa3;
-  --board-crosshair: rgba(61, 231, 224, 0.2);
+  --p-marches: #3a3214;
+  --p-coast: #13304d;
+  --p-wildwood: #163a24;
+  --p-forge: #3f2414;
+  --p-capital: #2a2152;
+  --p-throne: #401632;
+  --t-marches: #ffd34a;
+  --t-coast: #5bc8ff;
+  --t-wildwood: #5ec46f;
+  --t-forge: #ff9a3d;
+  --t-capital: #b48cff;
+  --t-throne: #ff4fa3;
+  --on-tab: #1b1b28;
+
+  --board-bg: #17224f;
+  --board-fill: #e6edff;
+  --board-mark: #7d8fc4;
+  --board-line: #2b3a72;
+  --board-line-major: #8394c8;
+  --board-border: var(--ink);
+  --board-cursor: var(--pink);
+  --board-crosshair: rgba(61, 231, 224, 0.14);
+
+  /* Pre-album names, kept until every page is restyled. */
+  --bg: var(--desk);
+  --surface: var(--card);
+  --text: var(--ink);
+  --text-muted: var(--ink-soft);
+  --line: var(--ink);
+  --shadow: var(--shade);
+  --brand-bg: var(--cover);
+  --brand-text: var(--on-cover);
+  --blank-border: var(--line-soft);
+  --a1: var(--pink);
+  --on-a1: var(--on-pink);
+  --a2: var(--cyan);
+  --on-a2: var(--on-cyan);
+  --bad: var(--red);
+  --on-bad: var(--on-red);
+  --font-pixel: var(--font-display);
+  --bw: 2px;
+  --sh: 4px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    color-scheme: dark;
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
 
-    --bg: #191331;
-    --surface: #251d45;
-    --text: #f4f0ff;
-    --text-muted: #b3aacf;
-    --line: #f4f0ff;
-    --shadow: #05030c;
-    --brand-bg: #f4f0ff;
-    --brand-text: #191331;
-    --blank-border: #4a4170;
+    --desk: #e6f2ff;
+    --desk-dot: rgba(35, 72, 232, 0.09);
+    --cover: #2348e8;
+    --cover-dk: #13299c;
+    --ink: #13306b;
+    --ink-soft: #4d6196;
+    --sticker: #ffffff;
+    --card: #ffffff;
+    --card-2: #eef1ff;
+    --line-soft: #c9d3f0;
+    --shade: rgba(10, 20, 60, 0.32);
+    --tape: rgba(255, 255, 255, 0.6);
 
-    --board-bg: #1e1739;
-    --board-fill: #f4f0ff;
-    --board-mark: #7f76a8;
-    --board-line: #3a3160;
-    --board-line-major: #9c93c4;
-    --board-crosshair: rgba(61, 231, 224, 0.14);
+    --p-marches: #ffeaa8;
+    --p-coast: #bfe8ff;
+    --p-wildwood: #c8f0cf;
+    --p-forge: #ffd7b8;
+    --p-capital: #e4d8ff;
+    --p-throne: #ffcfe6;
+
+    --board-bg: #ffffff;
+    --board-fill: #13306b;
+    --board-mark: #8b9ac4;
+    --board-line: #dde4f6;
+    --board-line-major: #13306b;
+    --board-crosshair: rgba(61, 231, 224, 0.2);
   }
 }
 
-:root[data-theme='dark'] {
-  color-scheme: dark;
+:root[data-theme='light'] {
+  color-scheme: light;
 
-  --bg: #191331;
-  --surface: #251d45;
-  --text: #f4f0ff;
-  --text-muted: #b3aacf;
-  --line: #f4f0ff;
-  --shadow: #05030c;
-  --brand-bg: #f4f0ff;
-  --brand-text: #191331;
-  --blank-border: #4a4170;
+  --desk: #e6f2ff;
+  --desk-dot: rgba(35, 72, 232, 0.09);
+  --cover: #2348e8;
+  --cover-dk: #13299c;
+  --ink: #13306b;
+  --ink-soft: #4d6196;
+  --sticker: #ffffff;
+  --card: #ffffff;
+  --card-2: #eef1ff;
+  --line-soft: #c9d3f0;
+  --shade: rgba(10, 20, 60, 0.32);
+  --tape: rgba(255, 255, 255, 0.6);
 
-  --board-bg: #1e1739;
-  --board-fill: #f4f0ff;
-  --board-mark: #7f76a8;
-  --board-line: #3a3160;
-  --board-line-major: #9c93c4;
-  --board-crosshair: rgba(61, 231, 224, 0.14);
+  --p-marches: #ffeaa8;
+  --p-coast: #bfe8ff;
+  --p-wildwood: #c8f0cf;
+  --p-forge: #ffd7b8;
+  --p-capital: #e4d8ff;
+  --p-throne: #ffcfe6;
+
+  --board-bg: #ffffff;
+  --board-fill: #13306b;
+  --board-mark: #8b9ac4;
+  --board-line: #dde4f6;
+  --board-line-major: #13306b;
+  --board-crosshair: rgba(61, 231, 224, 0.2);
 }
