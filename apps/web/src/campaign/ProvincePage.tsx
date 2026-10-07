@@ -23,7 +23,7 @@ export function ProvincePage({ campaign, province }: { campaign: Campaign; provi
   if (!isOpen(state)) return <LockedProvince campaign={campaign} province={province} progress={progress} />
   return (
     <Indexed campaign={campaign} province={province} progress={progress}>
-      <BackToMap campaign={campaign} />
+      <BackToCover campaign={campaign} />
       <Spread
         province={province}
         index={index}
@@ -35,8 +35,8 @@ export function ProvincePage({ campaign, province }: { campaign: Campaign; provi
           ) : state === 'conquered' ? (
             <>
               All {province.puzzles.length} solved.{' '}
-              <Link to="/c/$campaignId" params={{ campaignId: campaign.id }}>
-                Head back to the map to claim it.
+              <Link to="/c/$campaignId/map" params={{ campaignId: campaign.id }}>
+                Head to the map to claim it.
               </Link>
             </>
           ) : undefined
@@ -64,7 +64,7 @@ export function LockedProvince({
 
   return (
     <Indexed campaign={campaign} province={province} progress={progress}>
-      <BackToMap campaign={campaign} />
+      <BackToCover campaign={campaign} />
       <section className={styles.locked} style={paperStyle(index)} aria-labelledby="locked-title">
         <div className={styles.sealed} aria-hidden="true">
           <div className={styles.ghosts}>
@@ -131,7 +131,7 @@ function Indexed({
   )
 }
 
-function BackToMap({ campaign }: { campaign: Campaign }) {
+function BackToCover({ campaign }: { campaign: Campaign }) {
   return (
     <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} className={styles.back}>
       ← {campaign.name}

@@ -113,7 +113,11 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
       if (!c.get('user')) return c.json<ApiError>({ error: 'not signed in' }, 401)
       await next()
     })
-    .get('/campaigns', c => c.json(campaigns.map(({ id, name }): CampaignSummary => ({ id, name }))))
+    .get('/campaigns', c =>
+      c.json(
+        campaigns.map(({ id, name, coverColour }): CampaignSummary => ({ id, name, ...(coverColour && { coverColour }) })),
+      ),
+    )
     .get('/campaigns/:id', c => {
       const campaign = campaignPayloads.get(c.req.param('id'))
       if (!campaign) return c.json<ApiError>({ error: `no campaign '${c.req.param('id')}'` }, 404)

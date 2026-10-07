@@ -7,58 +7,97 @@
   padding: var(--space-4) max(var(--space-7), calc((100% - 1200px) / 2 + var(--space-7))) 56px;
 }
 
-.sec {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
+.mapHead {
   margin-bottom: var(--space-6);
 }
 
-.heading {
+.mapTitle {
   margin: 0;
-  font-size: 40px;
+  font-size: 36px;
+  line-height: 1.05;
 }
 
 .goal {
   margin: var(--space-2) 0 0;
   font-size: 17px;
-  color: var(--text-muted);
+  color: var(--ink-soft);
 }
 
-.continue {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 52px;
-  padding: 0 var(--space-6);
-  font: 700 17px var(--font-ui);
-  color: var(--on-a2);
-  text-decoration: none;
-  background: var(--a2);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--r-md);
-  box-shadow: var(--sh) var(--sh) 0 var(--shadow);
+/* The conquest's banner, a card taped over the map; placed in Journey rows like any Journey child. */
+.banner {
+  position: absolute;
+  left: calc(var(--fade) / var(--w) * 100% + var(--space-4));
+  right: calc(var(--fade) / var(--w) * 100% + var(--space-4));
+  /* Centred on Journey row --y; `translate` stays clear of the `rise` transform. */
+  top: calc(var(--y) / var(--h) * 100%);
+  translate: 0 -50%;
+  max-width: 560px;
+  margin-inline: auto;
+  padding: 22px 22px 18px;
+  color: var(--ink);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: 0 6px 0 var(--shade);
+  rotate: -1deg;
+  animation: rise 500ms ease-out both;
 }
 
-.continue:hover {
-  transform: translate(-1px, -1px);
+.banner::before,
+.banner::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  width: 70px;
+  height: 22px;
+  background: var(--tape);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.08);
 }
 
-.continueCount {
-  font: 700 15px var(--font-mono);
-  opacity: 0.8;
+.banner::before {
+  left: 18px;
+  transform: rotate(-6deg);
 }
 
-.continue svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.banner::after {
+  right: 18px;
+  transform: rotate(5deg);
+}
+
+.banner.foot {
+  top: auto;
+  bottom: calc(var(--fade) / var(--h) * 100% + var(--space-4));
+  translate: none;
+}
+
+.banner p {
+  margin: 0;
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+
+.banner p + p {
+  margin-top: var(--space-2);
+}
+
+.banner strong {
+  display: block;
+  font: 400 18px/1.15 var(--font-display);
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.banner .closing {
+  font: 400 20px/1.2 var(--font-display);
+  letter-spacing: -0.03em;
+  text-align: center;
+  color: var(--ink);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 .back {
@@ -71,26 +110,6 @@
 
 .back:hover {
   color: var(--text);
-}
-
-.switcher {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.switcher a {
-  padding: 4px 12px;
-  font: 700 14px var(--font-mono);
-  color: var(--text-muted);
-  text-decoration: none;
-  border: var(--bw) solid var(--line);
-  border-radius: var(--r-pill);
-}
-
-.switcher a[aria-current='page'] {
-  background: var(--a2);
-  color: var(--on-a2);
 }
 
 .slotLink {
@@ -300,23 +319,20 @@
     padding: var(--space-2) var(--space-4) 40px;
   }
 
-  .heading {
-    font-size: 30px;
+  .mapTitle {
+    font-size: 28px;
   }
 
   .goal {
     font-size: 15px;
   }
-
-  .continue {
-    width: 100%;
-    justify-content: center;
-  }
-
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .continue:hover,
+  .banner {
+    animation: none;
+  }
+
   .slotLink:hover,
   .paperLink:hover {
     transform: none;

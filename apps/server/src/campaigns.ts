@@ -26,6 +26,8 @@ export interface CampaignDef {
   /** Served outside production only, and exempt from the puzzle count. */
   draft: boolean
   closingLine: string
+  /** CSS colour for the volume's spine; cobalt when absent. */
+  coverColour?: string
   puzzlesPerProvince: number
   provinces: ProvinceDef[]
 }

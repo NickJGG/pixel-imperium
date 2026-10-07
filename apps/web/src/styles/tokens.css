@@ -53,7 +53,7 @@
   --card-2: #22306a;
   --line-soft: #36477f;
   --shade: rgba(0, 0, 0, 0.5);
-  --tape: rgba(200, 212, 255, 0.2);
+  --tape: rgba(214, 224, 255, 0.5);
 
   --p-marches: #3a3214;
   --p-coast: #13304d;
@@ -114,7 +114,7 @@
     --card-2: #eef1ff;
     --line-soft: #c9d3f0;
     --shade: rgba(10, 20, 60, 0.32);
-    --tape: rgba(255, 255, 255, 0.6);
+    --tape: rgba(196, 212, 255, 0.75);
 
     --p-marches: #ffeaa8;
     --p-coast: #bfe8ff;
@@ -146,7 +146,7 @@
   --card-2: #eef1ff;
   --line-soft: #c9d3f0;
   --shade: rgba(10, 20, 60, 0.32);
-  --tape: rgba(255, 255, 255, 0.6);
+  --tape: rgba(196, 212, 255, 0.75);
 
   --p-marches: #ffeaa8;
   --p-coast: #bfe8ff;

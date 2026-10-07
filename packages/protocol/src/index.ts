@@ -20,6 +20,8 @@ export interface PuzzleClues extends PuzzleSummary {
 export interface CampaignSummary {
   id: string
   name: string
+  /** The volume's cover colour on the shelf; the album's cobalt when absent. */
+  coverColour?: string
 }
 
 /**

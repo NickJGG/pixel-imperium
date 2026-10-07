@@ -13,6 +13,13 @@
   transform: rotate(var(--tilt));
 }
 
+.solid {
+  font-size: 10px;
+  letter-spacing: -0.06em;
+  background: var(--sticker);
+  box-shadow: 0 3px 0 var(--shade);
+}
+
 .ok {
   color: var(--ok);
 }

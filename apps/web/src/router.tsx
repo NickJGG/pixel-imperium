@@ -4,6 +4,7 @@ import { fetchCampaign, fetchCampaigns, fetchProfile, fetchPuzzle } from './api.
 import { AppHeader, ThumbBar } from './AppHeader.tsx'
 import { CampaignPage } from './campaign/CampaignPage.tsx'
 import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
+import { MapPage } from './campaign/MapPage.tsx'
 import { ProvincePage } from './campaign/ProvincePage.tsx'
 import { ImportPrompt } from './ImportPrompt.tsx'
 import { HandlePicker } from './me/HandlePicker.tsx'
@@ -64,6 +65,16 @@ const campaignRoute = createRoute({
     return { campaign, campaigns }
   },
   component: () => <CampaignPage {...campaignRoute.useLoaderData()} />,
+  notFoundComponent: () => <Missing what="campaign" />,
+})
+
+const mapRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/c/$campaignId/map',
+  validateSearch: (search: Record<string, unknown>): { conquer?: string } =>
+    import.meta.env.DEV && typeof search.conquer === 'string' ? { conquer: search.conquer } : {},
+  loader: async ({ params }) => ({ campaign: await loadCampaign(params.campaignId) }),
+  component: () => <MapPage {...mapRoute.useLoaderData()} conquer={mapRoute.useSearch().conquer} />,
   notFoundComponent: () => <Missing what="campaign" />,
 })
 
@@ -136,7 +147,7 @@ const settingsRoute = createRoute({
 })
 
 export const router = createRouter({
-  routeTree: rootRoute.addChildren([homeRoute, campaignRoute, provinceRoute, playRoute, profileRoute, settingsRoute]),
+  routeTree: rootRoute.addChildren([homeRoute, campaignRoute, mapRoute, provinceRoute, playRoute, profileRoute, settingsRoute]),
 })
 
 declare module '@tanstack/react-router' {

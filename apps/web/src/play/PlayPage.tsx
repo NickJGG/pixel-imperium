@@ -298,7 +298,7 @@ function Play({
                     <b>Page complete!</b> Every slot in {province.name} is filled.
                   </p>
                   <div className={styles.afterActions}>
-                    <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} className={styles.linkButton}>
+                    <Link to="/c/$campaignId/map" params={{ campaignId: campaign.id }} className={styles.linkButton}>
                       See it on the map
                     </Link>
                     <ClearButton store={store} solved />
@@ -386,7 +386,7 @@ function Play({
             </div>
           )}
           {moment === 'landed' && !fit?.sidePage && (
-            <Stamp thunk className={styles.cardStamp}>
+            <Stamp thunk solid className={styles.cardStamp}>
               New sticker!
             </Stamp>
           )}

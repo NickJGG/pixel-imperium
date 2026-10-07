@@ -38,35 +38,38 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  padding: 3px 12px;
   white-space: nowrap;
-  font: 400 14px var(--font-pixel);
-  border: var(--bw) solid var(--on-a1);
+  font: 600 14px var(--font-ui);
+  color: var(--ink);
+  background: var(--card);
   border-radius: var(--r-pill);
-  box-shadow: 3px 3px 0 var(--on-a1);
+  box-shadow: 0 2px 0 var(--shade);
 }
 
 .label[data-state='active'] {
-  background: var(--a1);
-  color: var(--on-a1);
+  background: var(--pink);
+  color: var(--on-pink);
+  box-shadow: 0 3px 0 var(--pink-dk);
 }
 
 .label[data-state='conquered'] {
-  background: #ffd34a;
-  color: #1f0e00;
+  background: var(--gold);
+  color: var(--on-gold);
+  box-shadow: 0 3px 0 var(--gold-dk);
+}
+
+.label[data-state='next'],
+.label[data-state='locked'] {
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  color: var(--ink-soft);
+  box-shadow: none;
+  outline: 2px dashed var(--line-soft);
+  outline-offset: -2px;
 }
 
 .label[data-state='next'] {
-  background: rgba(25, 19, 49, 0.8);
-  color: #f4f0ff;
-  border-style: dashed;
-  border-color: #f4f0ff;
-}
-
-.label[data-state='locked'] {
-  background: rgba(25, 19, 49, 0.8);
-  color: #b3aacf;
-  border-color: #5b5280;
+  color: var(--ink);
 }
 
 a.label {
@@ -76,7 +79,7 @@ a.label {
 }
 
 a.label:hover {
-  transform: translate(calc(-50% - 1px), calc(-50% - 1px));
+  transform: translate(-50%, calc(-50% - 1px));
 }
 
 .overlay[data-hidden] a.label {
@@ -93,51 +96,38 @@ a.label:hover {
   font: 700 12px var(--font-mono);
 }
 
-.banner {
+/* Crests and the conquest's stamp, pinned to the map; unlike the labels, they stay up while it plays. */
+.pins {
   position: absolute;
-  left: calc(var(--fade) / var(--w) * 100% + var(--space-3));
-  right: calc(var(--fade) / var(--w) * 100% + var(--space-3));
-  /* Centred on Journey row --y; `translate` stays clear of the `rise` transform. */
-  top: calc(var(--y) / var(--h) * 100%);
-  translate: 0 -50%;
-  padding: var(--space-3) var(--space-4);
-  background: var(--surface);
-  color: var(--text);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--r-md);
-  box-shadow: var(--sh) var(--sh) 0 var(--shadow);
-  animation: rise 500ms ease-out both;
+  inset: 0;
+  pointer-events: none;
 }
 
-.banner.foot {
-  top: auto;
-  bottom: calc(var(--fade) / var(--h) * 100% + var(--space-3));
-  translate: none;
+.crest {
+  position: absolute;
+  width: clamp(30px, 5.5%, 64px);
+  line-height: 0;
+  translate: -50% -50%;
 }
 
-.banner p {
-  margin: 0;
-  font-style: italic;
+.crest > * {
+  width: 100%;
 }
 
-.banner p + p {
-  margin-top: var(--space-2);
+.slam {
+  animation: slam 480ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
 }
 
-.banner strong {
-  font-style: normal;
-}
-
-.banner .closing {
-  font: 400 22px var(--font-display);
-  text-align: center;
-}
-
-@keyframes rise {
+@keyframes slam {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: scale(2.4) rotate(-20deg);
   }
+}
+
+.stamp {
+  position: absolute;
+  translate: -50% -50%;
 }
 
 /* Hidden, except while a keyboard user is inside it, since its links are the map's only focus stops. */
@@ -164,9 +154,15 @@ a.label:hover {
 
   .label {
     gap: 4px;
-    padding: 3px 8px;
-    font-size: 11px;
-    box-shadow: 2px 2px 0 var(--on-a1);
+    padding: 2px 8px;
+    font-size: 12px;
+  }
+
+  .stamp > * {
+    width: 80px;
+    height: 80px;
+    padding: 6px;
+    font-size: 9px;
   }
 }
 
@@ -180,7 +176,7 @@ a.label:hover {
     transform: translate(-50%, -50%);
   }
 
-  .banner {
+  .slam {
     animation: none;
   }
 }

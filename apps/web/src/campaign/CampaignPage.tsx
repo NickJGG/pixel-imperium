@@ -1,103 +1,245 @@
-import { type CSSProperties, useEffect, useState } from 'react'
+import { type CSSProperties, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { Campaign, CampaignSummary } from '@pixel-imperium/protocol'
+import { Dymo } from '../album/Dymo.tsx'
+import { Lock } from '../album/Lock.tsx'
+import { PageThumb } from '../album/PageThumb.tsx'
+import { paperStyle } from '../album/paper.ts'
+import { Slot } from '../album/Slot.tsx'
+import { Sticker, tiltOf } from '../album/Sticker.tsx'
+import { VolumeShelf } from '../album/VolumeShelf.tsx'
 import { useAccount } from '../account.ts'
-import { Journey } from './Journey.tsx'
-import { markConquestsSeen, unseenConquests } from './conquests.ts'
-import { campaignProgress } from './progress.ts'
-import styles from './Campaign.module.css'
-import mapStyles from './Journey.module.css'
+import { unseenConquests } from './conquests.ts'
+import { campaignProgress, continueAt, isOpen } from './progress.ts'
+import { GOLD_SLOT } from './PuzzleSlot.tsx'
+import { type StickerEntry, latestStickers, showcaseFallback } from './stickers.ts'
+import styles from './Cover.module.css'
 
 interface Props {
   campaign: Campaign
-  /** Every live campaign; the switcher shows only when there's more than one. */
+  /** Every live campaign; the shelf of volumes shows only when there's more than one. */
   campaigns: CampaignSummary[]
 }
 
+const LATEST = 8
+/** Where the showcase's stickers land on the cover, biggest first. */
+const SLAPS = [
+  { tilt: 10, width: 96 },
+  { tilt: -8, width: 72 },
+  { tilt: 5, width: 64 },
+]
+
 export function CampaignPage(props: Props) {
   const { generation } = useAccount()
-  return <CampaignView key={`${generation}:${props.campaign.id}`} {...props} />
+  return <Cover key={`${generation}:${props.campaign.id}`} {...props} />
 }
 
-function CampaignView({ campaign, campaigns }: Props) {
-  const { storage } = useAccount()
-  const [{ progress, conquests, from }] = useState(() => {
+/** Home: the album's cover, with what's next, the latest stickers and a thumbnail of every page. */
+function Cover({ campaign, campaigns }: Props) {
+  const { storage, account } = useAccount()
+  const [{ progress, latest, unseen }] = useState(() => {
     const progress = campaignProgress(campaign, storage)
-    const conquests = unseenConquests(campaign, progress, storage)
     return {
       progress,
-      conquests,
-      from:
-        conquests.length > 0 ? conquests.map((_, k) => campaignProgress(campaign, storage, conquests.slice(k))) : undefined,
+      latest: latestStickers(campaign, storage),
+      unseen: unseenConquests(campaign, progress, storage),
     }
   })
-  const [swept, setSwept] = useState(!from)
-  useEffect(() => markConquestsSeen(campaign, conquests, storage), [campaign, conquests, storage])
-
-  const showClosing = progress.conquered && swept
-  const announced = swept ? conquests.map(i => campaign.provinces[i]!) : []
-  const last = conquests.at(-1)
-  const { height, step } = campaign.journey
-  // Between the latest conquest and the province it opened, or at the Throne's foot for the finale.
-  const atFoot = showClosing || last === undefined
-  const bannerAt = atFoot ? undefined : ({ '--y': (last * step + height + (last + 1) * step) / 2 } as CSSProperties)
-  const activeIndex = progress.provinces.findIndex(p => p.state === 'active')
-  const active = activeIndex === -1 ? undefined : { ...progress.provinces[activeIndex]!, ...campaign.provinces[activeIndex]! }
-  const started = progress.provinces.some(p => p.solved > 0)
+  const isSolved = (id: string) => storage.loadSolved(id) !== null
+  const next = continueAt(campaign, progress, isSolved)
+  const solved = progress.provinces.reduce((n, p) => n + p.solved, 0)
+  const total = progress.provinces.reduce((n, p) => n + p.total, 0)
+  const showcase = showcaseFallback(latest, account !== null)
+  const claim = unseen.length > 0 ? campaign.provinces[unseen.at(-1)!]! : undefined
 
   return (
     <main className={styles.page}>
-      <div className={styles.sec}>
-        <div>
-          <h1 className={styles.heading}>{campaign.name}</h1>
-          {!progress.provinces.some(p => p.state === 'conquered') && (
-            <p className={styles.goal}>Solve every puzzle in a province to conquer it and march on the next.</p>
-          )}
-        </div>
-        {active && (
-          <Link
-            to="/c/$campaignId/$provinceId"
-            params={{ campaignId: campaign.id, provinceId: active.id }}
-            className={styles.continue}
-          >
-            {started ? 'Continue' : 'Start'}: {active.name}
-            <span className={styles.continueCount}>
-              {active.solved}/{active.total}
-            </span>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-          </Link>
-        )}
-        {campaigns.length > 1 && (
-          <nav className={styles.switcher} aria-label="Campaigns">
-            {campaigns.map(c => (
+      <div className={styles.home}>
+        <div className={styles.coverCol}>
+          <section className={styles.cover} aria-labelledby="cover-title">
+            <div className={styles.coverTop}>
+              <div className={styles.coverTitle}>
+                <h1 id="cover-title" className={styles.title}>
+                  <span>Pixel</span> Imperium
+                </h1>
+                <p className={styles.volume}>Sticker album · {campaign.name}</p>
+              </div>
+              <div className={styles.slaps}>
+                {showcase.length > 0
+                  ? showcase.map((s, i) => (
+                      <StickerLink key={s.puzzle.id} sticker={s} style={{ width: SLAPS[i]!.width }} tilt={SLAPS[i]!.tilt} />
+                    ))
+                  : next?.fresh && (
+                      <Link to="/play/$id" params={{ id: next.puzzle.id }} className={styles.startHere}>
+                        Start here
+                      </Link>
+                    )}
+              </div>
+            </div>
+            <p className={styles.total}>
+              <strong>
+                {solved} <em>/ {total}</em>
+              </strong>
+              stickers collected
+            </p>
+            <div className={styles.bar} aria-hidden="true">
+              {progress.provinces.map((p, i) => (
+                <i
+                  key={campaign.provinces[i]!.id}
+                  style={{ '--p': `${(p.solved / Math.max(1, p.total)) * 100}%` } as CSSProperties}
+                />
+              ))}
+            </div>
+            <ol className={styles.index} aria-label="Provinces">
+              {campaign.provinces.map((province, i) => {
+                const { state, solved, total } = progress.provinces[i]!
+                return (
+                  <li key={province.id} style={paperStyle(i)} data-locked={!isOpen(state) || undefined}>
+                    <Link to="/c/$campaignId/$provinceId" params={{ campaignId: campaign.id, provinceId: province.id }}>
+                      {province.name}
+                    </Link>
+                    {state === 'conquered' ? (
+                      <Dymo tone="pink" className={styles.complete}>
+                        Complete
+                      </Dymo>
+                    ) : isOpen(state) ? (
+                      <small>
+                        {solved}/{total}
+                      </small>
+                    ) : (
+                      <small>
+                        <Lock />
+                        Locked
+                      </small>
+                    )}
+                  </li>
+                )
+              })}
+            </ol>
+            <div className={styles.cta}>
+              {next && (
+                <Link to="/play/$id" params={{ id: next.puzzle.id }} className={`${styles.pill} ${styles.cyan}`}>
+                  {next.fresh ? 'Start' : 'Continue'}: #{next.number} {next.puzzle.title}
+                </Link>
+              )}
               <Link
-                key={c.id}
-                to="/c/$campaignId"
-                params={{ campaignId: c.id }}
-                aria-current={c.id === campaign.id ? 'page' : undefined}
+                to="/c/$campaignId/map"
+                params={{ campaignId: campaign.id }}
+                className={`${styles.pill} ${claim ? styles.pink : styles.paper}`}
               >
-                {c.name}
+                {claim ? `Claim ${claim.name.replace(/^The /, 'the ')} on the map` : 'Open the album'}
               </Link>
-            ))}
-          </nav>
-        )}
-      </div>
-      <Journey campaign={campaign} progress={progress} from={from} onSwept={() => setSwept(true)} linked>
-        {(showClosing || announced.length > 0) && (
-          <div className={`${mapStyles.banner} ${atFoot ? mapStyles.foot : ''}`} style={bannerAt} role="status">
-            {announced.map(p => (
-              <p key={p.id}>
-                <strong>{p.name} conquered.</strong> {p.flavour}
-              </p>
-            ))}
-            {showClosing && (
-              <p className={mapStyles.closing}>{campaign.closingLine || `${campaign.name} is yours.`}</p>
+            </div>
+          </section>
+          {campaigns.length > 1 && <VolumeShelf campaigns={campaigns} current={campaign.id} />}
+        </div>
+
+        <div className={styles.side}>
+          <section className={styles.card} aria-labelledby="next-title">
+            <h2 id="next-title" className={styles.label}>
+              Next up
+            </h2>
+            {next ? (
+              <div className={styles.nextUp}>
+                <Link
+                  to="/play/$id"
+                  params={{ id: next.puzzle.id }}
+                  className={styles.nextSlot}
+                  tabIndex={-1}
+                  aria-hidden="true"
+                >
+                  <Slot
+                    number={next.number}
+                    width={next.puzzle.width}
+                    height={next.puzzle.height}
+                    gold={next.number === GOLD_SLOT}
+                    next
+                  />
+                </Link>
+                <div>
+                  <p className={styles.nextName}>
+                    #{next.number} {next.puzzle.title}
+                  </p>
+                  <p className={styles.nextWhere}>
+                    {next.province.name} · {next.puzzle.width}×{next.puzzle.height}
+                  </p>
+                  <Link to="/play/$id" params={{ id: next.puzzle.id }} className={`${styles.pill} ${styles.pink}`}>
+                    {next.fresh ? 'Start' : 'Continue'}
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <p className={styles.empty}>Every slot is filled. The album is complete.</p>
             )}
-          </div>
-        )}
-      </Journey>
+          </section>
+          <section className={styles.card} aria-labelledby="latest-title">
+            <h2 id="latest-title" className={styles.label}>
+              Latest stickers
+            </h2>
+            {latest.length > 0 ? (
+              <div className={styles.latest}>
+                {latest.slice(0, LATEST).map(s => (
+                  <StickerLink key={s.puzzle.id} sticker={s} />
+                ))}
+              </div>
+            ) : (
+              <p className={styles.empty}>Solve a puzzle and its sticker lands here.</p>
+            )}
+          </section>
+        </div>
+      </div>
+
+      <section className={styles.pages} aria-labelledby="pages-title">
+        <h2 id="pages-title" className={styles.label}>
+          Pages
+        </h2>
+        <ol className={styles.thumbs}>
+          {campaign.provinces.map((province, i) => {
+            const { state, solved, total } = progress.provinces[i]!
+            return (
+              <li key={province.id}>
+                <Link
+                  to="/c/$campaignId/$provinceId"
+                  params={{ campaignId: campaign.id, provinceId: province.id }}
+                  className={styles.thumbLink}
+                  aria-label={`${province.name}: ${isOpen(state) ? `${solved} of ${total} stickers` : 'locked'}`}
+                >
+                  <PageThumb
+                    name={province.name}
+                    index={i}
+                    filled={province.puzzles.map(p => isSolved(p.id))}
+                    locked={!isOpen(state)}
+                    complete={state === 'conquered'}
+                  />
+                </Link>
+              </li>
+            )
+          })}
+        </ol>
+      </section>
     </main>
+  )
+}
+
+function StickerLink({ sticker: s, tilt, style }: { sticker: StickerEntry; tilt?: number; style?: CSSProperties }) {
+  const { puzzle } = s
+  return (
+    <Link
+      to="/play/$id"
+      params={{ id: puzzle.id }}
+      className={styles.stickerLink}
+      style={style}
+      aria-label={`#${s.number} ${puzzle.title}${s.unverified ? ', imported' : ''}`}
+    >
+      <Sticker
+        title={puzzle.title}
+        width={puzzle.width}
+        height={puzzle.height}
+        palette={s.palette ?? Array<null>(puzzle.width * puzzle.height).fill(null)}
+        gold={s.number === GOLD_SLOT}
+        unverified={s.unverified}
+        tilt={tilt ?? tiltOf(puzzle.id)}
+      />
+    </Link>
   )
 }

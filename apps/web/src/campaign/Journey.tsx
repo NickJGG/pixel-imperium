@@ -10,16 +10,22 @@ import {
 } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import type { Campaign } from '@pixel-imperium/protocol'
+import { Stamp } from '../album/Stamp.tsx'
+import { Sticker, tiltOf } from '../album/Sticker.tsx'
+import { play } from '../sound.ts'
 import { FADE } from './map-geometry.ts'
-import { type ConquestAnim, type Look, cropStart, fadesOf, journeyHeight, paintJourney, paintMap } from './journey-paint.ts'
+import { type ConquestAnim, cropStart, fadesOf, journeyHeight, paintJourney } from './journey-paint.ts'
 import { type CampaignProgress, isOpen } from './progress.ts'
+import type { CrestArt } from './stickers.ts'
 import styles from './Journey.module.css'
 
 /** Phones show only the middle two-thirds of the Journey. */
 const PHONE = '(max-width: 760px)'
 /** The least gap, in px, between a label and the Journey's edge. */
 const LABEL_INSET = 4
-const BEAT_MS = { scroll: 700, sweep: 1300, march: 1000, reveal: 600, shimmer: 1600 }
+const BEAT_MS = { scroll: 700, stamp: 700, crest: 650, sweep: 1300, march: 1000, reveal: 600, shimmer: 1600 }
+/** Where the "complete" stamp lands, across the Journey, level with the province's Landmark. */
+const STAMP_X = 0.8
 /** Where a conquered Map's foot settles before its conquest plays, as a fraction of the viewport. */
 const CONQUEST_AT = 0.45
 
@@ -59,11 +65,16 @@ interface Props {
   linked?: boolean
   /** The last province shown, by index; the Journey ends at the foot of its Map. */
   cutAfter?: number | undefined
+  /** Each province's Crest by index, stuck on its Landmark once it's conquered; `null` leaves it bare. */
+  crests?: readonly (CrestArt | null)[] | undefined
   /** Laid over the Journey, such as the conquest banner; it places itself, in Journey rows via `--h`. */
   children?: ReactNode
 }
 
-export function Journey({ campaign, progress, from, onSwept, linked = false, cutAfter, children }: Props) {
+const conqueredIn = (progress: CampaignProgress) =>
+  new Set(progress.provinces.flatMap((p, i) => (p.state === 'conquered' ? [i] : [])))
+
+export function Journey({ campaign, progress, from, onSwept, linked = false, cutAfter, crests, children }: Props) {
   const { journey, provinces } = campaign
   const { width, height, step, maps } = journey
   const cols = useCols(width)
@@ -72,7 +83,13 @@ export function Journey({ campaign, progress, from, onSwept, linked = false, cut
   const x0 = cropStart(journey, cols)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
+  const pinsRef = useRef<HTMLDivElement>(null)
   const [playing, setPlaying] = useState(() => from !== undefined && !reducedMotion())
+  // While a conquest plays, the Crests stuck on so far and the one slamming down; else every conquered one.
+  const [crested, setCrested] = useState<{ shown: ReadonlySet<number>; slam?: number } | null>(() =>
+    playing ? { shown: conqueredIn(from![0]!) } : null,
+  )
+  const [stamped, setStamped] = useState<number | null>(null)
   // What the canvas shows while a conquest plays; the animation mutates it frame by frame.
   const frame = useRef<{ progress: CampaignProgress; anim?: ConquestAnim } | null>(
     playing ? { progress: from![0]! } : null,
@@ -86,6 +103,7 @@ export function Journey({ campaign, progress, from, onSwept, linked = false, cut
     ctx.putImageData(new ImageData(paintJourney(journey, shownProgress, { cols, rows, anim }), cols, rows), 0, 0)
   })
   const finish = useEffectEvent(() => onSwept?.())
+  const hasCrest = useEffectEvent((i: number) => Boolean(crests?.[i]))
 
   useEffect(() => draw(), [journey, progress, cols, rows])
 
@@ -138,6 +156,16 @@ export function Journey({ campaign, progress, from, onSwept, linked = false, cut
         )
         await scrollTo(c)
         if (cancelled) return
+        setStamped(c)
+        play('press')
+        await wait(BEAT_MS.stamp)
+        if (cancelled) return
+        if (hasCrest(c)) {
+          setCrested(was => ({ shown: new Set([...(was?.shown ?? []), c]), slam: c }))
+          play('thunk')
+          await wait(BEAT_MS.crest)
+          if (cancelled) return
+        }
         const anim: ConquestAnim = { from: before, c, sweep: 0, march: 0, reveal: 0, shimmer: 0 }
         frame.current = { progress: after, anim }
         await tween(BEAT_MS.sweep, t => (anim.sweep = t))
@@ -145,12 +173,17 @@ export function Journey({ campaign, progress, from, onSwept, linked = false, cut
           await tween(BEAT_MS.march, t => (anim.march = easeInOut(t)))
           await tween(BEAT_MS.reveal, t => (anim.reveal = t))
         }
-        if (after.conquered && k === from.length - 1) await tween(BEAT_MS.shimmer, t => (anim.shimmer = t))
+        if (after.conquered && k === from.length - 1) {
+          play('chime')
+          await tween(BEAT_MS.shimmer, t => (anim.shimmer = t))
+        }
       }
       if (cancelled) return
       frame.current = null
       draw()
       setPlaying(false)
+      setCrested(null)
+      setStamped(null)
       finish()
     })()
     return () => {
@@ -160,25 +193,32 @@ export function Journey({ campaign, progress, from, onSwept, linked = false, cut
     }
   }, [from, progress, maps.length, step, height, rows])
 
-  // Labels centre above their Landmark, which can sit near the Journey's edge; slide them back inside.
-  // Re-measured on every render, as a label's width changes with its count and the font loading.
+  // Labels centre above their Landmark, and above its Crest; pins (Crests, the stamp) centre on their
+  // anchor. Either can sit near the Journey's edge; slide them back inside. Re-measured on every render,
+  // as a label's width changes with its count and the font loading.
   useLayoutEffect(() => {
     const overlay = overlayRef.current!
+    const pinned = [...pinsRef.current!.querySelectorAll<HTMLElement>('[data-anchor]')]
     const labels = [...overlay.querySelectorAll<HTMLElement>('[data-anchor]')]
     const fit = () => {
       const { clientWidth: w, clientHeight: h } = overlay
       const place = (at: number, size: number, max: number) =>
         Math.max(size / 2 + LABEL_INSET, Math.min(at, max - size / 2 - LABEL_INSET))
-      for (const label of labels) {
-        const [x, y] = label.dataset.anchor!.split(' ').map(Number)
-        const { offsetWidth: lw, offsetHeight: lh } = label
-        label.style.left = `${place((x! / cols) * w, lw, w)}px`
-        label.style.top = `${place((y! / rows) * h - lh, lh, h)}px`
+      const crestHeight = new Map<string, number>()
+      for (const el of [...pinned, ...labels]) {
+        const [x, y] = el.dataset.anchor!.split(' ').map(Number)
+        const { offsetWidth: ew, offsetHeight: eh } = el
+        const crest = el.dataset.crest
+        if (crest !== undefined) crestHeight.set(crest, eh)
+        const crestUnder = crestHeight.get(el.dataset.province!) ?? 0
+        const lift = el.parentElement === overlay ? Math.max(eh, (eh + crestUnder) / 2) : 0
+        el.style.left = `${place((x! / cols) * w, ew, w)}px`
+        el.style.top = `${place((y! / rows) * h - lift, eh, h)}px`
       }
     }
     fit()
     const observer = new ResizeObserver(fit)
-    for (const el of [overlay, ...labels]) observer.observe(el)
+    for (const el of [overlay, ...pinned, ...labels]) observer.observe(el)
     return () => observer.disconnect()
   })
 
@@ -221,6 +261,31 @@ export function Journey({ campaign, progress, from, onSwept, linked = false, cut
           role="img"
           aria-label={`Map of ${campaign.name}`}
         />
+        <div ref={pinsRef} className={styles.pins} aria-hidden="true">
+          {provinces.slice(0, shown).map((province, i) => {
+            const art = crests?.[i]
+            const stuck = crested ? crested.shown.has(i) : progress.provinces[i]!.state === 'conquered'
+            if (!art || !stuck) return null
+            const { landmark } = maps[i]!
+            return (
+              <span
+                key={province.id}
+                className={[styles.crest, crested?.slam === i && styles.slam].filter(Boolean).join(' ')}
+                data-anchor={`${landmark.x - x0 + 0.5} ${i * step + landmark.y + 0.5}`}
+                data-crest={i}
+              >
+                <Sticker {...art} gold round tilt={tiltOf(province.id) * 2} />
+              </span>
+            )
+          })}
+          {stamped !== null && (
+            <span className={styles.stamp} data-anchor={`${cols * STAMP_X} ${stamped * step + maps[stamped]!.landmark.y}`}>
+              <Stamp thunk solid>
+                {provinces[stamped]!.name} complete
+              </Stamp>
+            </span>
+          )}
+        </div>
         <div ref={overlayRef} className={styles.overlay} data-hidden={playing || undefined} aria-hidden="true">
           {provinces.slice(0, shown).map((province, i) => {
             const { state, solved, total } = progress.provinces[i]!
@@ -228,6 +293,7 @@ export function Journey({ campaign, progress, from, onSwept, linked = false, cut
             const label = {
               className: styles.label,
               'data-state': state,
+              'data-province': i,
               'data-anchor': `${landmark.x - x0 + 0.5} ${i * step + landmark.y + 0.5}`,
             }
             const content = (

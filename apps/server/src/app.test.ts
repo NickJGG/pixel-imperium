@@ -59,10 +59,13 @@ function solve(cells: unknown, id = 'diag', cookie?: string) {
 }
 
 describe('GET /api/campaigns', () => {
-  it('lists campaigns in order', async () => {
-    const multi = createApp([fixture('b', { x: [] }), fixture('a', { y: [] })], { db, auth })
+  it('lists campaigns in order, with any cover colour', async () => {
+    const multi = createApp([{ ...fixture('b', { x: [] }), coverColour: '#c0392b' }, fixture('a', { y: [] })], {
+      db,
+      auth,
+    })
     expect(await (await multi.request('/api/campaigns')).json()).toEqual<CampaignSummary[]>([
-      { id: 'b', name: 'Campaign b' },
+      { id: 'b', name: 'Campaign b', coverColour: '#c0392b' },
       { id: 'a', name: 'Campaign a' },
     ])
   })
