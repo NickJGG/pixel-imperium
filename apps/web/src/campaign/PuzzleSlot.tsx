@@ -32,7 +32,7 @@ function statusOf(p: PuzzleSummary, storage: ProgressStorage): Status {
   return percent > 0 ? { kind: 'started', percent } : { kind: 'new' }
 }
 
-const GOLD_SLOT = 30
+export const GOLD_SLOT = 30
 
 interface Props {
   puzzle: PuzzleSummary

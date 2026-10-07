@@ -1,132 +1,139 @@
+/* The play screen: the board on a card, laid on the album's cobalt cover. */
 .play {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-  padding-bottom: var(--space-6);
+  gap: var(--space-3);
+  padding: var(--space-4) max(var(--space-7), calc((100% - 1200px) / 2 + var(--space-7))) var(--space-6);
+  color: var(--on-cover);
+  background-color: var(--cover);
+  background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 1.6px);
+  background-size: 14px 14px;
 }
 
-.titleRow {
+.crumb {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-3);
-  padding: 0 var(--space-4);
-  text-align: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  font: 600 15px var(--font-ui);
 }
 
-.title {
-  margin: 0;
-  font-size: 44px;
-  line-height: 1;
+.crumb a {
+  color: inherit;
+  text-decoration: none;
 }
 
-.pill,
-.hotPill,
-.solvedPill {
-  padding: 5px 10px;
-  font: 700 12px var(--font-mono);
-  background: var(--surface);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--r-pill);
+.crumb a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-.hotPill {
-  background: var(--a2);
-  color: var(--on-a2);
-}
-
-.replayPill {
-  display: inline-flex;
-  font: 700 12px var(--font-mono);
-  text-transform: uppercase;
-  border: var(--bw) solid var(--line);
-  border-radius: var(--r-pill);
-  overflow: hidden;
-}
-
-.replayPill > span {
+.tag {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 10px;
 }
 
-.replayPill > span:first-child {
-  background: var(--a2);
-  color: var(--on-a2);
-}
-
-.replayPill > span:last-child {
-  background: var(--a1);
-  color: var(--on-a1);
-  border-left: var(--bw) solid var(--line);
-}
-
-.replayPill svg {
-  width: 13px;
-  height: 13px;
+.tag svg {
+  width: 12px;
+  height: 12px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.6;
+  stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.note {
-  font: 700 12px var(--font-mono);
-  color: var(--text-muted);
+/* The gap and the side page's width come from layout.ts, which fits the board around them. */
+.desk {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: flex-start;
 }
 
-.solvedPill {
-  font-size: 13px;
-  text-transform: uppercase;
-  background: var(--a2);
-  color: var(--on-a2);
-  box-shadow: 3px 3px 0 var(--shadow);
-  transform: rotate(-3deg);
-  animation: pop 360ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+.card {
+  position: relative;
+  flex: 1;
+  align-self: stretch;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-6);
+  color: var(--ink);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: 0 5px 0 var(--shade);
 }
 
-@keyframes pop {
-  from {
-    opacity: 0;
-    transform: scale(0.6) rotate(-8deg);
-  }
-  to {
-    transform: rotate(-3deg);
-  }
+.cardHead {
+  align-self: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
 }
 
-/* --cabinet-chrome is the cabinet's padding + border + shadow; PlayPage subtracts it when fitting cells. */
+.title {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.size,
+.percent {
+  font: 700 13px var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.percent {
+  padding: 2px 8px;
+  color: var(--on-cyan);
+  background: var(--cyan);
+  border-radius: var(--r-pill);
+}
+
+.cardHead .iconButton {
+  margin-left: auto;
+}
+
+.iconButton {
+  width: 44px;
+  padding: 0;
+}
+
+/* Small enough to sit in the header; the fly target when there's no room for the side page. */
+.slotChip {
+  flex: none;
+  width: 44px;
+}
+
+.slotChip small {
+  display: none;
+}
+
+.slotChip b {
+  font-size: 11px;
+}
+
 .stage {
-  --cabinet-chrome: 68px;
   flex: 1;
   min-height: 0;
   width: 100%;
-  padding: 0 var(--space-7);
   display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: auto;
 }
 
-.cabinet {
-  margin: auto;
-  padding: var(--space-7);
-  background: var(--surface);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--r-xl);
-  box-shadow: calc(var(--sh) * 2) calc(var(--sh) * 2) 0 var(--shadow);
-}
-
 .board {
+  margin: auto;
   display: grid;
   grid-template-columns: auto auto;
-  font: 700 calc(var(--cell) * 0.44) var(--font-mono);
+  font: 600 calc(var(--cell) * 0.44) var(--font-ui);
   line-height: 1;
 }
 
@@ -154,7 +161,6 @@
   justify-content: flex-end;
   align-items: center;
   padding: 6px 0 4px;
-  border: var(--bw) solid transparent;
   border-radius: var(--r-sm);
 }
 
@@ -175,7 +181,6 @@
   justify-content: flex-end;
   align-items: center;
   padding: 0 4px 0 var(--space-2);
-  border: var(--bw) solid transparent;
   border-radius: var(--r-sm);
 }
 
@@ -185,15 +190,13 @@
 }
 
 .active {
-  background: var(--a2);
-  color: var(--on-a2);
-  border-color: var(--line);
+  background: var(--cyan);
+  color: var(--on-cyan);
 }
 
 .impossible {
-  background: var(--bad);
-  color: var(--on-bad);
-  border-color: var(--line);
+  background: var(--t-forge);
+  color: var(--on-tab);
 }
 
 .done {
@@ -217,122 +220,70 @@
   outline: none;
 }
 
+.tools {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+}
+
 .dock {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
-  padding: 0 var(--space-4);
 }
 
-.modeToggle {
-  display: none;
-  border: var(--bw) solid var(--line);
-  border-radius: var(--r-md);
-  box-shadow: var(--sh) var(--sh) 0 var(--shadow);
-  overflow: hidden;
+/* A segmented control; a single button makes a toggle. */
+.seg {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--card-2);
+  border-radius: var(--r-pill);
+  box-shadow: 0 3px 0 var(--line-soft);
 }
 
-.modeToggle button {
-  min-height: 48px;
-  min-width: 92px;
+.seg button {
+  min-height: 36px;
+  padding: 0 16px;
+  font-size: 15px;
+  --btn-bg: transparent;
   --btn-edge: transparent;
-  border-radius: 0;
-  font-size: 16px;
 }
 
-.modeToggle button + button {
-  border-left: var(--bw) solid var(--line);
-}
-
-.modeToggle button:hover:not(:disabled),
-.modeToggle button:active:not(:disabled) {
+.seg button:hover:not(:disabled),
+.seg button:active:not(:disabled) {
   transform: none;
 }
 
-.modeToggle button[aria-pressed='true'] {
-  --btn-bg: var(--pink);
-  --btn-ink: var(--on-pink);
+.seg button[aria-pressed='true'] {
+  --btn-bg: var(--ink);
+  --btn-ink: var(--card);
+}
+
+.seg svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.4;
+}
+
+/* The mouse fills and crosses with its two buttons, so only touch needs the tool picker. */
+.touchOnly {
+  display: none;
 }
 
 @media (any-pointer: coarse) {
-  .modeToggle {
-    display: flex;
+  .touchOnly {
+    display: inline-flex;
   }
 }
 
 .fillSwatch {
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
   background: currentColor;
   border-radius: 2px;
-}
-
-.linkButton {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  padding: 0 var(--space-6);
-  font: 700 17px var(--font-ui);
-  color: var(--on-a2);
-  text-decoration: none;
-  background: var(--a2);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--r-md);
-  box-shadow: var(--sh) var(--sh) 0 var(--shadow);
-}
-
-.linkButton:hover {
-  transform: translate(-1px, -1px);
-}
-
-.linkButton.secondary {
-  padding: 0 var(--space-4);
-  font-size: 15px;
-  color: var(--text);
-  background: var(--surface);
-}
-
-.linkButton svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.confirm {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: 4px 4px 4px var(--space-3);
-  border: var(--bw) dashed var(--line);
-  border-radius: var(--r-md);
-}
-
-.confirm span {
-  font-weight: 800;
-}
-
-.confirm button {
-  min-height: 36px;
-}
-
-.confirm .danger {
-  --btn-bg: var(--red);
-  --btn-ink: var(--on-red);
-  --btn-edge: var(--red-dk);
-}
-
-.confirm .ghost {
-  --btn-bg: transparent;
-  --btn-edge: transparent;
 }
 
 .chips {
@@ -340,12 +291,11 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--space-2);
-  padding: 0 var(--space-4);
 }
 
 .chips button {
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 36px;
+  padding: 0 12px;
   font-size: 13px;
   --btn-bg: transparent;
   --btn-edge: transparent;
@@ -369,6 +319,217 @@
   stroke-width: 3;
 }
 
+.confirm {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 4px 4px 4px var(--space-3);
+  border: 2px dashed var(--line-soft);
+  border-radius: var(--r-pill);
+}
+
+.confirm span {
+  font-weight: 600;
+}
+
+.confirm button {
+  min-height: 36px;
+}
+
+.confirm .danger {
+  --btn-bg: var(--red);
+  --btn-ink: var(--on-red);
+  --btn-edge: var(--red-dk);
+}
+
+.confirm .ghost {
+  --btn-bg: transparent;
+  --btn-edge: transparent;
+}
+
+.after {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  text-align: center;
+  padding: var(--space-3) var(--space-4);
+  background: var(--card-2);
+  border-radius: var(--r-lg);
+}
+
+.after p {
+  margin: 0;
+  font: 600 16px var(--font-ui);
+}
+
+.after b {
+  font: 400 16px var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+.afterActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 20px;
+  font: 600 16px var(--font-ui);
+  color: var(--on-pink);
+  text-decoration: none;
+  white-space: nowrap;
+  background: var(--pink);
+  border-radius: var(--r-pill);
+  box-shadow: 0 var(--press) 0 var(--pink-dk);
+  transition:
+    transform 80ms linear,
+    box-shadow 80ms linear;
+}
+
+.linkButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 calc(var(--press) + 1px) 0 var(--pink-dk);
+}
+
+.linkButton:active {
+  transform: translateY(var(--press));
+  box-shadow: 0 0 0 transparent;
+}
+
+.linkButton.paper {
+  color: var(--ink);
+  background: var(--card);
+  box-shadow: 0 var(--press) 0 var(--line-soft);
+}
+
+.linkButton svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The row of the page this puzzle's slot is on. */
+.side {
+  position: relative;
+  flex: none;
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-6);
+  color: var(--ink);
+  background: var(--paper);
+  border-radius: var(--r-sm) var(--r-lg) var(--r-lg) var(--r-sm);
+  box-shadow:
+    inset 8px 0 10px -6px var(--shade),
+    0 5px 0 var(--shade);
+}
+
+.sideHead {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.sideHead h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.sideHead p {
+  margin: var(--space-1) 0 0;
+  font: 700 12px var(--font-mono);
+  opacity: 0.7;
+}
+
+.count {
+  padding: 3px 10px;
+  font: 700 13px var(--font-mono);
+  white-space: nowrap;
+  background: var(--ink);
+  color: var(--desk);
+  border-radius: var(--r-pill);
+}
+
+.sideSlots {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sideSlots > li {
+  min-width: 0;
+}
+
+.sideSlots small {
+  display: none;
+}
+
+/* Solid, unlike a stamp inked on paper: these hang off the page over the cover or the board. */
+.sideStamp,
+.cardStamp {
+  position: absolute;
+  z-index: 2;
+  width: 88px;
+  height: 88px;
+  padding: 6px;
+  font-size: 10px;
+  letter-spacing: -0.06em;
+  background: var(--sticker);
+  box-shadow: 0 3px 0 var(--shade);
+}
+
+.sideStamp {
+  right: -18px;
+  bottom: -62px;
+}
+
+.cardStamp {
+  top: 44px;
+  left: 4px;
+}
+
+/* The sticker in flight; sticker-moment.ts positions it in viewport coordinates. */
+.float {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  width: 96px;
+  pointer-events: none;
+  transform: scale(0);
+}
+
+.float > * {
+  width: 100%;
+}
+
+.burst {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  image-rendering: pixelated;
+  z-index: 3;
+}
+
 .visuallyHidden {
   position: absolute;
   width: 1px;
@@ -378,41 +539,34 @@
   white-space: nowrap;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 720px) {
   .play {
-    gap: var(--space-3);
+    padding: var(--space-3) var(--space-3) var(--space-4);
+    gap: var(--space-2);
+  }
+
+  .card {
+    padding: var(--space-3) 10px var(--space-4);
   }
 
   .title {
-    font-size: 34px;
+    font-size: 18px;
   }
 
-  .stage {
-    --cabinet-chrome: 40px;
-    padding: 0 var(--space-4);
-  }
-
-  .cabinet {
-    padding: 14px;
-    box-shadow: calc(var(--sh) + 1px) calc(var(--sh) + 1px) 0 var(--shadow);
-  }
-
-  .modeToggle button {
-    min-width: 76px;
+  .seg button {
+    padding: 0 12px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .solvedPill {
-    animation: none;
-  }
-
   .colClues,
-  .rowClues {
+  .rowClues,
+  .linkButton {
     transition: none;
   }
 
-  .linkButton:hover {
+  .linkButton:hover,
+  .linkButton:active {
     transform: none;
   }
 }

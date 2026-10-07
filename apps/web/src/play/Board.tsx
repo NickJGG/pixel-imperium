@@ -19,7 +19,7 @@ const keyTools: Record<string, Tool> = { z: 'fill', x: 'mark' }
 /** The reveal sweeps diagonally from the top-left; each cell then fades to its color. */
 const REVEAL_SWEEP_MS = 550
 const REVEAL_CELL_MS = 300
-const REVEAL_MS = REVEAL_SWEEP_MS + REVEAL_CELL_MS
+export const REVEAL_MS = REVEAL_SWEEP_MS + REVEAL_CELL_MS
 
 export function Board({ store, cellSize }: { store: PlayStore; cellSize: number }) {
   const { width, height } = store.puzzle
