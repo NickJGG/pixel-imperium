@@ -70,13 +70,13 @@ const summarize = ({ id, title, width, height, filledCount }: PuzzleSummary): Pu
 export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps) {
   const byId = new Map(campaigns.flatMap(c => c.provinces.flatMap(p => p.puzzles)).map(p => [p.id, p]))
   const campaignPayloads = new Map(
-    campaigns.map(({ id, name, closingLine, map, provinces }): [string, CampaignPayload] => [
+    campaigns.map(({ id, name, closingLine, journey, provinces }): [string, CampaignPayload] => [
       id,
       {
         id,
         name,
         closingLine,
-        map,
+        journey,
         provinces: provinces.map(p => ({ id: p.id, name: p.name, flavour: p.flavour, puzzles: p.puzzles.map(summarize) })),
       },
     ]),

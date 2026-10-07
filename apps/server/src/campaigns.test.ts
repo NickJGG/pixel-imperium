@@ -29,27 +29,42 @@ function source(overrides: Partial<CampaignSource['campaign']> = {}, provinces?:
       ],
       ...overrides,
     },
-    map: { palette: { g: '#0f0' }, rows: ['g.'], regions: { key: { p: 'p', q: 'q' }, rows: ['pq'] } },
+    journey: {
+      palette: { g: '#0f0' },
+      width: 6,
+      height: 3,
+      step: 2,
+      maps: {
+        p: { rows: ['gggggg', 'gggggg', 'gggggg'], landmark: [2, 1] },
+        q: { rows: ['......', 'gggggg', 'gggggg'], landmark: [3, 1] },
+      },
+      road: [[2, 1], [2, 2], [3, 3]],
+    },
     provinces: provinces ?? { p: [block('p1', 5, 10)], q: [block('q1', 10, 10)] },
   }
 }
 
 describe('buildCampaign', () => {
-  it('builds the map as colours plus province indexes', () => {
+  it('builds the journey as colours per map, landmarks and the road stops', () => {
     const c = buildCampaign(source())
-    expect(c.map).toEqual({ width: 2, height: 1, colors: ['#0f0', null], regions: [0, 1] })
+    expect(c.journey).toMatchObject({ width: 6, height: 3, step: 2, roadStops: [0, 2] })
+    expect(c.journey.maps.map(m => m.landmark)).toEqual([{ x: 2, y: 1 }, { x: 3, y: 1 }])
+    expect(c.journey.maps[1]?.colors.slice(0, 7)).toEqual([null, null, null, null, null, null, '#0f0'])
+    expect(c.journey.road[1]).toEqual({ x: 2, y: 2 })
     expect(c.provinces[1]?.puzzles[0]).toMatchObject({ id: 'q1', campaignId: 'c', provinceId: 'q', width: 10 })
   })
 
+  const p = { rows: ['gggggg', 'gggggg', 'gggggg'], landmark: [2, 1] as [number, number] }
   it.each([
-    ['an unknown map colour', { rows: ['gx'] }, /'x'.*palette/],
-    ['ragged map rows', { rows: ['g.', 'g'] }, /row 1/],
-    ['regions of another size', { regions: { key: { p: 'p' }, rows: ['p'] } }, /regions are 1×1, map is 2×1/],
-    ['an unknown region char', { regions: { key: { p: 'p' }, rows: ['pz'] } }, /'z'.*key/],
-    ['a region naming an unknown province', { regions: { key: { p: 'p', z: 'zz' }, rows: ['pz'] } }, /'zz'/],
-  ])('rejects %s', (_, map, error) => {
+    ['an unknown map colour', { maps: { p: { ...p, rows: ['ggggxg', 'gggggg', 'gggggg'] }, q: p } }, /'x'.*palette/],
+    ['ragged map rows', { maps: { p: { ...p, rows: ['gggggg', 'ggg', 'gggggg'] }, q: p } }, /row 1/],
+    ['a map of the wrong size', { maps: { p: { ...p, rows: ['gggggg'] }, q: p } }, /c\/p map is 6×1, expected 6×3/],
+    ['a province with no map', { maps: { p } }, /c\/q has no map/],
+    ['a map for an unknown province', { maps: { p, q: p, z: p } }, /unknown province 'z'/],
+    ['a step taller than a map', { step: 4 }, /step 4/],
+  ])('rejects %s', (_, journey, error) => {
     const s = source()
-    expect(() => buildCampaign({ ...s, map: { ...s.map, ...map } })).toThrow(error)
+    expect(() => buildCampaign({ ...s, journey: { ...s.journey, ...journey } })).toThrow(error)
   })
 })
 
@@ -72,12 +87,33 @@ describe('campaignProblems', () => {
     expect(campaignProblems([buildCampaign(source({ draft: true }, provinces))])).toEqual([])
   })
 
-  it('flags provinces missing from the map and bad bands', () => {
+  it('flags bad bands', () => {
     const s = source()
-    const c = buildCampaign({ ...s, map: { ...s.map, regions: { key: { p: 'p' }, rows: ['p.'] } } })
-    expect(campaignProblems([c])).toEqual(['c/q: has no cells on the map'])
     const banded = buildCampaign(source({ provinces: [{ ...s.campaign.provinces[0]!, minSize: 10, maxSize: 5 }, s.campaign.provinces[1]!] }))
     expect(campaignProblems([banded])).toContain('c/p: size band 10–5 must be multiples of 5, low to high')
+  })
+
+  it.each<[string, Partial<CampaignSource['journey']>, string[]]>([
+    [
+      'a landmark outside the middle two-thirds',
+      { maps: { p: { rows: ['gggggg', 'gggggg', 'gggggg'], landmark: [0, 1] }, q: { rows: ['gggggg', 'gggggg', 'gggggg'], landmark: [3, 1] } } },
+      ['c/p: landmark (0, 1) is outside the middle two-thirds', 'c/p: the road misses its landmark, or reaches it out of order'],
+    ],
+    ['a broken road', { road: [[2, 1], [3, 3]] }, ['c: road breaks between points 0 and 1', 'c: road never crosses the overlap above q']],
+    ['a road skipping a landmark', { road: [[2, 2], [3, 3]] }, ['c/p: the road misses its landmark, or reaches it out of order']],
+    [
+      'a road reaching landmarks out of order',
+      { road: [[3, 3], [2, 2], [2, 1]] },
+      ['c/q: the road misses its landmark, or reaches it out of order'],
+    ],
+    [
+      'a road outside the phone crop',
+      { road: [[2, 1], [1, 2], [0, 2], [1, 3], [2, 3], [3, 3]] },
+      ['c: road point 2 (0, 2) is outside the phone crop'],
+    ],
+  ])('flags %s', (_, journey, problems) => {
+    const s = source()
+    expect(campaignProblems([buildCampaign({ ...s, journey: { ...s.journey, ...journey } })])).toEqual(problems)
   })
 
   it('flags duplicate campaign and puzzle ids across campaigns', () => {

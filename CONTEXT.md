@@ -39,7 +39,7 @@ An **Account**'s unique, case-insensitive public name, used in its profile URL `
 _Avoid_: Username, display name
 
 **Profile**:
-An **Account**'s public page showing its handle, avatar and **Map**.
+An **Account**'s public page showing its handle, avatar and **Journey**.
 
 ### Solves
 
@@ -57,7 +57,7 @@ _Avoid_: Migration, sync
 ### Campaign
 
 **Campaign**:
-A single-player journey through a fixed sequence of **Provinces**, each **Campaign** defining its own shape and **Map**.
+A single-player journey through a fixed sequence of **Provinces**, each **Campaign** defining its own shape and **Journey**.
 _Avoid_: Story mode, adventure
 
 **Province**:
@@ -78,19 +78,32 @@ The second-to-last **Province** of the **Imperium**.
 The final and hardest **Province** of the **Imperium**.
 _Avoid_: Finale, boss
 
+**Journey**:
+A **Campaign**'s column of **Maps**, first **Province** to last, joined by the **Road**.
+_Avoid_: World map, overworld, path, column
+
 **Map**:
-The pixel-art picture of a **Campaign**'s territory, divided into **Provinces** shown fogged, monochrome or in colour.
-_Avoid_: World map, overworld
+One **Province**'s own top-down pixel-art picture, shown fogged, monochrome or in colour.
+_Avoid_: Scene, vignette, tile, province map
+
+**Road**:
+The single path through every **Landmark** of a **Journey**, lit up to the active **Province**.
+_Avoid_: Trail, route
+
+**Landmark**:
+The point on a **Map** where the **Road** passes through and the **Province**'s label sits.
+_Avoid_: Stop, node, pin
 
 ## Relationships
 
 - An **Account** has exactly one **Handle** and one **Profile**
 - An **Account** has at most one solve per **Puzzle**, either **Verified** or **Unverified**
 - An **Unverified solve** becomes a **Verified solve** when its owner solves the **Puzzle** again while signed in
-- A **Profile**'s **Map** counts a **Province** as conquered only if all its solves are **Verified**
+- A **Profile**'s **Journey** counts a **Province** as conquered only if all its solves are **Verified**, and ends after the active **Province**
 - A **Campaign** has an ordered list of **Provinces**; the **Imperium**'s is four outer **Provinces**, then the **Capital**, then the **Throne**
 - A **Province** has its **Campaign**'s number of **Puzzles** (30 in the **Imperium**), ordered from easiest to hardest
 - Each **Province** unlocks on the **Conquest** of the one before it
+- Each **Province** has one **Map** with one **Landmark**; neighbouring **Maps** overlap where they fade
 
 ## Example dialogue
 

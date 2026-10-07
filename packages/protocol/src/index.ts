@@ -22,12 +22,18 @@ export interface CampaignSummary {
   name: string
 }
 
-/** Row-major map art; `regions` holds each cell's index into `Campaign.provinces`, `null` for neutral terrain. */
-export interface CampaignMap {
+/**
+ * Province Maps by province index, stacked top to bottom with map i's top at i × `step`, each `width` ×
+ * `height` with row-major colours. Landmarks are map-local; the Road is in journey coordinates, first
+ * province to last, and `roadStops` holds its index at each Landmark.
+ */
+export interface CampaignJourney {
   width: number
   height: number
-  colors: (string | null)[]
-  regions: (number | null)[]
+  step: number
+  maps: { colors: (string | null)[]; landmark: { x: number; y: number } }[]
+  road: { x: number; y: number }[]
+  roadStops: number[]
 }
 
 export interface Province {
@@ -44,7 +50,7 @@ export interface Campaign {
   id: string
   name: string
   closingLine: string
-  map: CampaignMap
+  journey: CampaignJourney
   provinces: Province[]
 }
 

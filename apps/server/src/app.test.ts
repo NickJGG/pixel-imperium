@@ -20,10 +20,9 @@ import { createTestDeps, signedInUser, truncateAll } from './test-db.ts'
 const diagonal: SeedPuzzle = { id: 'diag', title: 'Diagonal', palette: { r: '#f00', b: '#00f' }, rows: ['r.', '.b'] }
 const dot: SeedPuzzle = { id: 'dot', title: 'Dot', palette: { g: '#0f0' }, rows: ['g'] }
 
-/** A draft campaign whose map is one green cell per province, so the fixture can skip the size rules. */
+/** A draft campaign with a 1×1 map per province, so the fixture can skip the size and layout rules. */
 function fixture(id: string, provinces: Record<string, SeedPuzzle[]>) {
   const ids = Object.keys(provinces)
-  const regionKeys = ids.map((_, i) => String(i))
   return buildCampaign({
     campaign: {
       id,
@@ -33,10 +32,13 @@ function fixture(id: string, provinces: Record<string, SeedPuzzle[]>) {
       puzzlesPerProvince: 30,
       provinces: ids.map(p => ({ id: p, name: `Province ${p}`, theme: '', flavour: `${p} falls.`, minSize: 5, maxSize: 5 })),
     },
-    map: {
+    journey: {
       palette: { g: '#0f0' },
-      rows: ['g'.repeat(ids.length - 1) + '.'],
-      regions: { key: Object.fromEntries(ids.map((p, i) => [regionKeys[i], p])), rows: [regionKeys.join('')] },
+      width: 1,
+      height: 1,
+      step: 1,
+      maps: Object.fromEntries(ids.map(p => [p, { rows: ['g'], landmark: [0, 0] }])),
+      road: ids.map((_, i) => [0, i]),
     },
     provinces,
   })
@@ -67,13 +69,23 @@ describe('GET /api/campaigns', () => {
 })
 
 describe('GET /api/campaigns/:id', () => {
-  it('returns the map and provinces with puzzle summaries, without palettes', async () => {
+  it('returns the journey and provinces with puzzle summaries, without palettes', async () => {
     const res = await app.request('/api/campaigns/main')
     expect(await res.json()).toEqual<Campaign>({
       id: 'main',
       name: 'Campaign main',
       closingLine: 'Done.',
-      map: { width: 2, height: 1, colors: ['#0f0', null], regions: [0, 1] },
+      journey: {
+        width: 1,
+        height: 1,
+        step: 1,
+        maps: [
+          { colors: ['#0f0'], landmark: { x: 0, y: 0 } },
+          { colors: ['#0f0'], landmark: { x: 0, y: 0 } },
+        ],
+        road: [{ x: 0, y: 0 }, { x: 0, y: 1 }],
+        roadStops: [0, 1],
+      },
       provinces: [
         {
           id: 'first',
