@@ -1,8 +1,8 @@
 {
   "id": "imperium",
   "name": "The Imperium",
-  "draft": true,
-  "closingLine": "",
+  "draft": false,
+  "closingLine": "The fog has lifted from every field and every tower. Long may you reign.",
   "puzzlesPerProvince": 30,
   "provinces": [
     { "id": "marches", "name": "The Marches", "theme": "Farmland and villages", "flavour": "The fields are yours. Past the last fence, the gulls are calling.", "minSize": 5, "maxSize": 10 },
