@@ -8,10 +8,6 @@
   margin-inline: calc((100% - var(--size)) / 2);
 }
 
-.header {
-  margin-bottom: var(--space-2);
-}
-
 .frame {
   position: relative;
   overflow: hidden;

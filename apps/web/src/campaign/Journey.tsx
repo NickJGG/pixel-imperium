@@ -300,31 +300,3 @@ function ProvinceList({ campaign, progress, linked }: { campaign: Campaign; prog
     </ol>
   )
 }
-
-/** Province `index`'s Map on its own, for the head of its page; cropped on phones like the Journey. */
-export function ProvinceMap({ campaign, index, look }: { campaign: Campaign; index: number; look: Look }) {
-  const { journey } = campaign
-  const cols = useCols(journey.width)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  useEffect(() => {
-    const ctx = canvasRef.current!.getContext('2d')
-    ctx?.putImageData(new ImageData(paintMap(journey, index, look, cols), cols, journey.height), 0, 0)
-  }, [journey, index, look, cols])
-
-  return (
-    <div
-      className={`${styles.journey} ${styles.header}`}
-      style={{ '--w': cols, '--h': journey.height, '--fade': FADE } as CSSProperties}
-    >
-      <canvas
-        ref={canvasRef}
-        width={cols}
-        height={journey.height}
-        className={styles.canvas}
-        role="img"
-        aria-label={`Map of ${campaign.provinces[index]!.name}`}
-      />
-    </div>
-  )
-}

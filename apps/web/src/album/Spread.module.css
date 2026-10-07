@@ -1,0 +1,156 @@
+/* Square on the right, where the index tabs stick out. */
+.spread {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-width: 0;
+  color: var(--ink);
+  background: var(--paper);
+  border-radius: var(--r-md) 0 0 var(--r-md);
+  box-shadow:
+    0 0 0 3px var(--cover),
+    6px 8px 0 3px var(--shade);
+  overflow: hidden;
+}
+
+.page {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: 20px;
+}
+
+/* The gutter: each page darkens into the fold. */
+.page:first-child {
+  background: linear-gradient(to left, rgba(10, 30, 80, 0.16), transparent 22px);
+}
+
+.page:nth-child(2) {
+  background:
+    linear-gradient(to right, rgba(10, 30, 80, 0.16), transparent 22px),
+    color-mix(in srgb, var(--paper) 92%, var(--ink));
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 52px;
+}
+
+.name {
+  margin: 0;
+  font: 400 26px/1 var(--font-display);
+  letter-spacing: -0.04em;
+}
+
+.theme {
+  margin: var(--space-1) 0 0;
+  font: 600 15px var(--font-ui);
+  opacity: 0.75;
+}
+
+.count {
+  padding: 3px 10px;
+  font: 700 14px var(--font-mono);
+  white-space: nowrap;
+  background: var(--ink);
+  color: var(--desk);
+  border-radius: var(--r-pill);
+}
+
+.slots {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px 10px;
+}
+
+.slots > li {
+  min-width: 0;
+}
+
+.pageNo {
+  align-self: end;
+  margin: 0;
+  font: 700 11px var(--font-mono);
+  opacity: 0.55;
+}
+
+.page:nth-child(2) .pageNo {
+  text-align: right;
+}
+
+.foot {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  padding: var(--space-3) 20px var(--space-4);
+  border-top: 2px dashed color-mix(in srgb, var(--ink) 20%, transparent);
+}
+
+.caption {
+  margin: 0;
+  max-width: 52ch;
+  font: italic 500 17px var(--font-ui);
+}
+
+.stamp {
+  flex: none;
+}
+
+@media (max-width: 720px) {
+  .spread {
+    grid-template-columns: minmax(0, 1fr);
+    border-radius: var(--r-md);
+  }
+
+  .page {
+    padding: var(--space-3);
+  }
+
+  /* The fold between the two pages, now stacked. */
+  .page:nth-child(2) {
+    background: var(--paper);
+    border-top: 3px dashed color-mix(in srgb, var(--ink) 25%, transparent);
+  }
+
+  .page:first-child {
+    background: none;
+  }
+
+  .head {
+    min-height: 0;
+  }
+
+  .name {
+    font-size: 20px;
+  }
+
+  .slots {
+    gap: 8px 6px;
+  }
+
+  .foot {
+    gap: var(--space-3);
+    padding-inline: var(--space-3);
+  }
+
+  .caption {
+    font-size: 15px;
+  }
+
+  .stamp {
+    width: 76px;
+    height: 76px;
+    font-size: 10px;
+  }
+}

@@ -1,5 +1,4 @@
 import { type CSSProperties, useEffect, useRef } from 'react'
-import styles from './Campaign.module.css'
 
 interface Props {
   title: string
@@ -10,7 +9,7 @@ interface Props {
 }
 
 /** A solved puzzle's picture at one canvas pixel per cell; CSS scales it up unsmoothed. */
-export function PixelArt({ title, width, height, palette, className = `${styles.box} ${styles.art}` }: Props) {
+export function PixelArt({ title, width, height, palette, className }: Props) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {

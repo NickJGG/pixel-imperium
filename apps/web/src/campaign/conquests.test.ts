@@ -12,9 +12,9 @@ const campaign: Campaign = {
   closingLine: '',
   journey: { width: 0, height: 0, step: 0, maps: [], road: [], roadStops: [] },
   provinces: [
-    { id: 'a', name: 'A', flavour: '', puzzles: [puzzle('a1')] },
-    { id: 'b', name: 'B', flavour: '', puzzles: [puzzle('b1')] },
-    { id: 'c', name: 'C', flavour: '', puzzles: [puzzle('c1')] },
+    { id: 'a', name: 'A', theme: '', flavour: '', puzzles: [puzzle('a1')] },
+    { id: 'b', name: 'B', theme: '', flavour: '', puzzles: [puzzle('b1')] },
+    { id: 'c', name: 'C', theme: '', flavour: '', puzzles: [puzzle('c1')] },
   ],
 }
 

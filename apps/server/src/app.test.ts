@@ -90,10 +90,11 @@ describe('GET /api/campaigns/:id', () => {
         {
           id: 'first',
           name: 'Province first',
+          theme: '',
           flavour: 'first falls.',
           puzzles: [{ id: 'diag', title: 'Diagonal', width: 2, height: 2, filledCount: 2 }],
         },
-        { id: 'second', name: 'Province second', flavour: 'second falls.', puzzles: [] },
+        { id: 'second', name: 'Province second', theme: '', flavour: 'second falls.', puzzles: [] },
       ],
     })
   })

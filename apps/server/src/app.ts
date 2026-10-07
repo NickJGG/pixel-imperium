@@ -77,7 +77,13 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         name,
         closingLine,
         journey,
-        provinces: provinces.map(p => ({ id: p.id, name: p.name, flavour: p.flavour, puzzles: p.puzzles.map(summarize) })),
+        provinces: provinces.map(({ id, name, theme, flavour, puzzles }) => ({
+          id,
+          name,
+          theme,
+          flavour,
+          puzzles: puzzles.map(summarize),
+        })),
       },
     ]),
   )

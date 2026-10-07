@@ -39,6 +39,8 @@ export interface CampaignJourney {
 export interface Province {
   id: string
   name: string
+  /** A few words under the name, e.g. "Ports and the sea". */
+  theme: string
   /** Shown once the province is conquered. */
   flavour: string
   /** Easiest first. */

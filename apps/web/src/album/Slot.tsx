@@ -9,7 +9,7 @@ interface Props {
   width: number
   height: number
   /** Percent filled in an unsolved, started puzzle. */
-  started?: number
+  started?: number | undefined
   /** The slot the player is due to fill; it pulses. */
   next?: boolean
   gold?: boolean

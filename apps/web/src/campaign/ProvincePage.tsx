@@ -1,44 +1,48 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import type { Campaign, Province } from '@pixel-imperium/protocol'
+import { Lock } from '../album/Lock.tsx'
+import { paperStyle } from '../album/paper.ts'
 import { ProvinceTabs } from '../album/ProvinceTabs.tsx'
+import { Spread } from '../album/Spread.tsx'
 import { useAccount } from '../account.ts'
 import { isConquestSeen } from './conquests.ts'
-import { ProvinceMap } from './Journey.tsx'
 import { type CampaignProgress, campaignProgress, isOpen } from './progress.ts'
-import { PuzzleCard } from './PuzzleCard.tsx'
+import { PuzzleSlot } from './PuzzleSlot.tsx'
 import styles from './Campaign.module.css'
 
 export function ProvincePage({ campaign, province }: { campaign: Campaign; province: Province }) {
   const { storage } = useAccount()
   const progress = campaignProgress(campaign, storage)
   const index = campaign.provinces.indexOf(province)
-  const { state, solved, total } = progress.provinces[index]!
+  const { state, solved } = progress.provinces[index]!
   // Its colour waits for the conquest to play out on the campaign map.
   const claimed = state === 'conquered' && isConquestSeen(campaign, index, storage)
+  const next = state === 'active' ? province.puzzles.find(p => storage.loadSolved(p.id) === null) : undefined
 
   if (!isOpen(state)) return <LockedProvince campaign={campaign} province={province} progress={progress} />
   return (
     <Indexed campaign={campaign} province={province} progress={progress}>
       <BackToMap campaign={campaign} />
-      <ProvinceMap campaign={campaign} index={index} look={claimed ? 'colour' : 'mono'} />
-      <div className={styles.sec}>
-        <h1 className={styles.heading}>{province.name}</h1>
-        <span className={styles.count}>
-          {solved}/{total}
-        </span>
-      </div>
-      {claimed && province.flavour && <p className={styles.flavour}>{province.flavour}</p>}
-      {state === 'conquered' && !claimed && (
-        <p className={styles.flavour}>All {province.puzzles.length} solved. Head back to the map to claim it.</p>
-      )}
-      <ul className={styles.grid}>
-        {province.puzzles.map(p => (
-          <li key={p.id}>
-            <PuzzleCard puzzle={p} storage={storage} />
-          </li>
-        ))}
-      </ul>
+      <Spread
+        province={province}
+        index={index}
+        solved={solved}
+        complete={state === 'conquered'}
+        caption={
+          claimed ? (
+            province.flavour || undefined
+          ) : state === 'conquered' ? (
+            <>
+              All {province.puzzles.length} solved.{' '}
+              <Link to="/c/$campaignId" params={{ campaignId: campaign.id }}>
+                Head back to the map to claim it.
+              </Link>
+            </>
+          ) : undefined
+        }
+        slot={(p, number) => <PuzzleSlot puzzle={p} number={number} storage={storage} next={p === next} />}
+      />
     </Indexed>
   )
 }
@@ -55,15 +59,51 @@ export function LockedProvince({
 }) {
   const index = campaign.provinces.indexOf(province)
   const active = campaign.provinces.find((_, i) => progress.provinces[i]!.state === 'active')
+  const sizes = [...province.puzzles].sort((a, b) => a.width * a.height - b.width * b.height).map(p => `${p.width}×${p.height}`)
+  const range = sizes.length === 0 ? '' : sizes[0] === sizes.at(-1) ? sizes[0] : `${sizes[0]} to ${sizes.at(-1)}`
+
   return (
     <Indexed campaign={campaign} province={province} progress={progress}>
       <BackToMap campaign={campaign} />
-      <h1 className={styles.heading}>Not yet</h1>
-      <p className={styles.empty}>
-        {progress.provinces[index]!.state === 'next' && active
-          ? `${province.name} opens once you conquer ${active.name}.`
-          : 'This province is still in the fog. Conquer the provinces before it first.'}
-      </p>
+      <section className={styles.locked} style={paperStyle(index)} aria-labelledby="locked-title">
+        <div className={styles.sealed} aria-hidden="true">
+          <div className={styles.ghosts}>
+            {province.puzzles.map(p => (
+              <i key={p.id} />
+            ))}
+          </div>
+          <div className={styles.seal}>
+            <span>
+              <Lock className={styles.sealLock} />
+              Locked
+            </span>
+          </div>
+        </div>
+        <div className={styles.lockedMsg}>
+          <h1 id="locked-title" className={styles.lockedName}>
+            {province.name}
+          </h1>
+          <span className={styles.lockBadge}>
+            <Lock />
+            Locked
+          </span>
+          <p>
+            {progress.provinces[index]!.state === 'next' && active
+              ? `${province.name} opens once you conquer ${active.name}.`
+              : 'This province is still in the fog. Conquer the provinces before it first.'}
+            {range && ` ${province.puzzles.length} slots, ${range}.`}
+          </p>
+          {active && (
+            <Link
+              to="/c/$campaignId/$provinceId"
+              params={{ campaignId: campaign.id, provinceId: active.id }}
+              className={styles.paperLink}
+            >
+              Back to {active.name.replace(/^The /, 'the ')}
+            </Link>
+          )}
+        </div>
+      </section>
     </Indexed>
   )
 }
