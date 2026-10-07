@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { stubStorage } from '../test-storage.ts'
-import { crestsOf, latestStickers, showcaseFallback } from './stickers.ts'
+import { crestsOf, latestStickers, profileStickers, showcaseFallback } from './stickers.ts'
 
 const puzzle = (id: string) => ({ id, title: id, width: 1, height: 1, filledCount: 1 })
 
@@ -51,6 +51,21 @@ describe('latestStickers', () => {
     const latest = latestStickers(campaign, storage)
     expect(showcaseFallback(latest, true).map(s => s.puzzle.id)).toEqual(['a1', 'a3', 'b1'])
     expect(showcaseFallback(latest, false).map(s => s.puzzle.id)).toEqual(['a1', 'a3'])
+  })
+})
+
+describe('profileStickers', () => {
+  beforeEach(() => stubStorage())
+  afterEach(() => vi.unstubAllGlobals())
+
+  it("keeps the profile's order, with art only where the viewer has it", () => {
+    const viewer = new ProgressStorage(null)
+    viewer.savePalette('a2', ['#fff'])
+    const stickers = profileStickers(campaign, ['b1', 'gone', 'a2'], viewer)
+    expect(stickers.map(s => [s.puzzle.id, s.province, s.number, s.palette])).toEqual([
+      ['b1', 1, 1, null],
+      ['a2', 0, 2, ['#fff']],
+    ])
   })
 })
 

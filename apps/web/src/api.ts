@@ -40,7 +40,13 @@ export async function fetchCampaign(id: string): Promise<Campaign | null> {
   return (await res.json()) as Campaign
 }
 
-export const fetchPuzzle = (id: string) => getJson<PuzzleClues>(`/api/puzzles/${encodeURIComponent(id)}`)
+/** `null` when no puzzle has the id. */
+export async function fetchPuzzle(id: string): Promise<PuzzleClues | null> {
+  const res = await fetch(`/api/puzzles/${encodeURIComponent(id)}`)
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  return (await res.json()) as PuzzleClues
+}
 
 export const submitSolve = (id: string, body: SolveRequest, signal: AbortSignal | null = null) =>
   getJson<SolveResponse>(`/api/puzzles/${encodeURIComponent(id)}/solve`, jsonInit('POST', body, { signal }))

@@ -1,38 +1,122 @@
-.header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  margin-bottom: var(--space-6);
-}
-
-.avatar {
-  flex: none;
+.profile {
   display: grid;
-  place-items: center;
-  width: 72px;
-  height: 72px;
-  border: var(--bw) solid var(--line);
-  border-radius: var(--r-pill);
-  background: var(--a1);
-  color: var(--on-a1);
-  font: 400 32px var(--font-display);
-  object-fit: cover;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.4fr);
+  gap: var(--space-7);
+  align-items: start;
 }
 
-.switcher {
-  margin-bottom: var(--space-4);
+.cover {
+  position: sticky;
+  top: 0;
+  align-content: start;
 }
 
-.meta {
-  margin: var(--space-1) 0 0;
-  font: 700 14px var(--font-mono);
-  color: var(--text-muted);
+.plate {
+  margin: 0;
+  font: inherit;
+  letter-spacing: normal;
 }
 
-@media (max-width: 760px) {
-  .avatar {
-    width: 52px;
-    height: 52px;
-    font-size: 24px;
+.showcase {
+  display: flex;
+  align-items: start;
+  justify-content: center;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 10px 0 4px;
+  list-style: none;
+}
+
+.showcase > li > *,
+.latest > li > *,
+.fill > * {
+  width: 100%;
+}
+
+.fill {
+  display: block;
+}
+
+.caption {
+  margin: 0;
+  font: 600 14px var(--font-ui);
+}
+
+.side {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+  margin: 0;
+}
+
+/* The number above its label. */
+.stats > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+}
+
+.stats dt {
+  font: 600 13px var(--font-ui);
+  color: var(--ink-soft);
+}
+
+.stats dd {
+  margin: 0;
+  font: 400 30px/1 var(--font-display);
+  letter-spacing: -0.05em;
+}
+
+.stats .date {
+  font: 700 22px/1.35 var(--font-mono);
+  letter-spacing: 0;
+}
+
+.settings {
+  min-height: 38px;
+}
+
+/* Clips the map's faded overhang to the column. */
+.journey {
+  overflow-x: clip;
+}
+
+.side section {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.latest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.latest > li {
+  width: 54px;
+}
+
+@media (max-width: 900px) {
+  .profile {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cover {
+    position: static;
+  }
+
+  .showcase {
+    max-width: 420px;
+    margin-inline: auto;
   }
 }

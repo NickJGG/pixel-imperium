@@ -18,12 +18,14 @@ interface Props {
   complete: boolean
   /** Printed under the stamp, e.g. the flavour line. */
   caption?: ReactNode
+  /** Someone else's pages: no call to fill them. */
+  readOnly?: boolean
   /** One slot, given the puzzle and its 1-based number. */
   slot: (puzzle: PuzzleSummary, number: number) => ReactNode
 }
 
 /** A province's two facing pages of slots, on its own paper. Stacks into one tall page on phones. */
-export function Spread({ province, index, solved, complete, caption, slot }: Props) {
+export function Spread({ province, index, solved, complete, caption, readOnly = false, slot }: Props) {
   const pages = [province.puzzles.slice(0, SLOTS_PER_PAGE), province.puzzles.slice(SLOTS_PER_PAGE)]
   const total = province.puzzles.length
   return (
@@ -43,7 +45,11 @@ export function Spread({ province, index, solved, complete, caption, slot }: Pro
       <div className={styles.page}>
         <header className={styles.head}>
           <p className={styles.theme}>
-            {complete ? 'Every slot filled.' : `Fill both pages to conquer ${province.name.replace(/^The /, 'the ')}.`}
+            {complete
+              ? 'Every slot filled.'
+              : readOnly
+                ? ''
+                : `Fill both pages to conquer ${province.name.replace(/^The /, 'the ')}.`}
           </p>
           <span className={styles.count}>
             {solved} / {total}

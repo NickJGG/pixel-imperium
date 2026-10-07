@@ -1,47 +1,210 @@
 .page {
   flex: 1;
   overflow-y: auto;
+  padding: var(--space-6) var(--space-4) 56px;
+}
+
+/* The album's inside back cover: cobalt board, its spine down the right edge. */
+.backCover {
+  display: grid;
+  gap: 18px;
+  width: min(960px, 100%);
+  margin: 0 auto;
+  padding: 22px 34px 24px 22px;
+  color: var(--on-cover);
+  background-color: var(--cover);
+  background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 1.6px);
+  background-size: 14px 14px;
+  border-radius: var(--r-xl) var(--r-sm) var(--r-sm) var(--r-xl);
+  box-shadow:
+    inset -10px 0 0 var(--cover-dk),
+    inset -13px 0 0 rgb(255 255 255 / 0.18),
+    6px 8px 0 var(--shade);
+}
+
+.coverHead {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-  /* Centres a 640px column while the scrollbar stays at the window edge. */
-  padding: var(--space-4) max(var(--space-4), calc((100% - 640px) / 2)) 56px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
 }
 
 .heading {
   margin: 0;
-  font-size: 40px;
+  font-size: 28px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: var(--space-4);
+  align-items: start;
 }
 
 .card {
-  padding: var(--space-6);
-  background: var(--surface);
-  border: var(--bw) solid var(--line);
+  display: grid;
+  gap: 10px;
+  padding: var(--space-4);
+  color: var(--ink);
+  background: var(--card);
   border-radius: var(--r-lg);
-  box-shadow: calc(var(--sh) + 1px) calc(var(--sh) + 1px) 0 var(--shadow);
-}
-
-.card h1 {
-  margin: 0 0 var(--space-3);
-  font-size: 32px;
+  box-shadow: 0 4px 0 var(--shade);
 }
 
 .card h2 {
-  margin: 0 0 var(--space-3);
-  font-size: 22px;
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: -0.03em;
 }
 
 .card p {
-  margin: 0 0 var(--space-4);
+  margin: 0;
   line-height: 1.45;
 }
 
-.card code {
-  font: 700 14px var(--font-mono);
+.card input {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  font: 700 16px var(--font-mono);
+  color: var(--ink);
+  background: var(--card-2);
+  border: 0;
+  border-radius: var(--r-md);
+  box-shadow: inset 0 3px 0 var(--line-soft);
 }
 
 .danger {
-  border-color: var(--bad);
+  box-shadow: 0 4px 0 var(--red-dk);
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 15px;
+}
+
+.soft {
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.handle {
+  overflow-wrap: anywhere;
+  font: 400 18px var(--font-display);
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.handle:hover {
+  text-decoration: underline;
+}
+
+.small {
+  min-height: 36px;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.cancel,
+.start {
+  justify-self: start;
+}
+
+/* A switch: the knob slides right and the track turns cyan when on. */
+.card .toggle {
+  --btn-bg: var(--line-soft);
+  --btn-edge: transparent;
+  position: relative;
+  flex: none;
+  width: 52px;
+  min-height: 30px;
+  height: 30px;
+  padding: 0;
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  background: var(--sticker);
+  border-radius: 50%;
+  box-shadow: 0 2px 0 var(--shade);
+  transition: left 120ms;
+}
+
+.card .toggle[aria-pressed='true'] {
+  --btn-bg: var(--cyan);
+}
+
+.toggle[aria-pressed='true']::after {
+  left: 26px;
+}
+
+.seg {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--card-2);
+  border-radius: var(--r-pill);
+  box-shadow: 0 3px 0 var(--line-soft);
+}
+
+.seg button {
+  --btn-bg: transparent;
+  --btn-edge: transparent;
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 15px;
+}
+
+.seg button[aria-pressed='true'] {
+  --btn-bg: var(--ink);
+  --btn-ink: var(--card);
+}
+
+.toggle:hover:not(:disabled),
+.toggle:active:not(:disabled),
+.seg button:hover:not(:disabled),
+.seg button:active:not(:disabled) {
+  transform: none;
+}
+
+.providers {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.providers li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 44px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.confirm {
+  display: grid;
+  gap: var(--space-2);
+  font-size: 15px;
 }
 
 .hint,
@@ -50,28 +213,17 @@
 }
 
 .hint {
-  color: var(--text-muted);
+  color: var(--ink-soft);
 }
 
 .bad {
-  color: var(--bad);
+  color: var(--red);
 }
 
 .card .hint,
 .card .bad {
   min-height: 1.45em;
   margin: 0;
-}
-
-.card input {
-  min-width: 0;
-  min-height: 44px;
-  padding: 0 var(--space-3);
-  font: 700 16px var(--font-mono);
-  color: var(--text);
-  background: var(--bg);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--r-md);
 }
 
 .handleForm {
@@ -116,6 +268,7 @@
   background: transparent;
   border: 0;
   outline: 0;
+  box-shadow: none;
 }
 
 .handleInput:has(input:focus-visible) {
@@ -133,18 +286,6 @@
   margin: 0;
 }
 
-.picker {
-  width: min(460px, 100%);
-  margin: var(--space-6) auto 0;
-  border: 0;
-  border-radius: var(--r-xl);
-  box-shadow: 0 6px 0 var(--shade);
-}
-
-.picker > .hint {
-  margin: var(--space-4) 0 0;
-}
-
 .srOnly {
   position: absolute;
   width: 1px;
@@ -154,63 +295,34 @@
   white-space: nowrap;
 }
 
-.primary {
-  --btn-bg: var(--cyan);
-  --btn-ink: var(--on-cyan);
-  --btn-edge: var(--cyan-dk);
+.picker {
+  width: min(460px, 100%);
+  margin: 0 auto;
+  padding: 26px 22px 20px;
+  border-radius: var(--r-xl);
+  box-shadow: 0 6px 0 var(--shade);
 }
 
-.destructive {
-  --btn-bg: var(--red);
-  --btn-ink: var(--on-red);
-  --btn-edge: var(--red-dk);
-}
-
-.providers {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.providers li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.providers li > span {
-  display: flex;
-  flex-direction: column;
-}
-
-.providers .hint {
-  margin: 0;
-  min-height: 0;
-}
-
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-
-.confirm {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
+.picker > .hint {
+  margin: var(--space-4) 0 0;
 }
 
 @media (max-width: 760px) {
-  .heading {
-    font-size: 30px;
+  .page {
+    padding: var(--space-4) var(--space-4) 40px;
   }
 
-  .card {
-    padding: var(--space-4);
+  .backCover {
+    padding: 18px 26px 20px 16px;
+  }
+
+  .heading {
+    font-size: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle::after {
+    transition: none;
   }
 }

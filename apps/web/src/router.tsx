@@ -1,7 +1,8 @@
-import { Link, Outlet, createRootRoute, createRoute, createRouter, notFound } from '@tanstack/react-router'
+import { Outlet, createRootRoute, createRoute, createRouter, notFound } from '@tanstack/react-router'
 import { accountReady, useAccount } from './account.ts'
 import { fetchCampaign, fetchCampaigns, fetchProfile, fetchPuzzle } from './api.ts'
 import { AppHeader, ThumbBar } from './AppHeader.tsx'
+import { LoadError, Loading, NotFound } from './EdgeStates.tsx'
 import { CampaignPage } from './campaign/CampaignPage.tsx'
 import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
 import { MapPage } from './campaign/MapPage.tsx'
@@ -11,6 +12,7 @@ import { HandlePicker } from './me/HandlePicker.tsx'
 import { SettingsPage } from './me/SettingsPage.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
 import { ProfilePage } from './profile/ProfilePage.tsx'
+import { ProfileSpread } from './profile/ProfileSpread.tsx'
 import styles from './App.module.css'
 
 function Root() {
@@ -27,12 +29,8 @@ function Root() {
 
 const rootRoute = createRootRoute({
   component: Root,
-  errorComponent: ({ error }) => (
-    <main className={styles.message}>
-      <p>Something went wrong: {error instanceof Error ? error.message : String(error)}</p>
-      <Link to="/">Back to the map</Link>
-    </main>
-  ),
+  errorComponent: LoadError,
+  notFoundComponent: () => <NotFound>There’s no page at this address.</NotFound>,
 })
 
 async function loadCampaign(id: string) {
@@ -65,7 +63,7 @@ const campaignRoute = createRoute({
     return { campaign, campaigns }
   },
   component: () => <CampaignPage {...campaignRoute.useLoaderData()} />,
-  notFoundComponent: () => <Missing what="campaign" />,
+  notFoundComponent: () => <NotFound>There’s no campaign by that name.</NotFound>,
 })
 
 const mapRoute = createRoute({
@@ -75,7 +73,7 @@ const mapRoute = createRoute({
     import.meta.env.DEV && typeof search.conquer === 'string' ? { conquer: search.conquer } : {},
   loader: async ({ params }) => ({ campaign: await loadCampaign(params.campaignId) }),
   component: () => <MapPage {...mapRoute.useLoaderData()} conquer={mapRoute.useSearch().conquer} />,
-  notFoundComponent: () => <Missing what="campaign" />,
+  notFoundComponent: () => <NotFound>There’s no campaign by that name.</NotFound>,
 })
 
 const provinceRoute = createRoute({
@@ -88,7 +86,9 @@ const provinceRoute = createRoute({
     return { campaign, province }
   },
   component: () => <ProvincePage {...provinceRoute.useLoaderData()} />,
-  notFoundComponent: () => <Missing what="province" />,
+  notFoundComponent: () => (
+    <NotFound>There’s no province called “{provinceRoute.useParams().provinceId}”. It might have been renamed.</NotFound>
+  ),
 })
 
 const playRoute = createRoute({
@@ -96,19 +96,12 @@ const playRoute = createRoute({
   path: '/play/$id',
   loader: async ({ params }) => {
     const puzzle = await fetchPuzzle(params.id)
+    if (!puzzle) throw notFound()
     return { puzzle, campaign: await loadCampaign(puzzle.campaignId) }
   },
   component: PlayPage,
+  notFoundComponent: () => <NotFound>There’s no puzzle by that name.</NotFound>,
 })
-
-function Missing({ what }: { what: string }) {
-  return (
-    <main className={styles.message}>
-      <p>There's no such {what}.</p>
-      <Link to="/">Back to the map</Link>
-    </main>
-  )
-}
 
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -126,15 +119,20 @@ const profileRoute = createRoute({
     return { profile, campaign, started }
   },
   component: ProfilePage,
-  notFoundComponent: () => {
-    const { handle } = profileRoute.useParams()
-    return (
-      <main className={styles.message}>
-        <p>No player goes by @{handle}.</p>
-        <Link to="/">Back to the map</Link>
-      </main>
-    )
+  notFoundComponent: () => <NotFound>No player goes by @{profileRoute.useParams().handle}.</NotFound>,
+})
+
+const profileSpreadRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/u/$handle/$campaignId/$provinceId',
+  loader: async ({ params }) => {
+    const [profile, campaign] = await Promise.all([fetchProfile(params.handle), fetchCampaign(params.campaignId)])
+    const province = campaign?.provinces.find(p => p.id === params.provinceId)
+    if (!profile || !campaign || !province) throw notFound()
+    return { profile, campaign, province }
   },
+  component: ProfileSpread,
+  notFoundComponent: () => <NotFound>That player has no such page.</NotFound>,
 })
 
 const settingsRoute = createRoute({
@@ -147,7 +145,18 @@ const settingsRoute = createRoute({
 })
 
 export const router = createRouter({
-  routeTree: rootRoute.addChildren([homeRoute, campaignRoute, mapRoute, provinceRoute, playRoute, profileRoute, settingsRoute]),
+  routeTree: rootRoute.addChildren([
+    homeRoute,
+    campaignRoute,
+    mapRoute,
+    provinceRoute,
+    playRoute,
+    profileRoute,
+    profileSpreadRoute,
+    settingsRoute,
+  ]),
+  defaultPendingComponent: Loading,
+  defaultPendingMs: 300,
 })
 
 declare module '@tanstack/react-router' {

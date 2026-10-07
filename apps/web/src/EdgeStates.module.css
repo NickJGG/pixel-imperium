@@ -1,0 +1,141 @@
+.page {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-4) 56px;
+}
+
+.state {
+  position: relative;
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  align-content: start;
+  width: min(560px, 100%);
+  min-height: 220px;
+  margin: 0 auto;
+  padding: 22px;
+  overflow: hidden;
+  color: var(--ink);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: 0 4px 0 var(--shade);
+}
+
+.state p {
+  margin: 0;
+}
+
+.paper {
+  background: var(--paper);
+}
+
+.label {
+  font: 700 12px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.title {
+  max-width: 18ch;
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.detail {
+  font: 700 12px var(--font-mono);
+  color: var(--ink-soft);
+}
+
+/* The rest of the page, ripped off along its left edge. */
+.torn {
+  position: absolute;
+  top: 18px;
+  right: -10px;
+  width: 120px;
+  height: 150px;
+  background: color-mix(in srgb, var(--paper) 80%, var(--ink));
+  transform: rotate(14deg);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 12% 100%, 0 88%, 8% 76%, 0 64%, 9% 52%, 0 40%, 8% 28%, 0 16%);
+  opacity: 0.8;
+}
+
+.state > :not(.torn, .srOnly) {
+  position: relative;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: var(--space-2);
+  padding: 0 20px;
+  font: 600 16px var(--font-ui);
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--card-2);
+  border-radius: var(--r-pill);
+  box-shadow: 0 var(--press) 0 var(--line-soft);
+}
+
+.pill:active {
+  transform: translateY(var(--press));
+  box-shadow: none;
+}
+
+.state > button {
+  margin-top: var(--space-2);
+}
+
+.loading {
+  width: min(720px, 100%);
+}
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px 8px;
+  width: 100%;
+}
+
+.slots > i {
+  aspect-ratio: 1;
+  border-radius: var(--r-sm);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--ink) 8%, transparent) 30%,
+    color-mix(in srgb, var(--ink) 18%, transparent) 50%,
+    color-mix(in srgb, var(--ink) 8%, transparent) 70%
+  );
+  background-size: 300% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slots > i {
+    animation: none;
+  }
+
+  .pill:active {
+    transform: none;
+  }
+}

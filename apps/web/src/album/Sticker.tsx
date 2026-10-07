@@ -37,6 +37,21 @@ export function Sticker({ title, width, height, palette, foil, gold, unverified,
   )
 }
 
+/**
+ * A sticker the viewer hasn't collected, face down: just its backing paper, shaped like the picture.
+ * Someone else's sticker shows this way, since a palette is only ever released to its solver.
+ */
+export function StickerBack({ width, height, tilt = 0, className }: Pick<Props, 'width' | 'height' | 'tilt' | 'className'>) {
+  return (
+    <span
+      className={[styles.sticker, styles.back, className].filter(Boolean).join(' ')}
+      style={{ '--tilt': `${tilt}deg` } as CSSProperties}
+    >
+      <span className={styles.backing} style={{ aspectRatio: `${width} / ${height}` }} />
+    </span>
+  )
+}
+
 /** A resting tilt in [-3.5, 3.5] degrees that stays the same for a puzzle across renders. */
 export function tiltOf(id: string): number {
   let hash = 0

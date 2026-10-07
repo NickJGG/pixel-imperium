@@ -33,6 +33,34 @@ export function latestStickers(campaign: Pick<Campaign, 'provinces'>, storage: P
   return stickers.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)).map(s => s.entry)
 }
 
+/**
+ * A player's verified stickers in the campaign, in `verifiedIds` order (latest first on a Profile). Art comes
+ * from the viewer's own `storage`, so stickers the viewer hasn't collected have a `null` palette.
+ */
+export function profileStickers(
+  campaign: Pick<Campaign, 'provinces'>,
+  verifiedIds: readonly string[],
+  storage: ProgressStorage,
+): StickerEntry[] {
+  const slots = new Map(
+    campaign.provinces.flatMap((province, index) => province.puzzles.map((puzzle, i) => [puzzle.id, { puzzle, index, i }] as const)),
+  )
+  return verifiedIds.flatMap(id => {
+    const slot = slots.get(id)
+    if (!slot) return []
+    const { puzzle, index, i } = slot
+    return [
+      {
+        puzzle,
+        province: index,
+        number: i + 1,
+        palette: storage.loadPalette(puzzle.id, puzzle.width * puzzle.height),
+        unverified: false,
+      },
+    ]
+  })
+}
+
 /** What the cover shows until a showcase is chosen: the latest stickers with art, three for an account, two signed out. */
 export function showcaseFallback(latest: readonly StickerEntry[], signedIn: boolean): StickerEntry[] {
   return latest.filter(s => !s.unverified && s.palette !== null).slice(0, signedIn ? 3 : 2)
