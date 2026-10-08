@@ -56,16 +56,6 @@
   filter: grayscale(1);
 }
 
-.round {
-  border-radius: 50%;
-}
-
-.round .art {
-  aspect-ratio: 1;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
 .back {
   background: var(--card-2);
 }

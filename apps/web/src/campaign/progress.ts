@@ -1,7 +1,7 @@
 /**
  * Where a player stands in a campaign. Provinces unlock one at a time: each is conquered once
  * every puzzle in it is solved, the first unconquered one is active, the one after it is next
- * (named on the map, still locked) and the rest are locked.
+ * (named, still locked) and the rest are locked.
  */
 import type { Campaign, Province, PuzzleSummary } from '@pixel-imperium/protocol'
 import type { ProgressStorage } from '../play/progress-storage.ts'
@@ -41,19 +41,9 @@ export function provinceStates(
 
 export const UNLOCK_ALL = import.meta.env.VITE_UNLOCK_ALL === '1'
 
-/**
- * The player's own view: every kind of solve on this device counts. Solves in the `unsolved`
- * provinces (indices) are ignored, giving the map as it stood before they were conquered.
- */
-export function campaignProgress(
-  campaign: Pick<Campaign, 'provinces'>,
-  storage: ProgressStorage,
-  unsolved: readonly number[] = [],
-): CampaignProgress {
-  const ignored = new Set(unsolved.flatMap(i => campaign.provinces[i]!.puzzles.map(p => p.id)))
-  return provinceStates(campaign, id => !ignored.has(id) && storage.loadSolved(id) !== null, {
-    unlockAll: UNLOCK_ALL,
-  })
+/** The player's own view: every kind of solve on this device counts. */
+export function campaignProgress(campaign: Pick<Campaign, 'provinces'>, storage: ProgressStorage): CampaignProgress {
+  return provinceStates(campaign, id => storage.loadSolved(id) !== null, { unlockAll: UNLOCK_ALL })
 }
 
 /**

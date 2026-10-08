@@ -400,6 +400,40 @@
   letter-spacing: -0.03em;
 }
 
+.headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+.headline p {
+  max-width: 54ch;
+  text-align: left;
+}
+
+.afterStamp {
+  flex: none;
+  width: 88px;
+  height: 88px;
+  padding: 6px;
+}
+
+.flavour {
+  display: block;
+  margin-top: 2px;
+  font-style: italic;
+  font-weight: 500;
+}
+
+.after .closing {
+  max-width: 54ch;
+  font: 400 14px/1.4 var(--font-display);
+  letter-spacing: -0.03em;
+  color: var(--gold);
+}
+
 .afterActions {
   display: flex;
   flex-wrap: wrap;
@@ -440,6 +474,14 @@
   color: var(--ink);
   background: var(--card);
   box-shadow: 0 var(--press) 0 var(--line-soft);
+}
+
+.tabChip {
+  padding: 1px 8px;
+  font-size: 14px;
+  color: var(--on-tab);
+  background: var(--tab);
+  border-radius: var(--r-sm);
 }
 
 .linkButton svg {
@@ -582,6 +624,10 @@
 
   .seg button {
     padding: 0 12px;
+  }
+
+  .headline p {
+    text-align: center;
   }
 }
 

@@ -1,10 +1,11 @@
-import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { type Cell, progressPercent } from '@pixel-imperium/nonogram'
 import type { Campaign, HintResponse, Province, PuzzleClues } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
 import { SoundIcon } from '../album/icons.tsx'
 import { Slot } from '../album/Slot.tsx'
+import { paperStyle } from '../album/paper.ts'
 import { pageOf } from '../album/Spread.tsx'
 import { Stamp } from '../album/Stamp.tsx'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
@@ -87,7 +88,8 @@ function Play({
   const mode = useStoreValue(store, s => s.mode)
   const solved = useStoreValue(store, s => s.solved)
   const [conqueredBefore] = useState(isConquered)
-  const conquest = solved && !conqueredBefore && isConquered()
+  const previewConquest = route.useSearch().conquest === true
+  const conquest = previewConquest || (solved && !conqueredBefore && isConquered())
   const next = solved ? nextPuzzle(province.puzzles, puzzle.id, id => storage.loadSolved(id) !== null) : null
   const replaying = useStoreValue(store, s => s.replaying)
   const unverified = !solved && storage.loadSolved(puzzle.id) === 'unverified'
@@ -211,7 +213,7 @@ function Play({
   }, [moment, conquest])
 
   const hideSticker = moment === 'waiting' || moment === 'flying'
-  const done = solved && !hideSticker
+  const done = previewConquest || (solved && !hideSticker)
   const left = province.puzzles.filter(p => storage.loadSolved(p.id) === null).length
   const art = palette ?? Array<null>(puzzle.width * puzzle.height).fill(null)
   // Read at each render: the first solve settles it, and an account's server answer can overrule the device.
@@ -305,17 +307,9 @@ function Play({
           {done ? (
             <div className={styles.after}>
               {conquest ? (
-                <>
-                  <p role="status">
-                    <b>Page complete!</b> Every slot in {province.name} is filled.
-                  </p>
-                  <div className={styles.afterActions}>
-                    <Link to="/c/$campaignId/map" params={{ campaignId: campaign.id }} className={styles.linkButton}>
-                      See it on the map
-                    </Link>
-                    <ClearButton store={store} solved />
-                  </div>
-                </>
+                <Conquest campaign={campaign} province={province}>
+                  <ClearButton store={store} solved />
+                </Conquest>
               ) : (
                 <>
                   <p role="status">
@@ -441,6 +435,53 @@ function Play({
         </div>
       )}
     </main>
+  )
+}
+
+/** The after panel when this solve conquered the province: on to the next one, or the album's close. */
+function Conquest({ campaign, province, children }: { campaign: Campaign; province: Province; children: ReactNode }) {
+  const index = campaign.provinces.indexOf(province)
+  const following = campaign.provinces[index + 1]
+  return (
+    <>
+      <div className={styles.headline}>
+        <Stamp thunk solid tone={following ? 'pink' : 'gold'} className={styles.afterStamp}>
+          {following ? 'Page complete' : 'Album complete'}
+        </Stamp>
+        <p role="status">
+          <b>{province.name} conquered.</b>
+          {province.flavour && <span className={styles.flavour}>{province.flavour}</span>}
+        </p>
+      </div>
+      {!following && <p className={styles.closing}>{campaign.closingLine || `${campaign.name} is yours.`}</p>}
+      <div className={styles.afterActions}>
+        {following ? (
+          <Link
+            to="/c/$campaignId/$provinceId"
+            params={{ campaignId: campaign.id, provinceId: following.id }}
+            className={styles.linkButton}
+          >
+            Open
+            <span className={styles.tabChip} style={paperStyle(index + 1)}>
+              {following.name.replace(/^The /, '')}
+            </span>
+            <ArrowIcon />
+          </Link>
+        ) : (
+          <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} className={styles.linkButton}>
+            Back to the cover
+          </Link>
+        )}
+        <Link
+          to="/c/$campaignId/$provinceId"
+          params={{ campaignId: campaign.id, provinceId: province.id }}
+          className={`${styles.linkButton} ${styles.paper}`}
+        >
+          Back to page
+        </Link>
+        {children}
+      </div>
+    </>
   )
 }
 

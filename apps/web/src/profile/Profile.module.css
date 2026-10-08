@@ -151,11 +151,6 @@
   transform: rotate(-8deg);
 }
 
-/* Clips the map's faded overhang to the column. */
-.journey {
-  overflow-x: clip;
-}
-
 .side section {
   display: grid;
   gap: var(--space-3);

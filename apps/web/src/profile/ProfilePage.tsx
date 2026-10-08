@@ -5,10 +5,9 @@ import { PageThumb } from '../album/PageThumb.tsx'
 import { Sticker, StickerBack, tiltOf } from '../album/Sticker.tsx'
 import { VolumeShelf } from '../album/VolumeShelf.tsx'
 import { useAccount } from '../account.ts'
-import { Journey } from '../campaign/Journey.tsx'
 import { isOpen, provinceStates } from '../campaign/progress.ts'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
-import { type StickerEntry, crestsOf, profileStickers, showcaseOf } from '../campaign/stickers.ts'
+import { type StickerEntry, profileStickers, showcaseOf } from '../campaign/stickers.ts'
 import cover from '../campaign/Cover.module.css'
 import { ShowcaseEditor } from './ShowcaseEditor.tsx'
 import styles from './Profile.module.css'
@@ -24,7 +23,7 @@ const SHOWCASE = [
   { tilt: -2, width: '28%' },
 ]
 
-/** A player's album seen from outside: their cover and showcase, numbers, Journey, pages and latest stickers. */
+/** A player's album seen from outside: their cover and showcase, numbers, pages and latest stickers. */
 export function ProfilePage() {
   const { profile, campaign, started } = route.useLoaderData()
   const { account, storage } = useAccount()
@@ -36,16 +35,12 @@ export function ProfilePage() {
       verified,
       progress: provinceStates(campaign, id => verified.has(id)),
       stickers: profileStickers(campaign, entry, storage),
-      crests: crestsOf(campaign, storage),
     }
   }, [profile, campaign, storage])
   const own = account?.handle.toLowerCase() === profile.handle.toLowerCase()
   /** The picks being edited, previewed on the cover; `null` when not editing. */
   const [editing, setEditing] = useState<string[] | null>(null)
 
-  // Cut after the province they're marching on, or show it all once nothing lies beyond.
-  const next = album?.progress.provinces.findIndex(p => p.state === 'next') ?? -1
-  const cutAfter = next === -1 ? undefined : next
   const stickers = album?.stickers ?? []
   const { stickers: showcase, picked } = showcaseOf(stickers, editing ?? profile.showcase, editing ? 0 : SHOWCASE.length)
   const total = campaign?.provinces.reduce((n, p) => n + p.puzzles.length, 0) ?? 0
@@ -129,21 +124,6 @@ export function ProfilePage() {
 
           {campaign && album && (
             <>
-              <section aria-labelledby="journey-title">
-                <h2 id="journey-title" className={cover.label}>
-                  Journey
-                </h2>
-                <div className={styles.journey}>
-                  <Journey
-                    key={campaign.id}
-                    campaign={campaign}
-                    progress={album.progress}
-                    cutAfter={cutAfter}
-                    crests={album.crests}
-                  />
-                </div>
-              </section>
-
               <section aria-labelledby="pages-title">
                 <h2 id="pages-title" className={cover.label}>
                   Pages

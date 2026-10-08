@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { stubStorage } from '../test-storage.ts'
-import { coverStickers, crestsOf, latestStickers, profileStickers, showcaseOf } from './stickers.ts'
+import { coverStickers, latestStickers, profileStickers, showcaseOf } from './stickers.ts'
 
 const puzzle = (id: string) => ({ id, title: id, width: 1, height: 1, filledCount: 1 })
 
@@ -93,17 +93,5 @@ describe('profileStickers', () => {
       ['b1', 1, 1, null, false],
       ['a2', 0, 2, ['#fff'], true],
     ])
-  })
-})
-
-describe('crestsOf', () => {
-  beforeEach(() => stubStorage())
-  afterEach(() => vi.unstubAllGlobals())
-
-  it("is each province's last puzzle, once its colours are known", () => {
-    const storage = new ProgressStorage(null)
-    storage.savePalette('b2', ['#123'])
-    storage.savePalette('a2', ['#456'])
-    expect(crestsOf(campaign, storage)).toEqual([null, { title: 'b2', width: 1, height: 1, palette: ['#123'] }])
   })
 })

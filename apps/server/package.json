@@ -8,8 +8,7 @@
     "typecheck": "tsc -p .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "validate:campaigns": "tsx src/validate-campaigns.ts",
-    "gen:imperium-map": "tsx src/gen-imperium-map.ts"
+    "validate:campaigns": "tsx src/validate-campaigns.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.3",

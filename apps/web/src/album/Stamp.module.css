@@ -24,6 +24,10 @@
   color: var(--ok);
 }
 
+.gold {
+  color: var(--gold-dk);
+}
+
 .thunk {
   animation: thunk 380ms cubic-bezier(0.3, 1.7, 0.5, 1) both;
 }

@@ -5,7 +5,6 @@ import { AppHeader, ThumbBar } from './AppHeader.tsx'
 import { LoadError, Loading, NotFound } from './EdgeStates.tsx'
 import { CampaignPage } from './campaign/CampaignPage.tsx'
 import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
-import { MapPage } from './campaign/MapPage.tsx'
 import { ProvincePage } from './campaign/ProvincePage.tsx'
 import { ImportPrompt } from './ImportPrompt.tsx'
 import { HandlePicker } from './me/HandlePicker.tsx'
@@ -66,16 +65,6 @@ const campaignRoute = createRoute({
   notFoundComponent: () => <NotFound>There’s no campaign by that name.</NotFound>,
 })
 
-const mapRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/c/$campaignId/map',
-  validateSearch: (search: Record<string, unknown>): { conquer?: string } =>
-    import.meta.env.DEV && typeof search.conquer === 'string' ? { conquer: search.conquer } : {},
-  loader: async ({ params }) => ({ campaign: await loadCampaign(params.campaignId) }),
-  component: () => <MapPage {...mapRoute.useLoaderData()} conquer={mapRoute.useSearch().conquer} />,
-  notFoundComponent: () => <NotFound>There’s no campaign by that name.</NotFound>,
-})
-
 const provinceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/c/$campaignId/$provinceId',
@@ -94,6 +83,9 @@ const provinceRoute = createRoute({
 const playRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/play/$id',
+  /** Dev only: `?conquest` shows the after panel as if this solve had just conquered the province. */
+  validateSearch: (search: Record<string, unknown>): { conquest?: true } =>
+    import.meta.env.DEV && 'conquest' in search ? { conquest: true } : {},
   loader: async ({ params }) => {
     const puzzle = await fetchPuzzle(params.id)
     if (!puzzle) throw notFound()
@@ -148,7 +140,6 @@ export const router = createRouter({
   routeTree: rootRoute.addChildren([
     homeRoute,
     campaignRoute,
-    mapRoute,
     provinceRoute,
     playRoute,
     profileRoute,

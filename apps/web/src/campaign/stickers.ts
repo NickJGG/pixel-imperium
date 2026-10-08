@@ -86,20 +86,3 @@ export function showcaseOf(
 
 /** Of the device's latest stickers, those a cover can show: verified, with art. */
 export const coverStickers = (latest: readonly StickerEntry[]) => latest.filter(s => !s.unverified && s.palette !== null)
-
-/** A Crest: a province's last (gold) puzzle's picture, round on its Landmark. */
-export interface CrestArt {
-  title: string
-  width: number
-  height: number
-  palette: (string | null)[]
-}
-
-/** Each province's Crest as this device has it, `null` until its last puzzle's colours are known. */
-export function crestsOf(campaign: Pick<Campaign, 'provinces'>, storage: ProgressStorage): (CrestArt | null)[] {
-  return campaign.provinces.map(({ puzzles }) => {
-    const last = puzzles.at(-1)
-    const palette = last && storage.loadPalette(last.id, last.width * last.height)
-    return last && palette ? { title: last.title, width: last.width, height: last.height, palette } : null
-  })
-}

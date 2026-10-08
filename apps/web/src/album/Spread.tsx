@@ -6,8 +6,8 @@ import styles from './Spread.module.css'
 
 export const SLOTS_PER_PAGE = 15
 
-/** The album page that slot `number` (1-based) of province `index` is printed on; the endpaper map is p. 1. */
-export const pageOf = (index: number, number: number) => 2 + 2 * index + (number > SLOTS_PER_PAGE ? 1 : 0)
+/** The album page that slot `number` (1-based) of province `index` is printed on; the first province starts at p. 1. */
+export const pageOf = (index: number, number: number) => 1 + 2 * index + (number > SLOTS_PER_PAGE ? 1 : 0)
 
 interface Props {
   province: Province

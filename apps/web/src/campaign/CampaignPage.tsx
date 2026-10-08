@@ -3,13 +3,11 @@ import { Link } from '@tanstack/react-router'
 import type { Campaign, CampaignSummary } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
 import { Lock } from '../album/Lock.tsx'
-import { PageThumb } from '../album/PageThumb.tsx'
 import { paperStyle } from '../album/paper.ts'
 import { Slot } from '../album/Slot.tsx'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { VolumeShelf } from '../album/VolumeShelf.tsx'
 import { useAccount } from '../account.ts'
-import { unseenConquests } from './conquests.ts'
 import { campaignProgress, continueAt, isOpen } from './progress.ts'
 import { GOLD_SLOT } from './PuzzleSlot.tsx'
 import { SHOWCASE_SIZE, type StickerEntry, coverStickers, latestStickers, showcaseOf } from './stickers.ts'
@@ -34,24 +32,19 @@ export function CampaignPage(props: Props) {
   return <Cover key={`${generation}:${props.campaign.id}`} {...props} />
 }
 
-/** Home: the album's cover, with what's next, the latest stickers and a thumbnail of every page. */
+/** Home: the album's cover, with what's next and the latest stickers. */
 function Cover({ campaign, campaigns }: Props) {
   const { storage, account } = useAccount()
-  const [{ progress, latest, unseen }] = useState(() => {
-    const progress = campaignProgress(campaign, storage)
-    return {
-      progress,
-      latest: latestStickers(campaign, storage),
-      unseen: unseenConquests(campaign, progress, storage),
-    }
-  })
+  const [{ progress, latest }] = useState(() => ({
+    progress: campaignProgress(campaign, storage),
+    latest: latestStickers(campaign, storage),
+  }))
   const isSolved = (id: string) => storage.loadSolved(id) !== null
   const next = continueAt(campaign, progress, isSolved)
   const solved = progress.provinces.reduce((n, p) => n + p.solved, 0)
   const total = progress.provinces.reduce((n, p) => n + p.total, 0)
   const foil = latest.filter(s => s.foil && !s.unverified).length
   const showcase = showcaseOf(coverStickers(latest), storage.loadShowcase(), account ? SHOWCASE_SIZE : 2).stickers
-  const claim = unseen.length > 0 ? campaign.provinces[unseen.at(-1)!]! : undefined
 
   return (
     <main className={styles.page}>
@@ -117,20 +110,13 @@ function Cover({ campaign, campaigns }: Props) {
                 )
               })}
             </ol>
-            <div className={styles.cta}>
-              {next && (
+            {next && (
+              <div className={styles.cta}>
                 <Link to="/play/$id" params={{ id: next.puzzle.id }} className={`${styles.pill} ${styles.cyan}`}>
                   {next.fresh ? 'Start' : 'Continue'}: #{next.number} {next.puzzle.title}
                 </Link>
-              )}
-              <Link
-                to="/c/$campaignId/map"
-                params={{ campaignId: campaign.id }}
-                className={`${styles.pill} ${claim ? styles.pink : styles.paper}`}
-              >
-                {claim ? `Claim ${claim.name.replace(/^The /, 'the ')} on the map` : 'Open the album'}
-              </Link>
-            </div>
+              </div>
+            )}
           </section>
           {campaigns.length > 1 && <VolumeShelf campaigns={campaigns} current={campaign.id} />}
         </div>
@@ -190,34 +176,6 @@ function Cover({ campaign, campaigns }: Props) {
         </div>
       </div>
 
-      <section className={styles.pages} aria-labelledby="pages-title">
-        <h2 id="pages-title" className={styles.label}>
-          Pages
-        </h2>
-        <ol className={styles.thumbs}>
-          {campaign.provinces.map((province, i) => {
-            const { state, solved, total } = progress.provinces[i]!
-            return (
-              <li key={province.id}>
-                <Link
-                  to="/c/$campaignId/$provinceId"
-                  params={{ campaignId: campaign.id, provinceId: province.id }}
-                  className={styles.thumbLink}
-                  aria-label={`${province.name}: ${isOpen(state) ? `${solved} of ${total} stickers` : 'locked'}`}
-                >
-                  <PageThumb
-                    name={province.name}
-                    index={i}
-                    filled={province.puzzles.map(p => isSolved(p.id))}
-                    locked={!isOpen(state)}
-                    complete={state === 'conquered'}
-                  />
-                </Link>
-              </li>
-            )
-          })}
-        </ol>
-      </section>
     </main>
   )
 }

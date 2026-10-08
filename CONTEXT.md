@@ -29,13 +29,13 @@ _Avoid_: Card, badge, trophy
 A **Sticker** earned by solving a **Puzzle** the first time without any **Hint**.
 _Avoid_: Shiny, holo, rare, perfect
 
+**Stamp**:
+A milestone an **Account** has earned, inked on its **Profile** with the date it was earned.
+_Avoid_: Achievement, badge, trophy, medal
+
 **Hint**:
 A server-given nudge on a **Puzzle** in progress: one wrong cell pointed out, or one correct cell revealed.
 _Avoid_: Assist (assists are the free play settings and never cost **Foil**), clue, help
-
-**Crest**:
-A conquered **Province**'s hardest (last) **Puzzle**'s **Sticker**, shown round on that **Province**'s **Landmark**.
-_Avoid_: Emblem, badge, flag
 
 ### Players
 
@@ -55,7 +55,7 @@ An **Account**'s unique, case-insensitive public name, used in its profile URL `
 _Avoid_: Username, display name
 
 **Profile**:
-An **Account**'s public page showing its handle, avatar and **Journey**.
+An **Account**'s public page: its handle, showcase, province index, stats, activity and latest **Stickers**.
 
 ### Solves
 
@@ -73,7 +73,7 @@ _Avoid_: Migration, sync
 ### Campaign
 
 **Campaign**:
-A single-player journey through a fixed sequence of **Provinces**, each **Campaign** defining its own shape and **Journey**.
+A single-player journey through a fixed sequence of **Provinces**.
 _Avoid_: Story mode, adventure
 
 **Province**:
@@ -81,7 +81,7 @@ A named group of **Puzzles** within the **Campaign**, unlocked one at a time in 
 _Avoid_: Chapter, world, region, level
 
 **Conquest**:
-A **Province** becoming conquered once every one of its **Puzzles** is solved.
+A **Province** becoming conquered once every one of its **Puzzles** is solved, celebrated on the spot when the last **Sticker** lands.
 _Avoid_: Completion, clear
 
 **Imperium**:
@@ -94,35 +94,18 @@ The second-to-last **Province** of the **Imperium**.
 The final and hardest **Province** of the **Imperium**.
 _Avoid_: Finale, boss
 
-**Journey**:
-A **Campaign**'s column of **Maps**, first **Province** to last, joined by the **Road**.
-_Avoid_: World map, overworld, path, column
-
-**Map**:
-One **Province**'s own top-down pixel-art picture, shown fogged, monochrome or in colour.
-_Avoid_: Scene, vignette, tile, province map
-
-**Road**:
-The single path through every **Landmark** of a **Journey**, lit up to the active **Province**.
-_Avoid_: Trail, route
-
-**Landmark**:
-The point on a **Map** where the **Road** passes through and the **Province**'s label sits.
-_Avoid_: Stop, node, pin
-
 ## Relationships
 
 - An **Account** has exactly one **Handle** and one **Profile**
 - An **Account** has at most one solve per **Puzzle**, either **Verified** or **Unverified**
 - An **Unverified solve** becomes a **Verified solve** when its owner solves the **Puzzle** again while signed in
-- A **Profile**'s **Journey** counts a **Province** as conquered only if all its solves are **Verified**, and ends after the active **Province**
+- A **Profile** counts a **Province** as conquered only if all its solves are **Verified**
 - A **Campaign** has an ordered list of **Provinces**; the **Imperium**'s is four outer **Provinces**, then the **Capital**, then the **Throne**
 - A **Province** has its **Campaign**'s number of **Puzzles** (30 in the **Imperium**), ordered from easiest to hardest
 - Each **Province** unlocks on the **Conquest** of the one before it
 - A **Sticker** is **Foil** or not for good once its **Puzzle** is first solved; a **Replay** never changes it
 - Using one **Hint** on a **Puzzle** before its first solve rules out **Foil** for that **Puzzle**
 - A solve brought in by **Import** is never **Foil**, even once it becomes a **Verified solve**
-- Each **Province** has one **Map** with one **Landmark**; neighbouring **Maps** overlap where they fade
 
 ## Example dialogue
 

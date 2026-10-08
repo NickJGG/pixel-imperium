@@ -13,21 +13,18 @@ interface Props {
   gold?: boolean
   /** Imported and not yet replayed, so still on its backing paper. Never foil. */
   unverified?: boolean
-  /** A Crest: the art cropped into a circle. */
-  round?: boolean
   /** Degrees; see `tiltOf`. */
   tilt?: number
   className?: string | undefined
 }
 
 /** A die-cut sticker of a solved puzzle's picture. Size it with `width` on the sticker or its container. */
-export function Sticker({ title, width, height, palette, foil, gold, unverified, round, tilt = 0, className }: Props) {
+export function Sticker({ title, width, height, palette, foil, gold, unverified, tilt = 0, className }: Props) {
   const classes = [
     styles.sticker,
     foil && !unverified && styles.foil,
     gold && styles.gold,
     unverified && styles.unverified,
-    round && styles.round,
     className,
   ]
   return (

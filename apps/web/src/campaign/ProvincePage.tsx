@@ -6,7 +6,6 @@ import { paperStyle } from '../album/paper.ts'
 import { ProvinceTabs } from '../album/ProvinceTabs.tsx'
 import { Spread } from '../album/Spread.tsx'
 import { useAccount } from '../account.ts'
-import { isConquestSeen } from './conquests.ts'
 import { type CampaignProgress, campaignProgress, isOpen } from './progress.ts'
 import { PuzzleSlot } from './PuzzleSlot.tsx'
 import styles from './Campaign.module.css'
@@ -16,8 +15,6 @@ export function ProvincePage({ campaign, province }: { campaign: Campaign; provi
   const progress = campaignProgress(campaign, storage)
   const index = campaign.provinces.indexOf(province)
   const { state, solved } = progress.provinces[index]!
-  // Its colour waits for the conquest to play out on the campaign map.
-  const claimed = state === 'conquered' && isConquestSeen(campaign, index, storage)
   const next = state === 'active' ? province.puzzles.find(p => storage.loadSolved(p.id) === null) : undefined
 
   if (!isOpen(state)) return <LockedProvince campaign={campaign} province={province} progress={progress} />
@@ -29,18 +26,7 @@ export function ProvincePage({ campaign, province }: { campaign: Campaign; provi
         index={index}
         solved={solved}
         complete={state === 'conquered'}
-        caption={
-          claimed ? (
-            province.flavour || undefined
-          ) : state === 'conquered' ? (
-            <>
-              All {province.puzzles.length} solved.{' '}
-              <Link to="/c/$campaignId/map" params={{ campaignId: campaign.id }}>
-                Head to the map to claim it.
-              </Link>
-            </>
-          ) : undefined
-        }
+        caption={(state === 'conquered' && province.flavour) || undefined}
         slot={(p, number) => <PuzzleSlot puzzle={p} number={number} storage={storage} next={p === next} />}
       />
     </Indexed>

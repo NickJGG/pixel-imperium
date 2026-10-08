@@ -24,20 +24,6 @@ export interface CampaignSummary {
   coverColour?: string
 }
 
-/**
- * Province Maps by province index, stacked top to bottom with map i's top at i × `step`, each `width` ×
- * `height` with row-major colours. Landmarks are map-local; the Road is in journey coordinates, first
- * province to last, and `roadStops` holds its index at each Landmark.
- */
-export interface CampaignJourney {
-  width: number
-  height: number
-  step: number
-  maps: { colors: (string | null)[]; landmark: { x: number; y: number } }[]
-  road: { x: number; y: number }[]
-  roadStops: number[]
-}
-
 export interface Province {
   id: string
   name: string
@@ -54,7 +40,6 @@ export interface Campaign {
   id: string
   name: string
   closingLine: string
-  journey: CampaignJourney
   provinces: Province[]
 }
 
