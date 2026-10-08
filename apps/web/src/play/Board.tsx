@@ -144,7 +144,8 @@ export function Board({ store, cellSize, assists, highlight, mistake = null }: P
     e.currentTarget.setPointerCapture(e.pointerId)
     pointerId.current = e.pointerId
     store.setHover(null)
-    const lockAxis = e.pointerType === 'mouse' ? e.shiftKey : (assists ?? getSettings()).lockLine
+    const { lockLine } = assists ?? getSettings()
+    const lockAxis = e.pointerType === 'mouse' ? e.shiftKey || lockLine : lockLine
     store.beginStroke(posFrom(e), tool, { lockAxis })
   }
 

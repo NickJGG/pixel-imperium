@@ -37,6 +37,7 @@ function CrownMark() {
 export function AppHeader() {
   const { theme, sound } = useSettings()
   const next = useContinue()
+  const playing = useRouterState({ select: s => s.location.pathname.startsWith('/play/') })
   return (
     <header className={styles.spine}>
       <Link to="/" className={styles.logo}>
@@ -45,7 +46,7 @@ export function AppHeader() {
           <span>Pixel</span> Imperium
         </span>
       </Link>
-      {next && (
+      {next && !playing && (
         <span className={styles.continue}>
           <span className={styles.nextUp}>
             {next.fresh ? (

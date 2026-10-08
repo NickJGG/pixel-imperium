@@ -231,6 +231,106 @@
   outline: none;
 }
 
+/* The board centres above an empty band as tall as layout.ts's PILL_BAND, which the pill floats over. */
+.stageWrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  align-self: stretch;
+  display: flex;
+}
+
+.playStage {
+  flex-direction: column;
+}
+
+.playStage::after {
+  content: '';
+  flex: none;
+  height: var(--pill-band);
+}
+
+.pill {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  z-index: 1;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  white-space: nowrap;
+  background: var(--card);
+  border-radius: var(--r-pill);
+  box-shadow:
+    0 0 0 2px var(--line-soft),
+    0 10px 24px -8px var(--shade);
+}
+
+.pill > button {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 15px;
+  --btn-bg: transparent;
+  --btn-edge: transparent;
+}
+
+.pill > button:hover:not(:disabled),
+.pill > button:active:not(:disabled) {
+  transform: none;
+}
+
+.pill > button:hover:not(:disabled, [aria-pressed='true']) {
+  --btn-bg: var(--card-2);
+}
+
+.pill > button[aria-pressed='true'] {
+  --btn-bg: var(--ink);
+  --btn-ink: var(--card);
+}
+
+.pill > button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pill > button[aria-pressed] svg {
+  width: 13px;
+  height: 13px;
+}
+
+.pill > .pillIcon {
+  width: 36px;
+  padding: 0;
+}
+
+.pill .seg {
+  box-shadow: none;
+}
+
+.pillSep {
+  width: 2px;
+  align-self: stretch;
+  margin: 4px 0;
+  background: var(--line-soft);
+  border-radius: 2px;
+}
+
+@media (any-pointer: coarse) {
+  .pill {
+    padding: 4px;
+  }
+
+  .pill > button {
+    min-height: 44px;
+  }
+
+  .pill > .pillIcon {
+    width: 44px;
+  }
+}
+
 .tools {
   display: grid;
   gap: var(--space-3);

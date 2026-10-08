@@ -3,7 +3,6 @@ import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
 import type { Campaign, Province, PuzzleClues } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
-import { SoundIcon } from '../album/icons.tsx'
 import { Slot } from '../album/Slot.tsx'
 import { paperStyle } from '../album/paper.ts'
 import { Stamp } from '../album/Stamp.tsx'
@@ -13,7 +12,7 @@ import { requestHint, submitSolve } from '../api.ts'
 import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
-import { getSettings, updateSettings, useSettings } from '../settings.ts'
+import { getSettings, useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
 import { useShouldOffer } from '../tutorial/asked.ts'
 import { ChoiceCard } from '../tutorial/ChoiceCard.tsx'
@@ -23,13 +22,13 @@ import { Board, REVEAL_MS } from './Board.tsx'
 import { ClearButton, LoopIcon } from './ClearButton.tsx'
 import { ColClues, RowClues } from './Clues.tsx'
 import { HintButton, hintText } from './HintButton.tsx'
-import { CLUE_SLOT, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, fitPlay } from './layout.ts'
+import { CLUE_SLOT, PILL_BAND, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, fitPlay } from './layout.ts'
 import { createLineHints } from './line-hints.ts'
 import { encodeCells } from './progress-storage.ts'
 import { SidePage } from './SidePage.tsx'
 import { type Choreography, confetti, flyIn, popOnly } from './sticker-moment.ts'
 import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
-import { ToolToggle } from './ToolToggle.tsx'
+import { ToolPill } from './ToolPill.tsx'
 import styles from './Play.module.css'
 
 const route = getRouteApi('/play/$id')
@@ -87,8 +86,6 @@ function Play({
         onSave: sync ? () => sync.markDirty(puzzle.id) : undefined,
       }),
   )
-  const canUndo = useStoreValue(store, s => s.canUndo)
-  const canRedo = useStoreValue(store, s => s.canRedo)
   const solved = useStoreValue(store, s => s.solved)
   const [conqueredBefore] = useState(isConquered)
   const previewConquest = route.useSearch().conquest === true
@@ -278,35 +275,33 @@ function Play({
               {puzzle.width}×{puzzle.height}
             </span>
             {!solved && !replaying && percent > 0 && <span className={styles.percent}>{percent}%</span>}
-            <button
-              type="button"
-              className={styles.iconButton}
-              aria-label={settings.sound ? 'Sound on. Turn it off.' : 'Sound off. Turn it on.'}
-              aria-pressed={settings.sound}
-              onClick={() => updateSettings({ sound: !settings.sound })}
-            >
-              <SoundIcon on={settings.sound} />
-            </button>
           </header>
-          <div ref={stageRef} className={styles.stage}>
-            {cellSize > 0 && (
-              <div
-                ref={boardRef}
-                className={styles.board}
-                data-revealed={palette !== null || undefined}
-                style={
-                  {
-                    '--cell': `${cellSize}px`,
-                    '--clue-slot': `${cellSize * CLUE_SLOT}px`,
-                  } as CSSProperties
-                }
-              >
-                <div />
-                <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={assists} />
-                <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={assists} />
-                <Board store={store} cellSize={cellSize} />
-              </div>
-            )}
+          <div className={styles.stageWrap}>
+            <div
+              ref={stageRef}
+              className={`${styles.stage} ${styles.playStage}`}
+              style={{ '--pill-band': `${PILL_BAND}px` } as CSSProperties}
+            >
+              {cellSize > 0 && (
+                <div
+                  ref={boardRef}
+                  className={styles.board}
+                  data-revealed={palette !== null || undefined}
+                  style={
+                    {
+                      '--cell': `${cellSize}px`,
+                      '--clue-slot': `${cellSize * CLUE_SLOT}px`,
+                    } as CSSProperties
+                  }
+                >
+                  <div />
+                  <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={assists} />
+                  <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={assists} />
+                  <Board store={store} cellSize={cellSize} />
+                </div>
+              )}
+            </div>
+            {!done && <ToolPill store={store} inert={solved} />}
           </div>
           {done ? (
             <div className={styles.after}>
@@ -364,43 +359,6 @@ function Play({
                 )
               )}
               <div className={styles.dock}>
-                <ToolToggle store={store} />
-                <div className={styles.seg}>
-                  <button
-                    type="button"
-                    aria-pressed={settings.lockLine}
-                    onClick={() => updateSettings({ lockLine: !settings.lockLine })}
-                  >
-                    <svg viewBox="0 0 10 10" aria-hidden="true">
-                      <path d="M1 5h8" />
-                    </svg>
-                    Lock line
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  className={styles.iconButton}
-                  aria-label="Undo"
-                  disabled={!canUndo}
-                  onClick={() => store.undo()}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M9 14 4 9l5-5" />
-                    <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  className={styles.iconButton}
-                  aria-label="Redo"
-                  disabled={!canRedo}
-                  onClick={() => store.redo()}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="m15 14 5-5-5-5" />
-                    <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
-                  </svg>
-                </button>
                 <ClearButton store={store} solved={false} disabled={!canClear} />
                 <HintButton
                   store={store}

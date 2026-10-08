@@ -10,6 +10,9 @@ const MAX_CELL = 40
 export const SIDE_PAGE_WIDTH = 280
 export const SIDE_PAGE_GAP = 16
 
+/** The band at the bottom of the play stage kept clear for the tool pill overlaid there. */
+export const PILL_BAND = 52
+
 interface FitPuzzle {
   width: number
   height: number
@@ -29,13 +32,13 @@ export function fitCellSize(available: { width: number; height: number }, puzzle
 
 /**
  * The board is sized first, against `available` as if there were no side page; the side page then
- * shows only if the board at that size still fits beside it.
+ * shows only if the board at that size still fits beside it. The board also stays above `PILL_BAND`.
  */
 export function fitPlay(
   available: { width: number; height: number },
   puzzle: FitPuzzle,
 ): { cellSize: number; sidePage: boolean } {
-  const cellSize = fitCellSize(available, puzzle)
+  const cellSize = fitCellSize({ width: available.width, height: available.height - PILL_BAND }, puzzle)
   const boardWidth = cellSize * (puzzle.width + depth(puzzle.clues.rows))
   return { cellSize, sidePage: boardWidth <= available.width - SIDE_PAGE_WIDTH - SIDE_PAGE_GAP }
 }
