@@ -1,6 +1,6 @@
 /*
  * Design tokens — "Sticker Album": a cobalt cover on a desk, province pages on tinted paper,
- * die-cut stickers, pink and cyan accents. Night is the main design and sits on bare :root;
+ * die-cut stickers, pink and blue accents. Night is the main design and sits on bare :root;
  * Day appears twice: once for the system preference (unless Night is forced) and once for
  * an explicit data-theme="light". The canvas reads the --board-* values at draw time.
  */
@@ -28,9 +28,9 @@
   --pink: #ff4fa3;
   --pink-dk: #b8336e;
   --on-pink: #1a0614;
-  --cyan: #3de7e0;
-  --cyan-dk: #1a9e98;
-  --on-cyan: #06201f;
+  --blue: #5b7cff;
+  --blue-dk: var(--cover);
+  --on-blue: #fff;
   --gold: #ffc92e;
   --gold-dk: #c78a00;
   --on-gold: #2a1a00;
@@ -76,9 +76,9 @@
   --board-line-major: #8394c8;
   --board-border: var(--ink);
   --board-cursor: var(--pink);
-  --board-crosshair: rgba(61, 231, 224, 0.14);
+  --board-crosshair: rgba(91, 124, 255, 0.22);
   --board-mistake: var(--red);
-  --board-reveal: var(--cyan);
+  --board-reveal: var(--blue);
 
   /* Pre-album names, kept until every page is restyled. */
   --bg: var(--desk);
@@ -92,8 +92,8 @@
   --blank-border: var(--line-soft);
   --a1: var(--pink);
   --on-a1: var(--on-pink);
-  --a2: var(--cyan);
-  --on-a2: var(--on-cyan);
+  --a2: var(--blue);
+  --on-a2: var(--on-blue);
   --bad: var(--red);
   --on-bad: var(--on-red);
   --font-pixel: var(--font-display);
@@ -130,8 +130,10 @@
     --board-mark: #8b9ac4;
     --board-line: #dde4f6;
     --board-line-major: #13306b;
-    --board-crosshair: rgba(61, 231, 224, 0.2);
-  --board-reveal: var(--cyan-dk);
+    --board-crosshair: rgba(35, 72, 232, 0.12);
+    --blue: #2348e8;
+    --blue-dk: #13299c;
+    --on-blue: #fff;
   }
 }
 
@@ -163,6 +165,8 @@
   --board-mark: #8b9ac4;
   --board-line: #dde4f6;
   --board-line-major: #13306b;
-  --board-crosshair: rgba(61, 231, 224, 0.2);
-  --board-reveal: var(--cyan-dk);
+  --board-crosshair: rgba(35, 72, 232, 0.12);
+  --blue: #2348e8;
+  --blue-dk: #13299c;
+  --on-blue: #fff;
 }

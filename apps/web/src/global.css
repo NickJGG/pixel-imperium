@@ -32,12 +32,12 @@ h3 {
 }
 
 a {
-  color: var(--cyan);
+  color: var(--blue);
 }
 
 /*
  * The house button: a pill sitting on a solid shadow that it drops onto when pressed. Bare buttons
- * are paper; `data-variant` picks primary, cyan, danger or ghost. Variants only set the three
+ * are paper; `data-variant` picks primary, blue, danger or ghost. Variants only set the three
  * --btn-* colours, so a module can recolour a button without restating the press.
  */
 button {
@@ -70,10 +70,10 @@ button[data-variant='primary'] {
   --btn-edge: var(--pink-dk);
 }
 
-button[data-variant='cyan'] {
-  --btn-bg: var(--cyan);
-  --btn-ink: var(--on-cyan);
-  --btn-edge: var(--cyan-dk);
+button[data-variant='blue'] {
+  --btn-bg: var(--blue);
+  --btn-ink: var(--on-blue);
+  --btn-edge: var(--blue-dk);
 }
 
 button[data-variant='danger'] {
@@ -115,8 +115,9 @@ button svg {
   stroke-linejoin: round;
 }
 
+/* Cobalt surfaces set --focus to white. */
 :focus-visible {
-  outline: 3px solid var(--cyan);
+  outline: 3px solid var(--focus, var(--blue));
   outline-offset: 2px;
 }
 

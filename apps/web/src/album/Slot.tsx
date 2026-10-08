@@ -22,7 +22,13 @@ interface Props {
 
 /** A numbered space on a province page, waiting for its sticker. */
 export function Slot({ number, width, height, started, next, gold, locked, children, className }: Props) {
-  if (children) return <span className={[styles.slot, styles.filled, className].filter(Boolean).join(' ')}>{children}</span>
+  if (children) {
+    return (
+      <span className={[styles.slot, styles.filled, className].filter(Boolean).join(' ')} style={{ '--ar': width / height } as CSSProperties}>
+        {children}
+      </span>
+    )
+  }
 
   const classes = [styles.slot, next && styles.next, gold && styles.gold, locked && styles.locked, className]
   return (

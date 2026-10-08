@@ -112,7 +112,7 @@ function Cover({ campaign, campaigns }: Props) {
             </ol>
             {next && (
               <div className={styles.cta}>
-                <Link to="/play/$id" params={{ id: next.puzzle.id }} className={`${styles.pill} ${styles.cyan}`}>
+                <Link to="/play/$id" params={{ id: next.puzzle.id }} className={`${styles.pill} ${styles.primary}`}>
                   {next.fresh ? 'Start' : 'Continue'}: #{next.number} {next.puzzle.title}
                 </Link>
               </div>

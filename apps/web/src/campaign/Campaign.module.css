@@ -192,9 +192,14 @@
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
-/* Clears the spread's cover-coloured edge. */
+/* The tabs tuck under the page, so its edge and shadow lie across all of them alike. */
+.indexedPage {
+  position: relative;
+  z-index: 1;
+}
+
 .edgeRail {
-  margin-left: 3px;
+  margin-left: -14px;
 }
 
 @media (max-width: 720px) {

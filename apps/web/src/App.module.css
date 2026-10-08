@@ -12,6 +12,7 @@
   align-items: center;
   gap: 14px;
   padding: 10px max(var(--space-7), calc((100% - 1200px) / 2 + var(--space-7))) 14px;
+  --focus: var(--on-cover);
   color: var(--on-cover);
   background-color: var(--cover);
   background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 1.6px);
@@ -61,12 +62,12 @@
   flex: none;
   min-height: 34px;
   padding: 0 14px;
-  background: var(--cyan);
-  color: var(--on-cyan);
+  background: var(--sticker);
+  color: var(--cover);
   border-radius: var(--r-pill);
   font: 600 14px var(--font-ui);
   text-decoration: none;
-  box-shadow: 0 var(--press) 0 var(--cyan-dk);
+  box-shadow: 0 var(--press) 0 var(--cover-dk);
   transition:
     transform 80ms linear,
     box-shadow 80ms linear;
@@ -74,7 +75,7 @@
 
 .pill:hover {
   transform: translateY(-1px);
-  box-shadow: 0 calc(var(--press) + 1px) 0 var(--cyan-dk);
+  box-shadow: 0 calc(var(--press) + 1px) 0 var(--cover-dk);
 }
 
 .pill:active {

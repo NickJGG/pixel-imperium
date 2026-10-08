@@ -6,6 +6,7 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4) max(var(--space-7), calc((100% - 1200px) / 2 + var(--space-7))) var(--space-6);
+  --focus: var(--on-cover);
   color: var(--on-cover);
   background-color: var(--cover);
   background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 1.6px);
@@ -65,6 +66,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-4) var(--space-6);
+  --focus: var(--blue);
   color: var(--ink);
   background: var(--card);
   border-radius: var(--r-lg);
@@ -93,8 +95,8 @@
 
 .percent {
   padding: 2px 8px;
-  color: var(--on-cyan);
-  background: var(--cyan);
+  color: var(--on-blue);
+  background: var(--blue);
   border-radius: var(--r-pill);
 }
 
@@ -190,8 +192,8 @@
 }
 
 .active {
-  background: var(--cyan);
-  color: var(--on-cyan);
+  background: var(--blue);
+  color: var(--on-blue);
 }
 
 .impossible {
@@ -308,9 +310,9 @@
 }
 
 .chips button[aria-pressed='true'] {
-  --btn-bg: var(--cyan);
-  --btn-ink: var(--on-cyan);
-  border-color: var(--cyan);
+  --btn-bg: var(--blue);
+  --btn-ink: var(--on-blue);
+  border-color: var(--blue);
 }
 
 .chips svg {
@@ -418,6 +420,8 @@
   width: 88px;
   height: 88px;
   padding: 6px;
+  font-size: 10px;
+  letter-spacing: -0.06em;
 }
 
 .flavour {
@@ -501,6 +505,7 @@
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-4) var(--space-6);
+  --focus: var(--blue);
   color: var(--ink);
   background: var(--paper);
   border-radius: var(--r-sm) var(--r-lg) var(--r-lg) var(--r-sm);
@@ -562,6 +567,8 @@
   width: 88px;
   height: 88px;
   padding: 6px;
+  font-size: 10px;
+  letter-spacing: -0.06em;
 }
 
 .sideStamp {

@@ -27,14 +27,27 @@
 }
 
 .edge .tab {
-  padding: 6px 12px 6px 8px;
+  padding: 6px 12px 6px 30px;
   border-radius: 0 var(--r-md) var(--r-md) 0;
   box-shadow: 2px 2px 0 var(--shade);
-  transition: padding 120ms;
+  transition:
+    padding 120ms,
+    filter 120ms;
 }
 
-.edge .tab[aria-current='page'],
-.edge .tab:hover {
+.tab:not(.locked):hover {
+  filter: brightness(1.12);
+}
+
+.edge .tab:not(.locked):hover {
+  box-shadow: 3px 3px 0 var(--shade);
+}
+
+.locked:hover {
+  color: var(--ink);
+}
+
+.edge .tab:not(.locked)[aria-current='page'] {
   padding-right: 22px;
 }
 
@@ -49,8 +62,8 @@
 }
 
 .locked {
-  filter: saturate(0.25);
-  opacity: 0.7;
+  background: var(--card-2);
+  color: var(--ink-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {

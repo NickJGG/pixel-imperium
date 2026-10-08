@@ -20,7 +20,6 @@ export function ProvincePage({ campaign, province }: { campaign: Campaign; provi
   if (!isOpen(state)) return <LockedProvince campaign={campaign} province={province} progress={progress} />
   return (
     <Indexed campaign={campaign} province={province} progress={progress}>
-      <BackToCover campaign={campaign} />
       <Spread
         province={province}
         index={index}
@@ -50,7 +49,6 @@ export function LockedProvince({
 
   return (
     <Indexed campaign={campaign} province={province} progress={progress}>
-      <BackToCover campaign={campaign} />
       <section className={styles.locked} style={paperStyle(index)} aria-labelledby="locked-title">
         <div className={styles.sealed} aria-hidden="true">
           <div className={styles.ghosts}>
@@ -109,8 +107,9 @@ function Indexed({
   return (
     <main className={styles.page}>
       <ProvinceTabs campaign={campaign} progress={progress} current={province.id} variant="chips" className={styles.chipRail} />
+      <BackToCover campaign={campaign} />
       <div className={styles.indexed}>
-        <div>{children}</div>
+        <div className={styles.indexedPage}>{children}</div>
         <ProvinceTabs campaign={campaign} progress={progress} current={province.id} variant="edge" className={styles.edgeRail} />
       </div>
     </main>

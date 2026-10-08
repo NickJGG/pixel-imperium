@@ -126,8 +126,8 @@
 }
 
 .pick[aria-pressed='true'] {
-  --btn-bg: color-mix(in srgb, var(--cyan) 22%, transparent);
-  outline: 3px solid var(--cyan);
+  --btn-bg: color-mix(in srgb, var(--blue) 22%, transparent);
+  outline: 3px solid var(--blue);
   outline-offset: 0;
 }
 

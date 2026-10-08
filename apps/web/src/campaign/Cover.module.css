@@ -24,6 +24,7 @@
   display: grid;
   gap: 18px;
   padding: 22px 22px 22px 34px;
+  --focus: var(--on-cover);
   color: var(--on-cover);
   background-color: var(--cover);
   background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 1.6px);
@@ -163,7 +164,7 @@
   position: absolute;
   inset: 0;
   width: var(--p);
-  background: var(--cyan);
+  background: var(--sticker);
 }
 
 .index {
@@ -274,10 +275,10 @@
   --pill-edge: var(--pink-dk);
 }
 
-.cyan {
-  --pill-bg: var(--cyan);
-  --pill-ink: var(--on-cyan);
-  --pill-edge: var(--cyan-dk);
+.primary {
+  --pill-bg: var(--sticker);
+  --pill-ink: var(--cover);
+  --pill-edge: var(--cover-dk);
 }
 
 .paper {

@@ -69,8 +69,9 @@
   background: none;
 }
 
+/* A tall sticker narrows so its height fits the square slot too. */
 .filled > * {
-  width: 100%;
+  width: min(100%, 100% * var(--ar, 1));
 }
 
 @media (max-width: 460px) {

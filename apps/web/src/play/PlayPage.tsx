@@ -191,7 +191,7 @@ function Play({
     let choreography: Choreography
     if (moment === 'flying') {
       const slot = slotRef.current!.getBoundingClientRect()
-      float.style.width = `${slot.width}px`
+      float.style.width = `${slot.width * Math.min(1, puzzle.width / puzzle.height)}px`
       choreography = flyIn(float, board, slot, tiltOf(puzzle.id))
     } else {
       choreography = popOnly(float, board)
@@ -411,7 +411,7 @@ function Play({
             </div>
           )}
           {moment === 'landed' && !fit?.sidePage && (
-            <Stamp thunk solid className={styles.cardStamp}>
+            <Stamp thunk className={styles.cardStamp}>
               New sticker!
             </Stamp>
           )}
@@ -445,7 +445,7 @@ function Conquest({ campaign, province, children }: { campaign: Campaign; provin
   return (
     <>
       <div className={styles.headline}>
-        <Stamp thunk solid tone={following ? 'pink' : 'gold'} className={styles.afterStamp}>
+        <Stamp thunk tone={following ? 'pink' : 'gold'} className={styles.afterStamp}>
           {following ? 'Page complete' : 'Album complete'}
         </Stamp>
         <p role="status">

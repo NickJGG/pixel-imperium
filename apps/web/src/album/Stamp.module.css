@@ -9,15 +9,9 @@
   color: var(--pink);
   border: 3px double currentColor;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--sticker) 55%, transparent);
-  transform: rotate(var(--tilt));
-}
-
-.solid {
-  font-size: 10px;
-  letter-spacing: -0.06em;
   background: var(--sticker);
   box-shadow: 0 3px 0 var(--shade);
+  transform: rotate(var(--tilt));
 }
 
 .ok {

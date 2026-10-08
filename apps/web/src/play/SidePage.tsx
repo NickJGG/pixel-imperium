@@ -60,7 +60,7 @@ export function SidePage({ province, index, number, storage, hideSticker, stampe
         ))}
       </ol>
       {stamped && (
-        <Stamp thunk solid className={styles.sideStamp}>
+        <Stamp thunk className={styles.sideStamp}>
           New sticker!
         </Stamp>
       )}

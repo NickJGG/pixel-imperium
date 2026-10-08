@@ -49,7 +49,7 @@ export function HintButton({ store, confirmFirst, onError }: Props) {
     return (
       <button
         type="button"
-        data-variant="cyan"
+        data-variant="blue"
         disabled={pending}
         onClick={() => (confirmFirst ? setConfirming(true) : void hint())}
       >
