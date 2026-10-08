@@ -22,13 +22,13 @@ export function stepCells({ target }: LessonStep, width: number): number[] {
   return [...(target.filled ?? []), ...(target.marked ?? [])].map(ref => at(width, ref))
 }
 
-/** The grid as it would be with every step before `step` done, for resuming mid-Lesson. */
-export function cellsBefore({ steps }: Lesson, step: number, width: number, height: number): Cell[] {
+/** The grid with the givens placed and every step before `step` done, for opening or resuming a Lesson. */
+export function cellsBefore({ given = {}, steps }: Lesson, step: number, width: number, height: number): Cell[] {
   const cells = Array<Cell>(width * height).fill('empty')
-  for (const { target } of steps.slice(0, step)) {
-    if (target === 'solved') continue
-    for (const ref of target.filled ?? []) cells[at(width, ref)] = 'filled'
-    for (const ref of target.marked ?? []) cells[at(width, ref)] = 'marked'
+  for (const placed of [given, ...steps.slice(0, step).map(s => s.target)]) {
+    if (placed === 'solved') continue
+    for (const ref of placed.filled ?? []) cells[at(width, ref)] = 'filled'
+    for (const ref of placed.marked ?? []) cells[at(width, ref)] = 'marked'
   }
   return cells
 }

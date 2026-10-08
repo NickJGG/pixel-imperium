@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { type SolverCell, isLogicSolvable, isUnique, lineSolve } from '@pixel-imperium/nonogram'
 import { type Lesson, LESSONS, lessonPuzzle } from './lessons.ts'
+import { cellsBefore, currentStep } from './steps.ts'
+import { TECHNIQUES } from './techniques.ts'
 
-/** What line logic on just the step's highlighted lines yields from the cells earlier steps settled. */
+/** What line logic on just the step's highlighted lines yields from the givens and the cells earlier steps settled. */
 function deducible(lesson: Lesson, stepIndex: number): SolverCell[] {
   const { width, height, clues } = lessonPuzzle(lesson)
   const g = Array<SolverCell>(width * height).fill('unknown')
-  for (const { target } of lesson.steps.slice(0, stepIndex)) {
-    if (target === 'solved') continue
-    for (const [r, c] of target.filled ?? []) g[r * width + c] = 'filled'
-    for (const [r, c] of target.marked ?? []) g[r * width + c] = 'empty'
+  for (const placed of [lesson.given ?? {}, ...lesson.steps.slice(0, stepIndex).map(s => s.target)]) {
+    if (placed === 'solved') continue
+    for (const [r, c] of placed.filled ?? []) g[r * width + c] = 'filled'
+    for (const [r, c] of placed.marked ?? []) g[r * width + c] = 'empty'
   }
   const { rows = [], cols = [] } = lesson.steps[stepIndex]!.highlight
   const lines = [
@@ -33,7 +35,7 @@ function deducible(lesson: Lesson, stepIndex: number): SolverCell[] {
   return g
 }
 
-describe.each(LESSONS.map(l => [l.picture, l] as const))('%s', (_, lesson) => {
+describe.each([...LESSONS, ...TECHNIQUES].map(l => [l.picture, l] as const))('%s', (_, lesson) => {
   const { width, height, clues, palette } = lessonPuzzle(lesson)
 
   it('has every dimension a multiple of 5 and every colour in the palette', () => {
@@ -52,8 +54,16 @@ describe.each(LESSONS.map(l => [l.picture, l] as const))('%s', (_, lesson) => {
     const last = lesson.steps.length - 1
     expect(lesson.steps.findIndex(s => s.target === 'solved')).toBeOneOf([-1, last])
     if (lesson.steps[last]!.target === 'solved') return
-    const filled = new Set(lesson.steps.flatMap(s => (s.target === 'solved' ? [] : (s.target.filled ?? []).map(([r, c]) => r * width + c))))
+    const placed = [lesson.given ?? {}, ...lesson.steps.flatMap(s => (s.target === 'solved' ? [] : [s.target]))]
+    const filled = new Set(placed.flatMap(p => (p.filled ?? []).map(([r, c]) => r * width + c)))
     expect(palette.map((_, i) => filled.has(i))).toEqual(palette.map(c => c !== null))
+  })
+
+  it('gives only cells that agree with the picture, and leaves the first step to do', () => {
+    const { filled = [], marked = [] } = lesson.given ?? {}
+    for (const [r, c] of filled) expect(palette[r * width + c], `(${r}, ${c})`).not.toBeNull()
+    for (const [r, c] of marked) expect(palette[r * width + c], `(${r}, ${c})`).toBeNull()
+    expect(currentStep(lesson, cellsBefore(lesson, 0, width, height), width)).toBe(0)
   })
 
   lesson.steps.forEach((step, i) => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Cell } from '@pixel-imperium/nonogram'
-import { LESSONS, lessonPuzzle } from './lessons.ts'
+import { type Lesson, LESSONS, lessonPuzzle } from './lessons.ts'
 import { cellsBefore, currentStep, feedback, stepCells, wrongCell } from './steps.ts'
 
 const gate = LESSONS[0]!
@@ -35,6 +35,17 @@ describe('currentStep', () => {
 
   it('runs to the end once every gated step is met', () => {
     expect(currentStep(gate, cellsBefore(gate, 3, width, height), width)).toBe(3)
+  })
+})
+
+describe('cellsBefore', () => {
+  it('places the givens before any step', () => {
+    const staged: Lesson = { ...gate, given: { filled: [[2, 2]], marked: [[4, 0]] } }
+    const cells = cellsBefore(staged, 1, width, height)
+    expect(cells[2 * width + 2]).toBe('filled')
+    expect(cells[4 * width]).toBe('marked')
+    expect(cells.slice(0, width)).toEqual(Array(width).fill('filled'))
+    expect(cells.filter(c => c !== 'empty')).toHaveLength(width + 2)
   })
 })
 

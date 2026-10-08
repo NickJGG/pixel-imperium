@@ -3,13 +3,18 @@ import { type Clues, cluesFromSolution } from '@pixel-imperium/nonogram'
 /** `[row, col]`, zero-based. */
 export type CellRef = readonly [number, number]
 
+export interface Placed {
+  filled?: CellRef[]
+  marked?: CellRef[]
+}
+
 export interface LessonStep {
   /** Paragraphs, with `**bold**`, `_italic_` and `` `key` `` spans. */
   text: string[]
   /** Lines whose clues and cells are outlined. */
   highlight: { rows?: number[]; cols?: number[] }
   /** Cells that must be right for the step to pass, or the whole picture. */
-  target: { filled?: CellRef[]; marked?: CellRef[] } | 'solved'
+  target: Placed | 'solved'
   /** Shows a block of `block` cells sliding along a line of `line`, for overlap. */
   slide?: { block: number; line: number }
 }
@@ -23,14 +28,16 @@ export interface Lesson {
   picture: string
   palette: Record<string, string>
   rows: string[]
+  /** Cells already placed when the grid opens, as ordinary cells the player can clear. */
+  given?: Placed
   steps: LessonStep[]
   /** Shown once the picture is revealed. */
   done: string
   free?: boolean
 }
 
-const row = (r: number, cols: number[]): CellRef[] => cols.map(c => [r, c])
-const col = (c: number, rows: number[]): CellRef[] => rows.map(r => [r, c])
+export const row = (r: number, cols: number[]): CellRef[] => cols.map(c => [r, c])
+export const col = (c: number, rows: number[]): CellRef[] => rows.map(r => [r, c])
 const ALL = [0, 1, 2, 3, 4]
 
 export const LESSONS: readonly Lesson[] = [

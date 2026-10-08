@@ -41,8 +41,12 @@ _Avoid_: Assist (assists are the free play settings and never cost **Foil**), cl
 A short, skippable guided sequence of **Lessons** teaching how to solve nonograms, offered once to a new **Player**; outside any **Campaign**.
 _Avoid_: Onboarding, intro, training, guide
 
+**Techniques**:
+A second guided sequence of **Lessons** on harder line deductions, offered mid-**Campaign**; outside any **Campaign**.
+_Avoid_: Advanced tutorial, masterclass, Tutorial 2
+
 **Lesson**:
-One guided picture grid within the **Tutorial**; it **Reveals** like a **Puzzle** but earns no **Sticker**.
+One guided picture grid within the **Tutorial** or **Techniques**; it **Reveals** like a **Puzzle** but earns no **Sticker**.
 _Avoid_: Drill, step (a step is one prompt within a lesson)
 
 ### Players
