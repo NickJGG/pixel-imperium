@@ -1,10 +1,10 @@
-import type { Ref, RefCallback } from 'react'
+import type { ReactNode, Ref, RefCallback } from 'react'
+import { Link } from '@tanstack/react-router'
 import type { Province } from '@pixel-imperium/protocol'
 import { paperStyle } from '../album/paper.ts'
 import { Slot } from '../album/Slot.tsx'
 import { Stamp } from '../album/Stamp.tsx'
 import { GOLD_SLOT, PuzzleSlot } from '../campaign/PuzzleSlot.tsx'
-import { HowToPlay } from '../tutorial/HowToPlay.tsx'
 import { SIDE_PAGE_WIDTH } from './layout.ts'
 import type { ProgressStorage } from './progress-storage.ts'
 import styles from './Play.module.css'
@@ -12,6 +12,7 @@ import styles from './Play.module.css'
 const ROW = 5
 
 interface Props {
+  campaignId: string
   province: Province
   /** The province's place in its campaign, for its paper colour. */
   index: number
@@ -21,12 +22,31 @@ interface Props {
   /** Keeps the puzzle's slot empty while its sticker is on its way. */
   hideSticker: boolean
   stamped: boolean
+  /** A status beside the size: Replaying, Imported and the like. */
+  tag: ReactNode
+  /** Everything under the slot row. */
+  children: ReactNode
   ref: Ref<HTMLElement>
   slotRef: RefCallback<HTMLElement>
 }
 
-/** The row of five slots holding the puzzle being played, cut from its province's page. */
-export function SidePage({ province, index, number, storage, hideSticker, stamped, ref, slotRef }: Props) {
+/**
+ * The puzzle's panel beside the board, on its province's paper: the way back, the puzzle, and the
+ * row of five slots it sits in, then whatever the play state puts under them.
+ */
+export function PuzzlePanel({
+  campaignId,
+  province,
+  index,
+  number,
+  storage,
+  hideSticker,
+  stamped,
+  tag,
+  children,
+  ref,
+  slotRef,
+}: Props) {
   const first = Math.floor((number - 1) / ROW) * ROW
   const current = province.puzzles[number - 1]!
   const has = (id: string) => storage.loadSolved(id) !== null && !(hideSticker && id === current.id)
@@ -35,15 +55,26 @@ export function SidePage({ province, index, number, storage, hideSticker, stampe
   return (
     <aside
       ref={ref}
-      className={styles.side}
+      className={styles.panel}
       style={{ ...paperStyle(index), width: SIDE_PAGE_WIDTH }}
       aria-label={province.name}
     >
-      <header className={styles.sideHead}>
-        <h2>{province.name}</h2>
+      <div className={styles.panelBack}>
+        <Link to="/c/$campaignId/$provinceId" params={{ campaignId, provinceId: province.id }}>
+          ← {province.name}
+        </Link>
         <span className={styles.count}>
           {solved} / {province.puzzles.length}
         </span>
+      </div>
+      <header className={styles.panelHead}>
+        <h1 className={styles.title}>
+          #{number} {current.title}
+        </h1>
+        <span className={styles.size}>
+          {current.width}×{current.height}
+        </span>
+        {tag}
       </header>
       <ol className={styles.sideSlots} start={first + 1}>
         {province.puzzles.slice(first, first + ROW).map((p, i) => (
@@ -56,7 +87,7 @@ export function SidePage({ province, index, number, storage, hideSticker, stampe
           </li>
         ))}
       </ol>
-      <HowToPlay back={`/play/${current.id}`} className={styles.howTo} />
+      {children}
       {stamped && (
         <Stamp thunk className={styles.sideStamp}>
           New sticker!

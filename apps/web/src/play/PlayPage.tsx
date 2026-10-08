@@ -18,6 +18,7 @@ import { useShouldOffer } from '../tutorial/asked.ts'
 import { ChoiceCard } from '../tutorial/ChoiceCard.tsx'
 import { HowToPlay } from '../tutorial/HowToPlay.tsx'
 import { AssistChips } from './AssistChips.tsx'
+import { AssistSwitches } from './AssistSwitches.tsx'
 import { Board, REVEAL_MS } from './Board.tsx'
 import { ClearButton, LoopIcon } from './ClearButton.tsx'
 import { ColClues, RowClues } from './Clues.tsx'
@@ -25,7 +26,7 @@ import { HintButton, hintText } from './HintButton.tsx'
 import { CLUE_SLOT, PILL_BAND, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, fitPlay } from './layout.ts'
 import { createLineHints } from './line-hints.ts'
 import { encodeCells } from './progress-storage.ts'
-import { SidePage } from './SidePage.tsx'
+import { PuzzlePanel } from './PuzzlePanel.tsx'
 import { type Choreography, confetti, flyIn, popOnly } from './sticker-moment.ts'
 import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
 import { ToolPill } from './ToolPill.tsx'
@@ -113,14 +114,24 @@ function Play({
   const assists = useMemo(() => ({ fade: fadeClues, impossible: impossibleLines }), [fadeClues, impossibleLines])
 
   const stageRef = useRef<HTMLDivElement>(null)
+  const crumbRef = useRef<HTMLDivElement>(null)
+  const headRef = useRef<HTMLElement>(null)
+  const belowRef = useRef<HTMLDivElement>(null)
   const sidePageShown = useRef(false)
   const [fit, setFit] = useState<{ cellSize: number; sidePage: boolean } | null>(null)
   useLayoutEffect(() => {
-    // The stage loses the side page's width while it shows; the fit is always made as if it didn't.
+    // The fit is always made against the stage wide gives: the panel's width goes back on while it
+    // shows, and compact's crumb, card head and under-board stack go back on while they show.
+    // Otherwise each layout's room could pick the other one, and the two would flip forever.
+    const compactChrome = () =>
+      [crumbRef, headRef, belowRef].reduce((sum, { current: el }) => {
+        if (!el) return sum
+        return sum + el.getBoundingClientRect().height + parseFloat(getComputedStyle(el.parentElement!).rowGap)
+      }, 0)
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry!.contentRect
       const room = sidePageShown.current ? SIDE_PAGE_WIDTH + SIDE_PAGE_GAP : 0
-      const next = fitPlay({ width: width + room, height }, puzzle)
+      const next = fitPlay({ width: width + room, height: height + compactChrome() }, puzzle)
       sidePageShown.current = next.sidePage
       setFit(next)
     })
@@ -128,6 +139,7 @@ function Play({
     return () => observer.disconnect()
   }, [puzzle])
   const cellSize = fit?.cellSize ?? 0
+  const wide = fit?.sidePage ?? false
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -231,33 +243,113 @@ function Play({
     />
   )
 
-  return (
-    <main className={styles.play}>
-      <div className={styles.crumb}>
-        <Link to="/c/$campaignId/$provinceId" params={{ campaignId: campaign.id, provinceId: province.id }}>
-          ← {province.name}
-        </Link>
-        {replaying ? (
-          <Dymo className={styles.tag}>
-            <LoopIcon />
-            Replaying {percent}%
-          </Dymo>
-        ) : moment === 'kept' ? (
-          <Dymo tone="pink" className={styles.tag}>
-            Sticker kept
-          </Dymo>
-        ) : moment === 'landed' && foil ? (
-          <Dymo tone="pink" className={styles.tag}>
-            +1 foil
-          </Dymo>
-        ) : (
-          unverified && <Dymo className={styles.tag}>Imported: replay to verify</Dymo>
+  const tag = replaying ? (
+    <Dymo className={styles.tag}>
+      <LoopIcon />
+      Replaying
+    </Dymo>
+  ) : moment === 'kept' ? (
+    <Dymo tone="pink" className={styles.tag}>
+      Sticker kept
+    </Dymo>
+  ) : moment === 'landed' && foil ? (
+    <Dymo tone="pink" className={styles.tag}>
+      +1 foil
+    </Dymo>
+  ) : (
+    unverified && <Dymo className={styles.tag}>Imported: replay to verify</Dymo>
+  )
+
+  const hintButton = (
+    <HintButton
+      store={store}
+      confirmFirst={firstSolve && !hinted}
+      request={cells => requestHint(puzzle.id, { cells: encodeCells(cells) })}
+      onError={setHintFailed}
+    />
+  )
+
+  const after = (
+    <div className={styles.after}>
+      {conquest ? (
+        <Conquest campaign={campaign} province={province}>
+          <ClearButton store={store} solved />
+        </Conquest>
+      ) : (
+        <>
+          <p role="status">
+            {moment === 'landed'
+              ? `${puzzle.title} is in ${province.name}. ${left === 0 ? 'Page complete.' : `${left} to go.`}`
+              : moment === 'kept'
+                ? `Solved again. ${puzzle.title} stays where it is.`
+                : `${puzzle.title} is in the album.`}
+          </p>
+          <div className={styles.afterActions}>
+            <Link
+              to="/c/$campaignId/$provinceId"
+              params={{ campaignId: campaign.id, provinceId: province.id }}
+              className={`${styles.linkButton} ${styles.paper}`}
+            >
+              Back to page
+            </Link>
+            <ClearButton store={store} solved />
+            {next && (
+              <Link to="/play/$id" params={{ id: next.id }} className={styles.linkButton}>
+                Next: {next.title}
+                <ArrowIcon />
+              </Link>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
+
+  const stage = (
+    <div className={styles.stageWrap}>
+      <div
+        ref={stageRef}
+        className={`${styles.stage} ${styles.playStage}`}
+        style={{ '--pill-band': `${PILL_BAND}px` } as CSSProperties}
+      >
+        {cellSize > 0 && (
+          <div
+            ref={boardRef}
+            className={styles.board}
+            data-revealed={palette !== null || undefined}
+            style={
+              {
+                '--cell': `${cellSize}px`,
+                '--clue-slot': `${cellSize * CLUE_SLOT}px`,
+              } as CSSProperties
+            }
+          >
+            <div />
+            <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={assists} />
+            <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={assists} />
+            <Board store={store} cellSize={cellSize} />
+          </div>
         )}
       </div>
+      {!done && <ToolPill store={store} inert={solved} />}
+    </div>
+  )
+
+  // One tree for both layouts, so switching between them never remounts the stage or the board.
+  return (
+    <main className={styles.play}>
+      {!wide && (
+        <div ref={crumbRef} className={styles.crumb}>
+          <Link to="/c/$campaignId/$provinceId" params={{ campaignId: campaign.id, provinceId: province.id }}>
+            ← {province.name}
+          </Link>
+          {tag}
+        </div>
+      )}
       <div className={styles.desk} style={{ gap: SIDE_PAGE_GAP }}>
         <div ref={cardRef} className={styles.card}>
-          <header className={styles.cardHead}>
-            {fit && !fit.sidePage && (
+          {!wide && (
+            <header ref={headRef} className={styles.cardHead}>
               <span ref={setSlot} className={styles.slotChip} aria-label={`Slot ${number}`}>
                 {solved && !hideSticker ? (
                   <Slot number={number} width={puzzle.width} height={puzzle.height}>
@@ -267,128 +359,116 @@ function Play({
                   <Slot number={number} width={puzzle.width} height={puzzle.height} gold={number === GOLD_SLOT} next />
                 )}
               </span>
-            )}
-            <h1 className={styles.title}>
-              #{number} {puzzle.title}
-            </h1>
-            <span className={styles.size}>
-              {puzzle.width}×{puzzle.height}
-            </span>
-            {!solved && !replaying && percent > 0 && <span className={styles.percent}>{percent}%</span>}
-          </header>
-          <div className={styles.stageWrap}>
-            <div
-              ref={stageRef}
-              className={`${styles.stage} ${styles.playStage}`}
-              style={{ '--pill-band': `${PILL_BAND}px` } as CSSProperties}
-            >
-              {cellSize > 0 && (
-                <div
-                  ref={boardRef}
-                  className={styles.board}
-                  data-revealed={palette !== null || undefined}
-                  style={
-                    {
-                      '--cell': `${cellSize}px`,
-                      '--clue-slot': `${cellSize * CLUE_SLOT}px`,
-                    } as CSSProperties
-                  }
-                >
-                  <div />
-                  <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={assists} />
-                  <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={assists} />
-                  <Board store={store} cellSize={cellSize} />
-                </div>
-              )}
-            </div>
-            {!done && <ToolPill store={store} inert={solved} />}
-          </div>
-          {done ? (
-            <div className={styles.after}>
-              {conquest ? (
-                <Conquest campaign={campaign} province={province}>
-                  <ClearButton store={store} solved />
-                </Conquest>
-              ) : (
-                <>
-                  <p role="status">
-                    {moment === 'landed'
-                      ? `${puzzle.title} is in ${province.name}. ${left === 0 ? 'Page complete.' : `${left} to go.`}`
-                      : moment === 'kept'
-                        ? `Solved again. ${puzzle.title} stays where it is.`
-                        : `${puzzle.title} is in the album.`}
-                  </p>
-                  <div className={styles.afterActions}>
-                    <Link
-                      to="/c/$campaignId/$provinceId"
-                      params={{ campaignId: campaign.id, provinceId: province.id }}
-                      className={`${styles.linkButton} ${styles.paper}`}
-                    >
-                      Back to page
-                    </Link>
-                    <ClearButton store={store} solved />
-                    {next && (
-                      <Link to="/play/$id" params={{ id: next.id }} className={styles.linkButton}>
-                        Next: {next.title}
-                        <ArrowIcon />
-                      </Link>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          ) : (
-            // Kept through the fly-in so the board doesn't resize under the sticker.
-            <div className={styles.tools} inert={solved}>
-              {hint ? (
-                <p className={styles.hintLine} role="status">
-                  <Dymo tone="pink">{hintText(hint, cells, puzzle.width)}</Dymo>
-                </p>
-              ) : hintFailed ? (
-                <p className={styles.hintLine} role="status">
-                  Couldn't reach the album for a hint. Try again in a moment.
-                </p>
-              ) : (
-                firstSolve && (
-                  <p className={styles.hintLine}>
-                    <span className={styles.foilNote} data-lost={hinted || undefined}>
-                      <i aria-hidden="true" />
-                      {hinted ? 'Hint used: regular sticker' : 'No hints yet: this one will be foil'}
-                    </span>
-                  </p>
-                )
-              )}
-              <div className={styles.dock}>
-                <ClearButton store={store} solved={false} disabled={!canClear} />
-                <HintButton
-                  store={store}
-                  confirmFirst={firstSolve && !hinted}
-                  request={cells => requestHint(puzzle.id, { cells: encodeCells(cells) })}
-                  onError={setHintFailed}
-                />
-              </div>
-              <AssistChips />
-              {fit && !fit.sidePage && <HowToPlay back={`/play/${puzzle.id}`} className={styles.howTo} />}
-            </div>
+              <h1 className={styles.title}>
+                #{number} {puzzle.title}
+              </h1>
+              <span className={styles.size}>
+                {puzzle.width}×{puzzle.height}
+              </span>
+              {!solved && percent > 0 && <span className={styles.percent}>{percent}%</span>}
+            </header>
           )}
-          {moment === 'landed' && !fit?.sidePage && (
+          {stage}
+          {done ? (
+            <div ref={wide ? undefined : belowRef}>{after}</div>
+          ) : (
+            !wide && (
+              // Kept through the fly-in so the board doesn't resize under the sticker.
+              <div ref={belowRef} className={styles.tools} inert={solved}>
+                {hint ? (
+                  <p className={styles.hintLine} role="status">
+                    <Dymo tone="pink">{hintText(hint, cells, puzzle.width)}</Dymo>
+                  </p>
+                ) : hintFailed ? (
+                  <p className={styles.hintLine} role="status">
+                    Couldn't reach the album for a hint. Try again in a moment.
+                  </p>
+                ) : (
+                  firstSolve && (
+                    <p className={styles.hintLine}>
+                      <span className={styles.foilNote} data-lost={hinted || undefined}>
+                        <i aria-hidden="true" />
+                        {hinted ? 'Hint used: regular sticker' : 'No hints yet: this one will be foil'}
+                      </span>
+                    </p>
+                  )
+                )}
+                <div className={styles.dock}>
+                  <ClearButton store={store} solved={false} disabled={!canClear} />
+                  {hintButton}
+                </div>
+                <AssistChips />
+                <HowToPlay back={`/play/${puzzle.id}`} className={styles.howTo} />
+              </div>
+            )
+          )}
+          {moment === 'landed' && !wide && (
             <Stamp thunk className={styles.cardStamp}>
               New sticker!
             </Stamp>
           )}
           {offerTutorial && <ChoiceCard puzzleId={puzzle.id} />}
         </div>
-        {fit?.sidePage && (
-          <SidePage
+        {wide && (
+          <PuzzlePanel
             ref={sidePageRef}
             slotRef={setSlot}
+            campaignId={campaign.id}
             province={province}
             index={provinceIndex}
             number={number}
             storage={storage}
             hideSticker={hideSticker}
             stamped={moment === 'landed'}
-          />
+            tag={tag}
+          >
+            {!done && (
+              <div className={styles.panelBody} inert={solved}>
+                <div className={styles.progress}>
+                  <span className={styles.bar}>
+                    <i style={{ width: `${percent}%` }} />
+                  </span>
+                  <span className={styles.size}>{percent}% filled</span>
+                </div>
+                {replaying ? (
+                  <p className={styles.panelNote}>Already in the album. Replays never change the sticker.</p>
+                ) : (
+                  firstSolve &&
+                  !hinted && (
+                    <span className={styles.foilNote}>
+                      <i aria-hidden="true" />
+                      Foil still possible
+                    </span>
+                  )
+                )}
+                <div className={styles.panelHint}>
+                  {hintButton}
+                  {hint ? (
+                    <p role="status">
+                      <Dymo tone="pink">{hintText(hint, cells, puzzle.width)}</Dymo>
+                    </p>
+                  ) : (
+                    hintFailed && (
+                      <p className={styles.panelNote} role="status">
+                        Couldn't reach the album for a hint. Try again in a moment.
+                      </p>
+                    )
+                  )}
+                  {firstSolve && hinted && (
+                    <span className={styles.foilNote} data-lost>
+                      <i aria-hidden="true" />
+                      Hint used: regular sticker
+                    </span>
+                  )}
+                </div>
+                <AssistSwitches />
+                <div className={styles.panelFoot}>
+                  <HowToPlay back={`/play/${puzzle.id}`} className={styles.howTo} />
+                  <ClearButton store={store} solved={false} disabled={!canClear} />
+                </div>
+              </div>
+            )}
+          </PuzzlePanel>
         )}
       </div>
       {(moment === 'flying' || moment === 'popping') && (
