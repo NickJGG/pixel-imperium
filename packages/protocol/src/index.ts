@@ -171,6 +171,29 @@ export interface ProfileCampaign {
   verifiedPuzzleIds: string[]
   /** The foil ones among `verifiedPuzzleIds`. */
   foilPuzzleIds: string[]
+  /** Puzzle id → ISO time of its verified solve. */
+  solvedAt: Record<string, string>
+  /** Earned ones only, in `StampId` order. */
+  stamps: ProfileStamp[]
+}
+
+/**
+ * A campaign's Stamps, derived from its verified solves: the first sticker and first foil, five foils in a row,
+ * ten solves within 24 hours, a page all foil, each page but the last conquered, and the last one completing the album.
+ */
+export type StampId =
+  | 'first-sticker'
+  | 'first-foil'
+  | 'foil-run'
+  | 'spree'
+  | 'perfect-page'
+  | `conquered:${string}`
+  | 'album-complete'
+
+export interface ProfileStamp {
+  id: StampId
+  /** ISO time of the solve that earned it. */
+  earnedAt: string
 }
 
 /** `GET /api/users/:handle`, public, and counting only verified solves, even for the owner. */

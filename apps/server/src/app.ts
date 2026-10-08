@@ -31,6 +31,7 @@ import { handleProblem } from './handles.ts'
 import { hintFor, rateLimiter } from './hints.ts'
 import { parseCells, planImport } from './import.ts'
 import type { Campaign } from './campaigns.ts'
+import { stampsFor } from './stamps.ts'
 
 export interface AppDeps {
   db: Db
@@ -99,6 +100,7 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
       },
     ]),
   )
+  const campaignsById = new Map(campaigns.map(c => [c.id, c]))
   const notFound = (id: string): ApiError => ({ error: `no puzzle '${id}'` })
 
   /**
@@ -205,22 +207,30 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
       if (!owner) return c.json<ApiError>({ error: `no player '${c.req.param('handle')}'` }, 404)
 
       const solves = await db
-        .select({ puzzleId: solve.puzzleId, foil: solve.foil })
+        .select({ puzzleId: solve.puzzleId, foil: solve.foil, solvedAt: solve.solvedAt })
         .from(solve)
         .where(and(eq(solve.userId, owner.id), eq(solve.verified, true)))
         .orderBy(desc(solve.solvedAt))
       // Insertion order follows the newest solve, so the most recently played campaign comes first.
       const byCampaign = new Map<string, ProfileCampaign>()
       let verifiedSolves = 0
-      for (const { puzzleId, foil } of solves) {
+      for (const { puzzleId, foil, solvedAt } of solves) {
         const p = byId.get(puzzleId)
         if (!p) continue
         verifiedSolves++
-        const entry = byCampaign.get(p.campaignId) ?? { id: p.campaignId, verifiedPuzzleIds: [], foilPuzzleIds: [] }
+        const entry = byCampaign.get(p.campaignId) ?? {
+          id: p.campaignId,
+          verifiedPuzzleIds: [],
+          foilPuzzleIds: [],
+          solvedAt: {},
+          stamps: [],
+        }
         entry.verifiedPuzzleIds.push(puzzleId)
         if (foil) entry.foilPuzzleIds.push(puzzleId)
+        entry.solvedAt[puzzleId] = solvedAt.toISOString()
         byCampaign.set(p.campaignId, entry)
       }
+      for (const entry of byCampaign.values()) entry.stamps = stampsFor(campaignsById.get(entry.id)!, solves)
       const verified = new Set(solves.map(s => s.puzzleId))
       return c.json<Profile>({
         handle: owner.handle,

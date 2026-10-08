@@ -9,6 +9,7 @@ import type {
   Profile,
   PuzzleClues,
   SolveResponse,
+  StampId,
 } from '@pixel-imperium/protocol'
 import { and, eq } from 'drizzle-orm'
 import { createApp } from './app.ts'
@@ -524,12 +525,19 @@ describe('GET /api/users/:handle', () => {
     return o
   }
 
+  /** `alpha` is a single page, so its one puzzle completes the album. */
+  const alphaStamps = (foil = false) =>
+    (['first-sticker', ...(foil ? ['first-foil', 'perfect-page'] : []), 'album-complete'] as StampId[]).map(id => ({
+      id,
+      earnedAt: '2026-01-01T00:00:00.000Z',
+    }))
+
   const verifiedOnly: Profile = {
     handle: 'Owner',
     image: null,
     joinedAt: expect.any(String),
     verifiedSolves: 1,
-    campaigns: [{ id: 'alpha', verifiedPuzzleIds: ['diag'], foilPuzzleIds: [] }],
+    campaigns: [{ id: 'alpha', verifiedPuzzleIds: ['diag'], foilPuzzleIds: [], solvedAt: { diag: '2026-01-01T00:00:00.000Z' }, stamps: alphaStamps() }],
     showcase: [],
   }
 
@@ -549,15 +557,26 @@ describe('GET /api/users/:handle', () => {
     const o = await owner()
     await db.update(solveTable).set({ verified: true }).where(eq(solveTable.userId, o.id))
     expect((await profile('owner')).campaigns).toEqual([
-      { id: 'beta', verifiedPuzzleIds: ['dot'], foilPuzzleIds: [] },
-      { id: 'alpha', verifiedPuzzleIds: ['diag'], foilPuzzleIds: [] },
+      {
+        id: 'beta',
+        verifiedPuzzleIds: ['dot'],
+        foilPuzzleIds: [],
+        solvedAt: { dot: '2026-01-02T00:00:00.000Z' },
+        stamps: [
+          { id: 'first-sticker', earnedAt: '2026-01-02T00:00:00.000Z' },
+          { id: 'album-complete', earnedAt: '2026-01-02T00:00:00.000Z' },
+        ],
+      },
+      { id: 'alpha', verifiedPuzzleIds: ['diag'], foilPuzzleIds: [], solvedAt: { diag: '2026-01-01T00:00:00.000Z' }, stamps: alphaStamps() },
     ])
   })
 
   it('lists foil stickers among the verified ones', async () => {
     await owner()
     await db.update(solveTable).set({ foil: true }).where(eq(solveTable.puzzleId, 'diag'))
-    expect((await profile('owner')).campaigns).toEqual([{ id: 'alpha', verifiedPuzzleIds: ['diag'], foilPuzzleIds: ['diag'] }])
+    expect((await profile('owner')).campaigns).toEqual([
+      { id: 'alpha', verifiedPuzzleIds: ['diag'], foilPuzzleIds: ['diag'], solvedAt: { diag: '2026-01-01T00:00:00.000Z' }, stamps: alphaStamps(true) },
+    ])
   })
 
   it('404s on an unknown handle', async () => {
