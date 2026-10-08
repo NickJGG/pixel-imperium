@@ -22,7 +22,10 @@
 
 .logo {
   flex: none;
-  padding: 6px 10px 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 9px 12px 8px;
   background: var(--sticker);
   color: #2348e8;
   border-radius: var(--r-md);
@@ -34,7 +37,12 @@
   box-shadow: 0 3px 0 var(--shade);
 }
 
-.logo span {
+.mark {
+  width: 1.5em;
+  height: 1em;
+}
+
+.wordmark span {
   color: var(--pink);
 }
 

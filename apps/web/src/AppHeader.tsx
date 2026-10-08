@@ -21,6 +21,18 @@ function useContinue(): ContinueAt | null {
   return continueAt(campaign, campaignProgress(campaign, storage), id => storage.loadSolved(id) !== null)
 }
 
+/** The logo mark: a 9×6-cell pixel crown, drawn in cell units. Decorative. */
+function CrownMark() {
+  return (
+    <svg className={styles.mark} viewBox="0 0 9 6" shapeRendering="crispEdges" aria-hidden="true">
+      <path d="M0 0h1v1h1v1h1V1h1V0h1v1h1v1h1V1h1V0h1v5H0z" fill="var(--gold)" />
+      <rect y="5" width="9" height="1" fill="var(--gold-dk)" />
+      <path d="M1 3h1v1H1zM5 3h1v1H5z" fill="var(--pink)" />
+      <path d="M3 3h1v1H3zM7 3h1v1H7z" fill="var(--cover)" />
+    </svg>
+  )
+}
+
 /** The cobalt spine bar across the top. On phones it compacts and Continue moves to the `ThumbBar`. */
 export function AppHeader() {
   const { theme, sound } = useSettings()
@@ -28,7 +40,10 @@ export function AppHeader() {
   return (
     <header className={styles.spine}>
       <Link to="/" className={styles.logo}>
-        <span>Pixel</span> Imperium
+        <CrownMark />
+        <span className={styles.wordmark}>
+          <span>Pixel</span> Imperium
+        </span>
       </Link>
       {next && (
         <span className={styles.continue}>
