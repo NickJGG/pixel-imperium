@@ -523,6 +523,35 @@
   stroke-linejoin: round;
 }
 
+/* The Tutorial's way in: under the side page, or under the assist chips when there's no side page. */
+.howTo {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--space-2);
+  font: 600 14px var(--font-ui);
+  color: var(--ink-soft);
+  text-underline-offset: 3px;
+}
+
+.tools .howTo {
+  justify-self: center;
+}
+
+.howTo:hover {
+  color: var(--ink);
+}
+
+.howTo svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* The row of the page this puzzle's slot is on. */
 .side {
   position: relative;

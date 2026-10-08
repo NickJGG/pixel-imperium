@@ -221,6 +221,23 @@
   --pill-edge: var(--cover-dk);
 }
 
+.onCover {
+  --pill-bg: rgb(255 255 255 / 0.14);
+  --pill-ink: var(--on-cover);
+  --pill-edge: var(--cover-dk);
+  gap: var(--space-2);
+}
+
+.onCover svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
 .paper {
   --pill-bg: var(--sticker);
   --pill-ink: var(--cover);

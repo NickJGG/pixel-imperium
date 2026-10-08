@@ -221,6 +221,70 @@
   image-rendering: pixelated;
 }
 
+/* Over the play card, so the first puzzle waits behind it. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  backdrop-filter: blur(2px);
+  border-radius: inherit;
+}
+
+.choice {
+  position: relative;
+  width: min(380px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  text-align: center;
+  background: var(--card-2);
+  border-radius: var(--r-lg);
+  box-shadow:
+    0 6px 0 var(--shade),
+    0 20px 50px var(--shade);
+}
+
+.choice h2 {
+  margin: 0;
+  font: 400 22px/1.15 var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+.choice p {
+  margin: 0;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.choiceTag {
+  justify-self: center;
+}
+
+.close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  min-height: 36px;
+  font-size: 18px;
+  text-decoration: none;
+  color: var(--ink-soft);
+}
+
+.learn {
+  justify-content: center;
+}
+
+.knowHow {
+  --btn-bg: transparent;
+  --btn-edge: transparent;
+  border: 2px solid var(--line-soft);
+}
+
 /* Below the board when there's no room beside it; the page scrolls instead of squeezing the board. */
 @media (max-width: 860px) {
   .page {

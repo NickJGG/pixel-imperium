@@ -15,6 +15,9 @@ import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
 import { getSettings, updateSettings, useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
+import { useShouldOffer } from '../tutorial/asked.ts'
+import { ChoiceCard } from '../tutorial/ChoiceCard.tsx'
+import { HowToPlay } from '../tutorial/HowToPlay.tsx'
 import { AssistChips } from './AssistChips.tsx'
 import { Board, REVEAL_MS } from './Board.tsx'
 import { ClearButton, LoopIcon } from './ClearButton.tsx'
@@ -101,6 +104,7 @@ function Play({
   const cells = useStoreValue(store, s => s.cells)
   const percent = useMemo(() => progressPercent(cells, puzzle.filledCount, false), [cells, puzzle.filledCount])
   const settings = useSettings()
+  const offerTutorial = useShouldOffer(storage)
   const fresh = useMemo(() => freshCells(puzzle, settings.autoMarkEmptyLines), [puzzle, settings.autoMarkEmptyLines])
   const canClear = useMemo(() => cells.some((c, i) => c !== fresh[i]), [cells, fresh])
   const crossRow = useStoreValue(store, s => (settings.crosshair ? (crosshairOf(s)?.row ?? null) : null))
@@ -406,6 +410,7 @@ function Play({
                 />
               </div>
               <AssistChips />
+              {fit && !fit.sidePage && <HowToPlay back={`/play/${puzzle.id}`} className={styles.howTo} />}
             </div>
           )}
           {moment === 'landed' && !fit?.sidePage && (
@@ -413,6 +418,7 @@ function Play({
               New sticker!
             </Stamp>
           )}
+          {offerTutorial && <ChoiceCard puzzleId={puzzle.id} />}
         </div>
         {fit?.sidePage && (
           <SidePage

@@ -4,6 +4,7 @@ import { paperStyle } from '../album/paper.ts'
 import { Slot } from '../album/Slot.tsx'
 import { Stamp } from '../album/Stamp.tsx'
 import { GOLD_SLOT, PuzzleSlot } from '../campaign/PuzzleSlot.tsx'
+import { HowToPlay } from '../tutorial/HowToPlay.tsx'
 import { SIDE_PAGE_WIDTH } from './layout.ts'
 import type { ProgressStorage } from './progress-storage.ts'
 import styles from './Play.module.css'
@@ -55,6 +56,7 @@ export function SidePage({ province, index, number, storage, hideSticker, stampe
           </li>
         ))}
       </ol>
+      <HowToPlay back={`/play/${current.id}`} className={styles.howTo} />
       {stamped && (
         <Stamp thunk className={styles.sideStamp}>
           New sticker!
