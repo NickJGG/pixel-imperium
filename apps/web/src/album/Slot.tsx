@@ -1,3 +1,4 @@
+import type { Tier } from '@pixel-imperium/protocol'
 import type { CSSProperties, ReactNode } from 'react'
 import { Lock } from './Lock.tsx'
 import styles from './Slot.module.css'
@@ -13,6 +14,8 @@ interface Props {
   /** The slot the player is due to fill; it pulses. */
   next?: boolean
   gold?: boolean
+  /** Shown as pips on an unsolved, unlocked slot. */
+  tier?: Tier | undefined
   /** On a locked page: no number, just the lock. */
   locked?: boolean
   /** The sticker, once solved. */
@@ -21,7 +24,9 @@ interface Props {
 }
 
 /** A numbered space on a province page, waiting for its sticker. */
-export function Slot({ number, width, height, started, next, gold, locked, children, className }: Props) {
+const PIPS: Record<Tier, number> = { easy: 1, medium: 2, hard: 3 }
+
+export function Slot({ number, width, height, started, next, gold, tier, locked, children, className }: Props) {
   if (children) {
     return (
       <span className={[styles.slot, styles.filled, className].filter(Boolean).join(' ')} style={{ '--ar': width / height } as CSSProperties}>
@@ -41,6 +46,13 @@ export function Slot({ number, width, height, started, next, gold, locked, child
         <Lock className={styles.lock} />
       ) : (
         <>
+          {tier && (
+            <span className={styles.pips} aria-hidden="true">
+              {[1, 2, 3].map(n => (
+                <i key={n} className={n <= PIPS[tier] ? styles.on : undefined} />
+              ))}
+            </span>
+          )}
           <b>{number}</b>
           <small>{gold ? 'Gold' : `${width}×${height}`}</small>
         </>

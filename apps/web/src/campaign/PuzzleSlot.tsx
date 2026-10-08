@@ -52,7 +52,7 @@ export function PuzzleSlot({ puzzle: p, number, storage, next = false }: Props) 
   const label =
     status.kind === 'solved'
       ? `${number}: ${p.title}, ${status.unverified ? 'imported, replay to verify' : status.foil ? 'foil' : 'solved'}${status.replay === null ? '' : `, replaying ${status.replay}%`}`
-      : `${number}: ${size}${status.kind === 'started' ? `, ${status.percent}% done` : ''}${next ? ', up next' : ''}`
+      : `${number}: ${size}${p.tier ? `, ${p.tier}` : ''}${status.kind === 'started' ? `, ${status.percent}% done` : ''}${next ? ', up next' : ''}`
 
   return (
     <Link
@@ -89,6 +89,7 @@ export function PuzzleSlot({ puzzle: p, number, storage, next = false }: Props) 
           started={status.kind === 'started' ? status.percent : undefined}
           next={next}
           gold={gold}
+          tier={p.tier}
         />
       )}
     </Link>

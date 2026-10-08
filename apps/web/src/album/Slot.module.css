@@ -26,6 +26,24 @@
   opacity: 0.6;
 }
 
+.pips {
+  position: absolute;
+  top: 4px;
+  display: flex;
+  gap: 2px;
+}
+
+.pips > i {
+  width: 5px;
+  height: 5px;
+  border: 1px solid color-mix(in srgb, var(--ink) 60%, transparent);
+  border-radius: 50%;
+}
+
+.pips > .on {
+  background: var(--ink);
+}
+
 .slot[data-started]::after {
   content: attr(data-started);
   position: absolute;

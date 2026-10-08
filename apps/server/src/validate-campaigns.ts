@@ -1,4 +1,4 @@
-import { type Campaign, buildCampaign, campaignProblems, readCampaignSources, solverReport } from './campaigns.ts'
+import { type Campaign, buildCampaign, campaignProblems, readCampaignSources, solverReport, suggestTierCuts } from './campaigns.ts'
 
 const problems: string[] = []
 const campaigns: Campaign[] = []
@@ -27,6 +27,11 @@ for (const campaign of campaigns) {
       passes: p.passes ?? '-',
     })),
   )
+  const cuts = (t: readonly number[] | null | undefined) => (t ? `[${t.join(', ')}]` : '-')
+  for (const province of campaign.provinces) {
+    const suggested = suggestTierCuts(report.puzzles.filter(p => p.provinceId === province.id))
+    console.log(`${province.id.padEnd(10)} tiers ${cuts(province.tiers).padEnd(9)} suggested ${cuts(suggested)}`)
+  }
 }
 
 if (problems.length > 0) {

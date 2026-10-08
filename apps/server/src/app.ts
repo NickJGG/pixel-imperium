@@ -73,12 +73,13 @@ function isUniqueViolation(e: unknown): boolean {
   return (e as { code?: unknown } | null)?.code === '23505' || (e instanceof Error && isUniqueViolation(e.cause))
 }
 
-const summarize = ({ id, title, width, height, filledCount }: PuzzleSummary): PuzzleSummary => ({
+const summarize = ({ id, title, width, height, filledCount, tier }: PuzzleSummary): PuzzleSummary => ({
   id,
   title,
   width,
   height,
   filledCount,
+  ...(tier && { tier }),
 })
 
 export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps) {

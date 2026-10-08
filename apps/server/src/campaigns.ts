@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import type { Tier } from '@pixel-imperium/protocol'
 import { isUnique, logicPassCount, rateDifficulty } from '@pixel-imperium/nonogram'
 import { type Puzzle, type SeedPuzzle, parseSeedPuzzle } from './puzzles.ts'
 
@@ -17,6 +18,8 @@ export interface ProvinceDef {
   /** Inclusive bounds on both dimensions. */
   minSize: number
   maxSize: number
+  /** 1-based slots where Medium and Hard start; required outside drafts. */
+  tiers?: [number, number]
 }
 
 export interface CampaignDef {
@@ -39,6 +42,7 @@ export interface CampaignSource {
 export interface CampaignPuzzle extends Puzzle {
   campaignId: string
   provinceId: string
+  tier?: Tier
 }
 
 export interface Campaign extends Omit<CampaignDef, 'provinces'> {
@@ -65,14 +69,18 @@ export function buildCampaign({ campaign, provinces }: CampaignSource): Campaign
     ...campaign,
     provinces: campaign.provinces.map(p => ({
       ...p,
-      puzzles: (provinces[p.id] ?? []).map(seed => ({
+      puzzles: (provinces[p.id] ?? []).map((seed, i) => ({
         ...parseSeedPuzzle(seed),
         campaignId: campaign.id,
         provinceId: p.id,
+        ...(p.tiers && { tier: tierAt(i + 1, p.tiers) }),
       })),
     })),
   }
 }
+
+const tierAt = (slot: number, [medium, hard]: [number, number]): Tier =>
+  slot >= hard ? 'hard' : slot >= medium ? 'medium' : 'easy'
 
 const isStep = (n: number) => Number.isInteger(n) && n > 0 && n % 5 === 0
 
@@ -104,6 +112,19 @@ export function campaignProblems(campaigns: readonly Campaign[]): string[] {
       }
 
       const count = p.puzzles.length
+      if (p.tiers === undefined) {
+        if (!c.draft) problems.push(`${where}: needs tiers`)
+      } else {
+        const [medium, hard] = p.tiers
+        if (
+          p.tiers.length !== 2 ||
+          !Number.isInteger(medium) ||
+          !Number.isInteger(hard) ||
+          !(medium >= 2 && medium < hard && hard <= count)
+        ) {
+          problems.push(`${where}: tiers [m, h] must be slots with 2 ≤ medium < hard ≤ ${count}`)
+        }
+      }
       if (c.draft ? count > c.puzzlesPerProvince : count !== c.puzzlesPerProvince) {
         problems.push(`${where}: has ${count} puzzles, expected ${c.puzzlesPerProvince}`)
       }
@@ -118,6 +139,51 @@ export function campaignProblems(campaigns: readonly Campaign[]): string[] {
     }
   }
   return problems
+}
+
+const MIN_BAND = 3
+
+/**
+ * Suggested `tiers` for a province, for the author to compare against the frozen cuts. Scores each puzzle
+ * by `passes × max(width, height) / 5` (a stand-in for real difficulty), takes the running max so tiers
+ * never drop, then finds the contiguous three-way split with the least within-band squared error, each
+ * band at least 3 slots. `null` if there are fewer than 9 puzzles or any is not line-solvable.
+ */
+export function suggestTierCuts(
+  puzzles: readonly { width: number; height: number; passes: number | null }[],
+): [number, number] | null {
+  if (puzzles.length < 3 * MIN_BAND) return null
+  const scores: number[] = []
+  for (const p of puzzles) {
+    if (p.passes === null) return null
+    scores.push(Math.max(scores.at(-1) ?? 0, (p.passes * Math.max(p.width, p.height)) / 5))
+  }
+
+  const sum = [0]
+  const sumSq = [0]
+  for (const x of scores) {
+    sum.push(sum.at(-1)! + x)
+    sumSq.push(sumSq.at(-1)! + x * x)
+  }
+  /** Squared error of `scores[from..to)` about its mean. */
+  const cost = (from: number, to: number) => {
+    const s = sum[to]! - sum[from]!
+    return sumSq[to]! - sumSq[from]! - (s * s) / (to - from)
+  }
+
+  const n = scores.length
+  let best: [number, number] | null = null
+  let bestCost = Infinity
+  for (let m = MIN_BAND; m <= n - 2 * MIN_BAND; m++) {
+    for (let h = m + MIN_BAND; h <= n - MIN_BAND; h++) {
+      const total = cost(0, m) + cost(m, h) + cost(h, n)
+      if (total < bestCost - 1e-9) {
+        bestCost = total
+        best = [m + 1, h + 1]
+      }
+    }
+  }
+  return best
 }
 
 export interface PuzzleReport {

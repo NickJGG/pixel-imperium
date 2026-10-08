@@ -102,6 +102,10 @@ The second-to-last **Province** of the **Imperium**.
 The final and hardest **Province** of the **Imperium**.
 _Avoid_: Finale, boss
 
+**Tier**:
+A **Puzzle**'s difficulty relative to the rest of its **Province**: Easy, Medium or Hard, set by the author as where each band starts in the province's order.
+_Avoid_: Difficulty, rating (the solver's campaign-wide score), level, rank
+
 ## Relationships
 
 - An **Account** has exactly one **Handle** and one **Profile**
@@ -111,6 +115,7 @@ _Avoid_: Finale, boss
 - A **Campaign** has an ordered list of **Provinces**; the **Imperium**'s is four outer **Provinces**, then the **Capital**, then the **Throne**
 - A **Province** has its **Campaign**'s number of **Puzzles** (30 in the **Imperium**), ordered from easiest to hardest
 - Each **Province** unlocks on the **Conquest** of the one before it
+- A **Province**'s **Tiers** run Easy, then Medium, then Hard in its order, each covering a contiguous run of its **Puzzles**
 - A **Sticker** is **Foil** or not for good once its **Puzzle** is first solved; a **Replay** never changes it
 - Using one **Hint** on a **Puzzle** before its first solve rules out **Foil** for that **Puzzle**
 - A solve brought in by **Import** is never **Foil**, even once it becomes a **Verified solve**

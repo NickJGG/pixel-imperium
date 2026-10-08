@@ -1,5 +1,7 @@
 import type { Clues, Hint } from '@pixel-imperium/nonogram'
 
+export type Tier = 'easy' | 'medium' | 'hard'
+
 export interface PuzzleSummary {
   id: string
   title: string
@@ -7,6 +9,8 @@ export interface PuzzleSummary {
   height: number
   /** Filled cells in the solution; derivable from the clues, so it leaks nothing. */
   filledCount: number
+  /** Relative to its province; absent in a draft province with no cuts. */
+  tier?: Tier
 }
 
 /** `GET /api/puzzles/:id`. Never includes the solution or palette. */

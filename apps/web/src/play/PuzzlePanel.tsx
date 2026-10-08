@@ -50,7 +50,7 @@ export function SlotRow(props: RowProps) {
       {province.puzzles.slice(first, first + ROW).map((p, i) => (
         <li key={p.id} ref={p === current ? slotRef : undefined}>
           {p === current && !has(p.id) ? (
-            <Slot number={number} width={p.width} height={p.height} gold={number === GOLD_SLOT} next />
+            <Slot number={number} width={p.width} height={p.height} gold={number === GOLD_SLOT} tier={p.tier} next />
           ) : (
             <PuzzleSlot puzzle={p} number={first + i + 1} storage={storage} />
           )}

@@ -123,6 +123,7 @@ function Cover({ campaign, campaigns }: Props) {
                     width={next.puzzle.width}
                     height={next.puzzle.height}
                     gold={next.number === GOLD_SLOT}
+                    tier={next.puzzle.tier}
                     next
                   />
                 </Link>
