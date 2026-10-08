@@ -19,24 +19,36 @@
   image-rendering: pixelated;
 }
 
-.foil::after {
+.foil::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  mix-blend-mode: color-dodge;
-  opacity: 0.75;
-  background: linear-gradient(115deg, transparent 20%, #ff9ad0 32%, #9ff 42%, #fff6a0 52%, #c8a0ff 62%, transparent 75%);
-  background-size: 300% 300%;
-  animation: shine 2.8s linear infinite;
+  mix-blend-mode: multiply;
+  opacity: 0.4;
+  background: linear-gradient(135deg, #ffb3de, #b3fff6 25%, #fff3b0 50%, #d9b8ff 75%, #b3d4ff);
 }
 
+.foil::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 200%;
+  pointer-events: none;
+  mix-blend-mode: color-dodge;
+  opacity: 0.75;
+  background: linear-gradient(115deg, transparent 10%, #ff9ad0 28%, #9ff 42%, #fff6a0 56%, #c8a0ff 72%, transparent 90%);
+  transform: translateX(-100%);
+  --period: 1.8s;
+  animation: shine var(--period) ease-in-out infinite;
+  animation-delay: calc(var(--phase, 0) * -1 * var(--period));
+}
+
+/* Starts and ends fully off the sticker so the loop never jumps; the hold is the pause between shines. */
 @keyframes shine {
-  from {
-    background-position: 100% 0;
-  }
-  to {
-    background-position: -100% 0;
+  75%,
+  100% {
+    transform: translateX(50%);
   }
 }
 
@@ -83,6 +95,6 @@
 @media (prefers-reduced-motion: reduce) {
   .foil::after {
     animation: none;
-    background-position: 50% 0;
+    transform: translateX(-25%);
   }
 }

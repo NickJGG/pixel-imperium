@@ -28,7 +28,10 @@ export function Sticker({ title, width, height, palette, foil, gold, unverified,
     className,
   ]
   return (
-    <span className={classes.filter(Boolean).join(' ')} style={{ '--tilt': `${tilt}deg` } as CSSProperties}>
+    <span
+      className={classes.filter(Boolean).join(' ')}
+      style={{ '--tilt': `${tilt}deg`, '--phase': (hashOf(title) % 100) / 100 } as CSSProperties}
+    >
       <PixelArt title={title} width={width} height={height} palette={palette} className={styles.art} />
     </span>
   )
@@ -51,7 +54,11 @@ export function StickerBack({ width, height, tilt = 0, className }: Pick<Props, 
 
 /** A resting tilt in [-3.5, 3.5] degrees that stays the same for a puzzle across renders. */
 export function tiltOf(id: string): number {
+  return ((hashOf(id) % 71) - 35) / 10
+}
+
+function hashOf(s: string): number {
   let hash = 0
-  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) | 0
-  return ((Math.abs(hash) % 71) - 35) / 10
+  for (const ch of s) hash = (hash * 31 + ch.charCodeAt(0)) | 0
+  return Math.abs(hash)
 }
