@@ -76,6 +76,12 @@ export function HintButton({ store, confirmFirst, note, request, onError }: Prop
   )
 }
 
+export function hintText({ kind, index }: HintResponse, cells: readonly Cell[], width: number): string {
+  const where = `row ${Math.floor(index / width) + 1}, column ${(index % width) + 1}`
+  if (kind === 'reveal') return `Hint: ${where} is filled`
+  return `Hint: ${where} shouldn't be ${cells[index] === 'marked' ? 'crossed' : 'filled'}`
+}
+
 function BulbIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">

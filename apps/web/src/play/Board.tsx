@@ -21,8 +21,27 @@ const REVEAL_SWEEP_MS = 550
 const REVEAL_CELL_MS = 300
 export const REVEAL_MS = REVEAL_SWEEP_MS + REVEAL_CELL_MS
 
-export function Board({ store, cellSize }: { store: PlayStore; cellSize: number }) {
+export interface BoardAssists {
+  crosshair: boolean
+  lockLine: boolean
+}
+
+interface Props {
+  store: PlayStore
+  cellSize: number
+  /** Overrides the player's settings, for a Lesson's fixed assists. */
+  assists?: BoardAssists | undefined
+  /** Cells to outline, for a Lesson step's targets. */
+  highlight?: readonly number[] | undefined
+  /** A cell to flag as wrong. */
+  mistake?: number | null | undefined
+}
+
+export function Board({ store, cellSize, assists, highlight, mistake = null }: Props) {
   const { width, height } = store.puzzle
+  const options = useRef({ assists, highlight, mistake })
+  options.current = { assists, highlight, mistake }
+  const redraw = useRef(() => {})
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const pointerId = useRef<number | null>(null)
   const heldKey = useRef<string | null>(null)
@@ -44,9 +63,12 @@ export function Board({ store, cellSize }: { store: PlayStore; cellSize: number 
         revealStart.current ??= reducedMotion.matches ? -Infinity : now
         revealElapsed = now - revealStart.current
       }
+      const { assists = getSettings(), highlight = [], mistake } = options.current
       paint(canvas, state, width, height, cellSize, {
-        crosshair: getSettings().crosshair ? crosshairOf(state) : null,
+        crosshair: assists.crosshair ? crosshairOf(state) : null,
         revealElapsed,
+        highlight,
+        mistake,
       })
       if (revealElapsed !== null && revealElapsed < REVEAL_MS) request()
     }
@@ -54,6 +76,7 @@ export function Board({ store, cellSize }: { store: PlayStore; cellSize: number 
       frame ||= requestAnimationFrame(draw)
     }
     request()
+    redraw.current = request
     const unsubscribe = store.subscribe(request)
     const unsubscribeSettings = subscribeSettings(request)
     darkScheme.addEventListener('change', request)
@@ -67,6 +90,8 @@ export function Board({ store, cellSize }: { store: PlayStore; cellSize: number 
       window.removeEventListener('resize', request)
     }
   }, [store, width, height, cellSize])
+
+  useEffect(() => redraw.current(), [assists?.crosshair, highlight, mistake])
 
   const announcement = useSyncExternalStore(store.subscribe, () => {
     const { cursor, cells } = store.getState()
@@ -119,7 +144,7 @@ export function Board({ store, cellSize }: { store: PlayStore; cellSize: number 
     e.currentTarget.setPointerCapture(e.pointerId)
     pointerId.current = e.pointerId
     store.setHover(null)
-    const lockAxis = e.pointerType === 'mouse' ? e.shiftKey : getSettings().lockLine
+    const lockAxis = e.pointerType === 'mouse' ? e.shiftKey : (assists ?? getSettings()).lockLine
     store.beginStroke(posFrom(e), tool, { lockAxis })
   }
 
@@ -197,6 +222,8 @@ interface PaintOptions {
   crosshair: Pos | null
   /** Milliseconds since the color reveal began, `null` before a confirmed solve. */
   revealElapsed: number | null
+  highlight: readonly number[]
+  mistake: number | null
 }
 
 const smoothstep = (t: number) => {
@@ -210,7 +237,7 @@ function paint(
   width: number,
   height: number,
   cell: number,
-  { crosshair, revealElapsed }: PaintOptions,
+  { crosshair, revealElapsed, highlight, mistake }: PaintOptions,
 ) {
   const dpr = window.devicePixelRatio || 1
   const cssWidth = width * cell
@@ -295,6 +322,18 @@ function paint(
   ctx.strokeStyle = color('--board-border')
   ctx.lineWidth = 3
   ctx.strokeRect(1.5, 1.5, cssWidth - 3, cssHeight - 3)
+
+  if (!state.solved) {
+    ctx.strokeStyle = color('--board-target')
+    ctx.lineWidth = 3
+    ctx.globalAlpha = 0.75
+    for (const i of highlight) ctx.strokeRect((i % width) * cell + 1.5, Math.floor(i / width) * cell + 1.5, cell - 3, cell - 3)
+    ctx.globalAlpha = 1
+    if (mistake !== null) {
+      ctx.strokeStyle = color('--board-mistake')
+      ctx.strokeRect((mistake % width) * cell + 1.5, Math.floor(mistake / width) * cell + 1.5, cell - 3, cell - 3)
+    }
+  }
 
   if (state.hint && !state.solved) {
     const x = (state.hint.index % width) * cell

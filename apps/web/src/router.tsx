@@ -12,6 +12,8 @@ import { SettingsPage } from './me/SettingsPage.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
 import { ProfilePage } from './profile/ProfilePage.tsx'
 import { ProfileSpread } from './profile/ProfileSpread.tsx'
+import { isBackPath, loadHandoff } from './tutorial/handoff.ts'
+import { LessonPage } from './tutorial/LessonPage.tsx'
 import styles from './App.module.css'
 
 function Root() {
@@ -136,6 +138,17 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 })
 
+/** The Tutorial; `back` is the page it hands back to. */
+const learnRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/learn',
+  validateSearch: (search: Record<string, unknown>): { back?: string } =>
+    isBackPath(search.back) ? { back: search.back } : {},
+  loaderDeps: ({ search }) => ({ back: search.back }),
+  loader: ({ deps }) => loadHandoff(deps.back),
+  component: LessonPage,
+})
+
 export const router = createRouter({
   routeTree: rootRoute.addChildren([
     homeRoute,
@@ -145,6 +158,7 @@ export const router = createRouter({
     profileRoute,
     profileSpreadRoute,
     settingsRoute,
+    learnRoute,
   ]),
   defaultPendingComponent: Loading,
   defaultPendingMs: 300,

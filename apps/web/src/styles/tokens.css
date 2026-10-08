@@ -79,6 +79,7 @@
   --board-crosshair: rgba(91, 124, 255, 0.22);
   --board-mistake: var(--red);
   --board-reveal: var(--blue);
+  --board-target: var(--pink);
 
   /* Pre-album names, kept until every page is restyled. */
   --bg: var(--desk);

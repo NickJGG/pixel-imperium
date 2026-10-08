@@ -51,7 +51,7 @@ export const LESSONS: readonly Lesson[] = [
       {
         text: [
           'Row 5 has a **0**: nothing in it is filled.',
-          'Cross its cells out with `right-click`, or switch to ✕ Mark. Crosses are your notes: _this cell is definitely empty._',
+          'Cross its cells out with `right-click`, or switch to ✕ Cross. Crosses are your notes: _this cell is definitely empty._',
         ],
         highlight: { rows: [4] },
         target: { marked: row(4, ALL) },
@@ -80,7 +80,7 @@ export const LESSONS: readonly Lesson[] = [
       },
       {
         text: [
-          'The gaps must be empty. **Cross them out** (`right-click` or ✕ Mark). Crossed cells make the next deductions easier.',
+          'The gaps must be empty. **Cross them out** (`right-click` or ✕ Cross). Crossed cells make the next deductions easier.',
         ],
         highlight: { rows: [0] },
         target: { marked: row(0, [1, 3]) },

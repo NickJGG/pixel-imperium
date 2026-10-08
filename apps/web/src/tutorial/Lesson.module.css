@@ -1,0 +1,247 @@
+/* The Lesson screen borrows the play screen's layout (Play.module.css); this adds the coach and handoff. */
+
+/* On a page of the Marches, where the side page sits on a puzzle. */
+.coach {
+  flex: none;
+  align-self: stretch;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 20px;
+  --focus: var(--blue);
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image: radial-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1.2px);
+  background-size: 10px 10px;
+  border-radius: var(--r-sm) var(--r-lg) var(--r-lg) var(--r-sm);
+  box-shadow:
+    inset 8px 0 10px -6px var(--shade),
+    0 5px 0 var(--shade);
+}
+
+.coachTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.label {
+  font: 700 12px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.lessons,
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 6px;
+}
+
+.lessons li {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font: 700 12px var(--font-mono);
+  color: var(--ink-soft);
+  background: var(--card);
+  border-radius: var(--r-sm);
+}
+
+.steps li {
+  width: 22px;
+  height: 6px;
+  background: var(--line-soft);
+  border-radius: 3px;
+}
+
+.lessons li[data-state='done'],
+.steps li[data-state='done'] {
+  color: #0b2a12;
+  background: var(--ok);
+}
+
+.lessons li[data-state='now'],
+.steps li[data-state='now'] {
+  color: var(--on-pink);
+  background: var(--pink);
+}
+
+.coachTitle {
+  margin: 0;
+  font: 400 20px/1.15 var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+.text {
+  display: grid;
+  gap: var(--space-3);
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.text p {
+  margin: 0;
+}
+
+.text b,
+.feedback b {
+  color: var(--pink);
+}
+
+.text kbd {
+  padding: 1px 6px;
+  font: 700 12px var(--font-mono);
+  color: var(--ink);
+  background: var(--card);
+  border-radius: 4px;
+  box-shadow: 0 2px 0 var(--shade);
+}
+
+.slide {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  background: var(--card);
+  border-radius: var(--r-md);
+}
+
+.slideRow {
+  display: grid;
+  grid-template-columns: 58px repeat(var(--line), 1fr);
+  gap: 3px;
+  align-items: center;
+  font: 700 11px var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.slideRow b {
+  height: 16px;
+  background: var(--card-2);
+  border-radius: 3px;
+}
+
+.slideRow b[data-state='on'] {
+  background: var(--board-fill);
+}
+
+.slideRow b[data-state='both'] {
+  background: var(--pink);
+}
+
+.feedback {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 15px;
+  background: color-mix(in srgb, var(--red) 22%, var(--card));
+  border-left: 4px solid var(--red);
+  border-radius: var(--r-md);
+}
+
+.foot {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.skip {
+  font: 600 14px var(--font-ui);
+  color: var(--ink-soft);
+  text-underline-offset: 3px;
+}
+
+.skip:hover {
+  color: var(--ink);
+}
+
+.handoffPage {
+  flex: 1;
+  padding: var(--space-6) var(--space-4);
+  color: var(--on-cover);
+  background-color: var(--cover);
+  background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 1.6px);
+  background-size: 14px 14px;
+}
+
+.handoff {
+  max-width: 560px;
+  margin: var(--space-6) auto;
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+  padding: 28px 22px;
+  text-align: center;
+  --focus: var(--blue);
+  color: var(--ink);
+  background: var(--card);
+  border-radius: var(--r-xl);
+  box-shadow: 0 6px 0 var(--shade);
+}
+
+.handoff h1 {
+  margin: 0;
+  font: 400 26px/1.1 var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+.handoff p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.minis {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Bare pictures on white backing: not stickers, which only the Imperium gives. */
+.mini {
+  padding: 6px;
+  background: var(--sticker);
+  border-radius: var(--r-md);
+  box-shadow: 0 3px 0 var(--shade);
+  transform: rotate(var(--tilt));
+}
+
+.mini canvas {
+  display: block;
+  width: 50px;
+  image-rendering: pixelated;
+}
+
+/* Below the board when there's no room beside it; the page scrolls instead of squeezing the board. */
+@media (max-width: 860px) {
+  .page {
+    flex: 1 0 auto;
+  }
+
+  .desk {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .card {
+    flex: none;
+  }
+
+  .stage {
+    flex: none;
+    height: min(60vh, 100vw);
+  }
+
+  .coach {
+    width: auto;
+  }
+}

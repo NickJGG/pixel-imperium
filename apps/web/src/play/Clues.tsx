@@ -12,23 +12,29 @@ interface PanelProps {
   hints: readonly LineHint[]
   active: number | null
   assists: ClueAssists
+  /** Lines a Lesson step points at. */
+  highlight?: readonly number[] | undefined
 }
 
 const ClueLine = memo(function ClueLine({
   line,
   hint,
   active,
+  highlighted,
   assists,
   className,
 }: {
   line: number[]
   hint: LineHint | undefined
   active: boolean
+  highlighted: boolean
   assists: ClueAssists
   className: string | undefined
 }) {
   const impossible = assists.impossible && hint?.impossible
-  const classes = [className, impossible && styles.impossible, active && styles.active].filter(Boolean).join(' ')
+  const classes = [className, impossible && styles.impossible, active && styles.active, highlighted && styles.highlighted]
+    .filter(Boolean)
+    .join(' ')
   return (
     <div className={classes}>
       {line.length === 0 ? (
@@ -44,7 +50,7 @@ const ClueLine = memo(function ClueLine({
   )
 })
 
-export function RowClues({ lines, hints, active, assists }: PanelProps) {
+export function RowClues({ lines, hints, active, assists, highlight }: PanelProps) {
   return (
     <div className={styles.rowClues} role="group" aria-label="Row clues">
       {lines.map((line, i) => (
@@ -53,6 +59,7 @@ export function RowClues({ lines, hints, active, assists }: PanelProps) {
           line={line}
           hint={hints[i]}
           active={active === i}
+          highlighted={highlight?.includes(i) ?? false}
           assists={assists}
           className={styles.rowLine}
         />
@@ -62,7 +69,7 @@ export function RowClues({ lines, hints, active, assists }: PanelProps) {
 }
 
 /** Column clues stack their numbers vertically, last clue nearest the grid. */
-export function ColClues({ lines, hints, active, assists }: PanelProps) {
+export function ColClues({ lines, hints, active, assists, highlight }: PanelProps) {
   return (
     <div className={styles.colClues} role="group" aria-label="Column clues">
       {lines.map((line, i) => (
@@ -71,6 +78,7 @@ export function ColClues({ lines, hints, active, assists }: PanelProps) {
           line={line}
           hint={hints[i]}
           active={active === i}
+          highlighted={highlight?.includes(i) ?? false}
           assists={assists}
           className={styles.colLine}
         />

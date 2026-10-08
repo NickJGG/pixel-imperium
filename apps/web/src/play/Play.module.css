@@ -201,6 +201,15 @@
   color: var(--on-tab);
 }
 
+.highlighted {
+  background: var(--pink);
+  color: var(--on-pink);
+}
+
+.highlighted .zero {
+  opacity: 1;
+}
+
 .done {
   opacity: 0.3;
   text-decoration: line-through;

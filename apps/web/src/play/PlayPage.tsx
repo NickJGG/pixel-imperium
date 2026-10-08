@@ -1,7 +1,7 @@
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
-import { type Cell, progressPercent } from '@pixel-imperium/nonogram'
-import type { Campaign, HintResponse, Province, PuzzleClues } from '@pixel-imperium/protocol'
+import { progressPercent } from '@pixel-imperium/nonogram'
+import type { Campaign, Province, PuzzleClues } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
 import { SoundIcon } from '../album/icons.tsx'
 import { Slot } from '../album/Slot.tsx'
@@ -19,13 +19,14 @@ import { AssistChips } from './AssistChips.tsx'
 import { Board, REVEAL_MS } from './Board.tsx'
 import { ClearButton, LoopIcon } from './ClearButton.tsx'
 import { ColClues, RowClues } from './Clues.tsx'
-import { HintButton } from './HintButton.tsx'
+import { HintButton, hintText } from './HintButton.tsx'
 import { CLUE_SLOT, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, fitPlay } from './layout.ts'
 import { createLineHints } from './line-hints.ts'
 import { encodeCells } from './progress-storage.ts'
 import { SidePage } from './SidePage.tsx'
 import { type Choreography, confetti, flyIn, popOnly } from './sticker-moment.ts'
 import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
+import { ToolToggle } from './ToolToggle.tsx'
 import styles from './Play.module.css'
 
 const route = getRouteApi('/play/$id')
@@ -85,7 +86,6 @@ function Play({
   )
   const canUndo = useStoreValue(store, s => s.canUndo)
   const canRedo = useStoreValue(store, s => s.canRedo)
-  const mode = useStoreValue(store, s => s.mode)
   const solved = useStoreValue(store, s => s.solved)
   const [conqueredBefore] = useState(isConquered)
   const previewConquest = route.useSearch().conquest === true
@@ -360,14 +360,7 @@ function Play({
                 )
               )}
               <div className={styles.dock}>
-                <div className={`${styles.seg} ${styles.touchOnly}`} role="group" aria-label="Touch tool">
-                  {(['fill', 'mark'] as const).map(m => (
-                    <button key={m} type="button" aria-pressed={mode === m} onClick={() => store.setMode(m)}>
-                      {m === 'fill' ? <i className={styles.fillSwatch} aria-hidden="true" /> : <CrossIcon />}
-                      {m === 'fill' ? 'Fill' : 'Cross'}
-                    </button>
-                  ))}
-                </div>
+                <ToolToggle store={store} />
                 <div className={styles.seg}>
                   <button
                     type="button"
@@ -490,24 +483,10 @@ function Conquest({ campaign, province, children }: { campaign: Campaign; provin
   )
 }
 
-function hintText({ kind, index }: HintResponse, cells: readonly Cell[], width: number): string {
-  const where = `row ${Math.floor(index / width) + 1}, column ${(index % width) + 1}`
-  if (kind === 'reveal') return `Hint: ${where} is filled`
-  return `Hint: ${where} shouldn't be ${cells[index] === 'marked' ? 'crossed' : 'filled'}`
-}
-
 function ArrowIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
-  )
-}
-
-function CrossIcon() {
-  return (
-    <svg viewBox="0 0 10 10" aria-hidden="true">
-      <path d="M2 2l6 6M8 2l-6 6" />
     </svg>
   )
 }
