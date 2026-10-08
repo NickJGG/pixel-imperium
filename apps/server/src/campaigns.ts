@@ -20,6 +20,8 @@ export interface ProvinceDef {
   maxSize: number
   /** 1-based slots where Medium and Hard start; required outside drafts. */
   tiers?: [number, number]
+  /** Its Conquest offers the Techniques; at most one per campaign. */
+  techniques?: true
 }
 
 export interface CampaignDef {
@@ -102,6 +104,7 @@ export function campaignProblems(campaigns: readonly Campaign[]): string[] {
       problems.push(`${c.id}: puzzlesPerProvince must be a positive integer`)
     }
 
+    if (c.provinces.filter(p => p.techniques).length > 1) problems.push(`${c.id}: more than one province offers techniques`)
     const provinceIds = new Set<string>()
     for (const p of c.provinces) {
       const where = `${c.id}/${p.id}`

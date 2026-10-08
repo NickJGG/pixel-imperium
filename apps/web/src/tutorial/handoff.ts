@@ -1,6 +1,7 @@
 /**
- * Where the Tutorial hands back to. `back` is the page it was entered from: a puzzle returns there, home
- * (or no `back`) goes on to the Continue target, and any other album page is returned to as is.
+ * Where a track hands back to. `back` is the page it was entered from: a puzzle returns there, home
+ * (or no `back`) goes on to the Continue target, a province page is named, and any other album page is
+ * returned to as is.
  */
 import type { Campaign } from '@pixel-imperium/protocol'
 import { accountReady, getAccount } from '../account.ts'
@@ -29,6 +30,8 @@ export async function loadHandoff(back: string | undefined): Promise<Handoff> {
     back && back !== '/'
       ? { to: back, heading: 'Back to the album.', text: DONE, action: 'Back to the album' }
       : { to: '/', heading: 'Back to the cover.', text: DONE, action: 'Back to the cover' }
+  const page = back?.match(/^\/c\/([\w-]+)\/([\w-]+)$/)
+  if (page) return provinceHandoff(page[1]!, page[2]!, fallback)
   if (back && back !== '/' && !puzzleId) return fallback
   try {
     await accountReady
@@ -55,6 +58,17 @@ export async function loadHandoff(back: string | undefined): Promise<Handoff> {
       text: `${DONE} Your puzzle is just as you left it.`,
       action: `${puzzleId ? 'Back to' : 'Continue:'} #${number} ${title}`,
     }
+  } catch {
+    return fallback
+  }
+}
+
+async function provinceHandoff(campaignId: string, provinceId: string, fallback: Handoff): Promise<Handoff> {
+  try {
+    const province = (await fetchCampaign(campaignId))?.provinces.find(p => p.id === provinceId)
+    if (!province) return fallback
+    const name = province.name.replace(/^The /, 'the ')
+    return { ...fallback, heading: `On to ${name}.`, action: `Open ${name}` }
   } catch {
     return fallback
   }

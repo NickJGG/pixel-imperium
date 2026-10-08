@@ -91,11 +91,12 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         id,
         name,
         closingLine,
-        provinces: provinces.map(({ id, name, theme, flavour, puzzles }) => ({
+        provinces: provinces.map(({ id, name, theme, flavour, techniques, puzzles }) => ({
           id,
           name,
           theme,
           flavour,
+          ...(techniques && { techniques }),
           puzzles: puzzles.map(summarize),
         })),
       },

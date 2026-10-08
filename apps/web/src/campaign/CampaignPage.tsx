@@ -6,7 +6,8 @@ import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { VolumeShelf } from '../album/VolumeShelf.tsx'
 import { useAccount } from '../account.ts'
 import { HowToPlay } from '../tutorial/HowToPlay.tsx'
-import { campaignProgress, continueAt } from './progress.ts'
+import { TRACKS } from '../tutorial/tracks.ts'
+import { campaignProgress, continueAt, techniquesOpen } from './progress.ts'
 import { ProvinceIndex } from './ProvinceIndex.tsx'
 import { GOLD_SLOT } from './PuzzleSlot.tsx'
 import { SHOWCASE_SIZE, type StickerEntry, coverStickers, latestStickers, showcaseOf } from './stickers.ts'
@@ -99,6 +100,9 @@ function Cover({ campaign, campaigns }: Props) {
                 </Link>
               )}
               <HowToPlay back="/" className={`${styles.pill} ${styles.onCover}`} />
+              {techniquesOpen(campaign, progress) && (
+                <HowToPlay track={TRACKS.techniques} back="/" className={`${styles.pill} ${styles.onCover}`} />
+              )}
             </div>
           </section>
           {campaigns.length > 1 && <VolumeShelf campaigns={campaigns} current={campaign.id} />}

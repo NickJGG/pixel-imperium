@@ -1,7 +1,5 @@
-/** Where "How to play" picks up: the Lesson and step the player last reached, kept in localStorage. */
-import { LESSONS } from './lessons.ts'
-
-const KEY = 'pixel-imperium:lesson'
+/** Where a track picks up: the Lesson and step the player last reached, kept in localStorage. */
+import type { Track } from './tracks.ts'
 
 export interface ResumeAt {
   lesson: number
@@ -10,10 +8,10 @@ export interface ResumeAt {
 
 const START: ResumeAt = { lesson: 0, step: 0 }
 
-export function loadResume(): ResumeAt {
+export function loadResume(track: Track): ResumeAt {
   try {
-    const { lesson, step } = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<ResumeAt>
-    const steps = typeof lesson === 'number' ? LESSONS[lesson]?.steps.length : undefined
+    const { lesson, step } = JSON.parse(localStorage.getItem(track.resumeKey) ?? 'null') as Partial<ResumeAt>
+    const steps = typeof lesson === 'number' ? track.lessons[lesson]?.steps.length : undefined
     if (steps === undefined || typeof step !== 'number' || !Number.isInteger(step) || step < 0 || step >= steps) return START
     return { lesson: lesson!, step }
   } catch {
@@ -22,9 +20,9 @@ export function loadResume(): ResumeAt {
 }
 
 /** `null` forgets the place, so the next visit starts from Lesson 1. */
-export function saveResume(at: ResumeAt | null): void {
+export function saveResume(track: Track, at: ResumeAt | null): void {
   try {
-    if (at === null) localStorage.removeItem(KEY)
-    else localStorage.setItem(KEY, JSON.stringify(at))
+    if (at === null) localStorage.removeItem(track.resumeKey)
+    else localStorage.setItem(track.resumeKey, JSON.stringify(at))
   } catch {}
 }

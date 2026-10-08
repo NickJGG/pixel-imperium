@@ -14,6 +14,7 @@ import { ProfilePage } from './profile/ProfilePage.tsx'
 import { ProfileSpread } from './profile/ProfileSpread.tsx'
 import { isBackPath, loadHandoff } from './tutorial/handoff.ts'
 import { LessonPage } from './tutorial/LessonPage.tsx'
+import { TRACKS, type Track } from './tutorial/tracks.ts'
 import styles from './App.module.css'
 
 function Root() {
@@ -138,16 +139,19 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 })
 
-/** The Tutorial; `back` is the page it hands back to. */
-const learnRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/learn',
-  validateSearch: (search: Record<string, unknown>): { back?: string } =>
-    isBackPath(search.back) ? { back: search.back } : {},
-  loaderDeps: ({ search }) => ({ back: search.back }),
-  loader: ({ deps }) => loadHandoff(deps.back),
-  component: LessonPage,
-})
+/** A track's Lessons; `back` is the page it hands back to. */
+function learnRoute<P extends Track['path']>(path: P, track: Track) {
+  const route = createRoute({
+    getParentRoute: () => rootRoute,
+    path,
+    validateSearch: (search: Record<string, unknown>): { back?: string } =>
+      isBackPath(search.back) ? { back: search.back } : {},
+    loaderDeps: ({ search }) => ({ back: search.back }),
+    loader: ({ deps }) => loadHandoff(deps.back),
+    component: () => <LessonPage track={track} handoff={route.useLoaderData()} />,
+  })
+  return route
+}
 
 export const router = createRouter({
   routeTree: rootRoute.addChildren([
@@ -158,7 +162,8 @@ export const router = createRouter({
     profileRoute,
     profileSpreadRoute,
     settingsRoute,
-    learnRoute,
+    learnRoute('/learn', TRACKS.tutorial),
+    learnRoute('/learn/techniques', TRACKS.techniques),
   ]),
   defaultPendingComponent: Loading,
   defaultPendingMs: 300,

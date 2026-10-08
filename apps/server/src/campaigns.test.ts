@@ -91,6 +91,14 @@ describe('campaignProblems', () => {
     expect(campaignProblems([banded])).toContain('c/p: size band 10–5 must be multiples of 5, low to high')
   })
 
+  it('allows at most one province offering techniques', () => {
+    const s = source()
+    const flag = (n: number) =>
+      buildCampaign(source({ provinces: s.campaign.provinces.map((p, i) => (i < n ? { ...p, techniques: true as const } : p)) }))
+    expect(campaignProblems([flag(1)])).toEqual([])
+    expect(campaignProblems([flag(2)])).toEqual(['c: more than one province offers techniques'])
+  })
+
   it('flags duplicate campaign and puzzle ids across campaigns', () => {
     const a = buildCampaign(source())
     const b = buildCampaign(source({}, { p: three('x', 5, 5, block('p1', 5, 5)), q: three('y', 10, 10, block('q1', 10, 10)) }))

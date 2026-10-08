@@ -1,10 +1,11 @@
 /**
- * The Tutorial at `/learn`: four Lessons on the real board, with a coach card where the puzzle page has
- * its side page, then the handoff. Lessons 1–3 gate their steps on fixed assists; Lesson 4 is free play
- * on the player's own assists, with a local Hint. Nothing here is saved but the place to resume from.
+ * A track's Lessons on the real board (the Tutorial at `/learn`, the Techniques at `/learn/techniques`),
+ * with a coach card where the puzzle page has its side page, then the handoff. Gated Lessons pass their
+ * steps on fixed assists; a `free` one is played on the player's own assists, with a local Hint. Nothing
+ * here is saved but the place to resume from.
  */
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { Link, getRouteApi } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { type Cell, hintFor } from '@pixel-imperium/nonogram'
 import type { Assists } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
@@ -24,15 +25,14 @@ import { type PlayState, PlayStore, crosshairOf } from '../play/store.ts'
 import { ToolToggle } from '../play/ToolToggle.tsx'
 import { BoardView } from '../play/viewport.ts'
 import type { Handoff } from './handoff.ts'
-import { LESSONS, type Lesson as LessonData, type LessonPuzzle, lessonPuzzle } from './lessons.ts'
+import { type Lesson as LessonData, type LessonPuzzle, lessonPuzzle } from './lessons.ts'
 import { loadResume, saveResume } from './resume.ts'
+import type { Track } from './tracks.ts'
 import { cellsBefore, currentStep, feedback, isWrong, stepCells, wrongCell } from './steps.ts'
 import playStyles from '../play/Play.module.css'
 import styles from './Lesson.module.css'
 
-const route = getRouteApi('/learn')
-
-/** Lessons 1–3: everything that helps read the board, but no auto-marking, which would give the 0s away. */
+/** Gated Lessons: everything that helps read the board, but no auto-marking, which would give the 0s away. */
 const FIXED: Assists = {
   fadeClues: true,
   impossibleLines: true,
@@ -43,14 +43,14 @@ const FIXED: Assists = {
 
 const FREE_HINT_NOTE = "In a lesson it's free, so nothing is lost here."
 
-export function LessonPage() {
-  const handoff = route.useLoaderData()
-  const [at, setAt] = useState(loadResume)
+export function LessonPage({ track, handoff }: { track: Track; handoff: Handoff }) {
+  const [at, setAt] = useState(() => loadResume(track))
   const [finished, setFinished] = useState(false)
-  if (finished) return <HandoffView handoff={handoff} />
+  if (finished) return <HandoffView track={track} handoff={handoff} />
   return (
     <Lesson
       key={at.lesson}
+      track={track}
       index={at.lesson}
       startStep={at.step}
       handoff={handoff}
@@ -98,6 +98,7 @@ function useStoreValue<T>(store: PlayStore, select: (s: PlayState) => T): T {
 }
 
 interface LessonProps {
+  track: Track
   index: number
   startStep: number
   handoff: Handoff
@@ -105,8 +106,9 @@ interface LessonProps {
   onFinish: () => void
 }
 
-function Lesson({ index, startStep, handoff, onNext, onFinish }: LessonProps) {
-  const lesson = LESSONS[index]!
+function Lesson({ track, index, startStep, handoff, onNext, onFinish }: LessonProps) {
+  const { lessons } = track
+  const lesson = lessons[index]!
   const free = lesson.free === true
   const [puzzle] = useState(() => lessonPuzzle(lesson))
   const { width, height } = puzzle
@@ -115,7 +117,7 @@ function Lesson({ index, startStep, handoff, onNext, onFinish }: LessonProps) {
   const [store] = useState(
     () =>
       new PlayStore(
-        { id: `lesson-${index + 1}`, width, height, clues: puzzle.clues },
+        { id: `${track.id}-${index + 1}`, width, height, clues: puzzle.clues },
         {
           autoMarkEmptyLines: assists.autoMarkEmptyLines,
           storage: new LessonStorage(cellsBefore(lesson, startStep, width, height)),
@@ -154,15 +156,15 @@ function Lesson({ index, startStep, handoff, onNext, onFinish }: LessonProps) {
   const cited = !solved && mistake !== null && isWrong(puzzle, cells, mistake) ? mistake : null
 
   useEffect(() => {
-    if (!solved) saveResume({ lesson: index, step: Math.min(step, lesson.steps.length - 1) })
-  }, [index, step, solved, lesson])
+    if (!solved) saveResume(track, { lesson: index, step: Math.min(step, lesson.steps.length - 1) })
+  }, [track, index, step, solved, lesson])
 
   useEffect(() => {
     if (!solved || store.getState().palette) return
     store.setPalette(puzzle.palette)
     play('pop')
-    saveResume(index + 1 < LESSONS.length ? { lesson: index + 1, step: 0 } : null)
-  }, [solved, store, puzzle, index])
+    saveResume(track, index + 1 < lessons.length ? { lesson: index + 1, step: 0 } : null)
+  }, [solved, store, puzzle, track, lessons, index])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -195,9 +197,9 @@ function Lesson({ index, startStep, handoff, onNext, onFinish }: LessonProps) {
       <div className={`${playStyles.desk} ${styles.desk}`} style={{ gap: SIDE_PAGE_GAP }}>
         <div className={`${playStyles.card} ${styles.card}`}>
           <header className={playStyles.cardHead}>
-            <Dymo tone="pink">How to play</Dymo>
+            <Dymo tone="pink">{track.label}</Dymo>
             <span className={playStyles.size}>
-              Lesson {index + 1} of {LESSONS.length} · {lesson.picture} · {width}×{height}
+              Lesson {index + 1} of {lessons.length} · {lesson.picture} · {width}×{height}
             </span>
           </header>
           <div ref={stageRef} className={`${playStyles.stage} ${styles.stage}`}>
@@ -244,6 +246,7 @@ function Lesson({ index, startStep, handoff, onNext, onFinish }: LessonProps) {
           </div>
         </div>
         <Coach
+          track={track}
           lesson={lesson}
           index={index}
           step={step}
@@ -259,6 +262,7 @@ function Lesson({ index, startStep, handoff, onNext, onFinish }: LessonProps) {
 }
 
 interface CoachProps {
+  track: Track
   lesson: LessonData
   index: number
   step: number
@@ -269,18 +273,20 @@ interface CoachProps {
   onFinish: () => void
 }
 
-function Coach({ lesson, index, step, solved, feedback, handoff, onNext, onFinish }: CoachProps) {
+function Coach({ track, lesson, index, step, solved, feedback, handoff, onNext, onFinish }: CoachProps) {
   const { steps } = lesson
   const shown = steps[Math.min(step, steps.length - 1)]!
-  const last = index === LESSONS.length - 1
+  const { lessons } = track
+  const last = index === lessons.length - 1
   return (
     <aside className={styles.coach} style={paperStyle(0)} aria-labelledby="lesson-title">
       <div className={styles.coachTop}>
         <span className={styles.label}>
-          Lesson {index + 1} of {LESSONS.length}
+          Lesson {index + 1} of {lessons.length}
+          {track.id === 'techniques' && ' · Techniques'}
         </span>
         <ol className={styles.lessons} aria-hidden="true">
-          {LESSONS.map((_, i) => (
+          {lessons.map((_, i) => (
             <li key={i} data-state={i < index ? 'done' : i === index ? 'now' : undefined}>
               {i + 1}
             </li>
@@ -308,7 +314,7 @@ function Coach({ lesson, index, step, solved, feedback, handoff, onNext, onFinis
       )}
       <div className={styles.foot}>
         <Link to={handoff.to} className={styles.skip}>
-          Skip tutorial
+          {track.skipText}
         </Link>
         {solved && (
           <button type="button" data-variant="primary" onClick={last ? onFinish : onNext}>
@@ -353,20 +359,21 @@ function Slide({ block, line }: { block: number; line: number }) {
   )
 }
 
-const TILTS = [-4, 3, -2, 4]
+const TILTS = [-4, 3, -2, 4, -3]
 
-function HandoffView({ handoff }: { handoff: Handoff }) {
-  const pictures = useMemo(() => LESSONS.map(lessonPuzzle), [])
+function HandoffView({ track, handoff }: { track: Track; handoff: Handoff }) {
+  const { lessons } = track
+  const pictures = useMemo(() => lessons.map(lessonPuzzle), [lessons])
   return (
     <main className={styles.handoffPage}>
       <section className={styles.handoff} aria-labelledby="handoff-title">
-        <Dymo tone="pink">Tutorial complete</Dymo>
+        <Dymo tone="pink">{track.doneDymo}</Dymo>
         <h1 id="handoff-title">{handoff.heading}</h1>
         <p>{handoff.text}</p>
         <div className={styles.minis}>
           {pictures.map((p: LessonPuzzle, k) => (
             <span key={k} className={styles.mini} style={{ '--tilt': `${TILTS[k]}deg`, '--w': p.width } as CSSProperties}>
-              <PixelArt title={LESSONS[k]!.picture} width={p.width} height={p.height} palette={p.palette} />
+              <PixelArt title={lessons[k]!.picture} width={p.width} height={p.height} palette={p.palette} />
             </span>
           ))}
         </div>

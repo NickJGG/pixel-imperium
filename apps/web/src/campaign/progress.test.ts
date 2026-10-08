@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { stubStorage } from '../test-storage.ts'
-import { campaignProgress, continueAt, nextPuzzle, provinceStates } from './progress.ts'
+import { campaignProgress, continueAt, nextPuzzle, provinceStates, techniquesOpen } from './progress.ts'
 
 const puzzle = (id: string) => ({ id, title: id, width: 5, height: 5, filledCount: 1 })
 
@@ -114,5 +114,19 @@ describe('continueAt', () => {
 
   it('has nowhere to go once the campaign is conquered', () => {
     expect(at(['a1', 'a2', 'b1', 'c1', 'd1'])).toBeNull()
+  })
+})
+
+describe('techniquesOpen', () => {
+  const flagged = { provinces: campaign.provinces.map(p => (p.id === 'b' ? { ...p, techniques: true as const } : p)) }
+  const open = (solved: string[]) => techniquesOpen(flagged, provinceStates(flagged, id => solved.includes(id)))
+
+  it('opens once the flagged province is conquered', () => {
+    expect(open(['a1', 'a2'])).toBe(false)
+    expect(open(['a1', 'a2', 'b1'])).toBe(true)
+  })
+
+  it('stays shut with no flagged province', () => {
+    expect(techniquesOpen(campaign, provinceStates(campaign, () => true))).toBe(false)
   })
 })

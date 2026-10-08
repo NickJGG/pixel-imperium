@@ -83,4 +83,8 @@ export function continueAt(
   return { province, puzzle: province.puzzles[number - 1]!, number, fresh }
 }
 
+/** Some province whose Conquest offers the Techniques has been conquered. */
+export const techniquesOpen = (campaign: Pick<Campaign, 'provinces'>, progress: CampaignProgress) =>
+  campaign.provinces.some((p, i) => p.techniques && progress.provinces[i]?.state === 'conquered')
+
 export const isOpen = (state: ProvinceState) => state === 'active' || state === 'conquered'

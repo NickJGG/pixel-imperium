@@ -9,7 +9,7 @@ import { Stamp } from '../album/Stamp.tsx'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { type AccountState, useAccount } from '../account.ts'
 import { requestHint, submitSolve } from '../api.ts'
-import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
+import { campaignProgress, isOpen, nextPuzzle, techniquesOpen } from '../campaign/progress.ts'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
 import { getSettings, useSettings } from '../settings.ts'
@@ -17,6 +17,7 @@ import { play } from '../sound.ts'
 import { useShouldOffer } from '../tutorial/asked.ts'
 import { ChoiceCard } from '../tutorial/ChoiceCard.tsx'
 import { HowToPlay } from '../tutorial/HowToPlay.tsx'
+import { TRACKS } from '../tutorial/tracks.ts'
 import { AssistSwitches } from './AssistSwitches.tsx'
 import { Board, REVEAL_MS } from './Board.tsx'
 import { ClearButton, LoopIcon } from './ClearButton.tsx'
@@ -94,6 +95,7 @@ function Play({
   const boardRef = useBoardGestures(store, boardView)
   const solved = useStoreValue(store, s => s.solved)
   const [conqueredBefore] = useState(isConquered)
+  const [showTechniques] = useState(() => techniquesOpen(campaign, campaignProgress(campaign, storage)))
   const previewConquest = route.useSearch().conquest === true
   const conquest = previewConquest || (solved && !conqueredBefore && isConquered())
   const next = solved ? nextPuzzle(province.puzzles, puzzle.id, id => storage.loadSolved(id) !== null) : null
@@ -332,17 +334,28 @@ function Play({
       </Link>
     )
   ) : following ? (
-    <Link
-      to="/c/$campaignId/$provinceId"
-      params={{ campaignId: campaign.id, provinceId: following.id }}
-      className={styles.linkButton}
-    >
-      Open
-      <span className={styles.tabChip} style={paperStyle(provinceIndex + 1)}>
-        {following.name.replace(/^The /, '')}
-      </span>
-      <ArrowIcon />
-    </Link>
+    <>
+      <Link
+        to="/c/$campaignId/$provinceId"
+        params={{ campaignId: campaign.id, provinceId: following.id }}
+        className={styles.linkButton}
+      >
+        Open
+        <span className={styles.tabChip} style={paperStyle(provinceIndex + 1)}>
+          {following.name.replace(/^The /, '')}
+        </span>
+        <ArrowIcon />
+      </Link>
+      {province.techniques && (
+        <Link
+          to="/learn/techniques"
+          search={{ back: `/c/${campaign.id}/${following.id}` }}
+          className={`${styles.linkButton} ${styles.paper}`}
+        >
+          Learn advanced techniques
+        </Link>
+      )}
+    </>
   ) : (
     <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} className={styles.linkButton}>
       Back to the cover
@@ -358,6 +371,12 @@ function Play({
     </Link>
   )
   const replay = <ClearButton store={store} solved />
+  const learn = (
+    <div className={styles.learn}>
+      <HowToPlay back={`/play/${puzzle.id}`} className={styles.howTo} />
+      {showTechniques && <HowToPlay track={TRACKS.techniques} back={`/play/${puzzle.id}`} className={styles.howTo} />}
+    </div>
+  )
 
   const afterBody = (
     <>
@@ -434,7 +453,7 @@ function Play({
                     <SlotRow province={province} number={number} storage={storage} hideSticker={hideSticker} />
                     <AssistSwitches />
                     <div className={styles.panelFoot}>
-                      <HowToPlay back={`/play/${puzzle.id}`} className={styles.howTo} />
+                      {learn}
                       <ClearButton store={store} solved={false} disabled={!canClear} />
                     </div>
                   </MoreMenu>
@@ -534,7 +553,7 @@ function Play({
                 </div>
                 <AssistSwitches />
                 <div className={styles.panelFoot}>
-                  <HowToPlay back={`/play/${puzzle.id}`} className={styles.howTo} />
+                  {learn}
                   <ClearButton store={store} solved={false} disabled={!canClear} />
                 </div>
               </div>

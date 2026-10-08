@@ -708,6 +708,11 @@
 }
 
 /* The Tutorial's way in: at the foot of the panel, or of its ⋯ popover when there's no panel. */
+.learn {
+  display: grid;
+  gap: var(--space-1);
+}
+
 .howTo {
   display: inline-flex;
   align-items: center;

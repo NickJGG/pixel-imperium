@@ -92,6 +92,13 @@ describe('GET /api/campaigns/:id', () => {
     })
   })
 
+  it('serves the techniques flag only where set', async () => {
+    const base = fixture('t', { x: [], y: [] })
+    const flagged = { ...base, provinces: [{ ...base.provinces[0]!, techniques: true as const }, base.provinces[1]!] }
+    const { provinces } = (await (await createApp([flagged], { db, auth }).request('/api/campaigns/t')).json()) as Campaign
+    expect(provinces.map(p => p.techniques)).toEqual([true, undefined])
+  })
+
   it('404s on unknown id', async () => {
     expect((await app.request('/api/campaigns/nope')).status).toBe(404)
   })

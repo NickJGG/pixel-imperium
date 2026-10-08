@@ -35,6 +35,8 @@ export interface Province {
   theme: string
   /** Shown once the province is conquered. */
   flavour: string
+  /** Its Conquest offers the Techniques. */
+  techniques?: true
   /** Easiest first. */
   puzzles: PuzzleSummary[]
 }
