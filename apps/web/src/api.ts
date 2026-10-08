@@ -75,6 +75,12 @@ export async function putSettings(assists: Assists): Promise<void> {
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
 }
 
+/** Records that the Tutorial was offered; the server keeps the first time. */
+export async function putTutorialAsked(): Promise<void> {
+  const res = await fetch('/api/me/tutorial', { method: 'PUT' })
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+}
+
 export const putShowcase = (puzzleIds: string[]) =>
   getJson<Showcase>('/api/me/showcase', jsonInit('PUT', { puzzleIds } satisfies Showcase))
 

@@ -340,6 +340,18 @@
   min-height: 36px;
 }
 
+.confirm:has(.note) {
+  border-radius: var(--r-lg);
+}
+
+.confirm .note {
+  flex-basis: 100%;
+  text-align: center;
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
 .confirm .danger {
   --btn-bg: var(--red);
   --btn-ink: var(--on-red);

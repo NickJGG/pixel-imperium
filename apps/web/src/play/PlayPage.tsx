@@ -9,7 +9,7 @@ import { paperStyle } from '../album/paper.ts'
 import { Stamp } from '../album/Stamp.tsx'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { type AccountState, useAccount } from '../account.ts'
-import { submitSolve } from '../api.ts'
+import { requestHint, submitSolve } from '../api.ts'
 import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
@@ -22,6 +22,7 @@ import { ColClues, RowClues } from './Clues.tsx'
 import { HintButton } from './HintButton.tsx'
 import { CLUE_SLOT, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, fitPlay } from './layout.ts'
 import { createLineHints } from './line-hints.ts'
+import { encodeCells } from './progress-storage.ts'
 import { SidePage } from './SidePage.tsx'
 import { type Choreography, confetti, flyIn, popOnly } from './sticker-moment.ts'
 import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
@@ -404,7 +405,12 @@ function Play({
                   </svg>
                 </button>
                 <ClearButton store={store} solved={false} disabled={!canClear} />
-                <HintButton store={store} confirmFirst={firstSolve && !hinted} onError={setHintFailed} />
+                <HintButton
+                  store={store}
+                  confirmFirst={firstSolve && !hinted}
+                  request={cells => requestHint(puzzle.id, { cells: encodeCells(cells) })}
+                  onError={setHintFailed}
+                />
               </div>
               <AssistChips />
             </div>

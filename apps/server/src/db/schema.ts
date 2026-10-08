@@ -25,6 +25,8 @@ export const user = pgTable(
     handleConfirmed: boolean('handle_confirmed').default(false).notNull(),
     /** Up to three verified puzzle ids, biggest sticker first; app data, so not in `auth.ts`. */
     showcase: text('showcase').array().default(sql`'{}'::text[]`).notNull(),
+    /** When the player was first offered the Tutorial, on any device. */
+    tutorialAskedAt: timestamp('tutorial_asked_at'),
   },
   t => [uniqueIndex('user_handle_lower_idx').on(sql`lower(${t.handle})`)],
 )

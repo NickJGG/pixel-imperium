@@ -1,0 +1,68 @@
+import { describe, expect, it } from 'vitest'
+import { type SolverCell, isLogicSolvable, isUnique, lineSolve } from '@pixel-imperium/nonogram'
+import { type Lesson, LESSONS, lessonPuzzle } from './lessons.ts'
+
+/** What line logic on just the step's highlighted lines yields from the cells earlier steps settled. */
+function deducible(lesson: Lesson, stepIndex: number): SolverCell[] {
+  const { width, height, clues } = lessonPuzzle(lesson)
+  const g = Array<SolverCell>(width * height).fill('unknown')
+  for (const { target } of lesson.steps.slice(0, stepIndex)) {
+    if (target === 'solved') continue
+    for (const [r, c] of target.filled ?? []) g[r * width + c] = 'filled'
+    for (const [r, c] of target.marked ?? []) g[r * width + c] = 'empty'
+  }
+  const { rows = [], cols = [] } = lesson.steps[stepIndex]!.highlight
+  const lines = [
+    ...rows.map(r => ({ clue: clues.rows[r]!, at: Array.from({ length: width }, (_, c) => r * width + c) })),
+    ...cols.map(c => ({ clue: clues.cols[c]!, at: Array.from({ length: height }, (_, r) => r * width + c) })),
+  ]
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const { clue, at } of lines) {
+      const solved = lineSolve(at.map(i => g[i]!), clue)
+      if (!solved) throw new Error('contradiction')
+      at.forEach((i, k) => {
+        if (g[i] === 'unknown' && solved[k] !== 'unknown') {
+          g[i] = solved[k]!
+          changed = true
+        }
+      })
+    }
+  }
+  return g
+}
+
+describe.each(LESSONS.map(l => [l.picture, l] as const))('%s', (_, lesson) => {
+  const { width, height, clues, palette } = lessonPuzzle(lesson)
+
+  it('has every dimension a multiple of 5 and every colour in the palette', () => {
+    expect(width % 5).toBe(0)
+    expect(height % 5).toBe(0)
+    expect(lesson.rows.every(r => r.length === width)).toBe(true)
+    expect(palette).not.toContain(undefined)
+  })
+
+  it('is unique and solvable by line logic', () => {
+    expect(isUnique(clues)).toBe(true)
+    expect(isLogicSolvable(clues)).toBe(true)
+  })
+
+  it('ends on solving the picture, and only there', () => {
+    const last = lesson.steps.length - 1
+    expect(lesson.steps.findIndex(s => s.target === 'solved')).toBeOneOf([-1, last])
+    if (lesson.steps[last]!.target === 'solved') return
+    const filled = new Set(lesson.steps.flatMap(s => (s.target === 'solved' ? [] : (s.target.filled ?? []).map(([r, c]) => r * width + c))))
+    expect(palette.map((_, i) => filled.has(i))).toEqual(palette.map(c => c !== null))
+  })
+
+  lesson.steps.forEach((step, i) => {
+    if (step.target === 'solved') return
+    const { filled = [], marked = [] } = step.target
+    it(`step ${i + 1} asks only for cells its highlighted lines imply`, () => {
+      const g = deducible(lesson, i)
+      for (const [r, c] of filled) expect(g[r * width + c], `(${r}, ${c})`).toBe('filled')
+      for (const [r, c] of marked) expect(g[r * width + c], `(${r}, ${c})`).toBe('empty')
+    })
+  })
+})

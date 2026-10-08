@@ -323,6 +323,7 @@ describe('/api/me', () => {
     ['POST', '/api/me/import'],
     ['PUT', '/api/me/handle'],
     ['PUT', '/api/me/showcase'],
+    ['PUT', '/api/me/tutorial'],
   ])('%s %s 401s without a session', async (method, path) => {
     const res = await app.request(path, { method, body: method === 'GET' ? null : '{}' })
     expect(res.status).toBe(401)
@@ -351,6 +352,7 @@ describe('/api/me', () => {
       },
       assists,
       showcase: [],
+      tutorialAskedAt: null,
     })
   })
 
@@ -365,6 +367,19 @@ describe('/api/me', () => {
   it('400s on incomplete assists', async () => {
     const { cookie } = await signedInUser(db, auth)
     expect((await send('PUT', '/api/me/settings', { assists: { fadeClues: true } }, cookie)).status).toBe(400)
+  })
+})
+
+describe('PUT /api/me/tutorial', () => {
+  it('records when the tutorial was first offered and keeps that time', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    const before = Date.now()
+    expect((await send('PUT', '/api/me/tutorial', null, cookie)).status).toBe(204)
+    const askedAt = (await getProgress(cookie)).tutorialAskedAt
+    expect(new Date(askedAt!).getTime()).toBeGreaterThanOrEqual(before - 1000)
+
+    expect((await send('PUT', '/api/me/tutorial', null, cookie)).status).toBe(204)
+    expect((await getProgress(cookie)).tutorialAskedAt).toBe(askedAt)
   })
 })
 

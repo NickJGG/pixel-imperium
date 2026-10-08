@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { rateLimiter } from './hints.ts'
+import { rateLimiter } from './rate-limit.ts'
 
 describe('rateLimiter', () => {
   it('allows the limit per key in each window', () => {

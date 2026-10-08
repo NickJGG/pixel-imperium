@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { satisfiesClues } from '@pixel-imperium/nonogram'
+import { hintFor, satisfiesClues } from '@pixel-imperium/nonogram'
 import type {
   ApiError,
   Assists,
@@ -23,12 +23,12 @@ import type {
   SolveResponse,
   SolveStatus,
 } from '@pixel-imperium/protocol'
-import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm'
 import type { Auth } from './auth.ts'
 import type { Db } from './db/index.ts'
 import { hint, progress, solve, user, userSettings } from './db/schema.ts'
 import { handleProblem } from './handles.ts'
-import { hintFor, rateLimiter } from './hints.ts'
+import { rateLimiter } from './rate-limit.ts'
 import { parseCells, planImport } from './import.ts'
 import type { Campaign } from './campaigns.ts'
 import { stampsFor } from './stamps.ts'
@@ -190,7 +190,7 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
       const cells = parseCells(body?.cells, p)
       if (!cells) return c.json<ApiError>({ error: `cells must be ${p.width * p.height} of '.#x'` }, 400)
 
-      const nudge = hintFor(p, cells)
+      const nudge = hintFor(p.palette, cells)
       if (!nudge) return c.json<ApiError>({ error: 'nothing to hint: the grid is solved' }, 409)
       if (user) await db.insert(hint).values({ userId: user.id, puzzleId: p.id }).onConflictDoNothing()
       return c.json<HintResponse>(nudge)
@@ -261,7 +261,10 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         db.select().from(progress).where(eq(progress.userId, userId)),
         db.select({ puzzleId: hint.puzzleId }).from(hint).where(eq(hint.userId, userId)),
         db.select().from(userSettings).where(eq(userSettings.userId, userId)),
-        db.select({ showcase: user.showcase }).from(user).where(eq(user.id, userId)),
+        db
+          .select({ showcase: user.showcase, tutorialAskedAt: user.tutorialAskedAt })
+          .from(user)
+          .where(eq(user.id, userId)),
       ])
       const records: Record<string, PuzzleRecord> = {}
       const record = (id: string) =>
@@ -277,7 +280,19 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         record(g.puzzleId).progress = { cells: g.cells, replaying: g.replaying, updatedAt: g.updatedAt.toISOString() }
       }
       const showcase = (me?.showcase ?? []).filter(id => records[id]?.solved === 'verified' && byId.has(id))
-      return c.json<MyProgress>({ puzzles: records, assists: settings?.assists ?? null, showcase })
+      return c.json<MyProgress>({
+        puzzles: records,
+        assists: settings?.assists ?? null,
+        showcase,
+        tutorialAskedAt: me?.tutorialAskedAt?.toISOString() ?? null,
+      })
+    })
+    .put('/me/tutorial', async c => {
+      await db
+        .update(user)
+        .set({ tutorialAskedAt: new Date() })
+        .where(and(eq(user.id, c.get('user')!.id), isNull(user.tutorialAskedAt)))
+      return c.body(null, 204)
     })
     .put('/me/showcase', async c => {
       const puzzleIds = parseShowcase(await c.req.json().catch(() => null))

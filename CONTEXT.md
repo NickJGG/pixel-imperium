@@ -37,6 +37,14 @@ _Avoid_: Achievement, badge, trophy, medal
 A server-given nudge on a **Puzzle** in progress: one wrong cell pointed out, or one correct cell revealed.
 _Avoid_: Assist (assists are the free play settings and never cost **Foil**), clue, help
 
+**Tutorial**:
+A short, skippable guided sequence of **Lessons** teaching how to solve nonograms, offered once to a new **Player**; outside any **Campaign**.
+_Avoid_: Onboarding, intro, training, guide
+
+**Lesson**:
+One guided picture grid within the **Tutorial**; it **Reveals** like a **Puzzle** but earns no **Sticker**.
+_Avoid_: Drill, step (a step is one prompt within a lesson)
+
 ### Players
 
 **Player**:

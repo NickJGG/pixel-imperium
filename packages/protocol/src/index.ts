@@ -1,4 +1,4 @@
-import type { Clues } from '@pixel-imperium/nonogram'
+import type { Clues, Hint } from '@pixel-imperium/nonogram'
 
 export interface PuzzleSummary {
   id: string
@@ -63,7 +63,7 @@ export interface HintRequest {
  * A row-major cell index: a cell that disagrees with the solution, or, when there are none, a cell
  * still to fill. Answers 409 when the grid has nothing left to hint.
  */
-export type HintResponse = { kind: 'mistake' | 'reveal'; index: number }
+export type HintResponse = Hint
 
 export interface ApiError {
   error: string
@@ -104,11 +104,15 @@ export interface PuzzleRecord {
   hinted: boolean
 }
 
-/** `GET /api/me/progress`; `assists` is `null` until the account first saves them. */
+/**
+ * `GET /api/me/progress`; `assists` is `null` until the account first saves them. `tutorialAskedAt` is
+ * when the player was first offered the Tutorial, set once by `PUT /api/me/tutorial`.
+ */
 export interface MyProgress {
   puzzles: Record<string, PuzzleRecord>
   assists: Assists | null
   showcase: string[]
+  tutorialAskedAt: string | null
 }
 
 /**

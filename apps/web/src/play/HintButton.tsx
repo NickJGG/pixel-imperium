@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { requestHint } from '../api.ts'
-import { encodeCells } from './progress-storage.ts'
+import type { Cell } from '@pixel-imperium/nonogram'
+import type { HintResponse } from '@pixel-imperium/protocol'
 import type { PlayStore } from './store.ts'
 import styles from './Play.module.css'
 
@@ -8,11 +8,14 @@ interface Props {
   store: PlayStore
   /** Foil is still on the table, so the first hint asks before giving it up. */
   confirmFirst: boolean
+  /** Shown under the confirm. */
+  note?: string
+  request: (cells: readonly Cell[]) => Promise<HintResponse | null>
   onError: (failed: boolean) => void
 }
 
-/** Asks the server for a hint on the grid as it stands; the store shows it until the next edit. */
-export function HintButton({ store, confirmFirst, onError }: Props) {
+/** Asks `request` for a hint on the grid as it stands; the store shows it until the next edit. */
+export function HintButton({ store, confirmFirst, note, request, onError }: Props) {
   const [confirming, setConfirming] = useState(false)
   const [pending, setPending] = useState(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
@@ -35,7 +38,7 @@ export function HintButton({ store, confirmFirst, onError }: Props) {
     onError(false)
     const { cells } = store.getState()
     try {
-      const nudge = await requestHint(store.puzzle.id, { cells: encodeCells(cells) })
+      const nudge = await request(cells)
       // A grid edited while the request was out has moved past the hint.
       if (nudge && store.getState().cells === cells) store.showHint(nudge)
     } catch {
@@ -68,6 +71,7 @@ export function HintButton({ store, confirmFirst, onError }: Props) {
       <button type="button" className={styles.ghost} onClick={() => setConfirming(false)}>
         Cancel
       </button>
+      {note && <span className={styles.note}>{note}</span>}
     </div>
   )
 }

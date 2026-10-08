@@ -4,7 +4,7 @@ import { ProgressStorage } from './play/progress-storage.ts'
 import { ProgressSync, SYNC_DELAY_MS, type SyncApi } from './sync.ts'
 import { stubStorage } from './test-storage.ts'
 
-function fakeApi(progress: MyProgress = { puzzles: {}, assists: null, showcase: [] }) {
+function fakeApi(progress: MyProgress = { puzzles: {}, assists: null, showcase: [], tutorialAskedAt: null }) {
   return {
     fetchProgress: vi.fn<SyncApi['fetchProgress']>(async () => progress),
     putProgress: vi.fn<SyncApi['putProgress']>(async () => ({ applied: true })),
@@ -98,6 +98,7 @@ describe('ProgressSync', () => {
       },
       assists: null,
       showcase: ['b'],
+      tutorialAskedAt: null,
     })
     storage.saveCells('stale', '#', '2026-01-01T00:00:00.000Z')
     const data = await new ProgressSync(storage, api).pull()

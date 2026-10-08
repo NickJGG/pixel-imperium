@@ -5,11 +5,12 @@
  */
 import { useSyncExternalStore } from 'react'
 import type { Assists, HandleProblem, ImportItem } from '@pixel-imperium/protocol'
-import { fetchMyProgress, importProgress, putHandle, putProgress, putSettings, submitSolve } from './api.ts'
+import { fetchMyProgress, importProgress, putHandle, putProgress, putSettings, putTutorialAsked, submitSolve } from './api.ts'
 import { deleteUser, getSession, refreshSession, signOut } from './auth.ts'
 import { ProgressStorage, signedOutStorage } from './play/progress-storage.ts'
 import { assistsOf, getSettings, subscribeSettings, updateSettings } from './settings.ts'
 import { ProgressSync } from './sync.ts'
+import { getAskedAt, recordAsked, subscribeAsked } from './tutorial/asked.ts'
 
 interface Account {
   userId: string
@@ -87,6 +88,15 @@ function pushAssistsIfChanged(): void {
   if (state.account && assistsKey(assistsOf(getSettings())) !== syncedAssists) pushAssists()
 }
 
+/** Whether the server is known to have the Tutorial as asked. */
+let syncedAsked = false
+
+function pushAskedIfNeeded(): void {
+  if (!state.account || syncedAsked || !getAskedAt()) return
+  syncedAsked = true
+  putTutorialAsked().catch(() => (syncedAsked = false))
+}
+
 let stopListening = () => {}
 
 function listen(sync: ProgressSync): void {
@@ -95,16 +105,19 @@ function listen(sync: ProgressSync): void {
   const onOnline = () => {
     void sync.reconnect()
     pushAssistsIfChanged()
+    pushAskedIfNeeded()
   }
   window.addEventListener('pagehide', leave)
   document.addEventListener('visibilitychange', onVisibility)
   window.addEventListener('online', onOnline)
   const unsubscribeSettings = subscribeSettings(pushAssistsIfChanged)
+  const unsubscribeAsked = subscribeAsked(pushAskedIfNeeded)
   stopListening = () => {
     window.removeEventListener('pagehide', leave)
     document.removeEventListener('visibilitychange', onVisibility)
     window.removeEventListener('online', onOnline)
     unsubscribeSettings()
+    unsubscribeAsked()
     sync.dispose()
   }
 }
@@ -118,6 +131,13 @@ async function refresh(sync: ProgressSync): Promise<boolean> {
     updateSettings(data.assists)
   } else {
     pushAssists()
+  }
+  if (data.tutorialAskedAt) {
+    syncedAsked = true
+    recordAsked(data.tutorialAskedAt)
+  } else {
+    syncedAsked = false
+    pushAskedIfNeeded()
   }
   setState({ generation: state.generation + 1 })
   return true
@@ -212,6 +232,7 @@ function reset(): void {
   cacheAccount(null)
   sessionId = null
   syncedAssists = ''
+  syncedAsked = false
   setState({ ...SIGNED_OUT, generation: state.generation + 1 })
 }
 
