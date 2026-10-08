@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
 import type { Campaign, Province, PuzzleClues } from '@pixel-imperium/protocol'
@@ -217,12 +217,12 @@ function Play({
   }, [moment, puzzle.id])
 
   const cardRef = useRef<HTMLDivElement>(null)
-  const sidePageRef = useRef<HTMLElement>(null)
+  const panelRef = useRef<HTMLElement>(null)
   useEffect(() => {
     if (moment !== 'landed') return
     play(conquest ? 'chime' : 'thunk')
     if (reducedMotion()) return
-    return confetti((sidePageRef.current ?? cardRef.current)!, styles.burst!)
+    return confetti((panelRef.current ?? cardRef.current)!, styles.burst!)
   }, [moment, conquest])
 
   const hideSticker = moment === 'waiting' || moment === 'flying'
@@ -269,39 +269,103 @@ function Play({
     />
   )
 
+  const following = campaign.provinces[provinceIndex + 1]
+  const conquestStamp = (className: string | undefined) => (
+    <Stamp thunk tone={following ? 'pink' : 'gold'} className={className}>
+      {following ? 'Page complete' : 'Album complete'}
+    </Stamp>
+  )
+  const message = conquest ? (
+    <p role="status">
+      <b>{province.name} conquered.</b>
+      {province.flavour && <span className={styles.flavour}>{province.flavour}</span>}
+    </p>
+  ) : (
+    <p role="status">
+      {moment === 'landed'
+        ? `${puzzle.title} is in ${province.name}. ${left === 0 ? 'Page complete.' : `${left} to go.`}`
+        : moment === 'kept'
+          ? `Solved again. ${puzzle.title} stays where it is.`
+          : `${puzzle.title} is in the album.`}
+    </p>
+  )
+  const closing = conquest && !following && (
+    <p className={styles.closing}>{campaign.closingLine || `${campaign.name} is yours.`}</p>
+  )
+  const onward = !conquest ? (
+    next && (
+      <Link to="/play/$id" params={{ id: next.id }} className={styles.linkButton}>
+        Next: {next.title}
+        <ArrowIcon />
+      </Link>
+    )
+  ) : following ? (
+    <Link
+      to="/c/$campaignId/$provinceId"
+      params={{ campaignId: campaign.id, provinceId: following.id }}
+      className={styles.linkButton}
+    >
+      Open
+      <span className={styles.tabChip} style={paperStyle(provinceIndex + 1)}>
+        {following.name.replace(/^The /, '')}
+      </span>
+      <ArrowIcon />
+    </Link>
+  ) : (
+    <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} className={styles.linkButton}>
+      Back to the cover
+    </Link>
+  )
+  const backToPage = (
+    <Link
+      to="/c/$campaignId/$provinceId"
+      params={{ campaignId: campaign.id, provinceId: province.id }}
+      className={`${styles.linkButton} ${styles.paper}`}
+    >
+      Back to page
+    </Link>
+  )
+  const replay = <ClearButton store={store} solved />
+
   const after = (
     <div className={styles.after}>
       {conquest ? (
-        <Conquest campaign={campaign} province={province}>
-          <ClearButton store={store} solved />
-        </Conquest>
+        <div className={styles.headline}>
+          {conquestStamp(styles.afterStamp)}
+          {message}
+        </div>
       ) : (
-        <>
-          <p role="status">
-            {moment === 'landed'
-              ? `${puzzle.title} is in ${province.name}. ${left === 0 ? 'Page complete.' : `${left} to go.`}`
-              : moment === 'kept'
-                ? `Solved again. ${puzzle.title} stays where it is.`
-                : `${puzzle.title} is in the album.`}
-          </p>
-          <div className={styles.afterActions}>
-            <Link
-              to="/c/$campaignId/$provinceId"
-              params={{ campaignId: campaign.id, provinceId: province.id }}
-              className={`${styles.linkButton} ${styles.paper}`}
-            >
-              Back to page
-            </Link>
-            <ClearButton store={store} solved />
-            {next && (
-              <Link to="/play/$id" params={{ id: next.id }} className={styles.linkButton}>
-                Next: {next.title}
-                <ArrowIcon />
-              </Link>
-            )}
-          </div>
-        </>
+        message
       )}
+      {closing}
+      <div className={styles.afterActions}>
+        {conquest ? (
+          <>
+            {onward}
+            {backToPage}
+            {replay}
+          </>
+        ) : (
+          <>
+            {backToPage}
+            {replay}
+            {onward}
+          </>
+        )}
+      </div>
+    </div>
+  )
+
+  const panelAfter = (
+    <div className={styles.panelAfter}>
+      {!conquest && tag}
+      {message}
+      {closing}
+      {onward}
+      <div className={styles.panelActions}>
+        {replay}
+        {backToPage}
+      </div>
     </div>
   )
 
@@ -331,7 +395,7 @@ function Play({
           </div>
         )}
       </div>
-      {!done && <ToolPill store={store} inert={solved} />}
+      {!solved && <ToolPill store={store} />}
     </div>
   )
 
@@ -369,10 +433,10 @@ function Play({
             </header>
           )}
           {stage}
-          {done ? (
-            <div ref={wide ? undefined : belowRef}>{after}</div>
-          ) : (
-            !wide && (
+          {!wide &&
+            (done ? (
+              <div ref={belowRef}>{after}</div>
+            ) : (
               // Kept through the fly-in so the board doesn't resize under the sticker.
               <div ref={belowRef} className={styles.tools} inert={solved}>
                 {hint ? (
@@ -400,8 +464,7 @@ function Play({
                 <AssistChips />
                 <HowToPlay back={`/play/${puzzle.id}`} className={styles.howTo} />
               </div>
-            )
-          )}
+            ))}
           {moment === 'landed' && !wide && (
             <Stamp thunk className={styles.cardStamp}>
               New sticker!
@@ -411,7 +474,7 @@ function Play({
         </div>
         {wide && (
           <PuzzlePanel
-            ref={sidePageRef}
+            ref={panelRef}
             slotRef={setSlot}
             campaignId={campaign.id}
             province={province}
@@ -419,10 +482,20 @@ function Play({
             number={number}
             storage={storage}
             hideSticker={hideSticker}
-            stamped={moment === 'landed'}
-            tag={tag}
+            stamp={
+              conquest
+                ? done && conquestStamp(styles.panelStamp)
+                : moment === 'landed' && (
+                    <Stamp thunk className={styles.panelStamp}>
+                      New sticker!
+                    </Stamp>
+                  )
+            }
+            tag={!done && tag}
           >
-            {!done && (
+            {done ? (
+              panelAfter
+            ) : (
               <div className={styles.panelBody} inert={solved}>
                 <div className={styles.progress}>
                   <span className={styles.bar}>
@@ -477,53 +550,6 @@ function Play({
         </div>
       )}
     </main>
-  )
-}
-
-/** The after panel when this solve conquered the province: on to the next one, or the album's close. */
-function Conquest({ campaign, province, children }: { campaign: Campaign; province: Province; children: ReactNode }) {
-  const index = campaign.provinces.indexOf(province)
-  const following = campaign.provinces[index + 1]
-  return (
-    <>
-      <div className={styles.headline}>
-        <Stamp thunk tone={following ? 'pink' : 'gold'} className={styles.afterStamp}>
-          {following ? 'Page complete' : 'Album complete'}
-        </Stamp>
-        <p role="status">
-          <b>{province.name} conquered.</b>
-          {province.flavour && <span className={styles.flavour}>{province.flavour}</span>}
-        </p>
-      </div>
-      {!following && <p className={styles.closing}>{campaign.closingLine || `${campaign.name} is yours.`}</p>}
-      <div className={styles.afterActions}>
-        {following ? (
-          <Link
-            to="/c/$campaignId/$provinceId"
-            params={{ campaignId: campaign.id, provinceId: following.id }}
-            className={styles.linkButton}
-          >
-            Open
-            <span className={styles.tabChip} style={paperStyle(index + 1)}>
-              {following.name.replace(/^The /, '')}
-            </span>
-            <ArrowIcon />
-          </Link>
-        ) : (
-          <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} className={styles.linkButton}>
-            Back to the cover
-          </Link>
-        )}
-        <Link
-          to="/c/$campaignId/$provinceId"
-          params={{ campaignId: campaign.id, provinceId: province.id }}
-          className={`${styles.linkButton} ${styles.paper}`}
-        >
-          Back to page
-        </Link>
-        {children}
-      </div>
-    </>
   )
 }
 

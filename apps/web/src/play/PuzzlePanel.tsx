@@ -3,7 +3,6 @@ import { Link } from '@tanstack/react-router'
 import type { Province } from '@pixel-imperium/protocol'
 import { paperStyle } from '../album/paper.ts'
 import { Slot } from '../album/Slot.tsx'
-import { Stamp } from '../album/Stamp.tsx'
 import { GOLD_SLOT, PuzzleSlot } from '../campaign/PuzzleSlot.tsx'
 import { SIDE_PAGE_WIDTH } from './layout.ts'
 import type { ProgressStorage } from './progress-storage.ts'
@@ -21,7 +20,8 @@ interface Props {
   storage: ProgressStorage
   /** Keeps the puzzle's slot empty while its sticker is on its way. */
   hideSticker: boolean
-  stamped: boolean
+  /** Hangs off the panel's edge: New sticker!, or the conquest's. */
+  stamp: ReactNode
   /** A status beside the size: Replaying, Imported and the like. */
   tag: ReactNode
   /** Everything under the slot row. */
@@ -41,7 +41,7 @@ export function PuzzlePanel({
   number,
   storage,
   hideSticker,
-  stamped,
+  stamp,
   tag,
   children,
   ref,
@@ -76,7 +76,7 @@ export function PuzzlePanel({
         </span>
         {tag}
       </header>
-      <ol className={styles.sideSlots} start={first + 1}>
+      <ol className={styles.panelSlots} start={first + 1}>
         {province.puzzles.slice(first, first + ROW).map((p, i) => (
           <li key={p.id} ref={p === current ? slotRef : undefined}>
             {p === current && !has(p.id) ? (
@@ -88,11 +88,7 @@ export function PuzzlePanel({
         ))}
       </ol>
       {children}
-      {stamped && (
-        <Stamp thunk className={styles.sideStamp}>
-          New sticker!
-        </Stamp>
-      )}
+      {stamp}
     </aside>
   )
 }

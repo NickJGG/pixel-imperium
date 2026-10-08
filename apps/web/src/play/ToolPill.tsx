@@ -5,12 +5,12 @@ import { ToolToggle } from './ToolToggle.tsx'
 import styles from './Play.module.css'
 
 /** The tools overlaid at the foot of the board card. `fitPlay` keeps the board clear of it. */
-export function ToolPill({ store, inert, children }: { store: PlayStore; inert?: boolean; children?: ReactNode }) {
+export function ToolPill({ store, children }: { store: PlayStore; children?: ReactNode }) {
   const canUndo = useSyncExternalStore(store.subscribe, () => store.getState().canUndo)
   const canRedo = useSyncExternalStore(store.subscribe, () => store.getState().canRedo)
   const { lockLine } = useSettings()
   return (
-    <div className={styles.pill} role="toolbar" aria-label="Tools" inert={inert}>
+    <div className={styles.pill} role="toolbar" aria-label="Tools">
       <ToolToggle store={store} />
       <span className={`${styles.pillSep} ${styles.touchOnly}`} />
       <button

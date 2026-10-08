@@ -48,7 +48,7 @@
   stroke-linejoin: round;
 }
 
-/* The gap and the side page's width come from layout.ts, which fits the board around them. */
+/* The gap and the panel's width come from layout.ts, which fits the board around them. */
 .desk {
   flex: 1;
   min-height: 0;
@@ -109,7 +109,7 @@
   padding: 0;
 }
 
-/* Small enough to sit in the header; the fly target when there's no room for the side page. */
+/* Small enough to sit in the header; the fly target when there's no room for the panel. */
 .slotChip {
   flex: none;
   width: 44px;
@@ -854,6 +854,82 @@
   height: 16px;
 }
 
+/* Solved: the slot row stays, and the play controls under it give way to these. */
+.panelAfter {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.panelAfter > .tag {
+  justify-self: start;
+}
+
+.panelAfter p {
+  margin: 0;
+  font: 600 14px/1.35 var(--font-ui);
+}
+
+.panelAfter b {
+  display: block;
+  font: 400 14px var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+.panelAfter .flavour {
+  color: var(--ink-soft);
+}
+
+.panelAfter .closing {
+  font: 400 13px/1.4 var(--font-display);
+  letter-spacing: -0.03em;
+  color: var(--gold-dk);
+}
+
+.panelAfter > .linkButton {
+  justify-content: center;
+  min-height: 48px;
+}
+
+.panelActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.panelActions > * {
+  flex: 1;
+}
+
+.panelActions > button,
+.panelActions > .linkButton {
+  justify-content: center;
+  padding: 0 var(--space-3);
+  font-size: 14px;
+}
+
+.panelActions > button {
+  --btn-bg: var(--line-soft);
+  --btn-ink: var(--ink);
+  --btn-edge: var(--shade);
+}
+
+.panelActions > button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.panelActions .confirm {
+  flex-basis: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  padding: var(--space-3);
+  border-radius: var(--r-lg);
+}
+
+.panelActions .confirm > span {
+  grid-column: 1 / -1;
+}
+
 @media (any-pointer: coarse) {
   .switches button,
   .panelFoot > button {
@@ -861,7 +937,7 @@
   }
 }
 
-.sideSlots {
+.panelSlots {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -870,16 +946,16 @@
   gap: 8px;
 }
 
-.sideSlots > li {
+.panelSlots > li {
   min-width: 0;
 }
 
-.sideSlots small {
+.panelSlots small {
   display: none;
 }
 
 /* Solid, unlike a stamp inked on paper: these hang off the page over the cover or the board. */
-.sideStamp,
+.panelStamp,
 .cardStamp {
   position: absolute;
   z-index: 2;
@@ -890,7 +966,7 @@
   letter-spacing: -0.06em;
 }
 
-.sideStamp {
+.panelStamp {
   right: -18px;
   bottom: -62px;
 }
