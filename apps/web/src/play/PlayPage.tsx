@@ -25,13 +25,14 @@ import { useBoardGestures } from './gestures.ts'
 import { HintButton, hintText } from './HintButton.tsx'
 import { PILL_BAND, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, boardTracks, fitPlay } from './layout.ts'
 import { createLineHints } from './line-hints.ts'
+import { Minimap } from './Minimap.tsx'
 import { MoreMenu } from './MoreMenu.tsx'
 import { encodeCells } from './progress-storage.ts'
 import { PuzzlePanel, SlotRow } from './PuzzlePanel.tsx'
 import { type Choreography, confetti, flyIn, popOnly } from './sticker-moment.ts'
 import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
 import { ToolPill } from './ToolPill.tsx'
-import { BoardView } from './viewport.ts'
+import { BoardView, fitView } from './viewport.ts'
 import styles from './Play.module.css'
 
 const route = getRouteApi('/play/$id')
@@ -176,6 +177,24 @@ function Play({
     return () => abort.abort()
   }, [solved, store, puzzle.id])
 
+  // A solve while zoomed glides back to fit before the reveal and the sticker's moment, so they
+  // see the whole picture; the view stays locked there until a replay.
+  const [fitting, setFitting] = useState(false)
+  useEffect(() => {
+    if (!solved) return
+    let live = true
+    if (boardView.zoomed) {
+      setFitting(true)
+      boardView.animateTo(fitView(boardView.fitCell), 450).then(() => live && setFitting(false))
+    }
+    boardView.locked = true
+    return () => {
+      live = false
+      boardView.locked = false
+      setFitting(false)
+    }
+  }, [solved, boardView])
+
   const [moment, setMoment] = useState<Moment | null>(null)
   const before = useRef({ solved, replaying })
   useEffect(() => {
@@ -193,11 +212,11 @@ function Play({
   }, [solved, replaying])
 
   useEffect(() => {
-    if (moment !== 'waiting' || !(palette || revealFailed)) return
+    if (moment !== 'waiting' || fitting || !(palette || revealFailed)) return
     if (reducedMotion()) return setMoment('landed')
     const timer = setTimeout(() => setMoment('flying'), palette ? REVEAL_MS : 0)
     return () => clearTimeout(timer)
-  }, [moment, palette, revealFailed])
+  }, [moment, fitting, palette, revealFailed])
 
   const floatRef = useRef<HTMLDivElement>(null)
   const slotRef = useRef<HTMLElement | null>(null)
@@ -205,9 +224,9 @@ function Play({
     slotRef.current = el
   }
   useLayoutEffect(() => {
-    if (moment !== 'flying' && moment !== 'popping') return
+    if ((moment !== 'flying' && moment !== 'popping') || fitting) return
     const float = floatRef.current!
-    const board = stageRef.current!.querySelector('canvas')!.getBoundingClientRect()
+    const board = stageRef.current!.querySelector(`.${styles.board} > canvas`)!.getBoundingClientRect()
     let choreography: Choreography
     if (moment === 'flying') {
       const slot = slotRef.current!.getBoundingClientRect()
@@ -221,7 +240,7 @@ function Play({
       () => {},
     )
     return choreography.cancel
-  }, [moment, puzzle.id])
+  }, [moment, fitting, puzzle.id])
 
   const cardRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLElement>(null)
@@ -366,7 +385,7 @@ function Play({
             data-revealed={palette !== null || undefined}
             style={boardTracks(puzzle, cellSize) as CSSProperties}
           >
-            <div />
+            <Minimap store={store} view={boardView} cellSize={cellSize} />
             <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={assists} />
             <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={assists} />
             <Board store={store} cellSize={cellSize} view={boardView} />
@@ -529,7 +548,7 @@ function Play({
           {afterBody}
         </div>
       )}
-      {(moment === 'flying' || moment === 'popping') && (
+      {(moment === 'flying' || moment === 'popping') && !fitting && (
         <div ref={floatRef} className={styles.float} aria-hidden="true">
           {sticker}
         </div>

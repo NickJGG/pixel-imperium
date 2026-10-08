@@ -2,8 +2,9 @@
  * Pointer input for the whole board grid: canvas, clue panels and corner. One finger on the canvas
  * paints, one finger on a clue panel pans, two fingers pinch and pan. A second finger soon after
  * a stroke began cancels the stroke, later it keeps it; the finger left after a pinch does nothing
- * until lifted. With a mouse, the wheel zooms, and a middle drag or a drag with Space held pans.
- * On a board that isn't zoomable, only painting is left.
+ * until lifted. Pressing or dragging on the minimap centres the view there. With a mouse, the wheel
+ * zooms, and a middle drag or a drag with Space held pans. While the board can't zoom, only
+ * painting is left, and the wheel scrolls the page.
  */
 import { useCallback, useRef } from 'react'
 import { getSettings } from '../settings.ts'
@@ -22,16 +23,17 @@ interface Point {
 type Gesture =
   | { type: 'stroke'; id: number; at: number }
   | { type: 'pan'; id: number; last: Point }
+  | { type: 'map'; id: number; map: Element }
   | { type: 'pinch'; ids: [number, number]; distance: number; mid: Point; view: View }
   | { type: 'tail' }
 
-type Zone = 'canvas' | 'rows' | 'cols'
+type Zone = 'canvas' | 'rows' | 'cols' | 'map'
 
 const zoneOf = (target: EventTarget | null): Zone | null => {
   if (!(target instanceof Element)) return null
-  if (target instanceof HTMLCanvasElement) return 'canvas'
   const zone = target.closest<HTMLElement>('[data-zone]')?.dataset.zone
-  return zone === 'rows' || zone === 'cols' ? zone : null
+  if (zone === 'rows' || zone === 'cols' || zone === 'map') return zone
+  return target instanceof HTMLCanvasElement ? 'canvas' : null
 }
 
 /** Returns a ref for the board grid element. */
@@ -42,7 +44,7 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
   return useCallback(
     (board: HTMLElement | null) => {
       if (!board) return
-      const canvas = board.querySelector('canvas')!
+      const canvas = board.querySelector<HTMLCanvasElement>(':scope > canvas')!
       const pointers = new Map<number, Point>()
       let gesture: Gesture | null = null
       let spaceHeld = false
@@ -97,6 +99,12 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
         return { type: 'stroke', id: e.pointerId, at: performance.now() }
       }
 
+      const centerFromMap = (map: Element, e: PointerEvent) => {
+        const rect = map.getBoundingClientRect()
+        const { width, height } = view.grid
+        view.centerOn(((e.clientY - rect.top) / rect.height) * height, ((e.clientX - rect.left) / rect.width) * width)
+      }
+
       const startPinch = (): Gesture => {
         const [first, second] = [...pointers]
         const [ida, a] = first!
@@ -117,13 +125,17 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
 
         if (pointers.size === 0) {
           const panButton = e.pointerType === 'mouse' && (e.button === 1 || (e.button === 0 && spaceHeld))
-          if (view.zoomable && (panButton || (zone !== 'canvas' && (e.pointerType !== 'mouse' || e.button === 0)))) {
+          const primary = e.pointerType !== 'mouse' || e.button === 0
+          if (view.canZoom && zone === 'map' && primary) {
+            gesture = { type: 'map', id: e.pointerId, map: e.target as Element }
+            centerFromMap(gesture.map, e)
+          } else if (view.canZoom && (panButton || (zone !== 'canvas' && primary))) {
             gesture = { type: 'pan', id: e.pointerId, last: p }
           } else if (zone === 'canvas') {
             gesture = startStroke(e, p)
           }
           if (!gesture) return
-        } else if (pointers.size === 1 && view.zoomable && e.pointerType !== 'mouse') {
+        } else if (pointers.size === 1 && view.canZoom && e.pointerType !== 'mouse') {
           if (gesture?.type === 'stroke') {
             if (performance.now() - gesture.at < GRACE_MS) store.cancelStroke()
             else store.endStroke()
@@ -154,6 +166,8 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
           const v = view.view
           view.set({ cell: v.cell, panX: v.panX + p.x - gesture.last.x, panY: v.panY + p.y - gesture.last.y })
           gesture.last = p
+        } else if (gesture?.type === 'map' && gesture.id === e.pointerId) {
+          centerFromMap(gesture.map, e)
         } else if (gesture?.type === 'pinch') {
           const a = pointers.get(gesture.ids[0])!
           const b = pointers.get(gesture.ids[1])!
@@ -172,7 +186,7 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
           store.endStroke()
         } else if (
           (gesture?.type === 'pinch' && gesture.ids.includes(e.pointerId)) ||
-          (gesture?.type === 'pan' && gesture.id === e.pointerId)
+          ((gesture?.type === 'pan' || gesture?.type === 'map') && gesture.id === e.pointerId)
         ) {
           gesture = pointers.size > 0 ? { type: 'tail' } : null
         }
@@ -180,7 +194,7 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
       }
 
       const onWheel = (e: WheelEvent) => {
-        if (!view.zoomable) return
+        if (!view.canZoom) return
         e.preventDefault()
         const { x, y } = local(e)
         const delta = e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY * 16 : e.deltaY
@@ -191,7 +205,7 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
         if (e.code !== 'Space') return
         spaceHeld = true
         // Over the board, Space is the pan modifier, not a page scroll or a press of the focused button.
-        if (over && view.zoomable) e.preventDefault()
+        if (over && view.canZoom) e.preventDefault()
       }
       const onKeyUp = (e: KeyboardEvent) => {
         if (e.code === 'Space') spaceHeld = false

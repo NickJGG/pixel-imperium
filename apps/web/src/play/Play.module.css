@@ -196,6 +196,25 @@
   cursor: grab;
 }
 
+.corner {
+  display: grid;
+  place-items: center;
+}
+
+.minimap {
+  display: block;
+  border-radius: 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+
+.board[data-zoomed] .minimap {
+  opacity: 1;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
 .colClues,
 .rowClues {
   transition: opacity 700ms ease;

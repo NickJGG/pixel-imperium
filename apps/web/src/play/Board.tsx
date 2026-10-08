@@ -60,7 +60,8 @@ export function Board({ store, cellSize, view, assists, highlight, mistake = nul
       frame = 0
       const state = store.getState()
       let revealElapsed: number | null = null
-      if (state.palette) {
+      // A solve while zoomed glides back to fit first (PlayPage); the reveal waits for it.
+      if (state.palette && !view.zoomed && !view.animating) {
         revealStart.current ??= reducedMotion.matches ? -Infinity : now
         revealElapsed = now - revealStart.current
       }
@@ -96,6 +97,15 @@ export function Board({ store, cellSize, view, assists, highlight, mistake = nul
 
   useEffect(() => redraw.current(), [assists?.crosshair, highlight, mistake])
 
+  useEffect(() => {
+    let { hint } = store.getState()
+    return store.subscribe(() => {
+      const next = store.getState().hint
+      if (next && next !== hint) view.reveal({ row: Math.floor(next.index / width), col: next.index % width })
+      hint = next
+    })
+  }, [store, view, width])
+
   const announcement = useSyncExternalStore(store.subscribe, () => {
     const { cursor, cells } = store.getState()
     return `Row ${cursor.row + 1}, column ${cursor.col + 1}, ${cells[cursor.row * width + cursor.col]}`
@@ -108,10 +118,12 @@ export function Board({ store, cellSize, view, assists, highlight, mistake = nul
     const tool = keyTools[key]
     if (move) {
       store.moveCursor(...move)
+      view.follow(store.getState().cursor)
     } else if (tool) {
       if (!e.repeat && heldKey.current === null) {
         heldKey.current = key
         store.beginStroke(store.getState().cursor, tool, { lockAxis: false })
+        view.follow(store.getState().cursor)
       }
     } else {
       return
