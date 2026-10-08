@@ -10,27 +10,33 @@ interface Props {
   confirmFirst: boolean
   /** Shown under the confirm. */
   note?: string
+  /** The confirm opens above the button instead of taking its place, so a toolbar doesn't reflow. */
+  popover?: boolean
   request: (cells: readonly Cell[]) => Promise<HintResponse | null>
   onError: (failed: boolean) => void
 }
 
 /** Asks `request` for a hint on the grid as it stands; the store shows it until the next edit. */
-export function HintButton({ store, confirmFirst, note, request, onError }: Props) {
+export function HintButton({ store, confirmFirst, note, popover = false, request, onError }: Props) {
   const [confirming, setConfirming] = useState(false)
   const [pending, setPending] = useState(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
+  const anchorRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     if (!confirming) return
     confirmRef.current?.focus()
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setConfirming(false)
+    const onDown = (e: PointerEvent) => !anchorRef.current?.contains(e.target as Node) && setConfirming(false)
     window.addEventListener('keydown', onKey)
+    if (popover) window.addEventListener('pointerdown', onDown)
     const unsubscribe = store.subscribe(() => store.strokeActive && setConfirming(false))
     return () => {
       window.removeEventListener('keydown', onKey)
+      window.removeEventListener('pointerdown', onDown)
       unsubscribe()
     }
-  }, [confirming, store])
+  }, [confirming, popover, store])
 
   const hint = async () => {
     setConfirming(false)
@@ -48,22 +54,21 @@ export function HintButton({ store, confirmFirst, note, request, onError }: Prop
     }
   }
 
-  if (!confirming) {
-    return (
-      <button
-        type="button"
-        data-variant="blue"
-        disabled={pending}
-        onClick={() => (confirmFirst ? setConfirming(true) : void hint())}
-      >
-        <BulbIcon />
-        Hint
-      </button>
-    )
-  }
+  const button = (
+    <button
+      type="button"
+      data-variant="blue"
+      disabled={pending}
+      aria-expanded={popover ? confirming : undefined}
+      onClick={() => (confirming ? setConfirming(false) : confirmFirst ? setConfirming(true) : void hint())}
+    >
+      <BulbIcon />
+      Hint
+    </button>
+  )
 
-  return (
-    <div className={styles.confirm} role="group" aria-label="Hint">
+  const confirm = confirming && (
+    <div className={popover ? `${styles.confirm} ${styles.hintPop}` : styles.confirm} role="group" aria-label="Hint">
       <span>Using a hint means this sticker won't be foil.</span>
       <button ref={confirmRef} type="button" data-variant="primary" onClick={() => void hint()}>
         Use a hint
@@ -74,6 +79,16 @@ export function HintButton({ store, confirmFirst, note, request, onError }: Prop
       {note && <span className={styles.note}>{note}</span>}
     </div>
   )
+
+  if (popover) {
+    return (
+      <span ref={anchorRef} className={styles.hintAnchor}>
+        {button}
+        {confirm}
+      </span>
+    )
+  }
+  return confirm || button
 }
 
 export function hintText({ kind, index }: HintResponse, cells: readonly Cell[], width: number): string {
