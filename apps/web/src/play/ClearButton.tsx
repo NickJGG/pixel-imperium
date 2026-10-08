@@ -31,7 +31,12 @@ export function ClearButton({ store, solved, disabled = false }: Props) {
 
   if (!confirming) {
     return (
-      <button type="button" disabled={disabled} onClick={() => setConfirming(true)}>
+      <button
+        type="button"
+        data-variant={solved ? 'blue' : undefined}
+        disabled={disabled}
+        onClick={() => setConfirming(true)}
+      >
         {solved ? <LoopIcon /> : <TrashIcon />}
         {label}
       </button>

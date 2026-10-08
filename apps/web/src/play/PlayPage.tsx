@@ -6,7 +6,6 @@ import { Dymo } from '../album/Dymo.tsx'
 import { SoundIcon } from '../album/icons.tsx'
 import { Slot } from '../album/Slot.tsx'
 import { paperStyle } from '../album/paper.ts'
-import { pageOf } from '../album/Spread.tsx'
 import { Stamp } from '../album/Stamp.tsx'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { type AccountState, useAccount } from '../account.ts'
@@ -234,7 +233,7 @@ function Play({
     <main className={styles.play}>
       <div className={styles.crumb}>
         <Link to="/c/$campaignId/$provinceId" params={{ campaignId: campaign.id, provinceId: province.id }}>
-          ← {province.name} · p. {pageOf(provinceIndex, number)}
+          ← {province.name}
         </Link>
         {replaying ? (
           <Dymo className={styles.tag}>
@@ -314,18 +313,12 @@ function Play({
                 <>
                   <p role="status">
                     {moment === 'landed'
-                      ? `${foil ? 'Foil sticker' : 'Sticker'} #${number} added to ${province.name}. ${left === 0 ? 'Page complete.' : `${left} to go.`}`
+                      ? `${puzzle.title} is in ${province.name}. ${left === 0 ? 'Page complete.' : `${left} to go.`}`
                       : moment === 'kept'
-                        ? `Solved again. Sticker #${number} stays where it is.`
-                        : `Sticker #${number} is in the album.`}
+                        ? `Solved again. ${puzzle.title} stays where it is.`
+                        : `${puzzle.title} is in the album.`}
                   </p>
                   <div className={styles.afterActions}>
-                    {next && (
-                      <Link to="/play/$id" params={{ id: next.id }} className={styles.linkButton}>
-                        Next: #{province.puzzles.indexOf(next) + 1}
-                        <ArrowIcon />
-                      </Link>
-                    )}
                     <Link
                       to="/c/$campaignId/$provinceId"
                       params={{ campaignId: campaign.id, provinceId: province.id }}
@@ -334,6 +327,12 @@ function Play({
                       Back to page
                     </Link>
                     <ClearButton store={store} solved />
+                    {next && (
+                      <Link to="/play/$id" params={{ id: next.id }} className={styles.linkButton}>
+                        Next: {next.title}
+                        <ArrowIcon />
+                      </Link>
+                    )}
                   </div>
                 </>
               )}

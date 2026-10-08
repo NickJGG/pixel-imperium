@@ -16,7 +16,7 @@
 .page {
   position: relative;
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  align-content: start;
   gap: var(--space-3);
   min-width: 0;
   padding: 20px;
@@ -74,17 +74,6 @@
 
 .slots > li {
   min-width: 0;
-}
-
-.pageNo {
-  align-self: end;
-  margin: 0;
-  font: 700 11px var(--font-mono);
-  opacity: 0.55;
-}
-
-.page:nth-child(2) .pageNo {
-  text-align: right;
 }
 
 .foot {

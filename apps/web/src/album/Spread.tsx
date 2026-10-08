@@ -6,12 +6,9 @@ import styles from './Spread.module.css'
 
 export const SLOTS_PER_PAGE = 15
 
-/** The album page that slot `number` (1-based) of province `index` is printed on; the first province starts at p. 1. */
-export const pageOf = (index: number, number: number) => 1 + 2 * index + (number > SLOTS_PER_PAGE ? 1 : 0)
-
 interface Props {
   province: Province
-  /** The province's place in its campaign, for its paper colour and page numbers. */
+  /** The province's place in its campaign, for its paper colour. */
   index: number
   solved: number
   /** Stamps the spread "Page complete". */
@@ -40,7 +37,6 @@ export function Spread({ province, index, solved, complete, caption, readOnly = 
           </div>
         </header>
         <Slots puzzles={pages[0]!} first={1} slot={slot} />
-        <p className={styles.pageNo}>p. {pageOf(index, 1)}</p>
       </div>
       <div className={styles.page}>
         <header className={styles.head}>
@@ -56,7 +52,6 @@ export function Spread({ province, index, solved, complete, caption, readOnly = 
           </span>
         </header>
         <Slots puzzles={pages[1]!} first={SLOTS_PER_PAGE + 1} slot={slot} />
-        <p className={styles.pageNo}>p. {pageOf(index, SLOTS_PER_PAGE + 1)}</p>
       </div>
       {(complete || caption) && (
         <footer className={styles.foot}>

@@ -476,8 +476,12 @@
 
 .linkButton.paper {
   color: var(--ink);
-  background: var(--card);
-  box-shadow: 0 var(--press) 0 var(--line-soft);
+  background: var(--line-soft);
+  box-shadow: 0 var(--press) 0 var(--shade);
+}
+
+.linkButton.paper:hover {
+  box-shadow: 0 calc(var(--press) + 1px) 0 var(--shade);
 }
 
 .tabChip {
@@ -525,12 +529,6 @@
   margin: 0;
   font-size: 18px;
   line-height: 1;
-}
-
-.sideHead p {
-  margin: var(--space-1) 0 0;
-  font: 700 12px var(--font-mono);
-  opacity: 0.7;
 }
 
 .count {

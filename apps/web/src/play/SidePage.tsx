@@ -2,7 +2,6 @@ import type { Ref, RefCallback } from 'react'
 import type { Province } from '@pixel-imperium/protocol'
 import { paperStyle } from '../album/paper.ts'
 import { Slot } from '../album/Slot.tsx'
-import { pageOf } from '../album/Spread.tsx'
 import { Stamp } from '../album/Stamp.tsx'
 import { GOLD_SLOT, PuzzleSlot } from '../campaign/PuzzleSlot.tsx'
 import { SIDE_PAGE_WIDTH } from './layout.ts'
@@ -13,7 +12,7 @@ const ROW = 5
 
 interface Props {
   province: Province
-  /** The province's place in its campaign, for its paper and page number. */
+  /** The province's place in its campaign, for its paper colour. */
   index: number
   /** The puzzle being played, 1-based on the province's pages. */
   number: number
@@ -37,13 +36,10 @@ export function SidePage({ province, index, number, storage, hideSticker, stampe
       ref={ref}
       className={styles.side}
       style={{ ...paperStyle(index), width: SIDE_PAGE_WIDTH }}
-      aria-label={`${province.name}, page ${pageOf(index, number)}`}
+      aria-label={province.name}
     >
       <header className={styles.sideHead}>
-        <div>
-          <h2>{province.name}</h2>
-          <p>p. {pageOf(index, number)}</p>
-        </div>
+        <h2>{province.name}</h2>
         <span className={styles.count}>
           {solved} / {province.puzzles.length}
         </span>
