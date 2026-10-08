@@ -15,12 +15,14 @@ import { play } from '../sound.ts'
 import { AssistChips } from '../play/AssistChips.tsx'
 import { Board } from '../play/Board.tsx'
 import { ColClues, RowClues } from '../play/Clues.tsx'
+import { useBoardGestures } from '../play/gestures.ts'
 import { HintButton, hintText } from '../play/HintButton.tsx'
-import { CLUE_SLOT, SIDE_PAGE_GAP, fitCellSize } from '../play/layout.ts'
+import { SIDE_PAGE_GAP, boardTracks, fitCellSize } from '../play/layout.ts'
 import { createLineHints } from '../play/line-hints.ts'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { type PlayState, PlayStore, crosshairOf } from '../play/store.ts'
 import { ToolToggle } from '../play/ToolToggle.tsx'
+import { BoardView } from '../play/viewport.ts'
 import type { Handoff } from './handoff.ts'
 import { LESSONS, type Lesson as LessonData, type LessonPuzzle, lessonPuzzle } from './lessons.ts'
 import { loadResume, saveResume } from './resume.ts'
@@ -175,6 +177,8 @@ function Lesson({ index, startStep, handoff, onNext, onFinish }: LessonProps) {
     return () => window.removeEventListener('keydown', onKey)
   }, [store])
 
+  const [boardView] = useState(() => new BoardView(store.puzzle, false))
+  const boardRef = useBoardGestures(store, boardView, free ? undefined : FIXED)
   const stageRef = useRef<HTMLDivElement>(null)
   const [cellSize, setCellSize] = useState(0)
   useLayoutEffect(() => {
@@ -199,9 +203,10 @@ function Lesson({ index, startStep, handoff, onNext, onFinish }: LessonProps) {
           <div ref={stageRef} className={`${playStyles.stage} ${styles.stage}`}>
             {cellSize > 0 && (
               <div
+                ref={boardRef}
                 className={playStyles.board}
                 data-revealed={palette !== null || undefined}
-                style={{ '--cell': `${cellSize}px`, '--clue-slot': `${cellSize * CLUE_SLOT}px` } as CSSProperties}
+                style={boardTracks(puzzle, cellSize) as CSSProperties}
               >
                 <div />
                 <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={clueAssists} highlight={colLines} />
@@ -209,6 +214,7 @@ function Lesson({ index, startStep, handoff, onNext, onFinish }: LessonProps) {
                 <Board
                   store={store}
                   cellSize={cellSize}
+                  view={boardView}
                   assists={free ? undefined : FIXED}
                   highlight={highlight}
                   mistake={cited}

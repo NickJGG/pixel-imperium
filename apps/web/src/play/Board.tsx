@@ -1,6 +1,7 @@
-import { type KeyboardEvent, type PointerEvent, useEffect, useRef, useSyncExternalStore } from 'react'
+import { type KeyboardEvent, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import { getSettings, subscribeSettings } from '../settings.ts'
 import { type PlayState, type PlayStore, type Pos, type Tool, crosshairOf } from './store.ts'
+import { type BoardView, type View, visibleRange } from './viewport.ts'
 import styles from './Play.module.css'
 
 const moves: Record<string, [number, number]> = {
@@ -28,7 +29,9 @@ export interface BoardAssists {
 
 interface Props {
   store: PlayStore
+  /** The fit cell size; the canvas stays this size while `view` zooms inside it. */
   cellSize: number
+  view: BoardView
   /** Overrides the player's settings, for a Lesson's fixed assists. */
   assists?: BoardAssists | undefined
   /** Cells to outline, for a Lesson step's targets. */
@@ -37,18 +40,16 @@ interface Props {
   mistake?: number | null | undefined
 }
 
-export function Board({ store, cellSize, assists, highlight, mistake = null }: Props) {
+export function Board({ store, cellSize, view, assists, highlight, mistake = null }: Props) {
   const { width, height } = store.puzzle
   const options = useRef({ assists, highlight, mistake })
   options.current = { assists, highlight, mistake }
   const redraw = useRef(() => {})
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const pointerId = useRef<number | null>(null)
   const heldKey = useRef<string | null>(null)
   const revealStart = useRef<number | null>(null)
-  const disarmContextMenu = useRef<(() => void) | null>(null)
 
-  useEffect(() => () => disarmContextMenu.current?.(), [])
+  useLayoutEffect(() => view.setFit(cellSize), [view, cellSize])
 
   useEffect(() => {
     const canvas = canvasRef.current!
@@ -64,7 +65,7 @@ export function Board({ store, cellSize, assists, highlight, mistake = null }: P
         revealElapsed = now - revealStart.current
       }
       const { assists = getSettings(), highlight = [], mistake } = options.current
-      paint(canvas, state, width, height, cellSize, {
+      paint(canvas, state, width, height, cellSize, view.view, {
         crosshair: assists.crosshair ? crosshairOf(state) : null,
         revealElapsed,
         highlight,
@@ -78,18 +79,20 @@ export function Board({ store, cellSize, assists, highlight, mistake = null }: P
     request()
     redraw.current = request
     const unsubscribe = store.subscribe(request)
+    const unsubscribeView = view.subscribe(request)
     const unsubscribeSettings = subscribeSettings(request)
     darkScheme.addEventListener('change', request)
     // Catches devicePixelRatio changes from browser zoom or moving between screens.
     window.addEventListener('resize', request)
     return () => {
       unsubscribe()
+      unsubscribeView()
       unsubscribeSettings()
       cancelAnimationFrame(frame)
       darkScheme.removeEventListener('change', request)
       window.removeEventListener('resize', request)
     }
-  }, [store, width, height, cellSize])
+  }, [store, view, width, height, cellSize])
 
   useEffect(() => redraw.current(), [assists?.crosshair, highlight, mistake])
 
@@ -97,68 +100,6 @@ export function Board({ store, cellSize, assists, highlight, mistake = null }: P
     const { cursor, cells } = store.getState()
     return `Row ${cursor.row + 1}, column ${cursor.col + 1}, ${cells[cursor.row * width + cursor.col]}`
   })
-
-  const posFrom = (e: PointerEvent): Pos => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const clamp = (n: number, max: number) => Math.min(Math.max(n, 0), max - 1)
-    return {
-      row: clamp(Math.floor((e.clientY - rect.top) / cellSize), height),
-      col: clamp(Math.floor((e.clientX - rect.left) / cellSize), width),
-    }
-  }
-
-  // On Windows, contextmenu fires on mouseup at whatever is under the cursor, and pointer capture
-  // doesn't retarget it, so a right-drag released off the board would open the menu there.
-  // The next pointerdown disarms the block in case no contextmenu arrives.
-  const armContextMenuBlock = () => {
-    disarmContextMenu.current?.()
-    const block = (e: Event) => {
-      e.preventDefault()
-      disarm()
-    }
-    const disarm = () => {
-      window.removeEventListener('contextmenu', block, true)
-      window.removeEventListener('pointerdown', disarm, true)
-      disarmContextMenu.current = null
-    }
-    window.addEventListener('contextmenu', block, true)
-    window.addEventListener('pointerdown', disarm, true)
-    disarmContextMenu.current = disarm
-  }
-
-  const onPointerDown = (e: PointerEvent<HTMLCanvasElement>) => {
-    if (pointerId.current !== null) return
-    let tool: Tool
-    if (e.pointerType === 'mouse') {
-      if (e.button === 0) tool = 'fill'
-      else if (e.button === 2) {
-        tool = 'mark'
-        armContextMenuBlock()
-      } else return
-    } else {
-      tool = store.getState().mode
-    }
-    // preventDefault suppresses the compat mouse events, which would otherwise focus the canvas.
-    e.preventDefault()
-    e.currentTarget.focus({ preventScroll: true })
-    e.currentTarget.setPointerCapture(e.pointerId)
-    pointerId.current = e.pointerId
-    store.setHover(null)
-    const { lockLine } = assists ?? getSettings()
-    const lockAxis = e.pointerType === 'mouse' ? e.shiftKey || lockLine : lockLine
-    store.beginStroke(posFrom(e), tool, { lockAxis })
-  }
-
-  const onPointerMove = (e: PointerEvent<HTMLCanvasElement>) => {
-    if (e.pointerId === pointerId.current) store.extendStroke(posFrom(e))
-    else if (e.pointerType === 'mouse' && pointerId.current === null) store.setHover(posFrom(e))
-  }
-
-  const onPointerEnd = (e: PointerEvent<HTMLCanvasElement>) => {
-    if (e.pointerId !== pointerId.current) return
-    pointerId.current = null
-    store.endStroke()
-  }
 
   const onKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return
@@ -200,17 +141,10 @@ export function Board({ store, cellSize, assists, highlight, mistake = null }: P
         tabIndex={0}
         role="application"
         aria-label={`Puzzle grid, ${width} by ${height}. Arrow keys or WASD move, hold Z to fill, hold X to mark.`}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerEnd}
-        onPointerCancel={onPointerEnd}
-        onLostPointerCapture={onPointerEnd}
-        onPointerLeave={() => store.setHover(null)}
         onFocus={() => store.setFocused(true)}
         onKeyDown={onKeyDown}
         onKeyUp={onKeyUp}
         onBlur={onBlur}
-        onContextMenu={e => e.preventDefault()}
       />
       <div className={styles.visuallyHidden} aria-live="polite">
         {announcement}
@@ -237,14 +171,15 @@ function paint(
   state: PlayState,
   width: number,
   height: number,
-  cell: number,
+  fitCell: number,
+  view: View,
   { crosshair, revealElapsed, highlight, mistake }: PaintOptions,
 ) {
   const dpr = window.devicePixelRatio || 1
-  const cssWidth = width * cell
-  const cssHeight = height * cell
-  const pxWidth = Math.round(cssWidth * dpr)
-  const pxHeight = Math.round(cssHeight * dpr)
+  const boxWidth = width * fitCell
+  const boxHeight = height * fitCell
+  const pxWidth = Math.round(boxWidth * dpr)
+  const pxHeight = Math.round(boxHeight * dpr)
   if (canvas.width !== pxWidth || canvas.height !== pxHeight) {
     canvas.width = pxWidth
     canvas.height = pxHeight
@@ -258,7 +193,14 @@ function paint(
   const mark = color('--board-mark')
 
   ctx.fillStyle = color('--board-bg')
-  ctx.fillRect(0, 0, cssWidth, cssHeight)
+  ctx.fillRect(0, 0, boxWidth, boxHeight)
+
+  // From here on, coordinates are the whole zoomed grid's; only the visible cells get drawn.
+  ctx.translate(view.panX, view.panY)
+  const { cell } = view
+  const cssWidth = width * cell
+  const cssHeight = height * cell
+  const { row0, row1, col0, col1 } = visibleRange(view, fitCell, { width, height })
 
   if (crosshair) {
     ctx.fillStyle = color('--board-crosshair')
@@ -276,33 +218,35 @@ function paint(
   ctx.lineWidth = Math.max(1, cell * 0.08)
   ctx.lineCap = 'round'
   const inset = cell * 0.3
-  state.cells.forEach((c, i) => {
-    const col = i % width
-    const row = Math.floor(i / width)
-    const x = col * cell
-    const y = row * cell
-    const t = revealAt(row, col)
-    if (c === 'filled') {
-      ctx.fillStyle = fill
-      ctx.fillRect(x, y, cell, cell)
-      const revealed = state.palette?.[i]
-      if (revealed && t > 0) {
-        ctx.globalAlpha = t
-        ctx.fillStyle = revealed
+  for (let row = row0; row <= row1; row++) {
+    for (let col = col0; col <= col1; col++) {
+      const i = row * width + col
+      const c = state.cells[i]
+      const x = col * cell
+      const y = row * cell
+      const t = revealAt(row, col)
+      if (c === 'filled') {
+        ctx.fillStyle = fill
         ctx.fillRect(x, y, cell, cell)
+        const revealed = state.palette?.[i]
+        if (revealed && t > 0) {
+          ctx.globalAlpha = t
+          ctx.fillStyle = revealed
+          ctx.fillRect(x, y, cell, cell)
+          ctx.globalAlpha = 1
+        }
+      } else if (c === 'marked' && t < 1) {
+        ctx.globalAlpha = 1 - t
+        ctx.beginPath()
+        ctx.moveTo(x + inset, y + inset)
+        ctx.lineTo(x + cell - inset, y + cell - inset)
+        ctx.moveTo(x + cell - inset, y + inset)
+        ctx.lineTo(x + inset, y + cell - inset)
+        ctx.stroke()
         ctx.globalAlpha = 1
       }
-    } else if (c === 'marked' && t < 1) {
-      ctx.globalAlpha = 1 - t
-      ctx.beginPath()
-      ctx.moveTo(x + inset, y + inset)
-      ctx.lineTo(x + cell - inset, y + cell - inset)
-      ctx.moveTo(x + cell - inset, y + inset)
-      ctx.lineTo(x + inset, y + cell - inset)
-      ctx.stroke()
-      ctx.globalAlpha = 1
     }
-  })
+  }
 
   // Lines straddle cell boundaries; every fifth is thicker, and the border sits fully inside.
   // Interior lines fade out during the reveal so the picture reads as one image.

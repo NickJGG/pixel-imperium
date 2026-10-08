@@ -217,6 +217,17 @@ export class PlayStore {
     this.commit()
   }
 
+  /** Drops the stroke as if it never happened: no undo step, nothing saved. */
+  cancelStroke(): void {
+    const s = this.stroke
+    if (!s) return
+    this.stroke = null
+    if (s.changes.length === 0) return
+    for (const c of s.changes.toReversed()) this.cells[c.index] = c.from
+    this.cellsChanged = true
+    this.emit({})
+  }
+
   undo(): void {
     if (this.state.solved) return
     this.endStroke()

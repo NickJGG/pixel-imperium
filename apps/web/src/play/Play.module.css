@@ -171,9 +171,29 @@
 .board {
   margin: auto;
   display: grid;
-  grid-template-columns: auto auto;
-  font: 600 calc(var(--cell) * 0.44) var(--font-ui);
+  grid-template-columns: var(--row-depth) var(--fit-width);
+  grid-template-rows: var(--col-depth) var(--fit-height);
+  /* Grows with the zoom, but never past what a clue slot holds. */
+  font: 600 min(var(--cell) * 0.44, var(--clue-slot) * 0.7) var(--font-ui);
   line-height: 1;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/*
+ * The strips are fixed at the depths and fit box layout.ts sized; the panels inside run the whole
+ * zoomed grid and slide with the pan. Paddings and number boxes are in clue slots, so they fit
+ * the depth at any zoom.
+ */
+.rowStrip,
+.colStrip {
+  overflow: hidden;
+}
+
+.board[data-zoomed] .rowStrip,
+.board[data-zoomed] .colStrip {
+  cursor: grab;
 }
 
 .colClues,
@@ -191,7 +211,10 @@
   grid-auto-flow: column;
   grid-auto-columns: var(--cell);
   align-items: stretch;
-  padding-bottom: var(--space-2);
+  height: 100%;
+  width: max-content;
+  padding-bottom: calc(var(--clue-slot) * 0.25);
+  transform: translateX(var(--pan-x));
 }
 
 .colLine {
@@ -199,12 +222,12 @@
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
-  padding: 6px 0 4px;
+  padding: calc(var(--clue-slot) * 0.15) 0 calc(var(--clue-slot) * 0.1);
   border-radius: var(--r-sm);
 }
 
 .colLine span {
-  height: calc(var(--cell) * 0.66);
+  height: calc(var(--clue-slot) * 0.825);
   display: flex;
   align-items: center;
 }
@@ -212,19 +235,21 @@
 .rowClues {
   display: grid;
   grid-auto-rows: var(--cell);
-  padding-right: 10px;
+  height: max-content;
+  padding-right: calc(var(--clue-slot) * 0.3);
+  transform: translateY(var(--pan-y));
 }
 
 .rowLine {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding: 0 4px 0 var(--space-2);
+  padding: 0 calc(var(--clue-slot) * 0.125);
   border-radius: var(--r-sm);
 }
 
 .rowLine span {
-  min-width: calc(var(--cell) * 0.58);
+  min-width: calc(var(--clue-slot) * 0.725);
   text-align: center;
 }
 

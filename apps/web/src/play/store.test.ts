@@ -108,6 +108,21 @@ describe('PlayStore strokes', () => {
     expect(s.getState().canRedo).toBe(false)
   })
 
+  it('cancels a stroke without an undo step or a save', () => {
+    const onSave = vi.fn()
+    const s = new PlayStore(makeStore().puzzle, { onSave })
+    drag(s, 'fill', [at(0, 0)])
+    s.beginStroke(at(2, 0), 'mark', { lockAxis: true })
+    s.extendStroke(at(2, 3))
+    expect(render(s)).toEqual(['#...', '....', 'xxxx'])
+    s.cancelStroke()
+    expect(render(s)).toEqual(['#...', '....', '....'])
+    expect(s.strokeActive).toBe(false)
+    expect(onSave).toHaveBeenCalledTimes(1)
+    s.undo()
+    expect(render(s)).toEqual(['....', '....', '....'])
+  })
+
   it('moving the cursor during a stroke paints along the way', () => {
     const s = makeStore()
     s.beginStroke(s.getState().cursor, 'fill', { lockAxis: false })

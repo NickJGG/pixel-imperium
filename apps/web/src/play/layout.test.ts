@@ -1,10 +1,43 @@
 import { describe, expect, it } from 'vitest'
-import { PILL_BAND, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, fitCellSize, fitPlay } from './layout.ts'
+import { PILL_BAND, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, clueDepth, clueSlot, fitCellSize, fitPlay } from './layout.ts'
 
-const square = (n: number) => ({
+const square = (n: number, clue: number[] = [1]) => ({
   width: n,
   height: n,
-  clues: { rows: Array.from({ length: n }, () => [1]), cols: Array.from({ length: n }, () => [1]) },
+  clues: { rows: Array.from({ length: n }, () => clue), cols: Array.from({ length: n }, () => clue) },
+})
+
+const boardSize = (cell: number, puzzle: ReturnType<typeof square>) => {
+  const slot = clueSlot(cell)
+  return {
+    width: cell * puzzle.width + clueDepth(puzzle.clues.rows, slot),
+    height: cell * puzzle.height + clueDepth(puzzle.clues.cols, slot),
+  }
+}
+
+describe('fitCellSize', () => {
+  it('keeps the cell-relative fit while the clue slot is unclamped', () => {
+    for (const n of [5, 10, 15]) {
+      for (const clue of [[1], [1, 1, 1], [2, 1, 2, 1]]) {
+        for (const side of [400, 520, 777, 1000]) {
+          const puzzle = square(n, clue)
+          const relative = Math.min(40, Math.floor(side / (n + clue.length * 0.8 + 0.4)))
+          if (relative * 0.8 < 14) continue
+          expect(fitCellSize({ width: side, height: side }, puzzle)).toBe(relative)
+        }
+      }
+    }
+  })
+
+  it('keeps big boards readable with deeper clues, still inside the box', () => {
+    const puzzle = square(30, [1, 2, 1, 2, 1, 2, 1])
+    const available = { width: 390, height: 600 }
+    const cell = fitCellSize(available, puzzle)
+    expect(clueSlot(cell)).toBe(14)
+    const size = boardSize(cell, puzzle)
+    expect(size.width).toBeLessThanOrEqual(available.width)
+    expect(boardSize(cell + 1, puzzle).width).toBeGreaterThan(available.width)
+  })
 })
 
 describe('fitPlay', () => {
@@ -34,7 +67,7 @@ describe('fitPlay', () => {
     for (const n of [5, 10, 15, 20, 30]) {
       for (const height of [400, 520, 640, 777, 900]) {
         const { cellSize } = fitPlay({ width: 2000, height }, square(n))
-        expect(cellSize * (n + 1.2)).toBeLessThanOrEqual(height - PILL_BAND)
+        expect(boardSize(cellSize, square(n)).height).toBeLessThanOrEqual(height - PILL_BAND)
       }
     }
   })

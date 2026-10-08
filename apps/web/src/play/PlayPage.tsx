@@ -21,8 +21,9 @@ import { AssistSwitches } from './AssistSwitches.tsx'
 import { Board, REVEAL_MS } from './Board.tsx'
 import { ClearButton, LoopIcon } from './ClearButton.tsx'
 import { ColClues, RowClues } from './Clues.tsx'
+import { useBoardGestures } from './gestures.ts'
 import { HintButton, hintText } from './HintButton.tsx'
-import { CLUE_SLOT, PILL_BAND, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, fitPlay } from './layout.ts'
+import { PILL_BAND, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, boardTracks, fitPlay } from './layout.ts'
 import { createLineHints } from './line-hints.ts'
 import { MoreMenu } from './MoreMenu.tsx'
 import { encodeCells } from './progress-storage.ts'
@@ -30,6 +31,7 @@ import { PuzzlePanel, SlotRow } from './PuzzlePanel.tsx'
 import { type Choreography, confetti, flyIn, popOnly } from './sticker-moment.ts'
 import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
 import { ToolPill } from './ToolPill.tsx'
+import { BoardView } from './viewport.ts'
 import styles from './Play.module.css'
 
 const route = getRouteApi('/play/$id')
@@ -87,6 +89,8 @@ function Play({
         onSave: sync ? () => sync.markDirty(puzzle.id) : undefined,
       }),
   )
+  const [boardView] = useState(() => new BoardView(puzzle, true))
+  const boardRef = useBoardGestures(store, boardView)
   const solved = useStoreValue(store, s => s.solved)
   const [conqueredBefore] = useState(isConquered)
   const previewConquest = route.useSearch().conquest === true
@@ -195,7 +199,6 @@ function Play({
     return () => clearTimeout(timer)
   }, [moment, palette, revealFailed])
 
-  const boardRef = useRef<HTMLDivElement>(null)
   const floatRef = useRef<HTMLDivElement>(null)
   const slotRef = useRef<HTMLElement | null>(null)
   const setSlot = (el: HTMLElement | null) => {
@@ -204,7 +207,7 @@ function Play({
   useLayoutEffect(() => {
     if (moment !== 'flying' && moment !== 'popping') return
     const float = floatRef.current!
-    const board = boardRef.current!.querySelector('canvas')!.getBoundingClientRect()
+    const board = stageRef.current!.querySelector('canvas')!.getBoundingClientRect()
     let choreography: Choreography
     if (moment === 'flying') {
       const slot = slotRef.current!.getBoundingClientRect()
@@ -361,17 +364,12 @@ function Play({
             ref={boardRef}
             className={styles.board}
             data-revealed={palette !== null || undefined}
-            style={
-              {
-                '--cell': `${cellSize}px`,
-                '--clue-slot': `${cellSize * CLUE_SLOT}px`,
-              } as CSSProperties
-            }
+            style={boardTracks(puzzle, cellSize) as CSSProperties}
           >
             <div />
             <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={assists} />
             <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={assists} />
-            <Board store={store} cellSize={cellSize} />
+            <Board store={store} cellSize={cellSize} view={boardView} />
           </div>
         )}
       </div>
