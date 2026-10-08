@@ -1,14 +1,12 @@
 import { type CSSProperties, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { Campaign, CampaignSummary } from '@pixel-imperium/protocol'
-import { Dymo } from '../album/Dymo.tsx'
-import { Lock } from '../album/Lock.tsx'
-import { paperStyle } from '../album/paper.ts'
 import { Slot } from '../album/Slot.tsx'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { VolumeShelf } from '../album/VolumeShelf.tsx'
 import { useAccount } from '../account.ts'
-import { campaignProgress, continueAt, isOpen } from './progress.ts'
+import { campaignProgress, continueAt } from './progress.ts'
+import { ProvinceIndex } from './ProvinceIndex.tsx'
 import { GOLD_SLOT } from './PuzzleSlot.tsx'
 import { SHOWCASE_SIZE, type StickerEntry, coverStickers, latestStickers, showcaseOf } from './stickers.ts'
 import styles from './Cover.module.css'
@@ -84,32 +82,15 @@ function Cover({ campaign, campaigns }: Props) {
                 />
               ))}
             </div>
-            <ol className={styles.index} aria-label="Provinces">
-              {campaign.provinces.map((province, i) => {
-                const { state, solved, total } = progress.provinces[i]!
-                return (
-                  <li key={province.id} style={paperStyle(i)} data-locked={!isOpen(state) || undefined}>
-                    <Link to="/c/$campaignId/$provinceId" params={{ campaignId: campaign.id, provinceId: province.id }}>
-                      {province.name}
-                    </Link>
-                    {state === 'conquered' ? (
-                      <Dymo tone="pink" className={styles.complete}>
-                        Complete
-                      </Dymo>
-                    ) : isOpen(state) ? (
-                      <small>
-                        {solved}/{total}
-                      </small>
-                    ) : (
-                      <small>
-                        <Lock />
-                        Locked
-                      </small>
-                    )}
-                  </li>
-                )
-              })}
-            </ol>
+            <ProvinceIndex
+              campaign={campaign}
+              progress={progress}
+              name={province => (
+                <Link to="/c/$campaignId/$provinceId" params={{ campaignId: campaign.id, provinceId: province.id }}>
+                  {province.name}
+                </Link>
+              )}
+            />
             {next && (
               <div className={styles.cta}>
                 <Link to="/play/$id" params={{ id: next.puzzle.id }} className={`${styles.pill} ${styles.primary}`}>
@@ -175,7 +156,6 @@ function Cover({ campaign, campaigns }: Props) {
           </section>
         </div>
       </div>
-
     </main>
   )
 }

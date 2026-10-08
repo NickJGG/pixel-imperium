@@ -28,7 +28,7 @@
 }
 
 .showcase > li > *,
-.latest > li > *,
+.latest > li > :first-child,
 .fill > * {
   width: 100%;
 }
@@ -46,36 +46,6 @@
   display: grid;
   gap: 22px;
   min-width: 0;
-}
-
-.stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px 22px;
-  margin: 0;
-}
-
-/* The number above its label. */
-.stats > div {
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 2px;
-}
-
-.stats dt {
-  font: 600 13px var(--font-ui);
-  color: var(--ink-soft);
-}
-
-.stats dd {
-  margin: 0;
-  font: 400 30px/1 var(--font-display);
-  letter-spacing: -0.05em;
-}
-
-.stats .date {
-  font: 700 22px/1.35 var(--font-mono);
-  letter-spacing: 0;
 }
 
 .actions {
@@ -158,16 +128,213 @@
 }
 
 .latest {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 16px 14px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .latest > li {
-  width: 54px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.latest time,
+.stamps time {
+  font: 700 11px var(--font-mono);
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+/* Beats `.side section`'s gap. */
+.side > .summary {
+  gap: 14px;
+  padding: 18px 18px 16px;
+  color: var(--ink);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: 0 5px 0 var(--shade);
+}
+
+.summaryTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 20px;
+}
+
+.big {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+}
+
+.big b {
+  font: 400 40px/1 var(--font-display);
+  letter-spacing: -0.05em;
+}
+
+.big span {
+  font: 600 15px var(--font-ui);
+  color: var(--ink-soft);
+}
+
+.foilBig b {
+  font-size: 26px;
+  color: var(--pink);
+}
+
+.segs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+
+.segs > i {
+  height: 10px;
+  background: linear-gradient(to right, var(--tab) var(--p), var(--card-2) var(--p));
+  border-radius: 3px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 28px;
+  margin: 0;
+  padding-top: 4px;
+  border-top: 2px dashed var(--line-soft);
+}
+
+.facts > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--line-soft) 60%, transparent);
+}
+
+.facts dt {
+  font: 600 14px var(--font-ui);
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.facts dd {
+  margin: 0 0 0 auto;
+  font: 700 14px var(--font-mono);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.facts small {
+  margin-left: 4px;
+  font: 600 12px var(--font-ui);
+  color: var(--ink-soft);
+}
+
+.calWrap {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.cal {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, auto);
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 3px;
+}
+
+.cal > i,
+.keyScale > i {
+  aspect-ratio: 1;
+  background: var(--card-2);
+  border-radius: 3px;
+}
+
+.cal > [data-future] {
+  visibility: hidden;
+}
+
+.cal > [data-level='1'],
+.keyScale > [data-level='1'] {
+  background: color-mix(in srgb, var(--blue) 40%, var(--card-2));
+}
+
+.cal > [data-level='2'],
+.keyScale > [data-level='2'] {
+  background: color-mix(in srgb, var(--blue) 70%, var(--card-2));
+}
+
+.cal > [data-level='3'],
+.keyScale > [data-level='3'] {
+  background: var(--blue);
+}
+
+.cal > [data-foil],
+.keyScale > [data-foil] {
+  background: var(--pink);
+}
+
+.calKey {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 0;
+  font: 600 12px var(--font-ui);
+  color: var(--ink-soft);
+}
+
+.keyScale {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.keyScale > i {
+  width: 10px;
+  border-radius: 2px;
+}
+
+.stamps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+}
+
+.stamps > li {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: 92px;
+  font: 600 12px/1.2 var(--font-ui);
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.stamps .stamp {
+  width: 76px;
+  height: 76px;
+  padding: 6px;
+  font-size: 9px;
+}
+
+.stamps > [data-off] .stamp {
+  color: color-mix(in srgb, var(--ink-soft) 70%, var(--sticker));
+  border-style: dashed;
+  box-shadow: none;
 }
 
 @media (max-width: 900px) {
@@ -182,5 +349,15 @@
   .showcase {
     max-width: 420px;
     margin-inline: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .big b {
+    font-size: 32px;
   }
 }

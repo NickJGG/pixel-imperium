@@ -1,0 +1,81 @@
+.index {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.index li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 6px 10px;
+  font: 600 15px var(--font-ui);
+  background: rgb(255 255 255 / 0.1);
+  border-radius: var(--r-sm);
+}
+
+.index li::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  background: var(--tab);
+  border-radius: 3px;
+}
+
+.index li[data-locked] {
+  opacity: 0.55;
+}
+
+.index li:has(a):hover {
+  background: rgb(255 255 255 / 0.18);
+}
+
+.index a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* The whole row is the link. */
+.index a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.index small {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 700 12px var(--font-mono);
+}
+
+.complete {
+  padding: 3px 6px 2px;
+  font-size: 9px;
+}
+
+.strip {
+  grid-column: 2 / -1;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 2px;
+}
+
+.strip > i {
+  height: 6px;
+  background: rgb(255 255 255 / 0.15);
+  border-radius: 1px;
+}
+
+.strip > [data-mark='filled'] {
+  background: var(--tab);
+}
+
+.strip > [data-mark='foil'] {
+  background: var(--sticker);
+}

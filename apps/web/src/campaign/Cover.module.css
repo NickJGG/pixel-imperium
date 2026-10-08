@@ -167,66 +167,6 @@
   background: var(--sticker);
 }
 
-.index {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.index li {
-  position: relative;
-  display: grid;
-  grid-template-columns: 12px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
-  font: 600 15px var(--font-ui);
-  background: rgb(255 255 255 / 0.1);
-  border-radius: var(--r-sm);
-}
-
-.index li::before {
-  content: '';
-  width: 12px;
-  height: 12px;
-  background: var(--tab);
-  border-radius: 3px;
-}
-
-.index li[data-locked] {
-  opacity: 0.55;
-}
-
-.index li:hover {
-  background: rgb(255 255 255 / 0.18);
-}
-
-.index a {
-  color: inherit;
-  text-decoration: none;
-}
-
-/* The whole row is the link. */
-.index a::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-}
-
-.index small {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font: 700 12px var(--font-mono);
-}
-
-.index .complete {
-  padding: 3px 6px 2px;
-  font-size: 9px;
-}
-
 .cta {
   display: flex;
   flex-wrap: wrap;
@@ -350,36 +290,6 @@
   width: 54px;
 }
 
-.pages {
-  display: grid;
-  gap: var(--space-3);
-  margin-top: var(--space-7);
-}
-
-.thumbs {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.thumbLink {
-  display: block;
-  color: inherit;
-  text-decoration: none;
-  transition: transform 120ms;
-}
-
-.thumbLink > * {
-  height: 100%;
-}
-
-.thumbLink:hover {
-  transform: translateY(-2px);
-}
-
 @media (max-width: 900px) {
   .home {
     grid-template-columns: minmax(0, 1fr);
@@ -399,17 +309,9 @@
   .cover {
     padding: 18px 16px 18px 28px;
   }
-
-  .thumbs {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 460px) {
-  .thumbs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .slaps > :nth-child(3) {
     display: none;
   }
@@ -417,13 +319,11 @@
 
 @media (prefers-reduced-motion: reduce) {
   .stickerLink,
-  .thumbLink,
   .pill {
     transition: none;
   }
 
   .stickerLink:hover,
-  .thumbLink:hover,
   .pill:hover {
     transform: none;
   }
