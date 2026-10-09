@@ -30,7 +30,7 @@ import { type Lesson as LessonData, type LessonPuzzle, lessonPuzzle } from './le
 import { markDone, useLessonsDone } from './done.ts'
 import { loadResume, saveResume } from './resume.ts'
 import { type Track, lessonKey } from './tracks.ts'
-import { cellsBefore, currentStep, feedback, isWrong, stepCells, wrongCell } from './steps.ts'
+import { type Cite, cellsBefore, cite, citedFlag, currentStep, lessonFeedback, stepCells } from './steps.ts'
 import playStyles from '../play/Play.module.css'
 import styles from './Lesson.module.css'
 
@@ -164,12 +164,21 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
   const highlight = useMemo(() => (solved ? [] : stepCells(shown, width)), [solved, shown, width])
   const { rows: rowLines = [], cols: colLines = [] } = solved ? {} : shown.highlight
 
+  const [beat, setBeat] = useState(0)
+  const [beatStep, setBeatStep] = useState(step)
+  if (beatStep !== step) {
+    setBeatStep(step)
+    setBeat(0)
+  }
+  const lastBeat = shown.beats.length - 1
+  const next = () => setBeat(b => Math.min(b + 1, lastBeat))
+
   const [lineHints] = useState(() => createLineHints(store.puzzle))
   const hints = useMemo(() => lineHints(cells), [lineHints, cells])
   const { fadeClues, impossibleLines } = assists
   const clueAssists = useMemo(() => ({ fade: fadeClues, impossible: impossibleLines }), [fadeClues, impossibleLines])
 
-  const [mistake, setMistake] = useState<number | null>(null)
+  const [cited, setCited] = useState<Cite | null>(null)
   useEffect(() => {
     if (free) return
     let before = store.getState().cells
@@ -178,10 +187,17 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
       if (cells === before) return
       const prev = before
       before = cells
-      setMistake(cited => wrongCell(puzzle, cells, prev, cited))
+      setCited(c => cite(puzzle, lesson, cells, prev, c))
     })
-  }, [store, puzzle, free])
-  const cited = !solved && mistake !== null && isWrong(puzzle, cells, mistake) ? mistake : null
+  }, [store, puzzle, lesson, free])
+  const flag = solved ? null : citedFlag(puzzle, lesson, cells, cited)
+  const flagged =
+    flag && cited
+      ? {
+          cell: cited.cell,
+          text: lessonFeedback(puzzle, lesson.steps[Math.min(cited.step, lesson.steps.length - 1)]!, cells[cited.cell]!, flag),
+        }
+      : null
 
   useEffect(() => {
     if (!solved) saveResume(track, { lesson: lesson.id, step: Math.min(step, lesson.steps.length - 1) })
@@ -249,7 +265,7 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
                   view={boardView}
                   assists={free ? undefined : FIXED}
                   highlight={highlight}
-                  mistake={cited}
+                  mistake={flagged?.cell ?? null}
                 />
               </div>
             )}
@@ -280,8 +296,10 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
           lesson={lesson}
           index={index}
           step={step}
+          beat={beat}
+          onBeat={next}
           solved={solved}
-          feedback={cited === null ? null : feedback(puzzle, cells, cited)}
+          feedback={flagged?.text ?? null}
           foot={foot}
           onNext={onNext}
           onFinish={onFinish}
@@ -296,6 +314,8 @@ interface CoachProps {
   lesson: LessonData
   index: number
   step: number
+  beat: number
+  onBeat: () => void
   solved: boolean
   feedback: string | null
   foot: Foot
@@ -303,7 +323,7 @@ interface CoachProps {
   onFinish: () => void
 }
 
-function Coach({ track, lesson, index, step, solved, feedback, foot, onNext, onFinish }: CoachProps) {
+function Coach({ track, lesson, index, step, beat, onBeat, solved, feedback, foot, onNext, onFinish }: CoachProps) {
   const { steps } = lesson
   const shown = steps[Math.min(step, steps.length - 1)]!
   const { lessons } = track
@@ -354,9 +374,13 @@ function Coach({ track, lesson, index, step, solved, feedback, foot, onNext, onF
         </ol>
       )}
       <div className={styles.text} aria-live="polite">
-        {solved ? <p>{lesson.done}</p> : shown.text.map((p, i) => <p key={i}>{rich(p)}</p>)}
-        {!solved && shown.slide && <Slide {...shown.slide} />}
+        <p>{solved ? lesson.done : rich(shown.beats[beat]!.text)}</p>
       </div>
+      {!solved && beat < shown.beats.length - 1 && (
+        <button type="button" onClick={onBeat}>
+          Next →
+        </button>
+      )}
       {feedback && (
         <p className={styles.feedback} role="status">
           {rich(feedback)}
@@ -390,29 +414,6 @@ function rich(text: string): ReactNode[] {
     if (part.startsWith('`')) return <kbd key={i}>{part.slice(1, -1)}</kbd>
     return <i key={i}>{part.slice(1, -1)}</i>
   })
-}
-
-/** A block pushed to each end of its line, and the cells it covers both ways. */
-function Slide({ block, line }: { block: number; line: number }) {
-  const left = (i: number) => i < block
-  const right = (i: number) => i >= line - block
-  const rows = [
-    { label: 'left', covers: left },
-    { label: 'right', covers: right },
-    { label: 'both', covers: (i: number) => left(i) && right(i) },
-  ]
-  return (
-    <div className={styles.slide} role="img" aria-label={`A block of ${block} pushed left and right in ${line} cells`}>
-      {rows.map(({ label, covers }) => (
-        <div key={label} className={styles.slideRow} style={{ '--line': line } as CSSProperties}>
-          <span>{label}</span>
-          {Array.from({ length: line }, (_, i) => (
-            <b key={i} data-state={covers(i) ? (left(i) && right(i) ? 'both' : 'on') : undefined} />
-          ))}
-        </div>
-      ))}
-    </div>
-  )
 }
 
 const TILTS = [-4, 3, -2, 4, -3]

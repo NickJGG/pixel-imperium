@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { type SolverCell, isLogicSolvable, isUnique, lineSolve } from '@pixel-imperium/nonogram'
-import { type Lesson, LESSONS, lessonPuzzle } from './lessons.ts'
+import { type Draw, type Lesson, type LineRef, LESSONS, lessonPuzzle } from './lessons.ts'
 import { cellsBefore, currentStep } from './steps.ts'
 import { TECHNIQUES } from './techniques.ts'
 import { TRACKS } from './tracks.ts'
@@ -34,6 +34,15 @@ function deducible(lesson: Lesson, stepIndex: number): SolverCell[] {
     }
   }
   return g
+}
+
+/** The cells a draw covers along its line. A `bad` ghost may run off the grid, so only its start counts. */
+function extent(draw: Draw): { line: LineRef; from: number; to: number } {
+  if ('ghost' in draw) {
+    const { at, len, tone } = draw.ghost
+    return { line: draw.ghost, from: Math.min(...at), to: Math.max(...at) + (tone === 'bad' ? 0 : len - 1) }
+  }
+  return 'both' in draw ? { line: draw.both, ...draw.both } : { line: draw.bracket, ...draw.bracket }
 }
 
 describe.each(Object.values(TRACKS).map(t => [t.id, t] as const))('%s track', (_, track) => {
@@ -76,6 +85,18 @@ describe.each([...LESSONS, ...TECHNIQUES].map(l => [l.picture, l] as const))('%s
   })
 
   lesson.steps.forEach((step, i) => {
+    it(`step ${i + 1} has beats, and draws only in bounds on its highlighted lines`, () => {
+      expect(step.beats.length).toBeGreaterThan(0)
+      const { rows = [], cols = [] } = step.highlight
+      for (const draw of step.beats.flatMap(b => b.draw ?? [])) {
+        const { line, from, to } = extent(draw)
+        const [lines, length] = line.row !== undefined ? [rows, width] : [cols, height]
+        expect(lines).toContain(line.row ?? line.col)
+        expect(from).toBeGreaterThanOrEqual(0)
+        expect(to).toBeLessThan(length)
+      }
+    })
+
     if (step.target === 'solved') return
     const { filled = [], marked = [] } = step.target
     it(`step ${i + 1} asks only for cells its highlighted lines imply`, () => {

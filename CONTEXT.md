@@ -53,6 +53,10 @@ _Avoid_: Academy, school, lessons page, hub (in product copy)
 One guided picture grid within the **Tutorial** or **Techniques**; it **Reveals** like a **Puzzle** but earns no **Sticker**.
 _Avoid_: Drill, step (a step is one prompt within a lesson)
 
+**Beat**:
+One callout within a step of a **Lesson**. Talk beats explain and wait for Next; the step's last beat, the do beat, waits for the step's cells.
+_Avoid_: Slide, page, tip
+
 ### Players
 
 **Player**:

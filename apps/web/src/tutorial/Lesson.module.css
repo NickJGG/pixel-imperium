@@ -114,37 +114,6 @@
   box-shadow: 0 2px 0 var(--shade);
 }
 
-.slide {
-  display: grid;
-  gap: 4px;
-  padding: 10px;
-  background: var(--card);
-  border-radius: var(--r-md);
-}
-
-.slideRow {
-  display: grid;
-  grid-template-columns: 58px repeat(var(--line), 1fr);
-  gap: 3px;
-  align-items: center;
-  font: 700 11px var(--font-mono);
-  color: var(--ink-soft);
-}
-
-.slideRow b {
-  height: 16px;
-  background: var(--card-2);
-  border-radius: 3px;
-}
-
-.slideRow b[data-state='on'] {
-  background: var(--board-fill);
-}
-
-.slideRow b[data-state='both'] {
-  background: var(--pink);
-}
-
 .feedback {
   margin: 0;
   padding: 10px 12px;
