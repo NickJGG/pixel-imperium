@@ -5,12 +5,22 @@
  */
 import { useSyncExternalStore } from 'react'
 import type { Assists, HandleProblem, ImportItem } from '@pixel-imperium/protocol'
-import { fetchMyProgress, importProgress, putHandle, putProgress, putSettings, putTutorialAsked, submitSolve } from './api.ts'
+import {
+  fetchMyProgress,
+  importProgress,
+  putHandle,
+  putLessonDone,
+  putProgress,
+  putSettings,
+  putTutorialAsked,
+  submitSolve,
+} from './api.ts'
 import { deleteUser, getSession, refreshSession, signOut } from './auth.ts'
 import { ProgressStorage, signedOutStorage } from './play/progress-storage.ts'
 import { assistsOf, getSettings, subscribeSettings, updateSettings } from './settings.ts'
 import { ProgressSync } from './sync.ts'
 import { getAskedAt, recordAsked, subscribeAsked } from './tutorial/asked.ts'
+import { getDone, recordDone, subscribeDone } from './tutorial/done.ts'
 
 interface Account {
   userId: string
@@ -97,6 +107,18 @@ function pushAskedIfNeeded(): void {
   putTutorialAsked().catch(() => (syncedAsked = false))
 }
 
+/** The finished Lessons the server is known to have. */
+let syncedDone = new Set<string>()
+
+function pushDoneIfNeeded(): void {
+  if (!state.account) return
+  for (const key of getDone()) {
+    if (syncedDone.has(key)) continue
+    syncedDone.add(key)
+    putLessonDone(key).catch(() => syncedDone.delete(key))
+  }
+}
+
 let stopListening = () => {}
 
 function listen(sync: ProgressSync): void {
@@ -106,18 +128,21 @@ function listen(sync: ProgressSync): void {
     void sync.reconnect()
     pushAssistsIfChanged()
     pushAskedIfNeeded()
+    pushDoneIfNeeded()
   }
   window.addEventListener('pagehide', leave)
   document.addEventListener('visibilitychange', onVisibility)
   window.addEventListener('online', onOnline)
   const unsubscribeSettings = subscribeSettings(pushAssistsIfChanged)
   const unsubscribeAsked = subscribeAsked(pushAskedIfNeeded)
+  const unsubscribeDone = subscribeDone(pushDoneIfNeeded)
   stopListening = () => {
     window.removeEventListener('pagehide', leave)
     document.removeEventListener('visibilitychange', onVisibility)
     window.removeEventListener('online', onOnline)
     unsubscribeSettings()
     unsubscribeAsked()
+    unsubscribeDone()
     sync.dispose()
   }
 }
@@ -139,6 +164,9 @@ async function refresh(sync: ProgressSync): Promise<boolean> {
     syncedAsked = false
     pushAskedIfNeeded()
   }
+  syncedDone = new Set(data.lessonsDone)
+  recordDone(data.lessonsDone)
+  pushDoneIfNeeded()
   setState({ generation: state.generation + 1 })
   return true
 }
@@ -233,6 +261,7 @@ function reset(): void {
   sessionId = null
   syncedAssists = ''
   syncedAsked = false
+  syncedDone = new Set()
   setState({ ...SIGNED_OUT, generation: state.generation + 1 })
 }
 

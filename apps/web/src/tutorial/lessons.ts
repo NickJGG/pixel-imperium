@@ -24,6 +24,8 @@ export interface LessonStep {
  * `palette` key). A `free` lesson runs on the player's own assists and has a Hint.
  */
 export interface Lesson {
+  /** A slug, unique within its track, for URLs and completion keys. */
+  id: string
   title: string
   picture: string
   palette: Record<string, string>
@@ -42,6 +44,7 @@ const ALL = [0, 1, 2, 3, 4]
 
 export const LESSONS: readonly Lesson[] = [
   {
+    id: 'reading-clues',
     title: 'Reading clues',
     picture: 'Gate',
     palette: { t: '#8f8a80', w: '#efe3c8' },
@@ -72,6 +75,7 @@ export const LESSONS: readonly Lesson[] = [
     done: "Every clue is satisfied, so the puzzle is solved and its colours are revealed. That's the whole game. The next lessons are about working out cells when it isn't this obvious.",
   },
   {
+    id: 'ruling-out',
     title: 'Ruling cells out',
     picture: 'Circlet',
     palette: { g: '#ffc92e', G: '#c78a00', p: '#ff4fa3', u: '#5b7cff' },
@@ -111,6 +115,7 @@ export const LESSONS: readonly Lesson[] = [
     done: "Whenever the blocks plus their gaps add up to the line's length, the line is fully determined. Look for these first in every puzzle.",
   },
   {
+    id: 'overlap',
     title: 'Overlap',
     picture: 'Banner',
     palette: { k: '#5b3a1e', f: '#c8312b', s: '#8f8a80' },
@@ -149,6 +154,7 @@ export const LESSONS: readonly Lesson[] = [
     done: "Overlap is the workhorse: a long block in a short line always pins down its middle. You'll use it on almost every big puzzle.",
   },
   {
+    id: 'putting-it-together',
     title: 'Putting it together',
     picture: 'Crown',
     palette: { g: '#ffc92e', G: '#c78a00', p: '#ff4fa3', u: '#5b7cff' },

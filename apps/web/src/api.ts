@@ -81,6 +81,12 @@ export async function putTutorialAsked(): Promise<void> {
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
 }
 
+/** Records a finished Lesson by its `<track>:<lesson>` key. */
+export async function putLessonDone(key: string): Promise<void> {
+  const res = await fetch(`/api/me/lessons/${key}`, { method: 'PUT' })
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+}
+
 export const putShowcase = (puzzleIds: string[]) =>
   getJson<Showcase>('/api/me/showcase', jsonInit('PUT', { puzzleIds } satisfies Showcase))
 

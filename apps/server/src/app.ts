@@ -26,7 +26,7 @@ import type {
 import { and, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm'
 import type { Auth } from './auth.ts'
 import type { Db } from './db/index.ts'
-import { hint, progress, solve, user, userSettings } from './db/schema.ts'
+import { hint, lessonDone, progress, solve, user, userSettings } from './db/schema.ts'
 import { handleProblem } from './handles.ts'
 import { rateLimiter } from './rate-limit.ts'
 import { parseCells, planImport } from './import.ts'
@@ -58,6 +58,8 @@ function parseImportItem(value: unknown): ImportItem | null {
 }
 
 const SHOWCASE_SIZE = 3
+
+const LESSON_KEY = /^(tutorial|techniques):[a-z0-9-]+$/
 
 /** Distinct puzzle ids, at most `SHOWCASE_SIZE`; whether they're the player's verified solves is checked separately. */
 function parseShowcase(value: unknown): string[] | null {
@@ -258,7 +260,7 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
     })
     .get('/me/progress', async c => {
       const userId = c.get('user')!.id
-      const [solves, grids, hints, [settings], [me]] = await Promise.all([
+      const [solves, grids, hints, [settings], [me], lessons] = await Promise.all([
         db.select().from(solve).where(eq(solve.userId, userId)),
         db.select().from(progress).where(eq(progress.userId, userId)),
         db.select({ puzzleId: hint.puzzleId }).from(hint).where(eq(hint.userId, userId)),
@@ -267,6 +269,7 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
           .select({ showcase: user.showcase, tutorialAskedAt: user.tutorialAskedAt })
           .from(user)
           .where(eq(user.id, userId)),
+        db.select({ lesson: lessonDone.lesson }).from(lessonDone).where(eq(lessonDone.userId, userId)),
       ])
       const records: Record<string, PuzzleRecord> = {}
       const record = (id: string) =>
@@ -287,6 +290,7 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         assists: settings?.assists ?? null,
         showcase,
         tutorialAskedAt: me?.tutorialAskedAt?.toISOString() ?? null,
+        lessonsDone: lessons.map(l => l.lesson),
       })
     })
     .put('/me/tutorial', async c => {
@@ -294,6 +298,12 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         .update(user)
         .set({ tutorialAskedAt: new Date() })
         .where(and(eq(user.id, c.get('user')!.id), isNull(user.tutorialAskedAt)))
+      return c.body(null, 204)
+    })
+    .put('/me/lessons/:key', async c => {
+      const lesson = c.req.param('key')
+      if (!LESSON_KEY.test(lesson)) return c.json<ApiError>({ error: 'unknown lesson' }, 400)
+      await db.insert(lessonDone).values({ userId: c.get('user')!.id, lesson }).onConflictDoNothing()
       return c.body(null, 204)
     })
     .put('/me/showcase', async c => {

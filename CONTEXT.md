@@ -42,8 +42,12 @@ A short, skippable guided sequence of **Lessons** teaching how to solve nonogram
 _Avoid_: Onboarding, intro, training, guide
 
 **Techniques**:
-A second guided sequence of **Lessons** on harder line deductions, offered mid-**Campaign**; outside any **Campaign**.
+A second guided sequence of **Lessons** on harder line deductions, always open from **Learn** and offered once, on the first **Puzzle** of the province that flags it; outside any **Campaign**.
 _Avoid_: Advanced tutorial, masterclass, Tutorial 2
+
+**Learn**:
+The page at `/learn` listing every **Lesson** of the **Tutorial** (labelled "Basics" there) and **Techniques**, with what the **Player** has finished.
+_Avoid_: Academy, school, lessons page, hub (in product copy)
 
 **Lesson**:
 One guided picture grid within the **Tutorial** or **Techniques**; it **Reveals** like a **Puzzle** but earns no **Sticker**.

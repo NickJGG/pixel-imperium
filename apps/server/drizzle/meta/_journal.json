@@ -36,6 +36,13 @@
       "when": 1791477731478,
       "tag": "0004_tutorial_asked",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791505121329,
+      "tag": "0005_lessons_done",
+      "breakpoints": true
     }
   ]
 }

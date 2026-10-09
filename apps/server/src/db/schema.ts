@@ -138,3 +138,16 @@ export const userSettings = pgTable('user_settings', {
     .references(() => user.id, { onDelete: 'cascade' }),
   assists: jsonb('assists').$type<Assists>().notNull(),
 })
+
+/** A finished Lesson, keyed `<track>:<lesson>` as in the web app's `tutorial/done.ts`. */
+export const lessonDone = pgTable(
+  'lesson_done',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    lesson: text('lesson').notNull(),
+    doneAt: timestamp('done_at').defaultNow().notNull(),
+  },
+  t => [primaryKey({ columns: [t.userId, t.lesson] })],
+)

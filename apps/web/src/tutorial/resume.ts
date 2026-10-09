@@ -2,20 +2,20 @@
 import type { Track } from './tracks.ts'
 
 export interface ResumeAt {
-  lesson: number
+  /** The Lesson's id. */
+  lesson: string
   step: number
 }
 
-const START: ResumeAt = { lesson: 0, step: 0 }
-
-export function loadResume(track: Track): ResumeAt {
+/** `null` when nothing valid is saved. */
+export function loadResume(track: Track): ResumeAt | null {
   try {
     const { lesson, step } = JSON.parse(localStorage.getItem(track.resumeKey) ?? 'null') as Partial<ResumeAt>
-    const steps = typeof lesson === 'number' ? track.lessons[lesson]?.steps.length : undefined
-    if (steps === undefined || typeof step !== 'number' || !Number.isInteger(step) || step < 0 || step >= steps) return START
+    const steps = track.lessons.find(l => l.id === lesson)?.steps.length
+    if (steps === undefined || typeof step !== 'number' || !Number.isInteger(step) || step < 0 || step >= steps) return null
     return { lesson: lesson!, step }
   } catch {
-    return START
+    return null
   }
 }
 

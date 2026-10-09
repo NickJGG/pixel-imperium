@@ -9,6 +9,7 @@ function board(rows: string[]): Placed {
 
 export const TECHNIQUES: readonly Lesson[] = [
   {
+    id: 'edges',
     title: 'Edges',
     picture: 'Spruce',
     palette: { g: '#2f6b34', h: '#5a9e4b', k: '#7a4f2a', s: '#e9eef0' },
@@ -84,6 +85,7 @@ export const TECHNIQUES: readonly Lesson[] = [
     done: "A block can't cross the edge of the grid or a cross, so a filled cell near one tells you which way its block runs. When a line seems stuck, look at its ends and its crosses first.",
   },
   {
+    id: 'joining-splitting',
     title: 'Joining and splitting',
     picture: 'Mushrooms',
     palette: { r: '#c8312b', w: '#f2ede0', c: '#e3d3b0', g: '#5a9e4b' },
@@ -148,6 +150,7 @@ export const TECHNIQUES: readonly Lesson[] = [
     done: "Two filled cells in a line are the same block when only one block can reach both, and different blocks when joining them would be too long. A run as long as the biggest clue is complete, so both its ends are empty.",
   },
   {
+    id: 'which-block',
     title: 'Which block is which',
     picture: 'Buck',
     palette: { a: '#d9c7a1', b: '#8a5a33', e: '#6e4526', k: '#2e2a26', n: '#2e2a26' },
@@ -209,6 +212,7 @@ export const TECHNIQUES: readonly Lesson[] = [
     done: "Clues are in order, so a filled cell can only belong to blocks that have room on both sides of it. Once you know whose cell it is, every other block has to fit around it.",
   },
   {
+    id: 'what-if',
     title: 'What if',
     picture: 'Bonfire',
     palette: { f: '#e8692c', y: '#ffc92e', k: '#6b4226' },
@@ -263,6 +267,7 @@ export const TECHNIQUES: readonly Lesson[] = [
     done: "That's the last trick: suppose, and see if the line still fits. Keep it to one line at a time. Every puzzle in the Imperium can be solved line by line, so you never need to guess across the whole grid.",
   },
   {
+    id: 'putting-it-together',
     title: 'Putting it together',
     picture: 'Lynx',
     palette: { t: '#b5833f', w: '#f2ede0', k: '#2e2a26' },

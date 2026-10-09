@@ -2,7 +2,7 @@
  * A track's Lessons on the real board (the Tutorial at `/learn`, the Techniques at `/learn/techniques`),
  * with a coach card where the puzzle page has its side page, then the handoff. Gated Lessons pass their
  * steps on fixed assists; a `free` one is played on the player's own assists, with a local Hint. Nothing
- * here is saved but the place to resume from.
+ * here is saved but the place to resume from and which Lessons are done.
  */
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link } from '@tanstack/react-router'
@@ -26,8 +26,9 @@ import { ToolToggle } from '../play/ToolToggle.tsx'
 import { BoardView } from '../play/viewport.ts'
 import type { Handoff } from './handoff.ts'
 import { type Lesson as LessonData, type LessonPuzzle, lessonPuzzle } from './lessons.ts'
+import { markDone } from './done.ts'
 import { loadResume, saveResume } from './resume.ts'
-import type { Track } from './tracks.ts'
+import { type Track, lessonKey } from './tracks.ts'
 import { cellsBefore, currentStep, feedback, isWrong, stepCells, wrongCell } from './steps.ts'
 import playStyles from '../play/Play.module.css'
 import styles from './Lesson.module.css'
@@ -44,7 +45,10 @@ const FIXED: Assists = {
 const FREE_HINT_NOTE = "In a lesson it's free, so nothing is lost here."
 
 export function LessonPage({ track, handoff }: { track: Track; handoff: Handoff }) {
-  const [at, setAt] = useState(() => loadResume(track))
+  const [at, setAt] = useState(() => {
+    const saved = loadResume(track)
+    return saved ? { lesson: track.lessons.findIndex(l => l.id === saved.lesson), step: saved.step } : { lesson: 0, step: 0 }
+  })
   const [finished, setFinished] = useState(false)
   if (finished) return <HandoffView track={track} handoff={handoff} />
   return (
@@ -156,15 +160,17 @@ function Lesson({ track, index, startStep, handoff, onNext, onFinish }: LessonPr
   const cited = !solved && mistake !== null && isWrong(puzzle, cells, mistake) ? mistake : null
 
   useEffect(() => {
-    if (!solved) saveResume(track, { lesson: index, step: Math.min(step, lesson.steps.length - 1) })
-  }, [track, index, step, solved, lesson])
+    if (!solved) saveResume(track, { lesson: lesson.id, step: Math.min(step, lesson.steps.length - 1) })
+  }, [track, step, solved, lesson])
 
   useEffect(() => {
     if (!solved || store.getState().palette) return
     store.setPalette(puzzle.palette)
     play('pop')
-    saveResume(track, index + 1 < lessons.length ? { lesson: index + 1, step: 0 } : null)
-  }, [solved, store, puzzle, track, lessons, index])
+    markDone(lessonKey(track, lesson))
+    const next = lessons[index + 1]
+    saveResume(track, next ? { lesson: next.id, step: 0 } : null)
+  }, [solved, store, puzzle, track, lesson, lessons, index])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

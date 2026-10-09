@@ -3,6 +3,7 @@ import { type SolverCell, isLogicSolvable, isUnique, lineSolve } from '@pixel-im
 import { type Lesson, LESSONS, lessonPuzzle } from './lessons.ts'
 import { cellsBefore, currentStep } from './steps.ts'
 import { TECHNIQUES } from './techniques.ts'
+import { TRACKS } from './tracks.ts'
 
 /** What line logic on just the step's highlighted lines yields from the givens and the cells earlier steps settled. */
 function deducible(lesson: Lesson, stepIndex: number): SolverCell[] {
@@ -34,6 +35,14 @@ function deducible(lesson: Lesson, stepIndex: number): SolverCell[] {
   }
   return g
 }
+
+describe.each(Object.values(TRACKS).map(t => [t.id, t] as const))('%s track', (_, track) => {
+  it('has unique, URL-safe lesson ids', () => {
+    const ids = track.lessons.map(l => l.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const id of ids) expect(id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/)
+  })
+})
 
 describe.each([...LESSONS, ...TECHNIQUES].map(l => [l.picture, l] as const))('%s', (_, lesson) => {
   const { width, height, clues, palette } = lessonPuzzle(lesson)

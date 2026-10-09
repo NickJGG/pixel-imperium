@@ -331,6 +331,7 @@ describe('/api/me', () => {
     ['PUT', '/api/me/handle'],
     ['PUT', '/api/me/showcase'],
     ['PUT', '/api/me/tutorial'],
+    ['PUT', '/api/me/lessons/tutorial:overlap'],
   ])('%s %s 401s without a session', async (method, path) => {
     const res = await app.request(path, { method, body: method === 'GET' ? null : '{}' })
     expect(res.status).toBe(401)
@@ -360,6 +361,7 @@ describe('/api/me', () => {
       assists,
       showcase: [],
       tutorialAskedAt: null,
+      lessonsDone: [],
     })
   })
 
@@ -387,6 +389,22 @@ describe('PUT /api/me/tutorial', () => {
 
     expect((await send('PUT', '/api/me/tutorial', null, cookie)).status).toBe(204)
     expect((await getProgress(cookie)).tutorialAskedAt).toBe(askedAt)
+  })
+})
+
+describe('PUT /api/me/lessons/:key', () => {
+  it('records each finished lesson once and lists them', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    for (const key of ['tutorial:overlap', 'techniques:what-if', 'tutorial:overlap']) {
+      expect((await send('PUT', `/api/me/lessons/${key}`, null, cookie)).status).toBe(204)
+    }
+    expect((await getProgress(cookie)).lessonsDone.toSorted()).toEqual(['techniques:what-if', 'tutorial:overlap'])
+  })
+
+  it.each(['overlap', 'basics:overlap', 'tutorial:Overlap', 'tutorial:'])('rejects %s', async key => {
+    const { cookie } = await signedInUser(db, auth)
+    expect((await send('PUT', `/api/me/lessons/${key}`, null, cookie)).status).toBe(400)
+    expect((await getProgress(cookie)).lessonsDone).toEqual([])
   })
 })
 

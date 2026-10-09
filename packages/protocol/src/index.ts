@@ -119,6 +119,8 @@ export interface MyProgress {
   assists: Assists | null
   showcase: string[]
   tutorialAskedAt: string | null
+  /** Finished Lessons as `<track>:<lesson>` keys, each added by `PUT /api/me/lessons/:key`. */
+  lessonsDone: string[]
 }
 
 /**
