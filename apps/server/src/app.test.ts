@@ -339,10 +339,10 @@ describe('/api/me', () => {
     expect(res.status).toBe(401)
   })
 
-  it('returns solves, grids, palettes for verified solves only, and assists', async () => {
+  it('returns solves, grids, palettes and solve dates for verified solves only, and assists', async () => {
     const { id, cookie } = await signedInUser(db, auth)
     await db.insert(solveTable).values([
-      { userId: id, puzzleId: 'diag', verified: true },
+      { userId: id, puzzleId: 'diag', verified: true, solvedAt: new Date('2026-01-03T00:00:00.000Z') },
       { userId: id, puzzleId: 'other', verified: false },
     ])
     await putProgress(cookie, '2026-01-01T00:00:00.000Z', '#..#')
@@ -357,8 +357,9 @@ describe('/api/me', () => {
           palette: ['#f00', null, null, '#00f'],
           foil: false,
           hinted: false,
+          solvedAt: '2026-01-03T00:00:00.000Z',
         },
-        other: { solved: 'unverified', progress: null, palette: null, foil: false, hinted: false },
+        other: { solved: 'unverified', progress: null, palette: null, foil: false, hinted: false, solvedAt: null },
       },
       assists,
       showcase: [],
@@ -474,6 +475,7 @@ describe('POST /api/me/import', () => {
         palette: ['#f00', null, null, '#00f'],
         foil: false,
         hinted: false,
+        solvedAt: expect.any(String),
       },
     })
   })

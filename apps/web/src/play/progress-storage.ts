@@ -11,7 +11,7 @@ const decode: Record<string, Cell> = { '.': 'empty', '#': 'filled', x: 'marked' 
 
 export const encodeCells = (cells: readonly Cell[]): string => cells.map(c => encode[c]).join('')
 
-const KINDS = ['progress', 'solved', 'replay', 'palette', 'updated', 'foil', 'hinted'] as const
+const KINDS = ['progress', 'solved', 'replay', 'palette', 'updated', 'foil', 'hinted', 'solved-at'] as const
 type Kind = (typeof KINDS)[number]
 
 /** `local`: solved on this device, not (yet) confirmed by the server for an account. */
@@ -86,6 +86,16 @@ export class ProgressStorage {
 
   saveSolved(puzzleId: string, mark: SolveMark): void {
     write(this.key('solved', puzzleId), mark === 'local' ? '1' : mark)
+  }
+
+  /** When the puzzle was first solved, as an ISO time. */
+  loadSolvedAt(puzzleId: string): string | null {
+    return read(this.key('solved-at', puzzleId))
+  }
+
+  /** Keeps the first date: a later solve never moves it. */
+  saveSolvedAt(puzzleId: string, iso: string): void {
+    if (this.loadSolvedAt(puzzleId) === null) write(this.key('solved-at', puzzleId), iso)
   }
 
   /** Set while a solved puzzle has been cleared to play again; the solved flag stays. */

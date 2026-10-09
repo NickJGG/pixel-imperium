@@ -345,7 +345,10 @@ export class PlayStore {
     const solved = satisfiesClues({ width, height, cells: this.cells }, clues)
     if (!solved) return false
     const before = this.storage.loadSolved(id)
-    if (before === null) this.storage.saveFoil(id, !this.storage.loadHinted(id))
+    if (before === null) {
+      this.storage.saveFoil(id, !this.storage.loadHinted(id))
+      this.storage.saveSolvedAt(id, new Date().toISOString())
+    }
     if (before !== 'verified') this.storage.saveSolved(id, 'local')
     return true
   }

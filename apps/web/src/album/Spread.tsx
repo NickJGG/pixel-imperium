@@ -15,14 +15,14 @@ interface Props {
   complete: boolean
   /** Printed under the stamp, e.g. the flavour line. */
   caption?: ReactNode
-  /** Someone else's pages: no call to fill them. */
-  readOnly?: boolean
+  /** A "what's next" row in the foot, while the province is still being filled. */
+  next?: ReactNode
   /** One slot, given the puzzle and its 1-based number. */
   slot: (puzzle: PuzzleSummary, number: number) => ReactNode
 }
 
 /** A province's two facing pages of slots, on its own paper. Stacks into one tall page on phones. */
-export function Spread({ province, index, solved, complete, caption, readOnly = false, slot }: Props) {
+export function Spread({ province, index, solved, complete, caption, next, slot }: Props) {
   const pages = [province.puzzles.slice(0, SLOTS_PER_PAGE), province.puzzles.slice(SLOTS_PER_PAGE)]
   const total = province.puzzles.length
   return (
@@ -40,24 +40,19 @@ export function Spread({ province, index, solved, complete, caption, readOnly = 
       </div>
       <div className={styles.page}>
         <header className={styles.head}>
-          <p className={styles.theme}>
-            {complete
-              ? 'Every slot filled.'
-              : readOnly
-                ? ''
-                : `Fill both pages to conquer ${province.name.replace(/^The /, 'the ')}.`}
-          </p>
           <span className={styles.count}>
             {solved} / {total}
           </span>
         </header>
         <Slots puzzles={pages[1]!} first={SLOTS_PER_PAGE + 1} slot={slot} />
       </div>
-      {(complete || caption) && (
+      {complete || caption ? (
         <footer className={styles.foot}>
           {caption && <p className={styles.caption}>{caption}</p>}
           {complete && <Stamp className={styles.stamp}>Page complete</Stamp>}
         </footer>
+      ) : (
+        next && <footer className={styles.foot}>{next}</footer>
       )}
     </section>
   )

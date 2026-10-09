@@ -248,7 +248,10 @@ function solve(store: PlayStore) {
 
 describe('PlayStore persistence', () => {
   beforeEach(stubStorage)
-  afterEach(() => vi.unstubAllGlobals())
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+  })
 
   it('records the solve so the library can show it', () => {
     const s = makeStore()
@@ -314,6 +317,17 @@ describe('PlayStore persistence', () => {
     solve(hinted)
     expect(storage.loadFoil('test')).toBe(false)
     expect(makeStore().getState().hinted).toBe(true)
+  })
+
+  it('dates the first solve, and a re-solve keeps that date', () => {
+    vi.useFakeTimers({ now: new Date('2026-01-01T00:00:00.000Z'), toFake: ['Date'] })
+    const s = makeStore()
+    solve(s)
+    expect(storage.loadSolvedAt('test')).toBe('2026-01-01T00:00:00.000Z')
+    vi.setSystemTime(new Date('2026-02-01T00:00:00.000Z'))
+    s.clear({ autoMarkEmptyLines: false })
+    solve(s)
+    expect(storage.loadSolvedAt('test')).toBe('2026-01-01T00:00:00.000Z')
   })
 
   it('drops the hint on show at the next edit', () => {

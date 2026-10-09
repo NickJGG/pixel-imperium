@@ -102,8 +102,9 @@ describe('ProgressSync', () => {
           palette: ['#f00', null],
           foil: true,
           hinted: false,
+          solvedAt: '2026-01-01T12:00:00.000Z',
         },
-        c: { solved: 'unverified', progress: null, palette: null, foil: false, hinted: true },
+        c: { solved: 'unverified', progress: null, palette: null, foil: false, hinted: true, solvedAt: null },
       },
       assists: null,
       showcase: ['b'],
@@ -112,6 +113,7 @@ describe('ProgressSync', () => {
       lessonsDone: [],
     })
     storage.saveCells('stale', '#', '2026-01-01T00:00:00.000Z')
+    storage.saveSolvedAt('b', '2025-12-31T00:00:00.000Z')
     const data = await new ProgressSync(storage, api).pull()
 
     expect(data?.puzzles).toHaveProperty('b')
@@ -124,6 +126,7 @@ describe('ProgressSync', () => {
     expect(storage.loadSolved('c')).toBe('unverified')
     expect([storage.loadFoil('b'), storage.loadHinted('b')]).toEqual([true, false])
     expect([storage.loadFoil('c'), storage.loadHinted('c')]).toEqual([false, true])
+    expect([storage.loadSolvedAt('b'), storage.loadSolvedAt('c')]).toEqual(['2026-01-01T12:00:00.000Z', null])
     expect(storage.loadShowcase()).toEqual(['b'])
   })
 

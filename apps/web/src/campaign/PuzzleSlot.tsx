@@ -49,12 +49,11 @@ interface Props {
 /** A puzzle's slot on its province's spread: its sticker once solved, else an empty slot. Opens the puzzle. */
 export function PuzzleSlot({ puzzle: p, number, storage, next = false, padDefault = false }: Props) {
   const status = statusOf(p, storage)
-  const gold = number === GOLD_SLOT
   const size = `${p.width}×${p.height}`
   const label =
     status.kind === 'solved'
       ? `${number}: ${p.title}, ${status.unverified ? 'imported, replay to verify' : status.foil ? 'foil' : 'solved'}${status.replay === null ? '' : `, replaying ${status.replay}%`}`
-      : `${number}: ${size}${p.tier ? `, ${p.tier}` : ''}${status.kind === 'started' ? `, ${status.percent}% done` : ''}${next ? ', up next' : ''}`
+      : `${number}: ${size}${p.tier ? `, ${p.tier}` : ''}${status.kind === 'started' ? `, board in progress, ${status.percent}% done` : ''}${next ? ', up next' : ''}`
 
   return (
     <Link
@@ -65,36 +64,55 @@ export function PuzzleSlot({ puzzle: p, number, storage, next = false, padDefaul
       aria-label={label}
       title={status.kind === 'solved' && status.unverified ? 'Imported: replay to verify' : undefined}
     >
-      {status.kind === 'solved' ? (
-        <Slot number={number} width={p.width} height={p.height}>
-          <Sticker
-            title={p.title}
-            width={p.width}
-            height={p.height}
-            palette={status.palette ?? Array<null>(p.width * p.height).fill(null)}
-            gold={gold}
-            foil={status.foil}
-            unverified={status.unverified}
-            tilt={tiltOf(p.id)}
-          />
-          {status.replay !== null && (
-            <Dymo className={styles.replay}>
-              <LoopIcon />
-              {status.replay}%
-            </Dymo>
-          )}
-        </Slot>
-      ) : (
-        <Slot
-          number={number}
-          width={p.width}
-          height={p.height}
-          started={status.kind === 'started' ? status.percent : undefined}
-          next={next}
-          gold={gold}
-          tier={p.tier}
-        />
-      )}
+      <SlotFace puzzle={p} number={number} status={status} next={next} storage={storage} />
     </Link>
+  )
+}
+
+/** What fills a puzzle's slot: its sticker once solved, else the empty slot with its started board. */
+export function SlotFace({
+  puzzle: p,
+  number,
+  storage,
+  next = false,
+  status = statusOf(p, storage),
+}: {
+  puzzle: PuzzleSummary
+  number: number
+  storage: ProgressStorage
+  next?: boolean
+  status?: Status
+}) {
+  const gold = number === GOLD_SLOT
+  return status.kind === 'solved' ? (
+    <Slot number={number} width={p.width} height={p.height}>
+      <Sticker
+        title={p.title}
+        width={p.width}
+        height={p.height}
+        palette={status.palette ?? Array<null>(p.width * p.height).fill(null)}
+        gold={gold}
+        foil={status.foil}
+        unverified={status.unverified}
+        tilt={tiltOf(p.id)}
+      />
+      {status.replay !== null && (
+        <Dymo className={styles.replay}>
+          <LoopIcon />
+          {status.replay}%
+        </Dymo>
+      )}
+    </Slot>
+  ) : (
+    <Slot
+      number={number}
+      width={p.width}
+      height={p.height}
+      started={status.kind === 'started' ? status.percent : undefined}
+      cells={status.kind === 'started' ? (storage.loadCells(p.id) ?? undefined) : undefined}
+      next={next}
+      gold={gold}
+      tier={p.tier}
+    />
   )
 }

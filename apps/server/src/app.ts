@@ -278,12 +278,15 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
       ])
       const records: Record<string, PuzzleRecord> = {}
       const record = (id: string) =>
-        (records[id] ??= { solved: null, progress: null, palette: null, foil: false, hinted: false })
+        (records[id] ??= { solved: null, progress: null, palette: null, foil: false, hinted: false, solvedAt: null })
       for (const s of solves) {
         const r = record(s.puzzleId)
         r.solved = s.verified ? 'verified' : 'unverified'
         r.foil = s.foil
-        if (s.verified) r.palette = byId.get(s.puzzleId)?.palette ?? null
+        if (s.verified) {
+          r.palette = byId.get(s.puzzleId)?.palette ?? null
+          r.solvedAt = s.solvedAt.toISOString()
+        }
       }
       for (const { puzzleId } of hints) record(puzzleId).hinted = true
       for (const g of grids) {

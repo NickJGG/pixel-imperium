@@ -6,6 +6,7 @@ import { paperStyle } from '../album/paper.ts'
 import { ProvinceTabs } from '../album/ProvinceTabs.tsx'
 import { Spread } from '../album/Spread.tsx'
 import { useAccount } from '../account.ts'
+import { NextUp } from './NextUp.tsx'
 import { type CampaignProgress, campaignProgress, isOpen } from './progress.ts'
 import { PuzzleSlot } from './PuzzleSlot.tsx'
 import styles from './Campaign.module.css'
@@ -26,6 +27,16 @@ export function ProvincePage({ campaign, province }: { campaign: Campaign; provi
         solved={solved}
         complete={state === 'conquered'}
         caption={(state === 'conquered' && province.flavour) || undefined}
+        next={
+          next && (
+            <NextUp
+              puzzle={next}
+              number={province.puzzles.indexOf(next) + 1}
+              storage={storage}
+              fresh={progress.provinces.every(p => p.solved === 0)}
+            />
+          )
+        }
         slot={(p, number) => (
           <PuzzleSlot
             puzzle={p}

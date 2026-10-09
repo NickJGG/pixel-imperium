@@ -26,6 +26,14 @@
   opacity: 0.6;
 }
 
+.board {
+  width: min(70%, 70% * var(--ar, 1));
+  aspect-ratio: var(--ar, 1);
+  image-rendering: pixelated;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
 .pips {
   position: absolute;
   top: 4px;

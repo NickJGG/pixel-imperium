@@ -110,6 +110,8 @@ export interface PuzzleRecord {
   foil: boolean
   /** A hint was given on the puzzle, so a first solve won't be foil. */
   hinted: boolean
+  /** When it was first solved; present only for a verified solve. */
+  solvedAt: string | null
 }
 
 /**

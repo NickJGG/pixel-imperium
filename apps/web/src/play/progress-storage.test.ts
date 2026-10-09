@@ -34,6 +34,18 @@ describe('ProgressStorage', () => {
     expect(account.loadFoil('a')).toBe(false)
   })
 
+  it('keeps the first solve date, per account, and clears it', () => {
+    expect(account.loadSolvedAt('a')).toBeNull()
+    account.saveSolvedAt('a', '2026-01-01T00:00:00.000Z')
+    account.saveSolvedAt('a', '2026-02-01T00:00:00.000Z')
+    expect(account.loadSolvedAt('a')).toBe('2026-01-01T00:00:00.000Z')
+    expect(data.get('pixel-imperium:u:u1:solved-at:a')).toBe('2026-01-01T00:00:00.000Z')
+    expect(signedOutStorage.loadSolvedAt('a')).toBeNull()
+    expect(account.puzzleIds()).toEqual([])
+    account.clear()
+    expect(account.loadSolvedAt('a')).toBeNull()
+  })
+
   it('round-trips the showcase in order, and keeps it through a clear', () => {
     expect(account.loadShowcase()).toEqual([])
     account.saveShowcase(['b', 'a'])

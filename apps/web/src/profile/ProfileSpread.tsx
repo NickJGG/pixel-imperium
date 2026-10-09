@@ -36,7 +36,6 @@ export function ProfileSpread() {
         solved={solved}
         complete={state === 'conquered'}
         caption={state === 'conquered' ? province.flavour || undefined : undefined}
-        readOnly
         slot={(p, number) => {
           const sticker = stickers.get(p.id)
           return sticker ? (

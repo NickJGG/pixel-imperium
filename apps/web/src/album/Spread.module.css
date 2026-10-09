@@ -55,6 +55,7 @@
 }
 
 .count {
+  margin-left: auto;
   padding: 3px 10px;
   font: 700 14px var(--font-mono);
   white-space: nowrap;
