@@ -13,6 +13,7 @@ import { Dymo } from '../album/Dymo.tsx'
 import { paperStyle } from '../album/paper.ts'
 import { PixelArt } from '../campaign/PixelArt.tsx'
 import { getPadMode } from '../pad/mode.ts'
+import { PanelTag } from '../pad/PadGlyph.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
 import { firstFocusable, focusDefault } from '../pad/spatial.ts'
@@ -22,6 +23,7 @@ import { play } from '../sound.ts'
 import { AssistChips } from '../play/AssistChips.tsx'
 import { Board, type BoardFlag, REVEAL_MS } from '../play/Board.tsx'
 import { ColClues, RowClues } from '../play/Clues.tsx'
+import { ControlsCard } from '../play/ControlsCard.tsx'
 import { useBoardGestures } from '../play/gestures.ts'
 import { HintButton, cellHintText } from '../play/HintButton.tsx'
 import { SIDE_PAGE_GAP, boardTracks, clueDepth, clueSlot, fitCellSize } from '../play/layout.ts'
@@ -368,19 +370,22 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
             )}
           </div>
         </div>
-        <Coach
-          ref={coachRef}
-          track={track}
-          lesson={lesson}
-          index={index}
-          step={step}
-          log={log}
-          now={beatKey}
-          solved={solved}
-          foot={foot}
-          onNext={onNext}
-          onFinish={onFinish}
-        />
+        <div className={styles.side} style={{ gap: SIDE_PAGE_GAP }}>
+          <Coach
+            ref={coachRef}
+            track={track}
+            lesson={lesson}
+            index={index}
+            step={step}
+            log={log}
+            now={beatKey}
+            solved={solved}
+            foot={foot}
+            onNext={onNext}
+            onFinish={onFinish}
+          />
+          {!stacked && <ControlsCard solved={solved} lines={free} zoom={false} back="All lessons" />}
+        </div>
       </div>
     </main>
   )
@@ -498,6 +503,7 @@ function Coach({ ref, track, lesson, index, step, log, now, solved, foot, onNext
           </button>
         )}
       </div>
+      {!solved && <PanelTag />}
     </aside>
   )
 }

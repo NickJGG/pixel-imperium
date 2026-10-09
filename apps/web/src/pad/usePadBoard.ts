@@ -51,7 +51,8 @@ export function usePadBoard(canvasRef: RefObject<HTMLCanvasElement | null>, { st
           if (button !== held) return false
           endStroke()
         } else if (isDirection(button)) {
-          if (!land()) move(store, view, ...DIRECTIONS[button])
+          // Only a fresh press wraps, so a held direction stops at the edge instead of cycling round.
+          if (!land()) move(store, view, ...DIRECTIONS[button], kind === 'press')
         } else if (button === 'A' && onTalkNext) {
           onTalkNext()
         } else if (button === 'A' || button === 'X') {

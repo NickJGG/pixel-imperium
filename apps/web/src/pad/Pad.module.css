@@ -1,0 +1,123 @@
+/* Controller button badges, only while a controller is in use. */
+.glyph {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  font: 700 12px/1 var(--font-ui);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+:root[data-pad] .glyph {
+  display: inline-flex;
+}
+
+.glyph > b {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 11px/1 var(--font-mono);
+  --face: var(--ink);
+  color: var(--card);
+  background: var(--face);
+  border-radius: var(--r-pill);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--face) 60%, #000);
+}
+
+.glyph[data-button='A'] > b {
+  --face: var(--ok);
+  color: #0d2612;
+}
+
+.glyph[data-button='B'] > b {
+  --face: var(--red);
+  color: var(--on-red);
+}
+
+.glyph[data-button='X'] > b {
+  --face: var(--blue);
+  color: var(--on-blue);
+}
+
+.glyph[data-button='Y'] > b {
+  --face: var(--gold);
+  color: var(--on-gold);
+}
+
+.glyph > b[data-wide] {
+  width: auto;
+  padding: 0 6px;
+}
+
+/* Outranks the toolbars' `.pill > button svg`, for a glyph pinned on a tool. */
+.glyph > b > .icon {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.corner {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  z-index: 1;
+}
+
+:root[data-pad] :has(> .corner) {
+  position: relative;
+}
+
+.panelTag {
+  position: absolute;
+  top: -12px;
+  right: var(--space-4);
+  z-index: 3;
+}
+
+.panelTag > .glyph {
+  padding: 3px 9px 3px 3px;
+  color: var(--ink);
+  background: var(--card);
+  border-radius: var(--r-pill);
+  box-shadow: 0 3px 0 var(--shade);
+}
+
+/* The controls for what the controller is driving, glyph then action. */
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2) var(--space-3);
+  font: 600 13px/1.2 var(--font-ui);
+}
+
+.list li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.list .glyph {
+  display: inline-flex;
+}
+
+/* One line of the list, under the board where there's no room for the card. */
+.strip {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+  font: 600 12px/1 var(--font-ui);
+  color: var(--ink-soft);
+}
+
+.strip .glyph {
+  display: inline-flex;
+}

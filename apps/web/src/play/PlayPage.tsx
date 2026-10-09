@@ -13,6 +13,8 @@ import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
 import { getPadMode } from '../pad/mode.ts'
+import { PadControls, PadStrip } from '../pad/PadControls.tsx'
+import { PadGlyph, PanelTag } from '../pad/PadGlyph.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
 import { firstFocusable, focusDefault } from '../pad/spatial.ts'
@@ -27,6 +29,7 @@ import { AssistSwitches } from './AssistSwitches.tsx'
 import { Board, REVEAL_MS } from './Board.tsx'
 import { ClearButton, LoopIcon } from './ClearButton.tsx'
 import { ColClues, RowClues } from './Clues.tsx'
+import { ControlsCard } from './ControlsCard.tsx'
 import { useBoardGestures } from './gestures.ts'
 import { HintButton, hintText } from './HintButton.tsx'
 import { PILL_BAND, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, boardTracks, fitPlay } from './layout.ts'
@@ -260,7 +263,7 @@ function Play({
       return panel && (panel.querySelector<HTMLElement>(`.${styles.panelHint} button`) ?? firstFocusable(panel))
     },
     menu: wide && !solved ? () => panelRef.current?.querySelector<HTMLElement>('[role="switch"]')?.focus() : undefined,
-    hold: solved && moment !== 'landed' && moment !== 'kept',
+    hold: hideSticker || moment === 'popping',
   })
   // The solve hands a controller on from the board to the onward link once it shows.
   useEffect(() => {
@@ -316,6 +319,8 @@ function Play({
     />
   )
 
+  const controls = { lines: true, zoom: true, back: 'Back to page' }
+
   const following = campaign.provinces[provinceIndex + 1]
   const conquestStamp = (className: string | undefined) => (
     <Stamp thunk tone={following ? 'pink' : 'gold'} className={className}>
@@ -344,6 +349,7 @@ function Play({
       <Link to="/play/$id" params={{ id: next.id }} className={styles.linkButton} data-pad-default>
         Next: {next.title}
         <ArrowIcon />
+        <PadGlyph button="A" />
       </Link>
     )
   ) : following ? (
@@ -358,10 +364,12 @@ function Play({
         {following.name.replace(/^The /, '')}
       </span>
       <ArrowIcon />
+      <PadGlyph button="A" />
     </Link>
   ) : (
     <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} className={styles.linkButton} data-pad-default>
       Back to the cover
+      <PadGlyph button="A" />
     </Link>
   )
   const backToPage = (
@@ -372,6 +380,7 @@ function Play({
       data-pad-default={!onward || undefined}
     >
       Back to page
+      <PadGlyph button="B" />
     </Link>
   )
   const replay = <ClearButton store={store} solved />
@@ -398,7 +407,7 @@ function Play({
       <div
         ref={stageRef}
         className={`${styles.stage} ${styles.playStage}`}
-        style={{ '--pill-band': `${PILL_BAND}px` } as CSSProperties}
+        style={{ '--pill-band': `${wide ? 0 : PILL_BAND}px` } as CSSProperties}
       >
         {cellSize > 0 && (
           <div
@@ -414,9 +423,9 @@ function Play({
           </div>
         )}
       </div>
-      {!solved && (
-        <ToolPill store={store} compact={!wide}>
-          {!wide && hintButton(true)}
+      {!solved && !wide && (
+        <ToolPill store={store} compact>
+          {hintButton(true)}
         </ToolPill>
       )}
     </div>
@@ -459,6 +468,7 @@ function Play({
                       {learn}
                       <ClearButton store={store} solved={false} disabled={!canClear} />
                     </div>
+                    <PadControls owner="board" solved={false} {...controls} />
                   </MoreMenu>
                 )}
               </div>
@@ -482,6 +492,11 @@ function Play({
             </p>
           )}
           {stage}
+          {!wide && (
+            <div className={styles.strip}>
+              <PadStrip />
+            </div>
+          )}
           {moment === 'landed' && !wide && !conquest && (
             <Stamp thunk className={styles.cardStamp}>
               New sticker!
@@ -493,78 +508,84 @@ function Play({
           )}
         </div>
         {wide && (
-          <PuzzlePanel
-            ref={panelRef}
-            slotRef={setSlot}
-            campaignId={campaign.id}
-            province={province}
-            index={provinceIndex}
-            number={number}
-            storage={storage}
-            hideSticker={hideSticker}
-            stamp={
-              conquest
-                ? done && conquestStamp(styles.panelStamp)
-                : moment === 'landed' && (
-                    <Stamp thunk className={styles.panelStamp}>
-                      New sticker!
-                    </Stamp>
-                  )
-            }
-            tag={!done && tag}
-          >
-            {done ? (
-              <div className={styles.panelAfter}>
-                {!conquest && tag}
-                {afterBody}
-              </div>
-            ) : (
-              <div className={styles.panelBody} inert={solved}>
-                <div className={styles.progress}>
-                  <span className={styles.bar}>
-                    <i style={{ width: `${percent}%` }} />
-                  </span>
-                  <span className={styles.size}>{percent}% filled</span>
+          <div className={styles.side} style={{ width: SIDE_PAGE_WIDTH, gap: SIDE_PAGE_GAP }}>
+            <PuzzlePanel
+              ref={panelRef}
+              slotRef={setSlot}
+              campaignId={campaign.id}
+              province={province}
+              index={provinceIndex}
+              number={number}
+              storage={storage}
+              hideSticker={hideSticker}
+              stamp={
+                conquest
+                  ? done && conquestStamp(styles.panelStamp)
+                  : moment === 'landed' && (
+                      <Stamp thunk className={styles.panelStamp}>
+                        New sticker!
+                      </Stamp>
+                    )
+              }
+              tag={!done && tag}
+            >
+              {done ? (
+                <div className={styles.panelAfter}>
+                  {!conquest && tag}
+                  {afterBody}
                 </div>
-                {replaying ? (
-                  <p className={styles.panelNote}>Already in the album. Replays never change the sticker.</p>
-                ) : (
-                  firstSolve &&
-                  !hinted && (
-                    <span className={styles.foilNote}>
-                      <i aria-hidden="true" />
-                      Foil still possible
+              ) : (
+                <div className={styles.panelBody} inert={solved}>
+                  <div className={styles.progress}>
+                    <span className={styles.bar}>
+                      <i style={{ width: `${percent}%` }} />
                     </span>
-                  )
-                )}
-                <div className={styles.panelHint}>
-                  {hintButton(false)}
-                  {hint ? (
-                    <p role="status">
-                      <Dymo tone="pink">{hintText(hint, cells, puzzle.width)}</Dymo>
-                    </p>
+                    <span className={styles.size}>{percent}% filled</span>
+                  </div>
+                  {replaying ? (
+                    <p className={styles.panelNote}>Already in the album. Replays never change the sticker.</p>
                   ) : (
-                    hintFailed && (
-                      <p className={styles.panelNote} role="status">
-                        Couldn't reach the album for a hint. Try again in a moment.
-                      </p>
+                    firstSolve &&
+                    !hinted && (
+                      <span className={styles.foilNote}>
+                        <i aria-hidden="true" />
+                        Foil still possible
+                      </span>
                     )
                   )}
-                  {firstSolve && hinted && (
-                    <span className={styles.foilNote} data-lost>
-                      <i aria-hidden="true" />
-                      Hint used: regular sticker
-                    </span>
-                  )}
+                  <div className={styles.panelHint}>
+                    {hintButton(false)}
+                    {hint ? (
+                      <p role="status">
+                        <Dymo tone="pink">{hintText(hint, cells, puzzle.width)}</Dymo>
+                      </p>
+                    ) : (
+                      hintFailed && (
+                        <p className={styles.panelNote} role="status">
+                          Couldn't reach the album for a hint. Try again in a moment.
+                        </p>
+                      )
+                    )}
+                    {firstSolve && hinted && (
+                      <span className={styles.foilNote} data-lost>
+                        <i aria-hidden="true" />
+                        Hint used: regular sticker
+                      </span>
+                    )}
+                  </div>
+                  <AssistSwitches />
+                  <div className={styles.panelFoot}>
+                    {learn}
+                    <ClearButton store={store} solved={false} disabled={!canClear} />
+                  </div>
                 </div>
-                <AssistSwitches />
-                <div className={styles.panelFoot}>
-                  {learn}
-                  <ClearButton store={store} solved={false} disabled={!canClear} />
-                </div>
-              </div>
-            )}
-          </PuzzlePanel>
+              )}
+              {!done && <PanelTag />}
+            </PuzzlePanel>
+            <ControlsCard solved={solved} {...controls}>
+              {!solved && <ToolPill store={store} docked />}
+            </ControlsCard>
+          </div>
         )}
       </div>
       {!wide && done && (

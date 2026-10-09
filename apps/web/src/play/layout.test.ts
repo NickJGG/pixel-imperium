@@ -63,18 +63,31 @@ describe('fitPlay', () => {
     expect(fitPlay({ width: board + SIDE_PAGE_WIDTH + SIDE_PAGE_GAP - 1, height: 1000 }, square(5)).sidePage).toBe(false)
   })
 
-  it('keeps the board above the pill band', () => {
+  it('keeps the board above the pill band without the side page', () => {
     for (const n of [5, 10, 15, 20, 30]) {
       for (const height of [400, 520, 640, 777, 900]) {
-        const { cellSize } = fitPlay({ width: 2000, height }, square(n))
-        expect(boardSize(cellSize, square(n)).height).toBeLessThanOrEqual(height - PILL_BAND)
+        const fit = fitPlay({ width: 460, height }, square(n))
+        expect(fit.sidePage).toBe(false)
+        expect(boardSize(fit.cellSize, square(n)).height).toBeLessThanOrEqual(height - PILL_BAND)
       }
     }
   })
 
-  it('sizes to the height left over once the band is taken', () => {
-    const height = 40 * (10 + 1.2) + PILL_BAND
-    expect(fitPlay({ width: 2000, height }, square(10)).cellSize).toBe(40)
+  it('takes the band from the height only without the side page', () => {
+    const height = 40 * (10 + 1.2)
+    expect(fitPlay({ width: 2000, height }, square(10))).toEqual({ cellSize: 40, sidePage: true })
     expect(fitPlay({ width: 2000, height: height - 1 }, square(10)).cellSize).toBe(39)
+    expect(fitPlay({ width: 460, height: height + PILL_BAND }, square(10))).toEqual({ cellSize: 40, sidePage: false })
+    expect(fitPlay({ width: 460, height: height + PILL_BAND - 1 }, square(10)).cellSize).toBe(39)
+  })
+
+  it('decides the side page at the full height, before the band shrinks the board', () => {
+    const puzzle = square(10)
+    const height = 40 * 11.2
+    const width = boardSize(40, puzzle).width + SIDE_PAGE_WIDTH + SIDE_PAGE_GAP - 1
+    expect(fitPlay({ width, height }, puzzle)).toEqual({
+      cellSize: fitCellSize({ width, height: height - PILL_BAND }, puzzle),
+      sidePage: false,
+    })
   })
 })

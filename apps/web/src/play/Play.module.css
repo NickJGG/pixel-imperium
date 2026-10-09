@@ -313,7 +313,7 @@
   outline: none;
 }
 
-/* The board centres above an empty band as tall as layout.ts's PILL_BAND, which the pill floats over. */
+/* Without the side page, the board centres above an empty band as tall as layout.ts's PILL_BAND, which the pill floats over. */
 .stageWrap {
   position: relative;
   flex: 1;
@@ -389,6 +389,26 @@
 
 .pill .seg {
   box-shadow: none;
+}
+
+/* In the controls card, set under the panel instead of floating over the board. */
+.pillDocked {
+  position: static;
+  transform: none;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0;
+  white-space: normal;
+  background: none;
+  box-shadow: none;
+}
+
+/* The controller's strip, in the board card's bottom padding under the pill. */
+.strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 5px;
 }
 
 /* Compact's Hint: its first-hint confirm pops up above it, so the pill keeps its width. */
@@ -736,6 +756,24 @@
   stroke-width: 2.2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* The side column: the panel, then the controls card under it. Its width and gap come from layout.ts. */
+.side {
+  flex: none;
+  display: grid;
+  align-content: start;
+}
+
+.controls {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  --focus: var(--blue);
+  color: var(--ink);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: 0 5px 0 var(--shade);
 }
 
 /* The puzzle's panel, on the province's paper beside the board. */

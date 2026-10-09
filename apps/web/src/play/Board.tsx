@@ -161,6 +161,7 @@ export function Board({ store, cellSize, view, assists, highlight, flag = null, 
         style={{ width: width * cellSize, height: height * cellSize }}
         tabIndex={0}
         data-pad-default={!solved || undefined}
+        data-pad-board
         role="application"
         aria-label={`Puzzle grid, ${width} by ${height}. Arrow keys or WASD move, hold Z to fill, hold X to mark.`}
         onFocus={() => store.setFocused(true)}

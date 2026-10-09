@@ -4,7 +4,6 @@ import type { Province } from '@pixel-imperium/protocol'
 import { paperStyle } from '../album/paper.ts'
 import { Slot } from '../album/Slot.tsx'
 import { GOLD_SLOT, PuzzleSlot } from '../campaign/PuzzleSlot.tsx'
-import { SIDE_PAGE_WIDTH } from './layout.ts'
 import type { ProgressStorage } from './progress-storage.ts'
 import styles from './Play.module.css'
 
@@ -75,7 +74,7 @@ export function PuzzlePanel({ campaignId, index, stamp, tag, children, ref, ...r
       ref={ref}
       className={styles.panel}
       data-pad-panel
-      style={{ ...paperStyle(index), width: SIDE_PAGE_WIDTH }}
+      style={paperStyle(index)}
       aria-label={province.name}
     >
       <div className={styles.panelBack}>

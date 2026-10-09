@@ -141,6 +141,26 @@ describe('PlayStore strokes', () => {
     s.moveCursor(10, 10)
     expect(s.getState().cursor).toEqual(at(2, 3))
   })
+
+  it('wraps the cursor round the edges when asked', () => {
+    const s = makeStore()
+    s.moveCursor(0, -1, true)
+    expect(s.getState().cursor).toEqual(at(0, 3))
+    s.moveCursor(-1, 0, true)
+    expect(s.getState().cursor).toEqual(at(2, 3))
+    s.moveCursor(1, 1, true)
+    expect(s.getState().cursor).toEqual(at(0, 0))
+  })
+
+  it('wraps mid-stroke by jumping, painting only the cell it lands on', () => {
+    const s = makeStore()
+    s.beginStroke(s.getState().cursor, 'fill', { lockAxis: true })
+    s.moveCursor(0, -1, true)
+    s.moveCursor(0, -1, true)
+    s.endStroke()
+    expect(s.getState().cursor).toEqual(at(0, 2))
+    expect(render(s)).toEqual(['#.##', '....', '....'])
+  })
 })
 
 describe('PlayStore win', () => {

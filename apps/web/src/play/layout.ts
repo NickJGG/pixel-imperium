@@ -68,13 +68,15 @@ export function boardTracks(puzzle: FitPuzzle, fitCell: number): Record<string, 
 
 /**
  * The board is sized first, against `available` as if there were no side page; the side page then
- * shows only if the board at that size still fits beside it. The board also stays above `PILL_BAND`.
+ * shows only if the board at that size still fits beside it. Without the side page the tools float
+ * over the stage, so the board refits above `PILL_BAND`.
  */
 export function fitPlay(
   available: { width: number; height: number },
   puzzle: FitPuzzle,
 ): { cellSize: number; sidePage: boolean } {
-  const cellSize = fitCellSize({ width: available.width, height: available.height - PILL_BAND }, puzzle)
-  const boardWidth = cellSize * puzzle.width + clueDepth(puzzle.clues.rows, clueSlot(cellSize))
-  return { cellSize, sidePage: boardWidth <= available.width - SIDE_PAGE_WIDTH - SIDE_PAGE_GAP }
+  const boardWidth = (cell: number) => cell * puzzle.width + clueDepth(puzzle.clues.rows, clueSlot(cell))
+  const cellSize = fitCellSize(available, puzzle)
+  if (boardWidth(cellSize) <= available.width - SIDE_PAGE_WIDTH - SIDE_PAGE_GAP) return { cellSize, sidePage: true }
+  return { cellSize: fitCellSize({ width: available.width, height: available.height - PILL_BAND }, puzzle), sidePage: false }
 }

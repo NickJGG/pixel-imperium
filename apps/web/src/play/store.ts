@@ -169,8 +169,8 @@ export class PlayStore {
     this.emit({ cursor: pos })
   }
 
-  /** Continues the stroke to `pos`, filling in any cells skipped between events. */
-  extendStroke(pos: Pos): void {
+  /** Continues the stroke to `pos`, filling in any cells skipped between events, unless it `jump`s there. */
+  extendStroke(pos: Pos, jump = false): void {
     const s = this.stroke
     if (!s) return
     let target = this.clamp(pos)
@@ -185,6 +185,11 @@ export class PlayStore {
     }
     if (target.row === s.last.row && target.col === s.last.col) return
 
+    if (jump) {
+      this.apply(target)
+      s.last = target
+      return this.emit({ cursor: target })
+    }
     let { row, col } = s.last
     const dRow = Math.abs(target.row - row)
     const dCol = Math.abs(target.col - col)
@@ -268,11 +273,13 @@ export class PlayStore {
     this.commit({ replaying: true, palette: null })
   }
 
-  moveCursor(dRow: number, dCol: number): void {
+  /** `wrap` carries a step off one edge round to the other; a stroke jumps there rather than paint the way across. */
+  moveCursor(dRow: number, dCol: number, wrap = false): void {
     const { cursor } = this.state
-    const next = this.clamp({ row: cursor.row + dRow, col: cursor.col + dCol })
+    const to = { row: cursor.row + dRow, col: cursor.col + dCol }
+    const next = wrap ? this.wrap(to) : this.clamp(to)
     if (this.state.hover) this.emit({ hover: null })
-    if (this.stroke) this.extendStroke(next)
+    if (this.stroke) this.extendStroke(next, next.row !== to.row || next.col !== to.col)
     else this.emit({ cursor: next })
   }
 
@@ -362,5 +369,10 @@ export class PlayStore {
   private clamp({ row, col }: Pos): Pos {
     const { width, height } = this.puzzle
     return { row: Math.min(Math.max(row, 0), height - 1), col: Math.min(Math.max(col, 0), width - 1) }
+  }
+
+  private wrap({ row, col }: Pos): Pos {
+    const { width, height } = this.puzzle
+    return { row: (row + height) % height, col: (col + width) % width }
   }
 }

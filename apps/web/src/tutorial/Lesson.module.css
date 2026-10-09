@@ -1,10 +1,18 @@
 /* The Lesson screen borrows the play screen's layout (Play.module.css); this adds the coach and handoff. */
 
-/* On a page of the Marches, where the side page sits on a puzzle. */
-.coach {
+/* Where the side page sits on a puzzle: the coach, then the controls card under it. */
+.side {
   flex: none;
   align-self: stretch;
   width: 260px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* On a page of the Marches. */
+.coach {
+  position: relative;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -310,7 +318,7 @@
     height: min(60vh, 100vw);
   }
 
-  .coach {
+  .side {
     width: auto;
   }
 }

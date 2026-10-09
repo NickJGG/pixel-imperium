@@ -2,8 +2,8 @@
 import type { PlayStore, Tool } from './store.ts'
 import type { BoardView } from './viewport.ts'
 
-export function move(store: PlayStore, view: BoardView, dRow: number, dCol: number): void {
-  store.moveCursor(dRow, dCol)
+export function move(store: PlayStore, view: BoardView, dRow: number, dCol: number, wrap = false): void {
+  store.moveCursor(dRow, dCol, wrap)
   view.follow(store.getState().cursor)
 }
 
