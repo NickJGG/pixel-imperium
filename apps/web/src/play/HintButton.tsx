@@ -97,6 +97,12 @@ export function hintText({ kind, index }: HintResponse, cells: readonly Cell[], 
   return `Hint: ${where} shouldn't be ${cells[index] === 'marked' ? 'crossed' : 'filled'}`
 }
 
+/** `hintText` for a tag beside the hinted cell. */
+export function cellHintText({ kind, index }: HintResponse, cells: readonly Cell[]): string {
+  if (kind === 'reveal') return 'Hint: this cell is filled.'
+  return `Hint: this cell shouldn't be ${cells[index] === 'marked' ? 'crossed out' : 'filled'}.`
+}
+
 function BulbIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">

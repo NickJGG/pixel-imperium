@@ -78,6 +78,8 @@
   --board-cursor: var(--pink);
   --board-crosshair: rgba(91, 124, 255, 0.22);
   --board-mistake: var(--red);
+  --board-guess: var(--gold);
+  --board-aside: var(--blue);
   --board-reveal: var(--blue);
   --board-target: var(--pink);
 
@@ -132,6 +134,7 @@
     --board-line: #dde4f6;
     --board-line-major: #13306b;
     --board-crosshair: rgba(35, 72, 232, 0.12);
+    --board-guess: var(--gold-dk);
     --blue: #2348e8;
     --blue-dk: #13299c;
     --on-blue: #fff;
@@ -167,6 +170,7 @@
   --board-line: #dde4f6;
   --board-line-major: #13306b;
   --board-crosshair: rgba(35, 72, 232, 0.12);
+  --board-guess: var(--gold-dk);
   --blue: #2348e8;
   --blue-dk: #13299c;
   --on-blue: #fff;

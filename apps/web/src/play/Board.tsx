@@ -36,14 +36,19 @@ interface Props {
   assists?: BoardAssists | undefined
   /** Cells to outline, for a Lesson step's targets. */
   highlight?: readonly number[] | undefined
-  /** A cell to flag as wrong. */
-  mistake?: number | null | undefined
+  /** A cell to ring: wrong, a guess, or true but beside the point. */
+  flag?: BoardFlag | null | undefined
 }
 
-export function Board({ store, cellSize, view, assists, highlight, mistake = null }: Props) {
+export interface BoardFlag {
+  index: number
+  tone: 'mistake' | 'guess' | 'aside'
+}
+
+export function Board({ store, cellSize, view, assists, highlight, flag = null }: Props) {
   const { width, height } = store.puzzle
-  const options = useRef({ assists, highlight, mistake })
-  options.current = { assists, highlight, mistake }
+  const options = useRef({ assists, highlight, flag })
+  options.current = { assists, highlight, flag }
   const redraw = useRef(() => {})
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const heldKey = useRef<string | null>(null)
@@ -65,12 +70,12 @@ export function Board({ store, cellSize, view, assists, highlight, mistake = nul
         revealStart.current ??= reducedMotion.matches ? -Infinity : now
         revealElapsed = now - revealStart.current
       }
-      const { assists = getSettings(), highlight = [], mistake } = options.current
+      const { assists = getSettings(), highlight = [], flag } = options.current
       paint(canvas, state, width, height, cellSize, view.view, {
         crosshair: assists.crosshair ? crosshairOf(state) : null,
         revealElapsed,
         highlight,
-        mistake,
+        flag,
       })
       if (revealElapsed !== null && revealElapsed < REVEAL_MS) request()
     }
@@ -95,7 +100,7 @@ export function Board({ store, cellSize, view, assists, highlight, mistake = nul
     }
   }, [store, view, width, height, cellSize])
 
-  useEffect(() => redraw.current(), [assists?.crosshair, highlight, mistake])
+  useEffect(() => redraw.current(), [assists?.crosshair, highlight, flag])
 
   useEffect(() => {
     let { hint } = store.getState()
@@ -170,7 +175,7 @@ interface PaintOptions {
   /** Milliseconds since the color reveal began, `null` before a confirmed solve. */
   revealElapsed: number | null
   highlight: readonly number[]
-  mistake: number | null
+  flag: BoardFlag | null
 }
 
 const smoothstep = (t: number) => {
@@ -185,7 +190,7 @@ function paint(
   height: number,
   fitCell: number,
   view: View,
-  { crosshair, revealElapsed, highlight, mistake }: PaintOptions,
+  { crosshair, revealElapsed, highlight, flag }: PaintOptions,
 ) {
   const dpr = window.devicePixelRatio || 1
   const boxWidth = width * fitCell
@@ -286,9 +291,9 @@ function paint(
     ctx.globalAlpha = 0.75
     for (const i of highlight) ctx.strokeRect((i % width) * cell + 1.5, Math.floor(i / width) * cell + 1.5, cell - 3, cell - 3)
     ctx.globalAlpha = 1
-    if (mistake !== null) {
-      ctx.strokeStyle = color('--board-mistake')
-      ctx.strokeRect((mistake % width) * cell + 1.5, Math.floor(mistake / width) * cell + 1.5, cell - 3, cell - 3)
+    if (flag !== null) {
+      ctx.strokeStyle = color(`--board-${flag.tone}`)
+      ctx.strokeRect((flag.index % width) * cell + 1.5, Math.floor(flag.index / width) * cell + 1.5, cell - 3, cell - 3)
     }
   }
 

@@ -5,7 +5,7 @@
  * steps on fixed assists; a `free` one is played on the player's own assists, with a local Hint. Nothing
  * here is saved but the place to resume from and which Lessons are done.
  */
-import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { type Cell, hintFor } from '@pixel-imperium/nonogram'
 import type { Assists } from '@pixel-imperium/protocol'
@@ -15,23 +15,27 @@ import { PixelArt } from '../campaign/PixelArt.tsx'
 import { useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
 import { AssistChips } from '../play/AssistChips.tsx'
-import { Board } from '../play/Board.tsx'
+import { Board, type BoardFlag } from '../play/Board.tsx'
 import { ColClues, RowClues } from '../play/Clues.tsx'
 import { useBoardGestures } from '../play/gestures.ts'
-import { HintButton, hintText } from '../play/HintButton.tsx'
-import { SIDE_PAGE_GAP, boardTracks, fitCellSize } from '../play/layout.ts'
+import { HintButton, cellHintText } from '../play/HintButton.tsx'
+import { SIDE_PAGE_GAP, boardTracks, clueDepth, clueSlot, fitCellSize } from '../play/layout.ts'
 import { createLineHints } from '../play/line-hints.ts'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { type PlayState, PlayStore, crosshairOf } from '../play/store.ts'
 import { ToolToggle } from '../play/ToolToggle.tsx'
 import { BoardView } from '../play/viewport.ts'
+import { type BeatView, BeatLayer, Dock, type Tag } from './BeatLayer.tsx'
 import type { Handoff } from './handoff.ts'
 import { type Lesson as LessonData, type LessonPuzzle, lessonPuzzle } from './lessons.ts'
 import { markDone, useLessonsDone } from './done.ts'
+import { type BoardBox, placeCallout } from './placement.ts'
 import { loadResume, saveResume } from './resume.ts'
+import { rich } from './rich.tsx'
 import { type Track, lessonKey } from './tracks.ts'
 import { type Cite, cellsBefore, cite, citedFlag, currentStep, lessonFeedback, stepCells } from './steps.ts'
 import playStyles from '../play/Play.module.css'
+import beatStyles from './BeatLayer.module.css'
 import styles from './Lesson.module.css'
 
 /** Gated Lessons: everything that helps read the board, but no auto-marking, which would give the 0s away. */
@@ -160,9 +164,8 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
   const crossCol = useStoreValue(store, s => (assists.crosshair ? (crosshairOf(s)?.col ?? null) : null))
 
   const step = currentStep(lesson, cells, width)
-  const shown = lesson.steps[Math.min(step, lesson.steps.length - 1)]!
-  const highlight = useMemo(() => (solved ? [] : stepCells(shown, width)), [solved, shown, width])
-  const { rows: rowLines = [], cols: colLines = [] } = solved ? {} : shown.highlight
+  const stepIndex = Math.min(step, lesson.steps.length - 1)
+  const shown = lesson.steps[stepIndex]!
 
   const [beat, setBeat] = useState(0)
   const [beatStep, setBeatStep] = useState(step)
@@ -171,7 +174,19 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
     setBeat(0)
   }
   const lastBeat = shown.beats.length - 1
+  const shownBeat = shown.beats[Math.min(beat, lastBeat)]!
+  const talk = !solved && beat < lastBeat
   const next = () => setBeat(b => Math.min(b + 1, lastBeat))
+  const beatKey = `${stepIndex}.${beat}`
+
+  const [log, setLog] = useState<LogEntry[]>([])
+  if (!solved && beatStep === step && !log.some(e => e.key === beatKey)) setLog([...log, { key: beatKey, text: shownBeat.text }])
+
+  const about = useMemo(() => {
+    const { rows = [], cols = [] } = solved || shownBeat.whole ? {} : shown.highlight
+    return { rows, cols }
+  }, [solved, shownBeat, shown])
+  const highlight = useMemo(() => (solved || talk ? [] : stepCells(shown, width)), [solved, talk, shown, width])
 
   const [lineHints] = useState(() => createLineHints(store.puzzle))
   const hints = useMemo(() => lineHints(cells), [lineHints, cells])
@@ -191,17 +206,23 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
     })
   }, [store, puzzle, lesson, free])
   const flag = solved ? null : citedFlag(puzzle, lesson, cells, cited)
-  const flagged =
-    flag && cited
+  const flagCell = flag && cited ? cited.cell : null
+  const flagTone: BoardFlag['tone'] | null = flag && (flag.kind === 'ruled' ? 'mistake' : flag.kind)
+  const boardFlag = useMemo(() => (flagCell === null || !flagTone ? null : { index: flagCell, tone: flagTone }), [flagCell, flagTone])
+  const tag: Tag | null =
+    flag && cited && flagTone
       ? {
           cell: cited.cell,
+          tone: flagTone,
           text: lessonFeedback(puzzle, lesson.steps[Math.min(cited.step, lesson.steps.length - 1)]!, cells[cited.cell]!, flag),
         }
-      : null
+      : free && hint && !solved
+        ? { cell: hint.index, tone: 'aside', text: cellHintText(hint, cells) }
+        : null
 
   useEffect(() => {
-    if (!solved) saveResume(track, { lesson: lesson.id, step: Math.min(step, lesson.steps.length - 1) })
-  }, [track, step, solved, lesson])
+    if (!solved) saveResume(track, { lesson: lesson.id, step: stepIndex })
+  }, [track, stepIndex, solved, lesson])
 
   useEffect(() => {
     if (!solved || store.getState().palette) return
@@ -214,6 +235,12 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && talk && !e.repeat && !(e.ctrlKey || e.metaKey || e.altKey)) {
+        if (e.target instanceof Element && e.target.closest('button, a, input, select, textarea')) return
+        setBeat(b => Math.min(b + 1, lastBeat))
+        e.preventDefault()
+        return
+      }
       if (!(e.ctrlKey || e.metaKey) || e.altKey) return
       const key = e.key.toLowerCase()
       if (key === 'z' && !e.shiftKey) store.undo()
@@ -223,20 +250,41 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [store])
+  }, [store, talk, lastBeat])
 
   const [boardView] = useState(() => new BoardView(store.puzzle, false))
   const boardRef = useBoardGestures(store, boardView, free ? undefined : FIXED)
   const stageRef = useRef<HTMLDivElement>(null)
-  const [cellSize, setCellSize] = useState(0)
+  const [stage, setStage] = useState({ width: 0, height: 0 })
   useLayoutEffect(() => {
     const observer = new ResizeObserver(([entry]) => {
       const { width, height } = entry!.contentRect
-      setCellSize(fitCellSize({ width, height }, store.puzzle))
+      setStage({ width, height })
     })
     observer.observe(stageRef.current!)
     return () => observer.disconnect()
-  }, [store])
+  }, [])
+  const cellSize = stage.width > 0 ? fitCellSize(stage, store.puzzle) : 0
+  const stacked = useMedia(STACKED)
+
+  const slot = clueSlot(cellSize)
+  const board: BoardBox = {
+    width,
+    height,
+    cell: cellSize,
+    rowDepth: clueDepth(puzzle.clues.rows, slot),
+    colDepth: clueDepth(puzzle.clues.cols, slot),
+  }
+  const at = placeCallout({
+    board,
+    lines: about,
+    whole: shownBeat.whole === true,
+    stacked,
+    stage,
+    boardLeft: Math.max(0, (stage.width - board.rowDepth - width * cellSize) / 2),
+  })
+  const view: BeatView = { key: beatKey, beat: shownBeat, index: beat, count: shown.beats.length, talk, onNext: next }
+  const anchor = solved ? undefined : shownBeat.anchor
 
   return (
     <main className={`${playStyles.play} ${styles.page}`}>
@@ -245,50 +293,53 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
           <header className={playStyles.cardHead}>
             <Dymo tone="pink">{track.label}</Dymo>
             <span className={playStyles.size}>
-              Lesson {index + 1} of {lessons.length} · {lesson.picture} · {width}×{height}
+              {lesson.picture} · {width}×{height}
             </span>
           </header>
           <div ref={stageRef} className={`${playStyles.stage} ${styles.stage}`}>
             {cellSize > 0 && (
               <div
                 ref={boardRef}
-                className={playStyles.board}
+                className={`${playStyles.board} ${styles.board}`}
                 data-revealed={palette !== null || undefined}
                 style={boardTracks(puzzle, cellSize) as CSSProperties}
               >
                 <div />
-                <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={clueAssists} highlight={colLines} />
-                <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={clueAssists} highlight={rowLines} />
+                <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={clueAssists} highlight={about.cols} />
+                <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={clueAssists} highlight={about.rows} />
                 <Board
                   store={store}
                   cellSize={cellSize}
                   view={boardView}
                   assists={free ? undefined : FIXED}
                   highlight={highlight}
-                  mistake={flagged?.cell ?? null}
+                  flag={boardFlag}
                 />
+                {!solved && <BeatLayer board={board} view={view} lines={about} at={at} tag={stacked ? null : tag} />}
               </div>
             )}
           </div>
+          {!solved && <Dock view={at === 'dock' ? view : null} tag={stacked ? tag : null} />}
           <div className={playStyles.tools} inert={solved}>
-            {free && (
-              <p className={playStyles.hintLine} role="status">
-                {hint && <Dymo tone="pink">{hintText(hint, cells, width)}</Dymo>}
-              </p>
-            )}
             <div className={playStyles.dock}>
               <ToolToggle store={store} />
               {free && !solved && (
-                <HintButton
-                  store={store}
-                  confirmFirst
-                  note={FREE_HINT_NOTE}
-                  request={async cells => hintFor(puzzle.palette, cells)}
-                  onError={() => {}}
-                />
+                <span className={anchor === 'hint' ? beatStyles.beckon : undefined}>
+                  <HintButton
+                    store={store}
+                    confirmFirst
+                    note={FREE_HINT_NOTE}
+                    request={async cells => hintFor(puzzle.palette, cells)}
+                    onError={() => {}}
+                  />
+                </span>
               )}
             </div>
-            {free && <AssistChips />}
+            {free && (
+              <div className={anchor === 'assists' ? beatStyles.beckon : undefined}>
+                <AssistChips />
+              </div>
+            )}
           </div>
         </div>
         <Coach
@@ -296,10 +347,9 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
           lesson={lesson}
           index={index}
           step={step}
-          beat={beat}
-          onBeat={next}
+          log={log}
+          now={beatKey}
           solved={solved}
-          feedback={flagged?.text ?? null}
           foot={foot}
           onNext={onNext}
           onFinish={onFinish}
@@ -309,60 +359,78 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
   )
 }
 
+/** The layout where the coach drops under the board, as in Lesson.module.css. */
+const STACKED = '(max-width: 860px)'
+
+function useMedia(query: string): boolean {
+  return useSyncExternalStore(
+    notify => {
+      const list = matchMedia(query)
+      list.addEventListener('change', notify)
+      return () => list.removeEventListener('change', notify)
+    },
+    () => matchMedia(query).matches,
+  )
+}
+
+/** A beat said so far in this Lesson, keyed `step.beat`. */
+interface LogEntry {
+  key: string
+  text: string
+}
+
 interface CoachProps {
   track: Track
   lesson: LessonData
   index: number
   step: number
-  beat: number
-  onBeat: () => void
+  log: LogEntry[]
+  /** The key of the beat being said. */
+  now: string
   solved: boolean
-  feedback: string | null
   foot: Foot
   onNext: () => void
   onFinish: () => void
 }
 
-function Coach({ track, lesson, index, step, beat, onBeat, solved, feedback, foot, onNext, onFinish }: CoachProps) {
+function Coach({ track, lesson, index, step, log, now, solved, foot, onNext, onFinish }: CoachProps) {
   const { steps } = lesson
-  const shown = steps[Math.min(step, steps.length - 1)]!
   const { lessons } = track
   const last = index === lessons.length - 1
   const done = useLessonsDone()
   const dotState = (i: number) => (i === index ? 'now' : done.has(lessonKey(track, lessons[i]!)) ? 'done' : undefined)
+  const logRef = useRef<HTMLOListElement>(null)
+  useEffect(() => {
+    const list = logRef.current
+    if (list) list.scrollTop = list.scrollHeight
+  }, [log.length])
   return (
     <aside className={styles.coach} style={paperStyle(0)} aria-labelledby="lesson-title">
-      <div className={styles.coachTop}>
-        <span className={styles.label}>
-          Lesson {index + 1} of {lessons.length}
-          {track.id === 'techniques' && ' · Techniques'}
-        </span>
-        {foot.learn ? (
-          <ol className={styles.lessons} aria-label="Lessons">
-            {lessons.map((l, i) => (
-              <li key={l.id} data-state={dotState(i)}>
-                <Link
-                  to="/learn/$track/$lesson"
-                  params={{ track: track.id, lesson: l.id }}
-                  search={{ back: foot.back, learn: true }}
-                  aria-label={`Lesson ${i + 1}: ${l.title}`}
-                  aria-current={i === index ? 'page' : undefined}
-                >
-                  {i + 1}
-                </Link>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <ol className={styles.lessons} aria-hidden="true">
-            {lessons.map((l, i) => (
-              <li key={l.id} data-state={dotState(i)}>
+      {foot.learn ? (
+        <ol className={styles.lessons} aria-label="Lessons">
+          {lessons.map((l, i) => (
+            <li key={l.id} data-state={dotState(i)}>
+              <Link
+                to="/learn/$track/$lesson"
+                params={{ track: track.id, lesson: l.id }}
+                search={{ back: foot.back, learn: true }}
+                aria-label={`Lesson ${i + 1}: ${l.title}`}
+                aria-current={i === index ? 'page' : undefined}
+              >
                 {i + 1}
-              </li>
-            ))}
-          </ol>
-        )}
-      </div>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <ol className={styles.lessons} aria-hidden="true">
+          {lessons.map((l, i) => (
+            <li key={l.id} data-state={dotState(i)}>
+              {i + 1}
+            </li>
+          ))}
+        </ol>
+      )}
       <h1 id="lesson-title" className={styles.coachTitle}>
         {solved ? `${lesson.picture} revealed!` : lesson.title}
       </h1>
@@ -373,18 +441,18 @@ function Coach({ track, lesson, index, step, beat, onBeat, solved, feedback, foo
           ))}
         </ol>
       )}
-      <div className={styles.text} aria-live="polite">
-        <p>{solved ? lesson.done : rich(shown.beats[beat]!.text)}</p>
-      </div>
-      {!solved && beat < shown.beats.length - 1 && (
-        <button type="button" onClick={onBeat}>
-          Next →
-        </button>
-      )}
-      {feedback && (
-        <p className={styles.feedback} role="status">
-          {rich(feedback)}
+      {solved ? (
+        <p className={styles.doneText} role="status">
+          {lesson.done}
         </p>
+      ) : (
+        <ol ref={logRef} className={styles.log} aria-label="What the coach has said">
+          {log.map(e => (
+            <li key={e.key} aria-current={e.key === now ? 'step' : undefined}>
+              {rich(e.text)}
+            </li>
+          ))}
+        </ol>
       )}
       <div className={styles.foot}>
         {foot.handoff ? (
@@ -404,16 +472,6 @@ function Coach({ track, lesson, index, step, beat, onBeat, solved, feedback, foo
       </div>
     </aside>
   )
-}
-
-/** Renders the steps' `**bold**`, `_italic_` and `` `key` `` spans. */
-function rich(text: string): ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*|_[^_]+_|`[^`]+`)/).map((part, i) => {
-    if (i % 2 === 0) return part
-    if (part.startsWith('**')) return <b key={i}>{part.slice(2, -2)}</b>
-    if (part.startsWith('`')) return <kbd key={i}>{part.slice(1, -1)}</kbd>
-    return <i key={i}>{part.slice(1, -1)}</i>
-  })
 }
 
 const TILTS = [-4, 3, -2, 4, -3]

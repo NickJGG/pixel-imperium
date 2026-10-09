@@ -1,0 +1,332 @@
+/* Over the board grid, which LessonPage makes the containing block. */
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  font: 400 16px/1.45 var(--font-ui);
+  color: var(--ink);
+}
+
+.drawings > *,
+.callout,
+.tag {
+  position: absolute;
+}
+
+.spotlight rect {
+  fill: color-mix(in srgb, var(--card) 66%, transparent);
+}
+
+.ghost {
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--on-pink);
+  background: color-mix(in srgb, var(--pink) 42%, transparent);
+  border: 3px dashed var(--pink);
+  border-radius: 9px;
+}
+
+.ghost[data-tone='blue'] {
+  color: var(--on-blue);
+  background: color-mix(in srgb, var(--blue) 40%, transparent);
+  border-color: var(--blue);
+}
+
+.ghost[data-tone='bad'] {
+  color: var(--on-red);
+  background: color-mix(in srgb, var(--red) 40%, transparent);
+  border-color: var(--red);
+}
+
+.ghost[data-sliding] {
+  animation: slide 2.6s ease-in-out infinite alternate;
+}
+
+/* The far end of a sliding ghost, drawn only when it can't slide. */
+.end {
+  display: none;
+}
+
+@keyframes slide {
+  0%,
+  18% {
+    transform: translate(0, 0);
+  }
+  82%,
+  100% {
+    transform: translate(var(--dx), var(--dy));
+  }
+}
+
+.both {
+  border: 4px solid var(--pink);
+  border-radius: 7px;
+  animation: pulse 1.3s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink) 30%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--pink) 8%, transparent);
+  }
+}
+
+.bracket {
+  --tone: var(--gold);
+  --on-tone: var(--on-gold);
+  border: 3px solid var(--tone);
+  border-radius: 6px;
+}
+
+.bracket[data-tone='bad'] {
+  --tone: var(--red);
+  --on-tone: var(--on-red);
+}
+
+.bracket[data-axis='row'] {
+  border-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.bracket[data-axis='col'] {
+  border-left: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.bracket span {
+  position: absolute;
+  padding: 2px 6px;
+  white-space: nowrap;
+  font: 700 12px var(--font-mono);
+  color: var(--on-tone);
+  background: var(--tone);
+  border-radius: 4px;
+}
+
+.bracket[data-axis='row'] span {
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.bracket[data-axis='col'] span {
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+}
+
+.callout {
+  z-index: 1;
+  pointer-events: auto;
+  padding: 14px 16px;
+  background: var(--card-2);
+  border: 2px solid var(--pink);
+  border-radius: var(--r-lg);
+  box-shadow:
+    0 6px 0 var(--shade),
+    0 18px 40px var(--shade);
+}
+
+.callout::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: var(--card-2);
+  border: 2px solid var(--pink);
+  transform: rotate(45deg);
+}
+
+.callout[data-side='below']::before {
+  top: -9px;
+  left: 28px;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.callout[data-side='above']::before {
+  bottom: -9px;
+  left: 28px;
+  border-top: 0;
+  border-left: 0;
+}
+
+.callout[data-side='right']::before {
+  top: 22px;
+  left: -9px;
+  border-top: 0;
+  border-right: 0;
+}
+
+.callout[data-side='left']::before {
+  top: 22px;
+  right: -9px;
+  border-bottom: 0;
+  border-left: 0;
+}
+
+.pop {
+  animation: pop 0.2s ease-out;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.pop p,
+.tag,
+.dockTag {
+  margin: 0;
+}
+
+.pop b,
+.tag b,
+.dockTag b {
+  color: var(--pink);
+}
+
+.pop kbd {
+  padding: 1px 6px;
+  font: 700 12px var(--font-mono);
+  color: var(--ink);
+  background: var(--card);
+  border-radius: 4px;
+  box-shadow: 0 2px 0 var(--shade);
+}
+
+.beatFoot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 10px;
+  font: 700 11px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.beatFoot button {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.pointsDown {
+  display: block;
+  margin-top: 6px;
+  font: 700 11px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pink);
+}
+
+.tag,
+.dockTag {
+  --tone: var(--red);
+  padding: 8px 10px;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--tone) 22%, var(--card-2));
+  border: 2px solid var(--tone);
+  border-radius: var(--r-md);
+}
+
+.tag[data-tone='guess'],
+.dockTag[data-tone='guess'] {
+  --tone: var(--gold);
+}
+
+.tag[data-tone='aside'],
+.dockTag[data-tone='aside'] {
+  --tone: var(--blue);
+}
+
+.tag {
+  z-index: 2;
+  box-shadow: 0 4px 0 var(--shade);
+  animation: pop 0.15s ease-out;
+}
+
+.tag::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  width: 10px;
+  height: 10px;
+  background: inherit;
+  border: 2px solid var(--tone);
+  transform: rotate(45deg);
+}
+
+.tag[data-side='right']::before {
+  left: -7px;
+  border-top: 0;
+  border-right: 0;
+}
+
+.tag[data-side='left']::before {
+  right: -7px;
+  border-bottom: 0;
+  border-left: 0;
+}
+
+/* Under the board, inside the play card. */
+.dock {
+  align-self: stretch;
+  display: grid;
+  gap: 10px;
+  font: 400 16px/1.45 var(--font-ui);
+  color: var(--ink);
+}
+
+.dock:empty {
+  display: none;
+}
+
+.dockBeat {
+  padding: 12px 14px;
+  background: var(--card-2);
+  border: 2px solid var(--pink);
+  border-radius: var(--r-lg);
+}
+
+/* Pulses a control below the board that a beat points at. */
+.beckon {
+  border-radius: var(--r-lg);
+  box-shadow: 0 0 0 3px var(--pink);
+  animation: beckon 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes beckon {
+  to {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--pink) 25%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghost[data-sliding],
+  .both,
+  .beckon,
+  .pop,
+  .tag {
+    animation: none;
+  }
+
+  .end {
+    display: grid;
+  }
+}
