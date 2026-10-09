@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getSettings } from '../settings.ts'
+import { usePadContain } from '../pad/PadProvider.tsx'
 import type { PlayStore } from './store.ts'
 import styles from './Play.module.css'
 
@@ -14,6 +15,9 @@ interface Props {
 export function ClearButton({ store, solved, disabled = false }: Props) {
   const [confirming, setConfirming] = useState(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const boxRef = useRef<HTMLDivElement>(null)
+  usePadContain(boxRef, confirming, () => setConfirming(false), buttonRef)
 
   useEffect(() => {
     if (!confirming) return
@@ -32,6 +36,7 @@ export function ClearButton({ store, solved, disabled = false }: Props) {
   if (!confirming) {
     return (
       <button
+        ref={buttonRef}
         type="button"
         data-variant={solved ? 'blue' : undefined}
         disabled={disabled}
@@ -44,7 +49,7 @@ export function ClearButton({ store, solved, disabled = false }: Props) {
   }
 
   return (
-    <div className={styles.confirm} role="group" aria-label={label}>
+    <div ref={boxRef} className={styles.confirm} role="group" aria-label={label}>
       <span>{solved ? 'Clear and replay?' : 'Clear the grid?'}</span>
       <button
         ref={confirmRef}

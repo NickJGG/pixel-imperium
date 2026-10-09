@@ -43,6 +43,7 @@ export function usePadBoard(canvasRef: RefObject<HTMLCanvasElement | null>, { st
     canvas.addEventListener('blur', endStroke)
     const unregister = dispatcher.register({
       canvas,
+      live: () => !store.getState().solved,
       handle({ kind, button }) {
         if (store.getState().solved) return false
         const { assists, onTalkNext } = options.current

@@ -1,4 +1,5 @@
 import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react'
+import { usePadContain } from '../pad/PadProvider.tsx'
 import type { PlayStore } from './store.ts'
 import styles from './Play.module.css'
 
@@ -14,7 +15,9 @@ export function MoreMenu({ store, paper, children }: Props) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const popRef = useRef<HTMLDivElement>(null)
   const id = useId()
+  usePadContain(popRef, open, () => setOpen(false), buttonRef)
 
   useEffect(() => {
     if (!open) return
@@ -35,10 +38,11 @@ export function MoreMenu({ store, paper, children }: Props) {
   }, [open, store])
 
   return (
-    <div ref={rootRef} className={styles.more}>
+    <div ref={rootRef} className={styles.more} data-pad-panel>
       <button
         ref={buttonRef}
         type="button"
+        data-pad-menu
         aria-label="More"
         title="More"
         aria-expanded={open}
@@ -50,7 +54,7 @@ export function MoreMenu({ store, paper, children }: Props) {
         </svg>
       </button>
       {open && (
-        <div id={id} className={styles.morePop} style={paper}>
+        <div ref={popRef} id={id} className={styles.morePop} style={paper}>
           {children}
         </div>
       )}

@@ -74,6 +74,7 @@ export function PuzzlePanel({ campaignId, index, stamp, tag, children, ref, ...r
     <aside
       ref={ref}
       className={styles.panel}
+      data-pad-panel
       style={{ ...paperStyle(index), width: SIDE_PAGE_WIDTH }}
       aria-label={province.name}
     >

@@ -42,10 +42,12 @@ interface Props {
   storage: ProgressStorage
   /** The lowest unsolved slot in the active province. */
   next?: boolean
+  /** Where a controller's focus lands on the page. */
+  padDefault?: boolean
 }
 
 /** A puzzle's slot on its province's spread: its sticker once solved, else an empty slot. Opens the puzzle. */
-export function PuzzleSlot({ puzzle: p, number, storage, next = false }: Props) {
+export function PuzzleSlot({ puzzle: p, number, storage, next = false, padDefault = false }: Props) {
   const status = statusOf(p, storage)
   const gold = number === GOLD_SLOT
   const size = `${p.width}×${p.height}`
@@ -59,6 +61,7 @@ export function PuzzleSlot({ puzzle: p, number, storage, next = false }: Props) 
       to="/play/$id"
       params={{ id: p.id }}
       className={styles.slotLink}
+      data-pad-default={padDefault || undefined}
       aria-label={label}
       title={status.kind === 'solved' && status.unverified ? 'Imported: replay to verify' : undefined}
     >

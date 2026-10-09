@@ -3,6 +3,7 @@ import { useRouter } from '@tanstack/react-router'
 import { type ImportOffer, acceptImport, deferImport, discardImport, useAccount } from './account.ts'
 import { Sticker, tiltOf } from './album/Sticker.tsx'
 import { useCurrentCampaign } from './campaign/last-campaign.ts'
+import { usePadContain } from './pad/PadProvider.tsx'
 import { signedOutStorage } from './play/progress-storage.ts'
 import styles from './App.module.css'
 
@@ -46,6 +47,7 @@ function Prompt({ offer, handle }: { offer: ImportOffer; handle: string }) {
   const [confirmDiscard, setConfirmDiscard] = useState(false)
 
   useEffect(() => dialogRef.current?.showModal(), [])
+  usePadContain(dialogRef, true, () => !busy && deferImport())
 
   const add = async () => {
     setBusy(true)

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { Province } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
+import { usePadContain } from '../pad/PadProvider.tsx'
 import { asked } from './asked.ts'
 import type { Track } from './tracks.ts'
 import playStyles from '../play/Play.module.css'
@@ -46,6 +47,7 @@ export function ChoiceCard({ track, copy, puzzleId }: { track: Track; copy: Offe
   const cardRef = useRef<HTMLDivElement>(null)
   const learnRef = useRef<HTMLAnchorElement>(null)
   const { mark } = asked(track.id)
+  usePadContain(cardRef, true, mark)
 
   useEffect(() => {
     learnRef.current?.focus()

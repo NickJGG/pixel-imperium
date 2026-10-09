@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
 import { signOutAccount } from './account.ts'
+import { usePadContain } from './pad/PadProvider.tsx'
 import { AlbumIcon, SettingsIcon, SignOutIcon } from './album/icons.tsx'
 import { PROVIDERS, signIn, useSession } from './auth.ts'
 import styles from './App.module.css'
@@ -94,6 +95,9 @@ interface MenuProps {
 function Menu({ label, trigger, triggerClassName, up, children }: MenuProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  usePadContain(menuRef, open, () => setOpen(false), triggerRef)
 
   useEffect(() => {
     if (!open) return
@@ -110,7 +114,9 @@ function Menu({ label, trigger, triggerClassName, up, children }: MenuProps) {
   return (
     <div ref={rootRef} className={styles.menuRoot}>
       <button
+        ref={triggerRef}
         type="button"
+        data-pad-menu
         className={triggerClassName}
         aria-label={label}
         aria-haspopup="menu"
@@ -121,6 +127,7 @@ function Menu({ label, trigger, triggerClassName, up, children }: MenuProps) {
       </button>
       {open && (
         <div
+          ref={menuRef}
           className={`${styles.menu} ${up ? styles.up : ''}`}
           role="menu"
           onClick={e => (e.target as Element).closest('[role="menuitem"]') && setOpen(false)}

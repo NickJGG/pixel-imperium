@@ -111,6 +111,16 @@
   outline: 3px solid var(--pink);
 }
 
+/* The current lesson's pink ring would hide focus: keep it inside, and ring focus outside it. */
+.lesson[data-current]:focus-visible,
+:root[data-pad] .lesson[data-current]:focus {
+  outline: 3px solid var(--focus, var(--blue));
+  outline-offset: 4px;
+  box-shadow:
+    inset 0 0 0 3px var(--pink),
+    0 3px 0 var(--shade);
+}
+
 .here {
   position: absolute;
   top: -10px;

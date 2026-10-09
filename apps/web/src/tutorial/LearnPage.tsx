@@ -84,7 +84,7 @@ function TrackSection({ track, paper, done, fresh, back, tag }: TrackProps) {
             Replay from lesson 1
           </Link>
         ) : (
-          <Link {...to(next.id)} className={playStyles.linkButton}>
+          <Link {...to(next.id)} className={playStyles.linkButton} data-pad-default>
             {count === 0 ? `Start: ${next.title}` : `Continue: ${lessons.indexOf(next) + 1}. ${next.title}`}
           </Link>
         )}

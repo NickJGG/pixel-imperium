@@ -94,7 +94,12 @@ function Cover({ campaign, campaigns }: Props) {
             />
             <div className={styles.cta}>
               {next && (
-                <Link to="/play/$id" params={{ id: next.puzzle.id }} className={`${styles.pill} ${styles.primary}`}>
+                <Link
+                  to="/play/$id"
+                  params={{ id: next.puzzle.id }}
+                  className={`${styles.pill} ${styles.primary}`}
+                  data-pad-default
+                >
                   {next.fresh ? 'Start' : 'Continue'}: #{next.number} {next.puzzle.title}
                 </Link>
               )}

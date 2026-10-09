@@ -5,18 +5,22 @@
  * steps on fixed assists; a `free` one is played on the player's own assists, with a local Hint. Nothing
  * here is saved but the place to resume from and which Lessons are done.
  */
-import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { type CSSProperties, type Ref, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { type Cell, hintFor } from '@pixel-imperium/nonogram'
 import type { Assists } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
 import { paperStyle } from '../album/paper.ts'
 import { PixelArt } from '../campaign/PixelArt.tsx'
+import { getPadMode } from '../pad/mode.ts'
+import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
+import { firstFocusable, focusDefault } from '../pad/spatial.ts'
+import { REVEAL_GUARD_MS } from '../pad/tuning.ts'
 import { useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
 import { AssistChips } from '../play/AssistChips.tsx'
-import { Board, type BoardFlag } from '../play/Board.tsx'
+import { Board, type BoardFlag, REVEAL_MS } from '../play/Board.tsx'
 import { ColClues, RowClues } from '../play/Clues.tsx'
 import { useBoardGestures } from '../play/gestures.ts'
 import { HintButton, cellHintText } from '../play/HintButton.tsx'
@@ -236,6 +240,31 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
     saveResume(track, next ? { lesson: next.id, step: 0 } : null)
   }, [solved, store, puzzle, track, lesson, lessons, index])
 
+  // A controller's A waits out the reveal, then the focus moves from the board to the coach's Next.
+  const [revealing, setRevealing] = useState(false)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const coachRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!solved) return
+    setRevealing(true)
+    const timer = setTimeout(() => setRevealing(false), REVEAL_MS + REVEAL_GUARD_MS)
+    const frame = requestAnimationFrame(() => {
+      const active = document.activeElement
+      if (getPadMode() && (active === document.body || stageRef.current?.contains(active))) focusDefault()
+    })
+    return () => {
+      clearTimeout(timer)
+      cancelAnimationFrame(frame)
+    }
+  }, [solved])
+  usePadPage({
+    panel: () => {
+      const coach = coachRef.current
+      return coach && (coach.querySelector<HTMLElement>('[data-variant="primary"]') ?? firstFocusable(coach))
+    },
+    hold: revealing,
+  })
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Enter' && talk && !e.repeat && !(e.ctrlKey || e.metaKey || e.altKey)) {
@@ -251,7 +280,6 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
 
   const [boardView] = useState(() => new BoardView(store.puzzle, false))
   const boardRef = useBoardGestures(store, boardView, free ? undefined : FIXED)
-  const stageRef = useRef<HTMLDivElement>(null)
   const [stage, setStage] = useState({ width: 0, height: 0 })
   useLayoutEffect(() => {
     const observer = new ResizeObserver(([entry]) => {
@@ -341,6 +369,7 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
           </div>
         </div>
         <Coach
+          ref={coachRef}
           track={track}
           lesson={lesson}
           index={index}
@@ -378,6 +407,7 @@ interface LogEntry {
 }
 
 interface CoachProps {
+  ref: Ref<HTMLElement>
   track: Track
   lesson: LessonData
   index: number
@@ -391,7 +421,7 @@ interface CoachProps {
   onFinish: () => void
 }
 
-function Coach({ track, lesson, index, step, log, now, solved, foot, onNext, onFinish }: CoachProps) {
+function Coach({ ref, track, lesson, index, step, log, now, solved, foot, onNext, onFinish }: CoachProps) {
   const { steps } = lesson
   const { lessons } = track
   const last = index === lessons.length - 1
@@ -403,7 +433,7 @@ function Coach({ track, lesson, index, step, log, now, solved, foot, onNext, onF
     if (list) list.scrollTop = list.scrollHeight
   }, [log.length])
   return (
-    <aside className={styles.coach} style={paperStyle(0)} aria-labelledby="lesson-title">
+    <aside ref={ref} className={styles.coach} style={paperStyle(0)} aria-labelledby="lesson-title" data-pad-panel>
       {foot.learn ? (
         <ol className={styles.lessons} aria-label="Lessons">
           {lessons.map((l, i) => (
@@ -463,7 +493,7 @@ function Coach({ track, lesson, index, step, log, now, solved, foot, onNext, onF
           </Link>
         )}
         {solved && (
-          <button type="button" data-variant="primary" onClick={last ? onFinish : onNext}>
+          <button type="button" data-variant="primary" data-pad-default onClick={last ? onFinish : onNext}>
             {last ? 'Finish' : 'Next lesson'} →
           </button>
         )}
@@ -490,7 +520,7 @@ function HandoffView({ track, handoff }: { track: Track; handoff: Handoff }) {
             </span>
           ))}
         </div>
-        <Link to={handoff.to} className={playStyles.linkButton}>
+        <Link to={handoff.to} className={playStyles.linkButton} data-pad-default>
           {handoff.action}
         </Link>
       </section>

@@ -116,6 +116,7 @@ export function Board({ store, cellSize, view, assists, highlight, flag = null, 
     })
   }, [store, view, width])
 
+  const solved = useSyncExternalStore(store.subscribe, () => store.getState().solved)
   const announcement = useSyncExternalStore(store.subscribe, () => {
     const { cursor, cells } = store.getState()
     return `Row ${cursor.row + 1}, column ${cursor.col + 1}, ${cells[cursor.row * width + cursor.col]}`
@@ -159,6 +160,7 @@ export function Board({ store, cellSize, view, assists, highlight, flag = null, 
         className={styles.canvas}
         style={{ width: width * cellSize, height: height * cellSize }}
         tabIndex={0}
+        data-pad-default={!solved || undefined}
         role="application"
         aria-label={`Puzzle grid, ${width} by ${height}. Arrow keys or WASD move, hold Z to fill, hold X to mark.`}
         onFocus={() => store.setFocused(true)}

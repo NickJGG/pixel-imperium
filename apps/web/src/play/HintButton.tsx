@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Cell } from '@pixel-imperium/nonogram'
 import type { HintResponse } from '@pixel-imperium/protocol'
+import { usePadContain } from '../pad/PadProvider.tsx'
 import type { PlayStore } from './store.ts'
 import styles from './Play.module.css'
 
@@ -22,6 +23,9 @@ export function HintButton({ store, confirmFirst, note, popover = false, request
   const [pending, setPending] = useState(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
   const anchorRef = useRef<HTMLSpanElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const boxRef = useRef<HTMLDivElement>(null)
+  usePadContain(boxRef, confirming, () => setConfirming(false), buttonRef)
 
   useEffect(() => {
     if (!confirming) return
@@ -56,6 +60,7 @@ export function HintButton({ store, confirmFirst, note, popover = false, request
 
   const button = (
     <button
+      ref={buttonRef}
       type="button"
       data-variant="blue"
       disabled={pending}
@@ -68,7 +73,7 @@ export function HintButton({ store, confirmFirst, note, popover = false, request
   )
 
   const confirm = confirming && (
-    <div className={popover ? `${styles.confirm} ${styles.hintPop}` : styles.confirm} role="group" aria-label="Hint">
+    <div ref={boxRef} className={popover ? `${styles.confirm} ${styles.hintPop}` : styles.confirm} role="group" aria-label="Hint">
       <span>Using a hint means this sticker won't be foil.</span>
       <button ref={confirmRef} type="button" data-variant="primary" onClick={() => void hint()}>
         Use a hint

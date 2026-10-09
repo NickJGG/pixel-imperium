@@ -26,7 +26,15 @@ export function ProvincePage({ campaign, province }: { campaign: Campaign; provi
         solved={solved}
         complete={state === 'conquered'}
         caption={(state === 'conquered' && province.flavour) || undefined}
-        slot={(p, number) => <PuzzleSlot puzzle={p} number={number} storage={storage} next={p === next} />}
+        slot={(p, number) => (
+          <PuzzleSlot
+            puzzle={p}
+            number={number}
+            storage={storage}
+            next={p === next}
+            padDefault={p === (next ?? province.puzzles[0])}
+          />
+        )}
       />
     </Indexed>
   )

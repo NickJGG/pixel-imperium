@@ -8,3 +8,5 @@ export const PAN_DEAD = 0.2
 export const PAN_PX_PER_S = 600
 /** Natural-log zoom per second at full trigger. */
 export const ZOOM_RATE = 2.2
+/** Slack after a Lesson's reveal before A counts again, so a press meant for the board can't skip ahead. */
+export const REVEAL_GUARD_MS = 150

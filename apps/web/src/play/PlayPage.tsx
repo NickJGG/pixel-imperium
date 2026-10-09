@@ -12,7 +12,10 @@ import { requestHint, submitSolve } from '../api.ts'
 import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
+import { getPadMode } from '../pad/mode.ts'
+import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
+import { firstFocusable, focusDefault } from '../pad/spatial.ts'
 import { getSettings, useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
 import { useShouldOffer, useShouldOfferTechniques } from '../tutorial/asked.ts'
@@ -248,6 +251,23 @@ function Play({
 
   const hideSticker = moment === 'waiting' || moment === 'flying'
   const done = previewConquest || (solved && !hideSticker)
+
+  usePadPage({
+    parent: solved ? `/c/${campaign.id}/${province.id}` : undefined,
+    panel: () => {
+      if (!wide) return cardRef.current?.querySelector<HTMLElement>('[data-pad-menu]') ?? null
+      const panel = panelRef.current
+      return panel && (panel.querySelector<HTMLElement>(`.${styles.panelHint} button`) ?? firstFocusable(panel))
+    },
+    menu: wide && !solved ? () => panelRef.current?.querySelector<HTMLElement>('[role="switch"]')?.focus() : undefined,
+    hold: solved && moment !== 'landed' && moment !== 'kept',
+  })
+  // The solve hands a controller on from the board to the onward link once it shows.
+  useEffect(() => {
+    if (!done || !getPadMode()) return
+    const active = document.activeElement
+    if (active === document.body || stageRef.current?.contains(active)) focusDefault()
+  }, [done])
   // Compact after a solve: the pill leaves, the card shrinks to the board and the after card stacks below.
   const settled = solved && done && !wide && fit !== null
   useLayoutEffect(() => {
@@ -321,7 +341,7 @@ function Play({
   )
   const onward = !conquest ? (
     next && (
-      <Link to="/play/$id" params={{ id: next.id }} className={styles.linkButton}>
+      <Link to="/play/$id" params={{ id: next.id }} className={styles.linkButton} data-pad-default>
         Next: {next.title}
         <ArrowIcon />
       </Link>
@@ -331,6 +351,7 @@ function Play({
       to="/c/$campaignId/$provinceId"
       params={{ campaignId: campaign.id, provinceId: following.id }}
       className={styles.linkButton}
+      data-pad-default
     >
       Open
       <span className={styles.tabChip} style={paperStyle(provinceIndex + 1)}>
@@ -339,7 +360,7 @@ function Play({
       <ArrowIcon />
     </Link>
   ) : (
-    <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} className={styles.linkButton}>
+    <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} className={styles.linkButton} data-pad-default>
       Back to the cover
     </Link>
   )
@@ -348,6 +369,7 @@ function Play({
       to="/c/$campaignId/$provinceId"
       params={{ campaignId: campaign.id, provinceId: province.id }}
       className={`${styles.linkButton} ${styles.paper}`}
+      data-pad-default={!onward || undefined}
     >
       Back to page
     </Link>
