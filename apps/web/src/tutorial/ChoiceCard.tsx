@@ -1,23 +1,56 @@
 import { useEffect, useRef } from 'react'
 import { Link } from '@tanstack/react-router'
+import type { Province } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
-import { markAsked } from './asked.ts'
-import { TRACKS } from './tracks.ts'
+import { asked } from './asked.ts'
+import type { Track } from './tracks.ts'
 import playStyles from '../play/Play.module.css'
 import styles from './Lesson.module.css'
 
+export interface OfferCopy {
+  tag: string
+  tone?: 'dark' | 'pink'
+  heading: string
+  text: string
+  /** Lists the track's Lessons as chips. */
+  chips?: true
+  learn: string
+  decline: string
+  footer?: string
+}
+
+export const TUTORIAL_OFFER: OfferCopy = {
+  tag: 'First puzzle',
+  heading: 'New to nonograms?',
+  text: 'The clues tell you which cells to fill. Four tiny lessons show you how. It takes about two minutes.',
+  learn: 'Learn in 2 minutes',
+  decline: 'I know how to play',
+}
+
+export const techniquesOffer = (province: Province): OfferCopy => ({
+  tag: province.name,
+  tone: 'pink',
+  heading: 'Bigger pictures ahead',
+  text: `From here the grids reach ${province.maxSize}×${province.maxSize}, and the basics alone get slow. Five short lessons show the tricks that keep them moving.`,
+  chips: true,
+  learn: 'Learn the techniques',
+  decline: 'Not now',
+  footer: "They're always in How to play.",
+})
+
 /**
- * Offers the Tutorial over a never-asked player's first puzzle, holding focus until answered. Learn, I know
- * how to play, ✕ and Escape all count as asked, which is what takes the card away.
+ * Offers `track` over a puzzle, holding focus until answered. Learn, the decline button, ✕ and Escape
+ * all count as asked, which is what takes the card away.
  */
-export function ChoiceCard({ puzzleId }: { puzzleId: string }) {
+export function ChoiceCard({ track, copy, puzzleId }: { track: Track; copy: OfferCopy; puzzleId: string }) {
   const cardRef = useRef<HTMLDivElement>(null)
   const learnRef = useRef<HTMLAnchorElement>(null)
+  const { mark } = asked(track.id)
 
   useEffect(() => {
     learnRef.current?.focus()
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') return markAsked()
+      if (e.key === 'Escape') return mark()
       if (e.key !== 'Tab') return
       const items = [...cardRef.current!.querySelectorAll<HTMLElement>('a, button')]
       const at = items.indexOf(document.activeElement as HTMLElement)
@@ -27,30 +60,40 @@ export function ChoiceCard({ puzzleId }: { puzzleId: string }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [mark])
 
   return (
     <div className={styles.overlay}>
       <div ref={cardRef} className={styles.choice} role="dialog" aria-modal="true" aria-labelledby="choice-title">
-        <button type="button" data-variant="ghost" className={styles.close} aria-label="Close" onClick={markAsked}>
+        <button type="button" data-variant="ghost" className={styles.close} aria-label="Close" onClick={mark}>
           ✕
         </button>
-        <Dymo className={styles.choiceTag}>First puzzle</Dymo>
-        <h2 id="choice-title">New to nonograms?</h2>
-        <p>The clues tell you which cells to fill. Four tiny lessons show you how. It takes about two minutes.</p>
+        <Dymo tone={copy.tone ?? 'dark'} className={styles.choiceTag}>
+          {copy.tag}
+        </Dymo>
+        <h2 id="choice-title">{copy.heading}</h2>
+        <p>{copy.text}</p>
+        {copy.chips && (
+          <ul className={styles.chips}>
+            {track.lessons.map(l => (
+              <li key={l.id}>{l.title}</li>
+            ))}
+          </ul>
+        )}
         <Link
           ref={learnRef}
           to="/learn/$track/$lesson"
-          params={{ track: 'tutorial', lesson: TRACKS.tutorial.lessons[0]!.id }}
+          params={{ track: track.id, lesson: track.lessons[0]!.id }}
           search={{ back: `/play/${puzzleId}` }}
           className={`${playStyles.linkButton} ${styles.learn}`}
-          onClick={markAsked}
+          onClick={mark}
         >
-          Learn in 2 minutes
+          {copy.learn}
         </Link>
-        <button type="button" className={styles.knowHow} onClick={markAsked}>
-          I know how to play
+        <button type="button" className={styles.knowHow} onClick={mark}>
+          {copy.decline}
         </button>
+        {copy.footer && <p className={styles.choiceFoot}>{copy.footer}</p>}
       </div>
     </div>
   )

@@ -43,6 +43,10 @@ export const lessonKey = (track: Track, lesson: Lesson): string => `${track.id}:
 
 export const trackOf = (id: string): Track | undefined => (Object.hasOwn(TRACKS, id) ? TRACKS[id as Track['id']] : undefined)
 
+/** Some Lesson of `track` is in `done`. */
+export const startedTrack = (track: Track, done: ReadonlySet<string>): boolean =>
+  track.lessons.some(l => done.has(lessonKey(track, l)))
+
 /** The first Lesson not in `done`, or `undefined` once the whole track is. */
 export const firstUnfinished = (track: Track, done: ReadonlySet<string>): Lesson | undefined =>
   track.lessons.find(l => !done.has(lessonKey(track, l)))

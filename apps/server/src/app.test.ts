@@ -85,9 +85,10 @@ describe('GET /api/campaigns/:id', () => {
           name: 'Province first',
           theme: '',
           flavour: 'first falls.',
+          maxSize: 5,
           puzzles: [{ id: 'diag', title: 'Diagonal', width: 2, height: 2, filledCount: 2 }],
         },
-        { id: 'second', name: 'Province second', theme: '', flavour: 'second falls.', puzzles: [] },
+        { id: 'second', name: 'Province second', theme: '', flavour: 'second falls.', maxSize: 5, puzzles: [] },
       ],
     })
   })
@@ -331,6 +332,7 @@ describe('/api/me', () => {
     ['PUT', '/api/me/handle'],
     ['PUT', '/api/me/showcase'],
     ['PUT', '/api/me/tutorial'],
+    ['PUT', '/api/me/techniques'],
     ['PUT', '/api/me/lessons/tutorial:overlap'],
   ])('%s %s 401s without a session', async (method, path) => {
     const res = await app.request(path, { method, body: method === 'GET' ? null : '{}' })
@@ -361,6 +363,7 @@ describe('/api/me', () => {
       assists,
       showcase: [],
       tutorialAskedAt: null,
+      techniquesAskedAt: null,
       lessonsDone: [],
     })
   })
@@ -379,16 +382,21 @@ describe('/api/me', () => {
   })
 })
 
-describe('PUT /api/me/tutorial', () => {
-  it('records when the tutorial was first offered and keeps that time', async () => {
+describe.each([
+  ['tutorial', 'tutorialAskedAt', 'techniquesAskedAt'],
+  ['techniques', 'techniquesAskedAt', 'tutorialAskedAt'],
+] as const)('PUT /api/me/%s', (offer, field, other) => {
+  it('records when it was first offered and keeps that time', async () => {
     const { cookie } = await signedInUser(db, auth)
     const before = Date.now()
-    expect((await send('PUT', '/api/me/tutorial', null, cookie)).status).toBe(204)
-    const askedAt = (await getProgress(cookie)).tutorialAskedAt
+    expect((await send('PUT', `/api/me/${offer}`, null, cookie)).status).toBe(204)
+    const askedAt = (await getProgress(cookie))[field]
     expect(new Date(askedAt!).getTime()).toBeGreaterThanOrEqual(before - 1000)
 
-    expect((await send('PUT', '/api/me/tutorial', null, cookie)).status).toBe(204)
-    expect((await getProgress(cookie)).tutorialAskedAt).toBe(askedAt)
+    expect((await send('PUT', `/api/me/${offer}`, null, cookie)).status).toBe(204)
+    const after = await getProgress(cookie)
+    expect(after[field]).toBe(askedAt)
+    expect(after[other]).toBeNull()
   })
 })
 

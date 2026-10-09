@@ -14,9 +14,11 @@ import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
 import { getSettings, useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
-import { useShouldOffer } from '../tutorial/asked.ts'
-import { ChoiceCard } from '../tutorial/ChoiceCard.tsx'
+import { useShouldOffer, useShouldOfferTechniques } from '../tutorial/asked.ts'
+import { ChoiceCard, TUTORIAL_OFFER, techniquesOffer } from '../tutorial/ChoiceCard.tsx'
+import { useLessonsDone } from '../tutorial/done.ts'
 import { HowToPlay } from '../tutorial/HowToPlay.tsx'
+import { TRACKS } from '../tutorial/tracks.ts'
 import { AssistSwitches } from './AssistSwitches.tsx'
 import { Board, REVEAL_MS } from './Board.tsx'
 import { ClearButton, LoopIcon } from './ClearButton.tsx'
@@ -108,6 +110,7 @@ function Play({
   const percent = useMemo(() => progressPercent(cells, puzzle.filledCount, false), [cells, puzzle.filledCount])
   const settings = useSettings()
   const offerTutorial = useShouldOffer(storage)
+  const offerTechniques = useShouldOfferTechniques(province, useLessonsDone()) && !offerTutorial
   const fresh = useMemo(() => freshCells(puzzle, settings.autoMarkEmptyLines), [puzzle, settings.autoMarkEmptyLines])
   const canClear = useMemo(() => cells.some((c, i) => c !== fresh[i]), [cells, fresh])
   const crossRow = useStoreValue(store, s => (settings.crosshair ? (crosshairOf(s)?.row ?? null) : null))
@@ -332,28 +335,17 @@ function Play({
       </Link>
     )
   ) : following ? (
-    <>
-      <Link
-        to="/c/$campaignId/$provinceId"
-        params={{ campaignId: campaign.id, provinceId: following.id }}
-        className={styles.linkButton}
-      >
-        Open
-        <span className={styles.tabChip} style={paperStyle(provinceIndex + 1)}>
-          {following.name.replace(/^The /, '')}
-        </span>
-        <ArrowIcon />
-      </Link>
-      {province.techniques && (
-        <Link
-          to="/learn/techniques"
-          search={{ back: `/c/${campaign.id}/${following.id}` }}
-          className={`${styles.linkButton} ${styles.paper}`}
-        >
-          Learn advanced techniques
-        </Link>
-      )}
-    </>
+    <Link
+      to="/c/$campaignId/$provinceId"
+      params={{ campaignId: campaign.id, provinceId: following.id }}
+      className={styles.linkButton}
+    >
+      Open
+      <span className={styles.tabChip} style={paperStyle(provinceIndex + 1)}>
+        {following.name.replace(/^The /, '')}
+      </span>
+      <ArrowIcon />
+    </Link>
   ) : (
     <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} className={styles.linkButton}>
       Back to the cover
@@ -481,7 +473,10 @@ function Play({
               New sticker!
             </Stamp>
           )}
-          {offerTutorial && <ChoiceCard puzzleId={puzzle.id} />}
+          {offerTutorial && <ChoiceCard track={TRACKS.tutorial} copy={TUTORIAL_OFFER} puzzleId={puzzle.id} />}
+          {offerTechniques && (
+            <ChoiceCard track={TRACKS.techniques} copy={techniquesOffer(province)} puzzleId={puzzle.id} />
+          )}
         </div>
         {wide && (
           <PuzzlePanel

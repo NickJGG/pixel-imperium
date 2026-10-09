@@ -93,11 +93,12 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         id,
         name,
         closingLine,
-        provinces: provinces.map(({ id, name, theme, flavour, techniques, puzzles }) => ({
+        provinces: provinces.map(({ id, name, theme, flavour, maxSize, techniques, puzzles }) => ({
           id,
           name,
           theme,
           flavour,
+          maxSize,
           ...(techniques && { techniques }),
           puzzles: puzzles.map(summarize),
         })),
@@ -266,7 +267,11 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         db.select({ puzzleId: hint.puzzleId }).from(hint).where(eq(hint.userId, userId)),
         db.select().from(userSettings).where(eq(userSettings.userId, userId)),
         db
-          .select({ showcase: user.showcase, tutorialAskedAt: user.tutorialAskedAt })
+          .select({
+            showcase: user.showcase,
+            tutorialAskedAt: user.tutorialAskedAt,
+            techniquesAskedAt: user.techniquesAskedAt,
+          })
           .from(user)
           .where(eq(user.id, userId)),
         db.select({ lesson: lessonDone.lesson }).from(lessonDone).where(eq(lessonDone.userId, userId)),
@@ -290,6 +295,7 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         assists: settings?.assists ?? null,
         showcase,
         tutorialAskedAt: me?.tutorialAskedAt?.toISOString() ?? null,
+        techniquesAskedAt: me?.techniquesAskedAt?.toISOString() ?? null,
         lessonsDone: lessons.map(l => l.lesson),
       })
     })
@@ -298,6 +304,13 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         .update(user)
         .set({ tutorialAskedAt: new Date() })
         .where(and(eq(user.id, c.get('user')!.id), isNull(user.tutorialAskedAt)))
+      return c.body(null, 204)
+    })
+    .put('/me/techniques', async c => {
+      await db
+        .update(user)
+        .set({ techniquesAskedAt: new Date() })
+        .where(and(eq(user.id, c.get('user')!.id), isNull(user.techniquesAskedAt)))
       return c.body(null, 204)
     })
     .put('/me/lessons/:key', async c => {

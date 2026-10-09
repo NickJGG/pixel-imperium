@@ -20,7 +20,7 @@ export interface ProvinceDef {
   maxSize: number
   /** 1-based slots where Medium and Hard start; required outside drafts. */
   tiers?: [number, number]
-  /** Its Conquest offers the Techniques; at most one per campaign. */
+  /** Offer the Techniques when this province starts; at most one per campaign. */
   techniques?: true
 }
 

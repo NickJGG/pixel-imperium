@@ -27,6 +27,8 @@ export const user = pgTable(
     showcase: text('showcase').array().default(sql`'{}'::text[]`).notNull(),
     /** When the player was first offered the Tutorial, on any device. */
     tutorialAskedAt: timestamp('tutorial_asked_at'),
+    /** When the player was first offered the Techniques, on any device. */
+    techniquesAskedAt: timestamp('techniques_asked_at'),
   },
   t => [uniqueIndex('user_handle_lower_idx').on(sql`lower(${t.handle})`)],
 )

@@ -8,7 +8,7 @@ import { Dymo } from '../album/Dymo.tsx'
 import { paperStyle } from '../album/paper.ts'
 import { useAccount } from '../account.ts'
 import { PixelArt } from '../campaign/PixelArt.tsx'
-import { campaignProgress, techniquesOpen } from '../campaign/progress.ts'
+import { campaignProgress, techniquesRecommended } from '../campaign/progress.ts'
 import { clearUnseen, getUnseen, useLessonsDone } from './done.ts'
 import type { LearnBack } from './handoff.ts'
 import { lessonPuzzle } from './lessons.ts'
@@ -21,7 +21,7 @@ export function LearnPage({ back }: { back: LearnBack }) {
   const { storage } = useAccount()
   const { campaign } = back
   const recommended = useMemo(
-    () => campaign !== null && techniquesOpen(campaign, campaignProgress(campaign, storage)),
+    () => campaign !== null && techniquesRecommended(campaign, campaignProgress(campaign, storage)),
     [campaign, storage],
   )
   const [fresh] = useState(getUnseen)

@@ -75,9 +75,9 @@ export async function putSettings(assists: Assists): Promise<void> {
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
 }
 
-/** Records that the Tutorial was offered; the server keeps the first time. */
-export async function putTutorialAsked(): Promise<void> {
-  const res = await fetch('/api/me/tutorial', { method: 'PUT' })
+/** Records that a track was offered; the server keeps the first time. */
+export async function putAsked(offer: 'tutorial' | 'techniques'): Promise<void> {
+  const res = await fetch(`/api/me/${offer}`, { method: 'PUT' })
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
 }
 

@@ -289,6 +289,28 @@
   justify-content: center;
 }
 
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips li {
+  padding: 3px 8px;
+  font: 700 11px var(--font-mono);
+  color: var(--ink-soft);
+  background: var(--card);
+  border-radius: var(--r-pill);
+}
+
+.choice .choiceFoot {
+  font-size: 13px;
+}
+
 .knowHow {
   --btn-bg: transparent;
   --btn-edge: transparent;

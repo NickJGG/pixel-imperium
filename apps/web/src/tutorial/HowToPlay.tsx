@@ -3,8 +3,9 @@ import { Link } from '@tanstack/react-router'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
 import { useAccount } from '../account.ts'
-import { campaignProgress, techniquesOpen } from '../campaign/progress.ts'
+import { campaignProgress, techniquesRecommended } from '../campaign/progress.ts'
 import { useLessonsDone } from './done.ts'
+import { TRACKS, startedTrack } from './tracks.ts'
 import styles from './Learn.module.css'
 
 /**
@@ -13,9 +14,9 @@ import styles from './Learn.module.css'
  */
 export function HowToPlay({ back, campaign, className }: { back: string; campaign: Campaign; className: string | undefined }) {
   const { storage } = useAccount()
-  const recommended = useMemo(() => techniquesOpen(campaign, campaignProgress(campaign, storage)), [campaign, storage])
+  const recommended = useMemo(() => techniquesRecommended(campaign, campaignProgress(campaign, storage)), [campaign, storage])
   const done = useLessonsDone()
-  const fresh = recommended && ![...done].some(k => k.startsWith('techniques:'))
+  const fresh = recommended && !startedTrack(TRACKS.techniques, done)
   return (
     <Link to="/learn" search={{ back }} className={className}>
       <svg viewBox="0 0 24 24" aria-hidden="true">

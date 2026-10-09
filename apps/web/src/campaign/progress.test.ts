@@ -2,16 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { stubStorage } from '../test-storage.ts'
-import { campaignProgress, continueAt, nextPuzzle, provinceStates, techniquesOpen } from './progress.ts'
+import { campaignProgress, continueAt, nextPuzzle, provinceStates, techniquesRecommended } from './progress.ts'
 
 const puzzle = (id: string) => ({ id, title: id, width: 5, height: 5, filledCount: 1 })
 
 const campaign: Pick<Campaign, 'provinces'> = {
   provinces: [
-    { id: 'a', name: 'A', theme: '', flavour: '', puzzles: [puzzle('a1'), puzzle('a2')] },
-    { id: 'b', name: 'B', theme: '', flavour: '', puzzles: [puzzle('b1')] },
-    { id: 'c', name: 'C', theme: '', flavour: '', puzzles: [puzzle('c1')] },
-    { id: 'd', name: 'D', theme: '', flavour: '', puzzles: [puzzle('d1')] },
+    { id: 'a', name: 'A', theme: '', flavour: '', maxSize: 5, puzzles: [puzzle('a1'), puzzle('a2')] },
+    { id: 'b', name: 'B', theme: '', flavour: '', maxSize: 5, puzzles: [puzzle('b1')] },
+    { id: 'c', name: 'C', theme: '', flavour: '', maxSize: 5, puzzles: [puzzle('c1')] },
+    { id: 'd', name: 'D', theme: '', flavour: '', maxSize: 5, puzzles: [puzzle('d1')] },
   ],
 }
 
@@ -43,7 +43,7 @@ describe('provinceStates', () => {
   })
 
   it('never conquers an empty province', () => {
-    const empty = { provinces: [{ id: 'e', name: 'E', theme: '', flavour: '', puzzles: [] }, ...campaign.provinces] }
+    const empty = { provinces: [{ id: 'e', name: 'E', theme: '', flavour: '', maxSize: 5, puzzles: [] }, ...campaign.provinces] }
     const { provinces, conquered } = provinceStates(empty, () => true)
     expect(provinces.map(p => p.state)).toEqual(['active', 'next', 'locked', 'locked', 'locked'])
     expect(conquered).toBe(false)
@@ -117,16 +117,17 @@ describe('continueAt', () => {
   })
 })
 
-describe('techniquesOpen', () => {
+describe('techniquesRecommended', () => {
   const flagged = { provinces: campaign.provinces.map(p => (p.id === 'b' ? { ...p, techniques: true as const } : p)) }
-  const open = (solved: string[]) => techniquesOpen(flagged, provinceStates(flagged, id => solved.includes(id)))
+  const recommended = (solved: string[]) => techniquesRecommended(flagged, provinceStates(flagged, id => solved.includes(id)))
 
-  it('opens once the flagged province is conquered', () => {
-    expect(open(['a1', 'a2'])).toBe(false)
-    expect(open(['a1', 'a2', 'b1'])).toBe(true)
+  it('recommends them once the flagged province starts', () => {
+    expect(recommended(['a1'])).toBe(false)
+    expect(recommended(['a1', 'a2'])).toBe(true)
+    expect(recommended(['a1', 'a2', 'b1'])).toBe(true)
   })
 
-  it('stays shut with no flagged province', () => {
-    expect(techniquesOpen(campaign, provinceStates(campaign, () => true))).toBe(false)
+  it('never recommends them with no flagged province', () => {
+    expect(techniquesRecommended(campaign, provinceStates(campaign, () => true))).toBe(false)
   })
 })

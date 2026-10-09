@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "techniques_asked_at" timestamp;

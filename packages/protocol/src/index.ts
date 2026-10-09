@@ -35,7 +35,9 @@ export interface Province {
   theme: string
   /** Shown once the province is conquered. */
   flavour: string
-  /** Its Conquest offers the Techniques. */
+  /** The longest a puzzle's side gets here. */
+  maxSize: number
+  /** Offer the Techniques when this province starts. */
   techniques?: true
   /** Easiest first. */
   puzzles: PuzzleSummary[]
@@ -111,14 +113,16 @@ export interface PuzzleRecord {
 }
 
 /**
- * `GET /api/me/progress`; `assists` is `null` until the account first saves them. `tutorialAskedAt` is
- * when the player was first offered the Tutorial, set once by `PUT /api/me/tutorial`.
+ * `GET /api/me/progress`; `assists` is `null` until the account first saves them. `tutorialAskedAt` and
+ * `techniquesAskedAt` are when the player was first offered the Tutorial and the Techniques, set once by
+ * `PUT /api/me/tutorial` and `PUT /api/me/techniques`.
  */
 export interface MyProgress {
   puzzles: Record<string, PuzzleRecord>
   assists: Assists | null
   showcase: string[]
   tutorialAskedAt: string | null
+  techniquesAskedAt: string | null
   /** Finished Lessons as `<track>:<lesson>` keys, each added by `PUT /api/me/lessons/:key`. */
   lessonsDone: string[]
 }

@@ -7,19 +7,19 @@ import { useSyncExternalStore } from 'react'
 import type { Assists, HandleProblem, ImportItem } from '@pixel-imperium/protocol'
 import {
   fetchMyProgress,
+  putAsked,
   importProgress,
   putHandle,
   putLessonDone,
   putProgress,
   putSettings,
-  putTutorialAsked,
   submitSolve,
 } from './api.ts'
 import { deleteUser, getSession, refreshSession, signOut } from './auth.ts'
 import { ProgressStorage, signedOutStorage } from './play/progress-storage.ts'
 import { assistsOf, getSettings, subscribeSettings, updateSettings } from './settings.ts'
 import { ProgressSync } from './sync.ts'
-import { getAskedAt, recordAsked, subscribeAsked } from './tutorial/asked.ts'
+import { type Offer, asked } from './tutorial/asked.ts'
 import { getDone, recordDone, subscribeDone } from './tutorial/done.ts'
 
 interface Account {
@@ -98,14 +98,19 @@ function pushAssistsIfChanged(): void {
   if (state.account && assistsKey(assistsOf(getSettings())) !== syncedAssists) pushAssists()
 }
 
-/** Whether the server is known to have the Tutorial as asked. */
-let syncedAsked = false
+const OFFERS: readonly Offer[] = ['tutorial', 'techniques']
+const ASKED_AT = { tutorial: 'tutorialAskedAt', techniques: 'techniquesAskedAt' } as const
 
-function pushAskedIfNeeded(): void {
-  if (!state.account || syncedAsked || !getAskedAt()) return
-  syncedAsked = true
-  putTutorialAsked().catch(() => (syncedAsked = false))
+/** The offers the server is known to have as asked. */
+let syncedAsked = new Set<Offer>()
+
+function pushAskedIfNeeded(offer: Offer): void {
+  if (!state.account || syncedAsked.has(offer) || !asked(offer).get()) return
+  syncedAsked.add(offer)
+  putAsked(offer).catch(() => syncedAsked.delete(offer))
 }
+
+const pushAllAskedIfNeeded = () => OFFERS.forEach(pushAskedIfNeeded)
 
 /** The finished Lessons the server is known to have. */
 let syncedDone = new Set<string>()
@@ -127,21 +132,21 @@ function listen(sync: ProgressSync): void {
   const onOnline = () => {
     void sync.reconnect()
     pushAssistsIfChanged()
-    pushAskedIfNeeded()
+    pushAllAskedIfNeeded()
     pushDoneIfNeeded()
   }
   window.addEventListener('pagehide', leave)
   document.addEventListener('visibilitychange', onVisibility)
   window.addEventListener('online', onOnline)
   const unsubscribeSettings = subscribeSettings(pushAssistsIfChanged)
-  const unsubscribeAsked = subscribeAsked(pushAskedIfNeeded)
+  const unsubscribeAsked = OFFERS.map(offer => asked(offer).subscribe(() => pushAskedIfNeeded(offer)))
   const unsubscribeDone = subscribeDone(pushDoneIfNeeded)
   stopListening = () => {
     window.removeEventListener('pagehide', leave)
     document.removeEventListener('visibilitychange', onVisibility)
     window.removeEventListener('online', onOnline)
     unsubscribeSettings()
-    unsubscribeAsked()
+    unsubscribeAsked.forEach(unsubscribe => unsubscribe())
     unsubscribeDone()
     sync.dispose()
   }
@@ -157,12 +162,15 @@ async function refresh(sync: ProgressSync): Promise<boolean> {
   } else {
     pushAssists()
   }
-  if (data.tutorialAskedAt) {
-    syncedAsked = true
-    recordAsked(data.tutorialAskedAt)
-  } else {
-    syncedAsked = false
-    pushAskedIfNeeded()
+  for (const offer of OFFERS) {
+    const at = data[ASKED_AT[offer]]
+    if (at) {
+      syncedAsked.add(offer)
+      asked(offer).record(at)
+    } else {
+      syncedAsked.delete(offer)
+      pushAskedIfNeeded(offer)
+    }
   }
   syncedDone = new Set(data.lessonsDone)
   recordDone(data.lessonsDone)
@@ -260,7 +268,7 @@ function reset(): void {
   cacheAccount(null)
   sessionId = null
   syncedAssists = ''
-  syncedAsked = false
+  syncedAsked = new Set()
   syncedDone = new Set()
   setState({ ...SIGNED_OUT, generation: state.generation + 1 })
 }
