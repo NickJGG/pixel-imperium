@@ -6,6 +6,7 @@ import { paperStyle } from '../album/paper.ts'
 import { ProvinceTabs } from '../album/ProvinceTabs.tsx'
 import { Spread } from '../album/Spread.tsx'
 import { useAccount } from '../account.ts'
+import type { ProgressStorage } from '../play/progress-storage.ts'
 import { NextUp } from './NextUp.tsx'
 import { type CampaignProgress, campaignProgress, isOpen } from './progress.ts'
 import { PuzzleSlot } from './PuzzleSlot.tsx'
@@ -14,40 +15,63 @@ import styles from './Campaign.module.css'
 export function ProvincePage({ campaign, province }: { campaign: Campaign; province: Province }) {
   const { storage } = useAccount()
   const progress = campaignProgress(campaign, storage)
-  const index = campaign.provinces.indexOf(province)
-  const { state, solved } = progress.provinces[index]!
-  const next = state === 'active' ? province.puzzles.find(p => storage.loadSolved(p.id) === null) : undefined
+  const { state } = progress.provinces[campaign.provinces.indexOf(province)]!
 
   if (!isOpen(state)) return <LockedProvince campaign={campaign} province={province} progress={progress} />
   return (
     <Indexed campaign={campaign} province={province} progress={progress}>
-      <Spread
-        province={province}
-        index={index}
-        solved={solved}
-        complete={state === 'conquered'}
-        caption={(state === 'conquered' && province.flavour) || undefined}
-        next={
-          next && (
-            <NextUp
-              puzzle={next}
-              number={province.puzzles.indexOf(next) + 1}
-              storage={storage}
-              fresh={progress.provinces.every(p => p.solved === 0)}
-            />
-          )
-        }
-        slot={(p, number) => (
-          <PuzzleSlot
-            puzzle={p}
-            number={number}
-            storage={storage}
-            next={p === next}
-            padDefault={p === (next ?? province.puzzles[0])}
-          />
-        )}
-      />
+      <ProvinceSpread campaign={campaign} province={province} progress={progress} storage={storage} />
     </Indexed>
+  )
+}
+
+/**
+ * An open province's spread as the player sees it, on its page and on home: playable slots, with Next up in the foot
+ * while it's active. `caption` replaces the flavour line once it's conquered.
+ */
+export function ProvinceSpread({
+  campaign,
+  province,
+  progress,
+  storage,
+  caption,
+}: {
+  campaign: Campaign
+  province: Province
+  progress: CampaignProgress
+  storage: ProgressStorage
+  caption?: string | undefined
+}) {
+  const index = campaign.provinces.indexOf(province)
+  const { state, solved } = progress.provinces[index]!
+  const next = state === 'active' ? province.puzzles.find(p => storage.loadSolved(p.id) === null) : undefined
+  return (
+    <Spread
+      province={province}
+      index={index}
+      solved={solved}
+      complete={state === 'conquered'}
+      caption={(state === 'conquered' && (caption ?? province.flavour)) || undefined}
+      next={
+        next && (
+          <NextUp
+            puzzle={next}
+            number={province.puzzles.indexOf(next) + 1}
+            storage={storage}
+            fresh={progress.provinces.every(p => p.solved === 0)}
+          />
+        )
+      }
+      slot={(p, number) => (
+        <PuzzleSlot
+          puzzle={p}
+          number={number}
+          storage={storage}
+          next={p === next}
+          padDefault={p === (next ?? province.puzzles[0])}
+        />
+      )}
+    />
   )
 }
 

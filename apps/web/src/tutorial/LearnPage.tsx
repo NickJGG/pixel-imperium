@@ -136,7 +136,7 @@ function TrackSection({ track, paper, done, fresh, back, tag }: TrackProps) {
   )
 }
 
-function BlankGrid({ width, height }: { width: number; height: number }) {
+export function BlankGrid({ width, height }: { width: number; height: number }) {
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}

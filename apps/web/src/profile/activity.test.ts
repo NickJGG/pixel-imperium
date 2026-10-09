@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CALENDAR_WEEKS, calendarOf, dayKey, relativeDate, streakOf } from './activity.ts'
+import { CALENDAR_WEEKS, calendarOf, dayKey, relativeDate, streakOf, weekOf } from './activity.ts'
 
 const at = (day: number, hour = 12, month = 9) => new Date(2026, month, day, hour)
 /** Wednesday, Oct 7 2026. */
@@ -51,6 +51,28 @@ describe('calendarOf', () => {
     expect(byKey.get('2026-10-06')).toMatchObject({ level: 2, foil: true })
     expect(byKey.get('2026-10-05')).toMatchObject({ level: 3, foil: false })
     expect(byKey.get('2026-10-04')).toMatchObject({ level: 0 })
+  })
+})
+
+describe('weekOf', () => {
+  it('spans the seven days up to today, oldest first', () => {
+    const week = weekOf([], now)
+    expect(week.map(d => d.key)).toEqual([
+      '2026-10-01',
+      '2026-10-02',
+      '2026-10-03',
+      '2026-10-04',
+      '2026-10-05',
+      '2026-10-06',
+      '2026-10-07',
+    ])
+    expect(week.every(d => d.count === 0 && d.level === 0)).toBe(true)
+  })
+
+  it('counts and levels each day, ignoring days outside the week', () => {
+    const week = weekOf([at(7, 9), at(6), at(6, 13), ...[1, 2, 3, 4].map(() => at(2)), at(30, 12, 8), at(8)], now)
+    expect(week.map(d => d.count)).toEqual([0, 4, 0, 0, 0, 2, 1])
+    expect(week.map(d => d.level)).toEqual([0, 3, 0, 0, 0, 2, 1])
   })
 })
 

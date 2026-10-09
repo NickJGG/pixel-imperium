@@ -40,11 +40,27 @@ export function streakOf(times: readonly Date[], now: Date): Streak {
 
 export const CALENDAR_WEEKS = 26
 
-export interface CalendarDay {
+export interface WeekDay {
   key: string
   count: number
   /** 0 for none, then 1 sticker, 2–3, and 4 or more. */
   level: 0 | 1 | 2 | 3
+}
+
+const levelOf = (n: number): WeekDay['level'] => (n === 0 ? 0 : n === 1 ? 1 : n < 4 ? 2 : 3)
+
+/** The seven local days ending today, oldest first, with how many of `times` fall on each. */
+export function weekOf(times: readonly Date[], now: Date): WeekDay[] {
+  const counts = new Map<string, number>()
+  for (const at of times) counts.set(dayKey(at), (counts.get(dayKey(at)) ?? 0) + 1)
+  return Array.from({ length: 7 }, (_, i) => {
+    const key = dayKey(addDays(now, i - 6))
+    const n = counts.get(key) ?? 0
+    return { key, count: n, level: levelOf(n) }
+  })
+}
+
+export interface CalendarDay extends WeekDay {
   foil: boolean
   /** After today; drawn blank. */
   future: boolean
@@ -66,7 +82,7 @@ export function calendarOf(solves: readonly { at: Date; foil: boolean }[], now: 
     const key = dayKey(addDays(start, i))
     const day = counts.get(key)
     const n = day?.n ?? 0
-    return { key, count: n, level: n === 0 ? 0 : n === 1 ? 1 : n < 4 ? 2 : 3, foil: day?.foil ?? false, future: key > today }
+    return { key, count: n, level: levelOf(n), foil: day?.foil ?? false, future: key > today }
   })
 }
 

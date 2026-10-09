@@ -79,3 +79,45 @@
 .strip > [data-mark='foil'] {
   background: var(--sticker);
 }
+
+.index[data-layout='row'] {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.index[data-layout='row'] li {
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: 2px 8px;
+  padding: 7px 10px 6px;
+  font-size: 14px;
+}
+
+.index[data-layout='row'] li > :not(:first-child) {
+  grid-column: 2;
+  justify-self: start;
+}
+
+.index[data-layout='row'] a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.index[data-layout='row'] small {
+  font-size: 11px;
+}
+
+.index[data-layout='row'] li[data-active] {
+  color: var(--cover);
+  background: var(--sticker);
+}
+
+@media (max-width: 760px) {
+  .index[data-layout='row'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .index[data-layout='row'] li {
+    padding: 6px 8px 5px;
+    font-size: 13px;
+  }
+}
