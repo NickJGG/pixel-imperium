@@ -71,6 +71,11 @@ export const cellAt = ({ cell, panX, panY }: View, x: number, y: number): Pos =>
   col: Math.floor((x - panX) / cell),
 })
 
+export const cellCenter = ({ cell, panX, panY }: View, { row, col }: Pos) => ({
+  x: panX + (col + 0.5) * cell,
+  y: panY + (row + 0.5) * cell,
+})
+
 /** The rows and columns at least partly inside the fit box, inclusive. */
 export function visibleRange({ cell, panX, panY }: View, fitCell: number, grid: Grid) {
   const last = (pan: number, cells: number) => Math.min(cells - 1, Math.floor((cells * fitCell - pan - 0.01) / cell))
@@ -82,7 +87,24 @@ export function visibleRange({ cell, panX, panY }: View, fitCell: number, grid: 
   }
 }
 
-const easeOut = (t: number) => 1 - (1 - t) ** 3
+/**
+ * The cell nearest `pos` that's wholly inside the fit box, which is `pos` itself when it is. Falls
+ * back to the partly visible cells if a zoomed cell is too big to show whole.
+ */
+export function nearestVisible(view: View, { row, col }: Pos, fitCell: number, grid: Grid): Pos {
+  const partly = visibleRange(view, fitCell, grid)
+  const axis = (i: number, pan: number, cells: number, lo: number, hi: number) => {
+    const first = Math.max(0, Math.ceil(-pan / view.cell - 1e-6))
+    const last = Math.min(cells - 1, Math.floor((cells * fitCell - pan) / view.cell + 1e-6) - 1)
+    return first <= last ? clamp(i, first, last) : clamp(i, lo, hi)
+  }
+  return {
+    row: axis(row, view.panY, grid.height, partly.row0, partly.row1),
+    col: axis(col, view.panX, grid.width, partly.col0, partly.col1),
+  }
+}
+
+const easeOut =(t: number) => 1 - (1 - t) ** 3
 
 /**
  * The live view of one board, kept out of React so pinches and pans never re-render. It mirrors

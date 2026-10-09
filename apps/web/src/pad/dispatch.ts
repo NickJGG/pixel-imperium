@@ -1,15 +1,18 @@
 import { unlock } from '../sound.ts'
-import type { PadButton, PadEvent } from './input.ts'
+import type { Frame, PadButton, PadEvent } from './input.ts'
 
 export interface PadBoard {
   readonly canvas: HTMLElement
   /** Returns whether the board used the event; unused events fall through to the generic actions. */
   handle(event: PadEvent): boolean
+  /** The triggers and right stick, every polled frame while it has focus; `dt` is in seconds. */
+  analog?(frame: Frame, dt: number): void
 }
 
 export interface Dispatcher {
   register(board: PadBoard): () => void
   dispatch(event: PadEvent): void
+  analog(frame: Frame, dt: number): void
 }
 
 /** Routes each event: wake focus, else the focused board, else the generic action. */
@@ -39,6 +42,9 @@ export function createDispatcher(): Dispatcher {
       }
       for (const board of boards) if (board.canvas === active && board.handle(event)) return
       if (event.kind === 'press' && event.button === 'A' && active instanceof HTMLElement) active.click()
+    },
+    analog(frame, dt) {
+      for (const board of boards) if (board.canvas === document.activeElement) board.analog?.(frame, dt)
     },
   }
 }

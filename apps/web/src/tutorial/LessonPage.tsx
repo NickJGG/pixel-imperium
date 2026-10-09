@@ -12,6 +12,7 @@ import type { Assists } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
 import { paperStyle } from '../album/paper.ts'
 import { PixelArt } from '../campaign/PixelArt.tsx'
+import { rumble } from '../pad/rumble.ts'
 import { useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
 import { AssistChips } from '../play/AssistChips.tsx'
@@ -229,6 +230,7 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
     if (!solved || store.getState().palette) return
     store.setPalette(puzzle.palette)
     play('pop')
+    rumble('solve')
     markDone(lessonKey(track, lesson))
     const next = lessons[index + 1]
     saveResume(track, next ? { lesson: next.id, step: 0 } : null)

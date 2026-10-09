@@ -12,6 +12,7 @@ import { requestHint, submitSolve } from '../api.ts'
 import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
+import { rumble } from '../pad/rumble.ts'
 import { getSettings, useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
 import { useShouldOffer, useShouldOfferTechniques } from '../tutorial/asked.ts'
@@ -240,6 +241,7 @@ function Play({
   useEffect(() => {
     if (moment !== 'landed') return
     play(conquest ? 'chime' : 'thunk')
+    rumble(conquest ? 'conquest' : 'solve')
     if (reducedMotion()) return
     return confetti((panelRef.current ?? cardRef.current)!, styles.burst!)
   }, [moment, conquest])

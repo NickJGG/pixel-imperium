@@ -3,10 +3,12 @@ import {
   BoardView,
   MAX_ZOOM_CELL,
   cellAt,
+  cellCenter,
   centerOn,
   clampView,
   ensureVisible,
   fitView,
+  nearestVisible,
   refitView,
   visibleRange,
   zoomAt,
@@ -38,6 +40,15 @@ describe('zoomAt', () => {
     expect(cellAt(view, 150, 100)).toEqual(cellAt(fitView(fit), 150, 100))
   })
 
+  it('anchored on a cell’s centre, keeps that cell in place', () => {
+    const from = { cell: 14, panX: -37, panY: -21 }
+    const cursor = { row: 7, col: 22 }
+    const { x, y } = cellCenter(from, cursor)
+    const to = zoomAt(from, 31, x, y, fit, grid)
+    expect(cellCenter(to, cursor).x).toBeCloseTo(x)
+    expect(cellCenter(to, cursor).y).toBeCloseTo(y)
+  })
+
   it('stops at the cap without drifting', () => {
     const at = zoomAt({ cell: 40, panX: -100, panY: -100 }, 999, 50, 50, fit, grid)
     expect(at.cell).toBe(MAX_ZOOM_CELL)
@@ -56,6 +67,32 @@ describe('visibleRange', () => {
 
   it('covers partly visible cells when zoomed', () => {
     expect(visibleRange({ cell: 40, panX: -45, panY: -80 }, fit, grid)).toEqual({ row0: 2, row1: 6, col0: 1, col1: 8 })
+  })
+})
+
+describe('nearestVisible', () => {
+  const zoomed = { cell: 40, panX: -45, panY: -80 }
+
+  it('keeps a wholly visible cell', () => {
+    expect(nearestVisible(zoomed, { row: 3, col: 4 }, fit, grid)).toEqual({ row: 3, col: 4 })
+  })
+
+  it('lands an off-screen cell on the nearest whole one', () => {
+    expect(nearestVisible(zoomed, { row: 19, col: 0 }, fit, grid)).toEqual({ row: 6, col: 2 })
+    expect(nearestVisible(zoomed, { row: 0, col: 29 }, fit, grid)).toEqual({ row: 2, col: 7 })
+  })
+
+  it('treats a cell flush with the box edge as whole', () => {
+    expect(nearestVisible({ cell: 40, panX: 0, panY: 0 }, { row: 0, col: 0 }, fit, grid)).toEqual({ row: 0, col: 0 })
+  })
+
+  it('keeps everything at fit', () => {
+    expect(nearestVisible(fitView(fit), { row: 19, col: 29 }, fit, grid)).toEqual({ row: 19, col: 29 })
+  })
+
+  it('falls back to partly visible cells when none fits whole', () => {
+    const tiny = { width: 1, height: 1 }
+    expect(nearestVisible({ cell: 48, panX: -10, panY: -10 }, { row: 0, col: 0 }, 30, tiny)).toEqual({ row: 0, col: 0 })
   })
 })
 

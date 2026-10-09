@@ -12,10 +12,11 @@ export function PadProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let analog = false
     return startPolling({
-      frame: frame => {
+      frame: (frame, dt) => {
         const active = analogActive(frame)
         if (active && !analog) setPadMode(true)
         analog = active
+        if (active) dispatcher.analog(frame, dt)
       },
       event: event => {
         if (event.kind === 'press') setPadMode(true)
