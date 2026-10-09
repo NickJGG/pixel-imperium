@@ -27,6 +27,15 @@ describe('lessons done', () => {
     expect(done.getDone()).not.toBe(after)
   })
 
+  it('holds keys finished here until Learn has shown them', () => {
+    done.recordDone(['tutorial:overlap'])
+    done.markDone('tutorial:overlap')
+    done.markDone('techniques:edges')
+    expect([...done.getUnseen()]).toEqual(['techniques:edges'])
+    done.clearUnseen()
+    expect(done.getUnseen().size).toBe(0)
+  })
+
   it('loads what an earlier visit recorded', async () => {
     done.markDone('tutorial:overlap')
     vi.resetModules()

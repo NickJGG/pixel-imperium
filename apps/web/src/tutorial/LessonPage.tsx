@@ -1,11 +1,12 @@
 /**
- * A track's Lessons on the real board (the Tutorial at `/learn`, the Techniques at `/learn/techniques`),
- * with a coach card where the puzzle page has its side page, then the handoff. Gated Lessons pass their
+ * One Lesson of a track on the real board (at `/learn/<track>/<lesson>`), with a coach card where the
+ * puzzle page has its side page; Next goes on to the track's next Lesson, and the last one ends on Learn
+ * or, for a deep link, the handoff. Gated Lessons pass their
  * steps on fixed assists; a `free` one is played on the player's own assists, with a local Hint. Nothing
  * here is saved but the place to resume from and which Lessons are done.
  */
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { type Cell, hintFor } from '@pixel-imperium/nonogram'
 import type { Assists } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
@@ -26,7 +27,7 @@ import { ToolToggle } from '../play/ToolToggle.tsx'
 import { BoardView } from '../play/viewport.ts'
 import type { Handoff } from './handoff.ts'
 import { type Lesson as LessonData, type LessonPuzzle, lessonPuzzle } from './lessons.ts'
-import { markDone } from './done.ts'
+import { markDone, useLessonsDone } from './done.ts'
 import { loadResume, saveResume } from './resume.ts'
 import { type Track, lessonKey } from './tracks.ts'
 import { cellsBefore, currentStep, feedback, isWrong, stepCells, wrongCell } from './steps.ts'
@@ -44,22 +45,38 @@ const FIXED: Assists = {
 
 const FREE_HINT_NOTE = "In a lesson it's free, so nothing is lost here."
 
-export function LessonPage({ track, handoff }: { track: Track; handoff: Handoff }) {
-  const [at, setAt] = useState(() => {
+interface PageProps {
+  track: Track
+  index: number
+  /** `null` when opened from Learn, which the last Lesson finishes on instead. */
+  handoff: Handoff | null
+  back: string
+  learn: boolean
+}
+
+export function LessonPage({ track, index, handoff, back, learn }: PageProps) {
+  const navigate = useNavigate()
+  const [startStep] = useState(() => {
     const saved = loadResume(track)
-    return saved ? { lesson: track.lessons.findIndex(l => l.id === saved.lesson), step: saved.step } : { lesson: 0, step: 0 }
+    return saved?.lesson === track.lessons[index]!.id ? saved.step : 0
   })
   const [finished, setFinished] = useState(false)
-  if (finished) return <HandoffView track={track} handoff={handoff} />
+  if (finished && handoff) return <HandoffView track={track} handoff={handoff} />
+  const next = track.lessons[index + 1]
   return (
     <Lesson
-      key={at.lesson}
       track={track}
-      index={at.lesson}
-      startStep={at.step}
-      handoff={handoff}
-      onNext={() => setAt({ lesson: at.lesson + 1, step: 0 })}
-      onFinish={() => setFinished(true)}
+      index={index}
+      startStep={startStep}
+      foot={{ handoff, back, learn }}
+      onNext={() =>
+        void navigate({
+          to: '/learn/$track/$lesson',
+          params: { track: track.id, lesson: next!.id },
+          search: { back, ...(learn ? { learn: true as const } : {}) },
+        })
+      }
+      onFinish={() => (learn ? void navigate({ to: '/learn', search: { back } }) : setFinished(true))}
     />
   )
 }
@@ -101,16 +118,23 @@ function useStoreValue<T>(store: PlayStore, select: (s: PlayState) => T): T {
   return useSyncExternalStore(store.subscribe, () => select(store.getState()))
 }
 
+/** How the coach's foot leaves: back to Learn, or for a deep link, to the handoff. */
+interface Foot {
+  handoff: Handoff | null
+  back: string
+  learn: boolean
+}
+
 interface LessonProps {
   track: Track
   index: number
   startStep: number
-  handoff: Handoff
+  foot: Foot
   onNext: () => void
   onFinish: () => void
 }
 
-function Lesson({ track, index, startStep, handoff, onNext, onFinish }: LessonProps) {
+function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps) {
   const { lessons } = track
   const lesson = lessons[index]!
   const free = lesson.free === true
@@ -258,7 +282,7 @@ function Lesson({ track, index, startStep, handoff, onNext, onFinish }: LessonPr
           step={step}
           solved={solved}
           feedback={cited === null ? null : feedback(puzzle, cells, cited)}
-          handoff={handoff}
+          foot={foot}
           onNext={onNext}
           onFinish={onFinish}
         />
@@ -274,16 +298,18 @@ interface CoachProps {
   step: number
   solved: boolean
   feedback: string | null
-  handoff: Handoff
+  foot: Foot
   onNext: () => void
   onFinish: () => void
 }
 
-function Coach({ track, lesson, index, step, solved, feedback, handoff, onNext, onFinish }: CoachProps) {
+function Coach({ track, lesson, index, step, solved, feedback, foot, onNext, onFinish }: CoachProps) {
   const { steps } = lesson
   const shown = steps[Math.min(step, steps.length - 1)]!
   const { lessons } = track
   const last = index === lessons.length - 1
+  const done = useLessonsDone()
+  const dotState = (i: number) => (i === index ? 'now' : done.has(lessonKey(track, lessons[i]!)) ? 'done' : undefined)
   return (
     <aside className={styles.coach} style={paperStyle(0)} aria-labelledby="lesson-title">
       <div className={styles.coachTop}>
@@ -291,13 +317,31 @@ function Coach({ track, lesson, index, step, solved, feedback, handoff, onNext, 
           Lesson {index + 1} of {lessons.length}
           {track.id === 'techniques' && ' · Techniques'}
         </span>
-        <ol className={styles.lessons} aria-hidden="true">
-          {lessons.map((_, i) => (
-            <li key={i} data-state={i < index ? 'done' : i === index ? 'now' : undefined}>
-              {i + 1}
-            </li>
-          ))}
-        </ol>
+        {foot.learn ? (
+          <ol className={styles.lessons} aria-label="Lessons">
+            {lessons.map((l, i) => (
+              <li key={l.id} data-state={dotState(i)}>
+                <Link
+                  to="/learn/$track/$lesson"
+                  params={{ track: track.id, lesson: l.id }}
+                  search={{ back: foot.back, learn: true }}
+                  aria-label={`Lesson ${i + 1}: ${l.title}`}
+                  aria-current={i === index ? 'page' : undefined}
+                >
+                  {i + 1}
+                </Link>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <ol className={styles.lessons} aria-hidden="true">
+            {lessons.map((l, i) => (
+              <li key={l.id} data-state={dotState(i)}>
+                {i + 1}
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
       <h1 id="lesson-title" className={styles.coachTitle}>
         {solved ? `${lesson.picture} revealed!` : lesson.title}
@@ -319,9 +363,15 @@ function Coach({ track, lesson, index, step, solved, feedback, handoff, onNext, 
         </p>
       )}
       <div className={styles.foot}>
-        <Link to={handoff.to} className={styles.skip}>
-          {track.skipText}
-        </Link>
+        {foot.handoff ? (
+          <Link to={foot.handoff.to} className={styles.skip}>
+            {track.skipText}
+          </Link>
+        ) : (
+          <Link to="/learn" search={{ back: foot.back }} className={styles.skip}>
+            All lessons
+          </Link>
+        )}
         {solved && (
           <button type="button" data-variant="primary" onClick={last ? onFinish : onNext}>
             {last ? 'Finish' : 'Next lesson'} →

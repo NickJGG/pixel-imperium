@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Dymo } from '../album/Dymo.tsx'
 import { markAsked } from './asked.ts'
+import { TRACKS } from './tracks.ts'
 import playStyles from '../play/Play.module.css'
 import styles from './Lesson.module.css'
 
@@ -39,7 +40,8 @@ export function ChoiceCard({ puzzleId }: { puzzleId: string }) {
         <p>The clues tell you which cells to fill. Four tiny lessons show you how. It takes about two minutes.</p>
         <Link
           ref={learnRef}
-          to="/learn"
+          to="/learn/$track/$lesson"
+          params={{ track: 'tutorial', lesson: TRACKS.tutorial.lessons[0]!.id }}
           search={{ back: `/play/${puzzleId}` }}
           className={`${playStyles.linkButton} ${styles.learn}`}
           onClick={markAsked}

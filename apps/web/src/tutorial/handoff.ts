@@ -1,7 +1,7 @@
 /**
  * Where a track hands back to. `back` is the page it was entered from: a puzzle returns there, home
  * (or no `back`) goes on to the Continue target, a province page is named, and any other album page is
- * returned to as is.
+ * returned to as is. Learn's back pill names the same page.
  */
 import type { Campaign } from '@pixel-imperium/protocol'
 import { accountReady, getAccount } from '../account.ts'
@@ -40,10 +40,9 @@ export async function loadHandoff(back: string | undefined): Promise<Handoff> {
     const { storage } = getAccount()
     const next = continueAt(campaign, campaignProgress(campaign, storage), id => storage.loadSolved(id) !== null)
     const id = puzzleId ?? next?.puzzle.id
-    const province = campaign.provinces.find(p => p.puzzles.some(q => q.id === id))
-    if (!province) return fallback
-    const number = province.puzzles.findIndex(q => q.id === id) + 1
-    const { title } = province.puzzles[number - 1]!
+    const found = id === undefined ? null : findPuzzle(campaign, id)
+    if (!found) return fallback
+    const { province, number, title } = found
     if (next?.fresh && next.puzzle.id === id) {
       return {
         to: `/play/${id}`,
@@ -61,6 +60,37 @@ export async function loadHandoff(back: string | undefined): Promise<Handoff> {
   } catch {
     return fallback
   }
+}
+
+/** Learn's back pill, and the campaign whose progress says whether Techniques is recommended. */
+export interface LearnBack {
+  to: string
+  label: string
+  campaign: Campaign | null
+}
+
+export async function loadLearnBack(back: string | undefined): Promise<LearnBack> {
+  const to = back ?? '/'
+  const label = to === '/' || /^\/c\/[\w-]+$/.test(to) ? 'Back to the cover' : 'Back to the album'
+  const puzzleId = to.match(/^\/play\/(.+)$/)?.[1]
+  const page = to.match(/^\/c\/([\w-]+)(?:\/([\w-]+))?$/)
+  try {
+    await accountReady
+    const campaign = puzzleId ? await campaignOf(puzzleId) : page ? await fetchCampaign(page[1]!) : await homeCampaign()
+    const title = puzzleId && campaign ? findPuzzle(campaign, puzzleId)?.title : undefined
+    const province = page?.[2] && campaign?.provinces.find(p => p.id === page[2])
+    const name = title ?? (province ? province.name.replace(/^The /, 'the ') : undefined)
+    return { to, label: name ? `Back to ${name}` : label, campaign }
+  } catch {
+    return { to, label, campaign: null }
+  }
+}
+
+function findPuzzle(campaign: Campaign, id: string) {
+  const province = campaign.provinces.find(p => p.puzzles.some(q => q.id === id))
+  if (!province) return null
+  const number = province.puzzles.findIndex(q => q.id === id) + 1
+  return { province, number, title: province.puzzles[number - 1]!.title }
 }
 
 async function provinceHandoff(campaignId: string, provinceId: string, fallback: Handoff): Promise<Handoff> {

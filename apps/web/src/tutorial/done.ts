@@ -37,6 +37,16 @@ export function recordDone(keys: Iterable<string>): void {
   for (const listener of listeners) listener()
 }
 
-export const markDone = (key: string): void => recordDone([key])
+/** Finished on this device since Learn last showed them, so Learn can pop their ✓ once. */
+const unseen = new Set<string>()
+
+export function markDone(key: string): void {
+  if (!done.has(key)) unseen.add(key)
+  recordDone([key])
+}
+
+export const getUnseen = (): ReadonlySet<string> => new Set(unseen)
+
+export const clearUnseen = (): void => unseen.clear()
 
 export const useLessonsDone = (): ReadonlySet<string> => useSyncExternalStore(subscribeDone, getDone)

@@ -9,7 +9,7 @@ import { Stamp } from '../album/Stamp.tsx'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { type AccountState, useAccount } from '../account.ts'
 import { requestHint, submitSolve } from '../api.ts'
-import { campaignProgress, isOpen, nextPuzzle, techniquesOpen } from '../campaign/progress.ts'
+import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
 import { getSettings, useSettings } from '../settings.ts'
@@ -17,7 +17,6 @@ import { play } from '../sound.ts'
 import { useShouldOffer } from '../tutorial/asked.ts'
 import { ChoiceCard } from '../tutorial/ChoiceCard.tsx'
 import { HowToPlay } from '../tutorial/HowToPlay.tsx'
-import { TRACKS } from '../tutorial/tracks.ts'
 import { AssistSwitches } from './AssistSwitches.tsx'
 import { Board, REVEAL_MS } from './Board.tsx'
 import { ClearButton, LoopIcon } from './ClearButton.tsx'
@@ -95,7 +94,6 @@ function Play({
   const boardRef = useBoardGestures(store, boardView)
   const solved = useStoreValue(store, s => s.solved)
   const [conqueredBefore] = useState(isConquered)
-  const [showTechniques] = useState(() => techniquesOpen(campaign, campaignProgress(campaign, storage)))
   const previewConquest = route.useSearch().conquest === true
   const conquest = previewConquest || (solved && !conqueredBefore && isConquered())
   const next = solved ? nextPuzzle(province.puzzles, puzzle.id, id => storage.loadSolved(id) !== null) : null
@@ -373,8 +371,7 @@ function Play({
   const replay = <ClearButton store={store} solved />
   const learn = (
     <div className={styles.learn}>
-      <HowToPlay back={`/play/${puzzle.id}`} className={styles.howTo} />
-      {showTechniques && <HowToPlay track={TRACKS.techniques} back={`/play/${puzzle.id}`} className={styles.howTo} />}
+      <HowToPlay back={`/play/${puzzle.id}`} campaign={campaign} className={styles.howTo} />
     </div>
   )
 

@@ -4,8 +4,10 @@ import { TECHNIQUES } from './techniques.ts'
 
 export interface Track {
   id: 'tutorial' | 'techniques'
-  path: '/learn' | '/learn/techniques'
   label: string
+  /** Its section on Learn. */
+  name: string
+  blurb: string
   lessons: readonly Lesson[]
   /** localStorage key for the place to resume from, as `ResumeAt`. */
   resumeKey: string
@@ -16,8 +18,9 @@ export interface Track {
 export const TRACKS: Record<Track['id'], Track> = {
   tutorial: {
     id: 'tutorial',
-    path: '/learn',
     label: 'How to play',
+    name: 'Basics',
+    blurb: 'How to read clues, rule cells out and find overlaps. About two minutes.',
     lessons: LESSONS,
     resumeKey: 'pixel-imperium:tutorial-at',
     doneDymo: 'Tutorial complete',
@@ -25,8 +28,9 @@ export const TRACKS: Record<Track['id'], Track> = {
   },
   techniques: {
     id: 'techniques',
-    path: '/learn/techniques',
     label: 'Advanced techniques',
+    name: 'Techniques',
+    blurb: 'Edges, joins, telling blocks apart and what-ifs, for the bigger pictures.',
     lessons: TECHNIQUES,
     resumeKey: 'pixel-imperium:techniques-at',
     doneDymo: 'Techniques complete',
@@ -36,3 +40,9 @@ export const TRACKS: Record<Track['id'], Track> = {
 
 /** The key a finished Lesson is recorded under, here and on the server. */
 export const lessonKey = (track: Track, lesson: Lesson): string => `${track.id}:${lesson.id}`
+
+export const trackOf = (id: string): Track | undefined => (Object.hasOwn(TRACKS, id) ? TRACKS[id as Track['id']] : undefined)
+
+/** The first Lesson not in `done`, or `undefined` once the whole track is. */
+export const firstUnfinished = (track: Track, done: ReadonlySet<string>): Lesson | undefined =>
+  track.lessons.find(l => !done.has(lessonKey(track, l)))

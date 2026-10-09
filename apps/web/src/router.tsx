@@ -1,4 +1,4 @@
-import { Outlet, createRootRoute, createRoute, createRouter, notFound } from '@tanstack/react-router'
+import { Outlet, createRootRoute, createRoute, createRouter, notFound, redirect } from '@tanstack/react-router'
 import { accountReady, useAccount } from './account.ts'
 import { fetchCampaign, fetchCampaigns, fetchProfile, fetchPuzzle } from './api.ts'
 import { AppHeader, ThumbBar } from './AppHeader.tsx'
@@ -12,9 +12,11 @@ import { SettingsPage } from './me/SettingsPage.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
 import { ProfilePage } from './profile/ProfilePage.tsx'
 import { ProfileSpread } from './profile/ProfileSpread.tsx'
-import { isBackPath, loadHandoff } from './tutorial/handoff.ts'
+import { getDone } from './tutorial/done.ts'
+import { isBackPath, loadHandoff, loadLearnBack } from './tutorial/handoff.ts'
+import { LearnPage } from './tutorial/LearnPage.tsx'
 import { LessonPage } from './tutorial/LessonPage.tsx'
-import { TRACKS, type Track } from './tutorial/tracks.ts'
+import { TRACKS, firstUnfinished, trackOf } from './tutorial/tracks.ts'
 import styles from './App.module.css'
 
 function Root() {
@@ -139,19 +141,65 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 })
 
-/** A track's Lessons; `back` is the page it hands back to. */
-function learnRoute<P extends Track['path']>(path: P, track: Track) {
-  const route = createRoute({
-    getParentRoute: () => rootRoute,
-    path,
-    validateSearch: (search: Record<string, unknown>): { back?: string } =>
-      isBackPath(search.back) ? { back: search.back } : {},
-    loaderDeps: ({ search }) => ({ back: search.back }),
-    loader: ({ deps }) => loadHandoff(deps.back),
-    component: () => <LessonPage track={track} handoff={route.useLoaderData()} />,
-  })
-  return route
-}
+const backSearch = (search: Record<string, unknown>): { back?: string } =>
+  isBackPath(search.back) ? { back: search.back } : {}
+
+/** Every Lesson of both tracks; `back` is the page it was opened from. */
+const learnRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/learn',
+  validateSearch: backSearch,
+  loaderDeps: ({ search }) => ({ back: search.back }),
+  loader: ({ deps }) => loadLearnBack(deps.back),
+  component: () => <LearnPage back={learnRoute.useLoaderData()} />,
+})
+
+/**
+ * One Lesson. `learn` means it was opened from Learn, and `back` is then Learn's own; otherwise it's a deep
+ * link, and the track hands back to `back` when it's done or skipped.
+ */
+const lessonRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/learn/$track/$lesson',
+  validateSearch: (search: Record<string, unknown>): { back?: string; learn?: true } => ({
+    ...backSearch(search),
+    ...(search.learn === true ? { learn: true as const } : {}),
+  }),
+  loaderDeps: ({ search }) => ({ back: search.back, learn: search.learn }),
+  loader: async ({ params, deps }) => {
+    const track = trackOf(params.track)
+    const index = track?.lessons.findIndex(l => l.id === params.lesson) ?? -1
+    if (!track || index === -1) throw notFound()
+    return { track, index, handoff: deps.learn ? null : await loadHandoff(deps.back) }
+  },
+  component: () => {
+    const { track, index, handoff } = lessonRoute.useLoaderData()
+    const { back, learn } = lessonRoute.useSearch()
+    return (
+      <LessonPage
+        key={`${track.id}:${index}`}
+        track={track}
+        index={index}
+        handoff={handoff}
+        back={back ?? '/'}
+        learn={learn === true}
+      />
+    )
+  },
+  notFoundComponent: () => <NotFound>There’s no lesson by that name.</NotFound>,
+})
+
+/** The old Techniques address, from before each Lesson had its own. */
+const techniquesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/learn/techniques',
+  validateSearch: backSearch,
+  beforeLoad: ({ search }) => {
+    const track = TRACKS.techniques
+    const lesson = firstUnfinished(track, getDone()) ?? track.lessons[0]!
+    throw redirect({ to: '/learn/$track/$lesson', params: { track: track.id, lesson: lesson.id }, search, replace: true })
+  },
+})
 
 export const router = createRouter({
   routeTree: rootRoute.addChildren([
@@ -162,8 +210,9 @@ export const router = createRouter({
     profileRoute,
     profileSpreadRoute,
     settingsRoute,
-    learnRoute('/learn', TRACKS.tutorial),
-    learnRoute('/learn/techniques', TRACKS.techniques),
+    learnRoute,
+    lessonRoute,
+    techniquesRoute,
   ]),
   defaultPendingComponent: Loading,
   defaultPendingMs: 300,
