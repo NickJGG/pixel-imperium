@@ -116,7 +116,8 @@ button svg {
 }
 
 /* Cobalt surfaces set --focus to white. */
-:focus-visible {
+:focus-visible,
+:root[data-pad] :focus {
   outline: 3px solid var(--focus, var(--blue));
   outline-offset: 2px;
 }

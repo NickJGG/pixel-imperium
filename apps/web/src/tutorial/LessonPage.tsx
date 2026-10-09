@@ -24,6 +24,7 @@ import { createLineHints } from '../play/line-hints.ts'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { type PlayState, PlayStore, crosshairOf } from '../play/store.ts'
 import { ToolToggle } from '../play/ToolToggle.tsx'
+import { useUndoKeys } from '../play/useUndoKeys.ts'
 import { BoardView } from '../play/viewport.ts'
 import { type BeatView, BeatLayer, Dock, type Tag } from './BeatLayer.tsx'
 import type { Handoff } from './handoff.ts'
@@ -239,18 +240,12 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
         if (e.target instanceof Element && e.target.closest('button, a, input, select, textarea')) return
         setBeat(b => Math.min(b + 1, lastBeat))
         e.preventDefault()
-        return
       }
-      if (!(e.ctrlKey || e.metaKey) || e.altKey) return
-      const key = e.key.toLowerCase()
-      if (key === 'z' && !e.shiftKey) store.undo()
-      else if (key === 'z' || key === 'y') store.redo()
-      else return
-      e.preventDefault()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [store, talk, lastBeat])
+  }, [talk, lastBeat])
+  useUndoKeys(store)
 
   const [boardView] = useState(() => new BoardView(store.puzzle, false))
   const boardRef = useBoardGestures(store, boardView, free ? undefined : FIXED)
@@ -314,6 +309,7 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
                   assists={free ? undefined : FIXED}
                   highlight={highlight}
                   flag={boardFlag}
+                  onTalkNext={talk ? next : undefined}
                 />
                 {!solved && <BeatLayer board={board} view={view} lines={about} at={at} tag={stacked ? null : tag} />}
               </div>

@@ -34,6 +34,7 @@ import { PuzzlePanel, SlotRow } from './PuzzlePanel.tsx'
 import { type Choreography, confetti, flyIn, popOnly } from './sticker-moment.ts'
 import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
 import { ToolPill } from './ToolPill.tsx'
+import { useUndoKeys } from './useUndoKeys.ts'
 import { BoardView, fitView } from './viewport.ts'
 import styles from './Play.module.css'
 
@@ -153,18 +154,7 @@ function Play({
   const cellSize = fit?.cellSize ?? 0
   const wide = fit?.sidePage ?? false
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || e.altKey) return
-      const key = e.key.toLowerCase()
-      if (key === 'z' && !e.shiftKey) store.undo()
-      else if (key === 'z' || key === 'y') store.redo()
-      else return
-      e.preventDefault()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [store])
+  useUndoKeys(store)
 
   // The local check already won; the server only supplies the reveal colors, so a failure just
   // sends the sticker off without them.

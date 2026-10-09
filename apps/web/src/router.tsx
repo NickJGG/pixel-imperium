@@ -9,6 +9,7 @@ import { ProvincePage } from './campaign/ProvincePage.tsx'
 import { ImportPrompt } from './ImportPrompt.tsx'
 import { HandlePicker } from './me/HandlePicker.tsx'
 import { SettingsPage } from './me/SettingsPage.tsx'
+import { PadProvider } from './pad/PadProvider.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
 import { ProfilePage } from './profile/ProfilePage.tsx'
 import { ProfileSpread } from './profile/ProfileSpread.tsx'
@@ -22,12 +23,14 @@ import styles from './App.module.css'
 function Root() {
   const { needsHandle } = useAccount()
   return (
-    <div className={styles.app}>
-      <AppHeader />
-      {needsHandle ? <HandlePicker /> : <Outlet />}
-      <ThumbBar />
-      <ImportPrompt />
-    </div>
+    <PadProvider>
+      <div className={styles.app}>
+        <AppHeader />
+        {needsHandle ? <HandlePicker /> : <Outlet />}
+        <ThumbBar />
+        <ImportPrompt />
+      </div>
+    </PadProvider>
   )
 }
 

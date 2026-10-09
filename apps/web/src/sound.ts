@@ -27,7 +27,8 @@ const sounds: Record<SoundName, Tone[]> = {
 
 let ctx: AudioContext | null = null
 
-function unlock() {
+/** Called on any user gesture; controller presses aren't seen by the listeners below. */
+export function unlock(): void {
   try {
     ctx ??= new AudioContext()
     if (ctx.state === 'suspended') void ctx.resume()

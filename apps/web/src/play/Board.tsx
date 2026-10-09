@@ -1,5 +1,7 @@
 import { type KeyboardEvent, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
+import { usePadBoard } from '../pad/usePadBoard.ts'
 import { getSettings, subscribeSettings } from '../settings.ts'
+import { move, startStroke } from './board-actions.ts'
 import { type PlayState, type PlayStore, type Pos, type Tool, crosshairOf } from './store.ts'
 import { type BoardView, type View, visibleRange } from './viewport.ts'
 import styles from './Play.module.css'
@@ -38,6 +40,8 @@ interface Props {
   highlight?: readonly number[] | undefined
   /** A cell to ring: wrong, a guess, or true but beside the point. */
   flag?: BoardFlag | null | undefined
+  /** Set during a Lesson's talk beat, when a controller's A advances it. */
+  onTalkNext?: (() => void) | undefined
 }
 
 export interface BoardFlag {
@@ -45,7 +49,7 @@ export interface BoardFlag {
   tone: 'mistake' | 'guess' | 'aside'
 }
 
-export function Board({ store, cellSize, view, assists, highlight, flag = null }: Props) {
+export function Board({ store, cellSize, view, assists, highlight, flag = null, onTalkNext }: Props) {
   const { width, height } = store.puzzle
   const options = useRef({ assists, highlight, flag })
   options.current = { assists, highlight, flag }
@@ -55,6 +59,7 @@ export function Board({ store, cellSize, view, assists, highlight, flag = null }
   const revealStart = useRef<number | null>(null)
 
   useLayoutEffect(() => view.setFit(cellSize), [view, cellSize])
+  usePadBoard(canvasRef, { store, view, assists, onTalkNext })
 
   useEffect(() => {
     const canvas = canvasRef.current!
@@ -119,16 +124,14 @@ export function Board({ store, cellSize, view, assists, highlight, flag = null }
   const onKeyDown = (e: KeyboardEvent<HTMLCanvasElement>) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return
     const key = e.key.toLowerCase()
-    const move = moves[key]
+    const delta = moves[key]
     const tool = keyTools[key]
-    if (move) {
-      store.moveCursor(...move)
-      view.follow(store.getState().cursor)
+    if (delta) {
+      move(store, view, ...delta)
     } else if (tool) {
       if (!e.repeat && heldKey.current === null) {
         heldKey.current = key
-        store.beginStroke(store.getState().cursor, tool, { lockAxis: false })
-        view.follow(store.getState().cursor)
+        startStroke(store, view, tool, false)
       }
     } else {
       return
