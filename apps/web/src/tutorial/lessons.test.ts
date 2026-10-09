@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type SolverCell, isLogicSolvable, isUnique, lineSolve } from '@pixel-imperium/nonogram'
+import { type SolverCell, isLogicSolvable, isUnique, linePlacements, lineSolve } from '@pixel-imperium/nonogram'
 import { type Draw, type Lesson, type LineRef, LESSONS, lessonPuzzle } from './lessons.ts'
 import { cellsBefore, currentStep } from './steps.ts'
 import { TECHNIQUES } from './techniques.ts'
@@ -43,6 +43,35 @@ function extent(draw: Draw): { line: LineRef; from: number; to: number } {
     return { line: draw.ghost, from: Math.min(...at), to: Math.max(...at) + (tone === 'bad' ? 0 : len - 1) }
   }
   return 'both' in draw ? { line: draw.both, ...draw.both } : { line: draw.bracket, ...draw.bracket }
+}
+
+/** Where each block of `line` can start, from the board before step `stepIndex`: `[block][placement]`. */
+function blockStarts(lesson: Lesson, stepIndex: number, line: LineRef): number[][] {
+  const { width, height, clues } = lessonPuzzle(lesson)
+  const cells = cellsBefore(lesson, stepIndex, width, height)
+  const [at, clue] =
+    line.row !== undefined
+      ? [Array.from({ length: width }, (_, c) => line.row * width + c), clues.rows[line.row]!]
+      : [Array.from({ length: height }, (_, r) => r * width + line.col), clues.cols[line.col]!]
+  const known = at.map((i): SolverCell => (cells[i] === 'filled' ? 'filled' : cells[i] === 'marked' ? 'empty' : 'unknown'))
+  const starts = linePlacements(known, clue).map(p => p.flatMap((on, k) => (on && !p[k - 1] ? [k] : [])))
+  return clue.map((_, b) => starts.map(s => s[b]!))
+}
+
+/** Whether a draw shows only what the board before the step allows. */
+function honest(lesson: Lesson, stepIndex: number, draw: Draw): boolean {
+  const { clues } = lessonPuzzle(lesson)
+  const d = 'ghost' in draw ? draw.ghost : 'both' in draw ? draw.both : draw.bracket
+  const clue = d.row !== undefined ? clues.rows[d.row]! : clues.cols[d.col!]!
+  const blocks = blockStarts(lesson, stepIndex, d).map((starts, b) => ({ len: clue[b]!, lo: Math.min(...starts), hi: Math.max(...starts), starts }))
+  if ('ghost' in draw) {
+    const { at, len, tone } = draw.ghost
+    const same = blocks.filter(b => b.len === len)
+    if (tone === 'bad') return same.every(b => !b.starts.includes(at[0]))
+    return same.some(b => b.lo === at[0] && b.hi === at[1])
+  }
+  if ('both' in draw) return blocks.some(b => b.hi === draw.both.from && b.lo + b.len - 1 === draw.both.to)
+  return draw.bracket.from <= draw.bracket.to
 }
 
 describe.each(Object.values(TRACKS).map(t => [t.id, t] as const))('%s track', (_, track) => {
@@ -95,6 +124,10 @@ describe.each([...LESSONS, ...TECHNIQUES].map(l => [l.picture, l] as const))('%s
         expect(from).toBeGreaterThanOrEqual(0)
         expect(to).toBeLessThan(length)
       }
+    })
+
+    it(`step ${i + 1} draws only what the board before it allows`, () => {
+      for (const draw of step.beats.flatMap(b => b.draw ?? [])) expect(honest(lesson, i, draw), JSON.stringify(draw)).toBe(true)
     })
 
     if (step.target === 'solved') return

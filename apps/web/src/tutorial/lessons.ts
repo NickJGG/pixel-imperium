@@ -75,18 +75,21 @@ export const LESSONS: readonly Lesson[] = [
     steps: [
       {
         beats: [
+          { text: 'Each number is a **block**: a run of filled cells in that line, with no gaps.' },
           {
-            text: 'Each number is a run of filled cells in that line. Row 1 says **5**, and the row is 5 cells wide, so **every cell is filled**. Fill them: `left-click`, or tap in Fill mode.',
+            text: 'Row 1 says **5**, and the row is 5 cells wide. So **every cell is filled**.',
+            draw: [{ ghost: { row: 0, at: [0, 0], len: 5, tone: 'blue' } }],
           },
+          { text: 'Fill row 1: `left-click`, or tap in Fill mode.' },
         ],
         highlight: { rows: [0] },
         target: { filled: row(0, ALL) },
       },
       {
         beats: [
-          {
-            text: 'Row 5 has a **0**: nothing in it is filled. Cross its cells out with `right-click`, or switch to ✕ Cross. Crosses are your notes: _this cell is definitely empty._',
-          },
+          { text: 'Row 5 has a **0**: nothing in it is filled.' },
+          { text: 'Crosses are your notes. A cross means _this cell is definitely empty._' },
+          { text: 'Cross out row 5: `right-click`, or switch to ✕ Cross.' },
         ],
         highlight: { rows: [4] },
         target: { marked: row(4, ALL) },
@@ -94,8 +97,17 @@ export const LESSONS: readonly Lesson[] = [
       {
         beats: [
           {
-            text: 'Columns 1 and 5 say **4**. The bottom cell is crossed out, so there are exactly 4 cells left. Fill them all.',
+            text: 'Columns 1 and 5 say **4**. The bottom cell is crossed out, so exactly **4 cells** are left.',
+            draw: [
+              { bracket: { col: 0, from: 0, to: 3, label: '4 cells' } },
+              { bracket: { col: 4, from: 0, to: 3, label: '4 cells' } },
+            ],
           },
+          {
+            text: 'The 4 fills all of them.',
+            draw: [{ ghost: { col: 0, at: [0, 0], len: 4, tone: 'blue' } }, { ghost: { col: 4, at: [0, 0], len: 4, tone: 'blue' } }],
+          },
+          { text: 'Fill the rest of columns 1 and 5.' },
         ],
         highlight: { cols: [0, 4] },
         target: { filled: [...col(0, [1, 2, 3]), ...col(4, [1, 2, 3])] },
@@ -112,9 +124,18 @@ export const LESSONS: readonly Lesson[] = [
     steps: [
       {
         beats: [
+          { text: 'Row 1 says **1 1 1**: three blocks, with at least one empty cell between each pair.' },
           {
-            text: "Row 1 says **1 1 1**: three blocks, and there must be at least one empty cell between each pair. 1+1+1 plus 2 gaps = **5**, exactly the width. There's only one way to fit it.",
+            text: "1 + 1 + 1 plus 2 gaps is **5**, exactly the width. There's only one way to fit it.",
+            draw: [
+              { ghost: { row: 0, at: [0, 0], len: 1, tone: 'blue' } },
+              { ghost: { row: 0, at: [2, 2], len: 1, tone: 'blue' } },
+              { ghost: { row: 0, at: [4, 4], len: 1, tone: 'blue' } },
+              { bracket: { row: 0, from: 1, to: 1, label: 'gap' } },
+              { bracket: { row: 0, from: 3, to: 3, label: 'gap' } },
+            ],
           },
+          { text: 'Fill the three blocks.' },
         ],
         highlight: { rows: [0] },
         target: { filled: row(0, [0, 2, 4]) },
@@ -122,8 +143,10 @@ export const LESSONS: readonly Lesson[] = [
       {
         beats: [
           {
-            text: 'The gaps must be empty. **Cross them out** (`right-click` or ✕ Cross). Crossed cells make the next deductions easier.',
+            text: 'The gaps must be empty. Crossing them out makes the next deductions easier.',
+            draw: [{ bracket: { row: 0, from: 1, to: 1, label: 'gap' } }, { bracket: { row: 0, from: 3, to: 3, label: 'gap' } }],
           },
+          { text: 'Cross out the two gaps.' },
         ],
         highlight: { rows: [0] },
         target: { marked: row(0, [1, 3]) },
@@ -131,8 +154,14 @@ export const LESSONS: readonly Lesson[] = [
       {
         beats: [
           {
-            text: 'Row 4 says **2 2**: 2 + gap + 2 = 5. Another exact fit. Fill the blocks and cross out the gap.',
+            text: 'Row 4 says **2 2**. 2 + gap + 2 is **5**: another exact fit.',
+            draw: [
+              { ghost: { row: 3, at: [0, 0], len: 2, tone: 'blue' } },
+              { ghost: { row: 3, at: [3, 3], len: 2, tone: 'blue' } },
+              { bracket: { row: 3, from: 2, to: 2, label: 'gap' } },
+            ],
           },
+          { text: 'Fill the blocks and cross out the gap.' },
         ],
         highlight: { rows: [3] },
         target: { filled: row(3, [0, 1, 3, 4]), marked: row(3, [2]) },
@@ -140,19 +169,16 @@ export const LESSONS: readonly Lesson[] = [
       {
         beats: [
           {
-            text: 'Rows 3 and 5 say **5**. You know what to do.',
+            text: 'Rows 3 and 5 say **5**: full rows, like the top of the gate.',
+            draw: [{ ghost: { row: 2, at: [0, 0], len: 5, tone: 'blue' } }, { ghost: { row: 4, at: [0, 0], len: 5, tone: 'blue' } }],
           },
+          { text: 'Fill them both.' },
         ],
         highlight: { rows: [2, 4] },
         target: { filled: [...row(2, ALL), ...row(4, ALL)] },
       },
       {
-        beats: [
-          {
-            text: 'Row 2 is another **1 1 1**. Finish the picture, and check that every column agrees.',
-            whole: true,
-          },
-        ],
+        beats: [{ text: 'Row 2 is another **1 1 1**. Finish the picture, and check that every column agrees.', whole: true }],
         highlight: {},
         target: 'solved',
       },
@@ -168,9 +194,12 @@ export const LESSONS: readonly Lesson[] = [
     steps: [
       {
         beats: [
+          { text: "Row 1 says **4** in 5 cells. You don't know where the 4 starts." },
           {
-            text: "Row 1 says **4** in 5 cells. You don't know where it starts, but slide it both ways: some cells are covered **either way**.",
+            text: 'Push it as far left as it goes, then as far right. Three cells are covered **either way**.',
+            draw: [{ ghost: { row: 0, at: [0, 1], len: 4 } }, { both: { row: 0, from: 1, to: 3 } }],
           },
+          { text: 'However the 4 sits, those three are filled. Fill them.', draw: [{ both: { row: 0, from: 1, to: 3 } }] },
         ],
         highlight: { rows: [0] },
         target: { filled: row(0, [1, 2, 3]) },
@@ -178,37 +207,44 @@ export const LESSONS: readonly Lesson[] = [
       {
         beats: [
           {
-            text: 'Row 2 is the same: **4** in 5. Fill the overlap.',
+            text: 'Row 2 is the same: **4** in 5.',
+            draw: [{ ghost: { row: 1, at: [0, 1], len: 4 } }, { both: { row: 1, from: 1, to: 3 } }],
           },
+          { text: 'Fill the overlap.' },
         ],
         highlight: { rows: [1] },
         target: { filled: row(1, [1, 2, 3]) },
       },
       {
         beats: [
-          {
-            text: 'Row 5 says **3**. Pushed left it covers 1–3, pushed right 3–5. Only the **middle** cell is certain.',
-          },
+          { text: 'Row 5 says **3**. Pushed left it covers cells 1–3. Pushed right, 3–5.', draw: [{ ghost: { row: 4, at: [0, 2], len: 3 } }] },
+          { text: 'Only the **middle** cell is covered both ways. Fill it.', draw: [{ both: { row: 4, from: 2, to: 2 } }] },
         ],
         highlight: { rows: [4] },
         target: { filled: row(4, [2]) },
       },
       {
-        beats: [
-          {
-            text: 'Column 5 has a **0**. Cross it out. Now the 4s in rows 1 and 2 have only one place left to go.',
-          },
-        ],
+        beats: [{ text: 'Column 5 has a **0**: nothing in it is filled.' }, { text: 'Cross out all five cells.' }],
         highlight: { cols: [4] },
         target: { marked: col(4, ALL) },
       },
       {
         beats: [
           {
-            text: 'Column 1 says **5**. From here you have everything you need. Finish the banner.',
-            whole: true,
+            text: 'With column 5 crossed out, the 4s in rows 1 and 2 have exactly **4 cells** left.',
+            draw: [{ bracket: { row: 0, from: 0, to: 3, label: '4 cells' } }, { bracket: { row: 1, from: 0, to: 3, label: '4 cells' } }],
           },
+          {
+            text: 'Each 4 has only one place to go.',
+            draw: [{ ghost: { row: 0, at: [0, 0], len: 4, tone: 'blue' } }, { ghost: { row: 1, at: [0, 0], len: 4, tone: 'blue' } }],
+          },
+          { text: 'Fill the first cell of rows 1 and 2.' },
         ],
+        highlight: { rows: [0, 1] },
+        target: { filled: [[0, 0], [1, 0]] },
+      },
+      {
+        beats: [{ text: 'Column 1 says **5**. You have everything you need. Finish the banner.', whole: true }],
         highlight: {},
         target: 'solved',
       },
@@ -236,9 +272,12 @@ export const LESSONS: readonly Lesson[] = [
       {
         beats: [
           {
-            text: "Your turn, on a 10×10 like the end of the Marches. Use everything: full lines, exact fits, overlap and crosses. The **assists** under the board are now your own settings, so toggle them however you like. Stuck? Try **Hint**. In the Imperium a hint costs the puzzle its **Foil**. Here it's free.",
+            text: 'Your turn, on a 10×10 like the end of the Marches. Use everything: full lines, exact fits, overlap and crosses.',
             whole: true,
           },
+          { text: 'The **assists** under the board are now your own settings, so toggle them however you like.', whole: true, anchor: 'assists' },
+          { text: "Stuck? Try **Hint**. In the Imperium a hint costs the puzzle its **Foil**. Here it's free.", whole: true, anchor: 'hint' },
+          { text: 'Solve the crown.', whole: true },
         ],
         highlight: {},
         target: 'solved',
