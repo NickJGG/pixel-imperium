@@ -7,7 +7,7 @@ import styles from './Play.module.css'
 
 interface Props {
   store: PlayStore
-  /** Inert once solved; it stays under the after card so the board never refits under the sticker. */
+  /** Inert once solved; it stays under the after sheet so the board never refits under the sticker. */
   solved: boolean
   hint: ReactNode
   paper: CSSProperties
@@ -27,7 +27,7 @@ export function Dock({ store, solved, hint, paper, page, status, ref }: Props) {
         <ToolPill store={store} compact>
           {hint}
         </ToolPill>
-        <PageSheet store={store} paper={paper}>
+        <PageSheet store={store} solved={solved} paper={paper}>
           {page}
         </PageSheet>
       </div>

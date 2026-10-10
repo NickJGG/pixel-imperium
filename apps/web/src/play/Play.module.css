@@ -157,9 +157,12 @@
   bottom: calc(100% + var(--space-2));
   z-index: 4;
   width: min(420px, calc(100% - 2 * var(--space-2)));
+  transform: translateX(-50%);
+}
+
+.sheetFace {
   max-height: calc(100dvh - 140px);
   overflow-y: auto;
-  transform: translateX(-50%);
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4);
@@ -185,6 +188,38 @@
   font: 700 12px var(--font-mono);
   text-transform: uppercase;
   color: var(--ink-soft);
+}
+
+/* The solve's sheet, risen over the dock in place of the page sheet. */
+.afterSheet {
+  bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+  animation: sheet-rise 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@keyframes sheet-rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 32px);
+  }
+}
+
+.afterSheet .sheetFace {
+  max-height: calc(100dvh - 72px);
+}
+
+.afterSheet .panelAfter {
+  transition:
+    opacity 0.2s,
+    visibility 0.2s;
+}
+
+.afterSheet .panelAfter[data-pending] {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.afterSheet .closing {
+  color: var(--gold);
 }
 
 .sheet .foilNote {
@@ -691,15 +726,6 @@
   background: var(--line-soft);
 }
 
-.afterStamp {
-  flex: none;
-  width: 88px;
-  height: 88px;
-  padding: 6px;
-  font-size: 10px;
-  letter-spacing: -0.06em;
-}
-
 .flavour {
   display: block;
   margin-top: 2px;
@@ -1136,32 +1162,9 @@
   display: none;
 }
 
-/* The dock's after card, risen over the dock and the foot of the surface. */
-.afterCard {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 3;
-  padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
-  --focus: var(--blue);
-  color: var(--ink);
-  background: var(--card);
-  border-radius: var(--r-lg) var(--r-lg) 0 0;
-  box-shadow: 0 -2px 0 var(--line-soft);
-}
-
-.afterCard > .afterStamp {
-  justify-self: start;
-}
-
-.panelAfter.afterCard .closing {
-  color: var(--gold);
-}
-
 /* Solid, unlike a stamp inked on paper: these hang off the page over the cover or the board. */
 .panelStamp,
-.cardStamp {
+.sheetStamp {
   position: absolute;
   z-index: 2;
   width: 88px;
@@ -1176,9 +1179,9 @@
   bottom: -62px;
 }
 
-.cardStamp {
-  top: 44px;
-  left: 4px;
+.sheetStamp {
+  top: -64px;
+  right: var(--space-3);
 }
 
 /* The sticker in flight; sticker-moment.ts positions it in viewport coordinates. */
@@ -1249,8 +1252,13 @@
   .linkButton,
   .howTo,
   .switches i,
-  .switches i::after {
+  .switches i::after,
+  .afterSheet .panelAfter {
     transition: none;
+  }
+
+  .afterSheet {
+    animation: none;
   }
 
   .linkButton:hover,

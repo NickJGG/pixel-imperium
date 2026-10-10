@@ -159,7 +159,8 @@ function Play({
   // A solve while zoomed glides back to fit before the reveal and the sticker's moment, so they
   // see the whole picture; the view stays locked there until a replay.
   const [fitting, setFitting] = useState(false)
-  useEffect(() => {
+  // Layout effects, like the moment's below, so a solve never paints a frame as if its sticker had landed.
+  useLayoutEffect(() => {
     if (!solved) return
     let live = true
     if (boardView.zoomed) {
@@ -176,7 +177,7 @@ function Play({
 
   const [moment, setMoment] = useState<Moment | null>(null)
   const before = useRef({ solved, replaying })
-  useEffect(() => {
+  useLayoutEffect(() => {
     const prev = before.current
     before.current = { solved, replaying }
     if (!solved) setMoment(null)
@@ -207,7 +208,6 @@ function Play({
     const float = floatRef.current!
     const board = stageRef.current!.querySelector(`.${styles.board} > canvas`)!.getBoundingClientRect()
     let choreography: Choreography
-    // Until the dock has a slot to fly to, its solve only pops.
     if (moment === 'flying' && slotRef.current) {
       const slot = slotRef.current.getBoundingClientRect()
       float.style.width = `${slot.width * Math.min(1, puzzle.width / puzzle.height)}px`
@@ -222,7 +222,7 @@ function Play({
     return choreography.cancel
   }, [moment, fitting, puzzle.id])
 
-  const surfaceRef = useRef<HTMLDivElement>(null)
+  const afterRef = useRef<HTMLDivElement>(null)
   const dockRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -230,11 +230,13 @@ function Play({
     play(conquest ? 'chime' : 'thunk')
     rumble(conquest ? 'conquest' : 'solve')
     if (reducedMotion()) return
-    return confetti((panelRef.current ?? surfaceRef.current)!, styles.burst!)
+    return confetti((panelRef.current ?? afterRef.current)!, styles.burst!)
   }, [moment, conquest])
 
   const hideSticker = moment === 'waiting' || moment === 'flying'
   const done = previewConquest || (solved && !hideSticker)
+  // Up before the flight, once the fit glide is over, so the sticker has a slot to fly to.
+  const afterOpen = !wide && (done || (hideSticker && !fitting))
 
   usePadPage({
     parent: solved ? `/c/${campaign.id}/${province.id}` : undefined,
@@ -297,11 +299,18 @@ function Play({
   const controls = { lines: true, zoom: true, back: 'Back to page' }
 
   const following = campaign.provinces[provinceIndex + 1]
-  const conquestStamp = (className: string | undefined) => (
-    <Stamp thunk tone={following ? 'pink' : 'gold'} className={className}>
-      {following ? 'Page complete' : 'Album complete'}
-    </Stamp>
-  )
+  const stamp = (className: string | undefined) =>
+    conquest
+      ? done && (
+          <Stamp thunk tone={following ? 'pink' : 'gold'} className={className}>
+            {following ? 'Page complete' : 'Album complete'}
+          </Stamp>
+        )
+      : moment === 'landed' && (
+          <Stamp thunk className={className}>
+            New sticker!
+          </Stamp>
+        )
   const message = conquest ? (
     <p role="status">
       <b>{province.name} conquered.</b>
@@ -380,6 +389,7 @@ function Play({
 
   const afterBody = (
     <>
+      {!conquest && tag}
       {message}
       {closing}
       {onward}
@@ -420,7 +430,7 @@ function Play({
     <main className={styles.shell}>
       {barPuzzle}
       <div className={styles.shellBody}>
-        <div ref={surfaceRef} className={styles.surface}>
+        <div className={styles.surface}>
           <div ref={stageRef} className={styles.stage}>
             {cellSize > 0 && (
               <div
@@ -436,11 +446,6 @@ function Play({
               </div>
             )}
           </div>
-          {moment === 'landed' && !wide && !conquest && (
-            <Stamp thunk className={styles.cardStamp}>
-              New sticker!
-            </Stamp>
-          )}
           {offerTutorial && <ChoiceCard track={TRACKS.tutorial} copy={TUTORIAL_OFFER} puzzleId={puzzle.id} />}
           {offerTechniques && (
             <ChoiceCard track={TRACKS.techniques} copy={techniquesOffer(province)} puzzleId={puzzle.id} />
@@ -453,19 +458,10 @@ function Play({
               slotRef={setSlot}
               {...slotRow}
               index={provinceIndex}
-              stamp={
-                conquest
-                  ? done && conquestStamp(styles.panelStamp)
-                  : moment === 'landed' && (
-                      <Stamp thunk className={styles.panelStamp}>
-                        New sticker!
-                      </Stamp>
-                    )
-              }
+              stamp={stamp(styles.panelStamp)}
             >
               {done ? (
                 <div className={styles.panelAfter}>
-                  {!conquest && tag}
                   {afterBody}
                   <PadControls solved {...controls} />
                 </div>
@@ -523,10 +519,16 @@ function Play({
           status={hint ? hintText(hint, cells, puzzle.width) : hintFailed && HINT_FAILED}
         />
       )}
-      {!wide && done && (
-        <div className={`${styles.panelAfter} ${styles.afterCard}`}>
-          {conquest ? conquestStamp(styles.afterStamp) : tag}
-          {afterBody}
+      {afterOpen && (
+        <div ref={afterRef} className={`${styles.sheet} ${styles.afterSheet}`} style={paperStyle(provinceIndex)}>
+          <div className={styles.sheetFace}>
+            <SlotRow {...slotRow} slotRef={setSlot} />
+            {/* Laid out but unseen until the sticker lands, so the slot row can't shift under its flight. */}
+            <div className={styles.panelAfter} data-pending={!done || undefined}>
+              {afterBody}
+            </div>
+          </div>
+          {stamp(styles.sheetStamp)}
         </div>
       )}
       {(moment === 'flying' || moment === 'popping') && !fitting && (
