@@ -13,7 +13,9 @@ export interface Rect {
 
 /**
  * The candidate nearest `from` in `dir`. Each is measured from `from`'s centre clamped into it, so a
- * long target beside the centre counts as straight ahead; sideways distance costs double.
+ * long target beside the centre counts as straight ahead; sideways distance costs double. Candidates
+ * level with `from` across the direction come first, so a far one on the same row beats a near one
+ * a row down (the bar's back link over the rail's slots).
  */
 export function pickNext<T extends Rect>(from: Rect, dir: Direction, candidates: readonly T[]): T | null {
   const [dy, dx] = DIRECTIONS[dir]
@@ -21,6 +23,7 @@ export function pickNext<T extends Rect>(from: Rect, dir: Direction, candidates:
   const fy = (from.top + from.bottom) / 2
   let best: T | null = null
   let bestScore = Infinity
+  let bestLevel = false
   for (const c of candidates) {
     const tx = Math.max(c.left, Math.min(fx, c.right))
     const ty = Math.max(c.top, Math.min(fy, c.bottom))
@@ -28,8 +31,10 @@ export function pickNext<T extends Rect>(from: Rect, dir: Direction, candidates:
     if (main <= 0) continue
     const cross = dx ? Math.abs(ty - fy) : Math.abs(tx - fx)
     const score = main + 2 * cross
-    if (score < bestScore) {
+    const level = dx ? c.top < from.bottom && c.bottom > from.top : c.left < from.right && c.right > from.left
+    if (level > bestLevel || (level === bestLevel && score < bestScore)) {
       bestScore = score
+      bestLevel = level
       best = c
     }
   }

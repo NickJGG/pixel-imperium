@@ -4,7 +4,7 @@ import styles from './Play.module.css'
 
 /**
  * Fill or Cross for touch and pen; the mouse picks with its buttons, so it's hidden without touch.
- * `compact` lets the pill drop the labels on touch, so the buttons carry their names themselves.
+ * `compact` lets the pill drop the labels, so the buttons carry their names themselves.
  */
 export function ToolToggle({ store, compact = false }: { store: PlayStore; compact?: boolean }) {
   const mode = useSyncExternalStore(store.subscribe, () => store.getState().mode)

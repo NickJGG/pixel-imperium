@@ -6,8 +6,8 @@ import { ToolToggle } from './ToolToggle.tsx'
 import styles from './Play.module.css'
 
 /**
- * The tools. `compact` packs them into the dock where there's no rail: icons only on touch, and
- * `children` (Hint) at the end. `docked` sets them in the controls card under the rail's panel.
+ * The tools. `compact` packs them into the dock where there's no rail: icons only, and `children`
+ * (Hint) at the end. `docked` sets them in the rail.
  */
 export function ToolPill({
   store,

@@ -1,5 +1,4 @@
 import type { ReactNode, Ref, RefCallback } from 'react'
-import { Link } from '@tanstack/react-router'
 import type { Province } from '@pixel-imperium/protocol'
 import { paperStyle } from '../album/paper.ts'
 import { Slot } from '../album/Slot.tsx'
@@ -20,13 +19,10 @@ interface RowProps {
 }
 
 interface Props extends RowProps {
-  campaignId: string
   /** The province's place in its campaign, for its paper colour. */
   index: number
   /** Hangs off the panel's edge: New sticker!, or the conquest's. */
   stamp: ReactNode
-  /** A status beside the size: Replaying, Imported and the like. */
-  tag: ReactNode
   /** Everything under the slot row. */
   children: ReactNode
   ref: Ref<HTMLElement>
@@ -59,41 +55,24 @@ export function SlotRow(props: RowProps) {
   )
 }
 
-/**
- * The puzzle's panel beside the board, on its province's paper: the way back, the puzzle, and the
- * row of five slots it sits in, then whatever the play state puts under them.
- */
-export function PuzzlePanel({ campaignId, index, stamp, tag, children, ref, ...row }: Props) {
-  const { province, number } = row
-  const current = province.puzzles[number - 1]!
-  const has = stuck(row)
-  const solved = province.puzzles.filter(p => has(p.id)).length
-
+/** The province and how much of it is stuck in, over the page sheet's slot row. */
+export function PageHead(props: RowProps) {
+  const { province } = props
+  const has = stuck(props)
   return (
-    <aside
-      ref={ref}
-      className={styles.panel}
-      data-pad-panel
-      style={paperStyle(index)}
-      aria-label={province.name}
-    >
-      <div className={styles.panelBack}>
-        <Link to="/c/$campaignId/$provinceId" params={{ campaignId, provinceId: province.id }}>
-          ← {province.name}
-        </Link>
-        <span className={styles.count}>
-          {solved} / {province.puzzles.length}
-        </span>
-      </div>
-      <header className={styles.panelHead}>
-        <h1 className={styles.title}>
-          #{number} {current.title}
-        </h1>
-        <span className={styles.size}>
-          {current.width}×{current.height}
-        </span>
-        {tag}
-      </header>
+    <div className={styles.pageHead}>
+      {province.name}
+      <span className={styles.count}>
+        {province.puzzles.filter(p => has(p.id)).length} / {province.puzzles.length}
+      </span>
+    </div>
+  )
+}
+
+/** The rail beside the board, on its province's paper: the row of five slots, then whatever the play state puts under it. */
+export function PuzzlePanel({ index, stamp, children, ref, ...row }: Props) {
+  return (
+    <aside ref={ref} className={styles.panel} data-pad-panel style={paperStyle(index)} aria-label={row.province.name}>
       <SlotRow {...row} />
       {children}
       {stamp}

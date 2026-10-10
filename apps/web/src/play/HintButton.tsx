@@ -11,7 +11,7 @@ interface Props {
   confirmFirst: boolean
   /** Shown under the confirm. */
   note?: string
-  /** The confirm opens above the button instead of taking its place, so a toolbar doesn't reflow. */
+  /** The confirm opens above the button instead of taking its place, so a toolbar doesn't reflow; the toolbar may hide the label. */
   popover?: boolean
   request: (cells: readonly Cell[]) => Promise<HintResponse | null>
   onError: (failed: boolean) => void
@@ -65,10 +65,12 @@ export function HintButton({ store, confirmFirst, note, popover = false, request
       data-variant="blue"
       disabled={pending}
       aria-expanded={popover ? confirming : undefined}
+      aria-label={popover ? 'Hint' : undefined}
+      title={popover ? 'Hint' : undefined}
       onClick={() => (confirming ? setConfirming(false) : confirmFirst ? setConfirming(true) : void hint())}
     >
       <BulbIcon />
-      Hint
+      <span className={styles.toolLabel}>Hint</span>
     </button>
   )
 

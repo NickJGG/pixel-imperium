@@ -12,8 +12,8 @@ import { requestHint, submitSolve } from '../api.ts'
 import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
-import { getPadMode } from '../pad/mode.ts'
-import { PadControls, PadStrip } from '../pad/PadControls.tsx'
+import { getPadMode, usePadMode } from '../pad/mode.ts'
+import { PadControls } from '../pad/PadControls.tsx'
 import { PadGlyph, PanelTag } from '../pad/PadGlyph.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
@@ -26,19 +26,19 @@ import { ChoiceCard, TUTORIAL_OFFER, techniquesOffer } from '../tutorial/ChoiceC
 import { useLessonsDone } from '../tutorial/done.ts'
 import { HowToPlay } from '../tutorial/HowToPlay.tsx'
 import { TRACKS } from '../tutorial/tracks.ts'
+import { AssistsDisclosure } from './AssistsDisclosure.tsx'
 import { AssistSwitches } from './AssistSwitches.tsx'
 import { Board, REVEAL_MS } from './Board.tsx'
 import { ClearButton, LoopIcon } from './ClearButton.tsx'
 import { ColClues, RowClues } from './Clues.tsx'
-import { ControlsCard } from './ControlsCard.tsx'
+import { Dock } from './Dock.tsx'
 import { useBoardGestures } from './gestures.ts'
 import { HintButton, hintText } from './HintButton.tsx'
 import { RAIL_WIDTH, boardTracks, fitCellSize, useRail } from './layout.ts'
 import { createLineHints } from './line-hints.ts'
 import { Minimap } from './Minimap.tsx'
-import { MoreMenu } from './MoreMenu.tsx'
 import { encodeCells } from './progress-storage.ts'
-import { PuzzlePanel, SlotRow } from './PuzzlePanel.tsx'
+import { PageHead, PuzzlePanel, SlotRow } from './PuzzlePanel.tsx'
 import { type Choreography, confetti, flyIn, popOnly } from './sticker-moment.ts'
 import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
 import { ToolPill } from './ToolPill.tsx'
@@ -118,6 +118,7 @@ function Play({
   const cells = useStoreValue(store, s => s.cells)
   const percent = useMemo(() => progressPercent(cells, puzzle.filledCount, false), [cells, puzzle.filledCount])
   const settings = useSettings()
+  const pad = usePadMode()
   const offerTutorial = useShouldOffer(storage)
   const offerTechniques = useShouldOfferTechniques(province, useLessonsDone()) && !offerTutorial
   const fresh = useMemo(() => freshCells(puzzle, settings.autoMarkEmptyLines), [puzzle, settings.autoMarkEmptyLines])
@@ -242,7 +243,6 @@ function Play({
       const panel = panelRef.current
       return panel && (panel.querySelector<HTMLElement>(`.${styles.panelHint} button`) ?? firstFocusable(panel))
     },
-    menu: wide && !solved ? () => panelRef.current?.querySelector<HTMLElement>('[role="switch"]')?.focus() : undefined,
     hold: hideSticker || moment === 'popping',
   })
   // The solve hands a controller on from the board to the onward link once it shows.
@@ -359,11 +359,24 @@ function Play({
     </Link>
   )
   const replay = <ClearButton store={store} solved />
-  const learn = (
-    <div className={styles.learn}>
+  const actions = (
+    <div className={styles.btnRow}>
       <HowToPlay back={`/play/${puzzle.id}`} campaign={campaign} className={styles.howTo} />
+      <ClearButton store={store} solved={false} disabled={!canClear} />
     </div>
   )
+  const foilChip = replaying ? (
+    <p className={styles.panelNote}>Already in the album. Replays never change the sticker.</p>
+  ) : (
+    firstSolve &&
+    !hinted && (
+      <span className={styles.foilNote}>
+        <i aria-hidden="true" />
+        Foil still possible
+      </span>
+    )
+  )
+  const slotRow = { province, number, storage, hideSticker }
 
   const afterBody = (
     <>
@@ -438,12 +451,8 @@ function Play({
             <PuzzlePanel
               ref={panelRef}
               slotRef={setSlot}
-              campaignId={campaign.id}
-              province={province}
+              {...slotRow}
               index={provinceIndex}
-              number={number}
-              storage={storage}
-              hideSticker={hideSticker}
               stamp={
                 conquest
                   ? done && conquestStamp(styles.panelStamp)
@@ -453,32 +462,16 @@ function Play({
                       </Stamp>
                     )
               }
-              tag={null}
             >
               {done ? (
                 <div className={styles.panelAfter}>
                   {!conquest && tag}
                   {afterBody}
+                  <PadControls solved {...controls} />
                 </div>
               ) : (
                 <div className={styles.panelBody} inert={solved}>
-                  <div className={styles.progress}>
-                    <span className={styles.bar}>
-                      <i style={{ width: `${percent}%` }} />
-                    </span>
-                    <span className={styles.size}>{percent}% filled</span>
-                  </div>
-                  {replaying ? (
-                    <p className={styles.panelNote}>Already in the album. Replays never change the sticker.</p>
-                  ) : (
-                    firstSolve &&
-                    !hinted && (
-                      <span className={styles.foilNote}>
-                        <i aria-hidden="true" />
-                        Foil still possible
-                      </span>
-                    )
-                  )}
+                  {foilChip}
                   <div className={styles.panelHint}>
                     {hintButton(false)}
                     {hint ? (
@@ -488,7 +481,7 @@ function Play({
                     ) : (
                       hintFailed && (
                         <p className={styles.panelNote} role="status">
-                          Couldn't reach the album for a hint. Try again in a moment.
+                          {HINT_FAILED}
                         </p>
                       )
                     )}
@@ -499,45 +492,36 @@ function Play({
                       </span>
                     )}
                   </div>
-                  <AssistSwitches />
-                  <div className={styles.panelFoot}>
-                    {learn}
-                    <ClearButton store={store} solved={false} disabled={!canClear} />
-                  </div>
+                  {actions}
+                  {pad ? <PadControls solved={false} {...controls} /> : <ToolPill store={store} docked />}
+                  <AssistsDisclosure store={store} />
                 </div>
               )}
               {!done && <PanelTag />}
             </PuzzlePanel>
-            <ControlsCard solved={solved} {...controls}>
-              {!solved && <ToolPill store={store} docked />}
-            </ControlsCard>
           </div>
         )}
       </div>
       {!wide && (
-        // Stays through the solve, under the after card, so the board never refits under the sticker.
-        <div ref={dockRef} className={styles.playDock} inert={solved}>
-          <PadStrip />
-          <div className={styles.dockRow}>
-            <ToolPill store={store} compact>
-              {hintButton(true)}
-            </ToolPill>
-            <MoreMenu store={store} paper={paperStyle(provinceIndex)}>
-              <SlotRow province={province} number={number} storage={storage} hideSticker={hideSticker} />
+        <Dock
+          ref={dockRef}
+          store={store}
+          solved={solved}
+          hint={hintButton(true)}
+          paper={paperStyle(provinceIndex)}
+          page={
+            <>
+              <PageHead {...slotRow} />
+              <SlotRow {...slotRow} />
+              {foilChip}
+              {actions}
+              <h2 className={styles.sheetHead}>Assists</h2>
               <AssistSwitches />
-              <div className={styles.panelFoot}>
-                {learn}
-                <ClearButton store={store} solved={false} disabled={!canClear} />
-              </div>
               <PadControls owner="board" solved={false} {...controls} />
-            </MoreMenu>
-          </div>
-          <p className={styles.visuallyHidden} role="status">
-            {hint
-              ? hintText(hint, cells, puzzle.width)
-              : hintFailed && "Couldn't reach the album for a hint. Try again in a moment."}
-          </p>
-        </div>
+            </>
+          }
+          status={hint ? hintText(hint, cells, puzzle.width) : hintFailed && HINT_FAILED}
+        />
       )}
       {!wide && done && (
         <div className={`${styles.panelAfter} ${styles.afterCard}`}>
@@ -553,6 +537,8 @@ function Play({
     </main>
   )
 }
+
+const HINT_FAILED = "Couldn't reach the album for a hint. Try again in a moment."
 
 function ArrowIcon() {
   return (

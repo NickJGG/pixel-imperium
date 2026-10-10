@@ -38,7 +38,7 @@ export function ClearButton({ store, solved, disabled = false }: Props) {
       <button
         ref={buttonRef}
         type="button"
-        data-variant={solved ? 'blue' : undefined}
+        data-variant={solved ? 'blue' : 'danger'}
         disabled={disabled}
         onClick={() => setConfirming(true)}
       >

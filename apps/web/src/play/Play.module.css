@@ -59,7 +59,10 @@
 /* The puzzle in the spine's slot: the way back, the title, its size and progress. */
 .barBack {
   flex: none;
-  font: 700 18px var(--font-ui);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 700 18px/1 var(--font-ui);
   color: inherit;
   text-decoration: none;
 }
@@ -81,13 +84,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 17px;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 .barSize,
 .barPercent {
   flex: none;
-  font: 700 12px var(--font-mono);
+  font: 700 12px/1 var(--font-mono);
 }
 
 .barSize {
@@ -95,13 +98,14 @@
 }
 
 .barPercent {
-  padding: 2px 8px;
+  padding: 4px 8px;
   background: rgb(255 255 255 / 0.18);
   border-radius: var(--r-pill);
 }
 
 /* The tools along the bottom where there's no rail. */
 .playDock {
+  position: relative;
   flex: none;
   display: grid;
   justify-items: center;
@@ -125,16 +129,68 @@
   gap: var(--space-2);
 }
 
-.playDock .pill {
-  position: static;
-  transform: none;
-  padding: 0;
-  box-shadow: none;
+/* The sliders at the dock's end, and the page sheet it raises over the dock. */
+.sheetRoot {
+  display: flex;
 }
 
-.playDock .morePop {
-  top: auto;
-  bottom: calc(100% + 14px);
+.sheetButton {
+  width: 44px;
+  min-height: 36px;
+  padding: 0;
+  --btn-bg: transparent;
+  --btn-edge: transparent;
+}
+
+.sheetButton:hover:not(:disabled) {
+  --btn-bg: var(--card-2);
+}
+
+.sheetButton[aria-expanded='true'] {
+  --btn-bg: var(--ink);
+  --btn-ink: var(--card);
+}
+
+.sheet {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + var(--space-2));
+  z-index: 4;
+  width: min(420px, calc(100% - 2 * var(--space-2)));
+  max-height: calc(100dvh - 140px);
+  overflow-y: auto;
+  transform: translateX(-50%);
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  color: var(--ink);
+  background: var(--paper);
+  border-radius: var(--r-lg);
+  box-shadow:
+    0 5px 0 var(--shade),
+    0 0 0 2px var(--line-soft),
+    0 16px 32px -12px var(--shade);
+}
+
+.pageHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font: 600 15px var(--font-ui);
+}
+
+.sheetHead {
+  margin: 0;
+  font: 700 12px var(--font-mono);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.sheet .foilNote {
+  justify-self: start;
+  font: 600 13px var(--font-ui);
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
 .tag {
@@ -187,53 +243,9 @@
   gap: var(--space-2) var(--space-3);
 }
 
-.title {
-  margin: 0;
-  font-size: 22px;
-  line-height: 1.1;
-}
-
 .size {
   font: 700 13px var(--font-mono);
   color: var(--ink-soft);
-}
-
-.more {
-  position: relative;
-  display: flex;
-}
-
-.more > button {
-  width: 44px;
-  padding: 0;
-  --btn-bg: transparent;
-  --btn-edge: transparent;
-}
-
-.more > button:hover:not(:disabled),
-.more > button[aria-expanded='true'] {
-  --btn-bg: var(--card-2);
-}
-
-.more > button svg {
-  stroke-width: 4;
-}
-
-.morePop {
-  position: absolute;
-  top: calc(100% + var(--space-2));
-  right: 0;
-  z-index: 4;
-  width: min(300px, calc(100vw - 2 * var(--space-6)));
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  color: var(--ink);
-  background: var(--paper);
-  border-radius: var(--r-lg);
-  box-shadow:
-    0 5px 0 var(--shade),
-    0 16px 32px -12px var(--shade);
 }
 
 .stage {
@@ -390,21 +402,10 @@
 }
 
 .pill {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  z-index: 1;
-  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px;
   white-space: nowrap;
-  background: var(--card);
-  border-radius: var(--r-pill);
-  box-shadow:
-    0 0 0 2px var(--line-soft),
-    0 10px 24px -8px var(--shade);
 }
 
 .pill > button {
@@ -448,16 +449,23 @@
   box-shadow: none;
 }
 
-/* In the controls card, set under the panel instead of floating over the board. */
+/* In the rail, under Hint and the actions. */
 .pillDocked {
-  position: static;
-  transform: none;
   flex-wrap: wrap;
   justify-content: center;
-  padding: 0;
   white-space: normal;
-  background: none;
-  box-shadow: none;
+}
+
+/* The dock's tools carry their names in aria-label and title. */
+.pillCompact .toolLabel {
+  display: none;
+}
+
+.pillCompact > button[aria-pressed],
+.pillCompact .seg button,
+.pillCompact .hintAnchor > button {
+  width: 44px;
+  padding: 0;
 }
 
 /* Compact's Hint: its first-hint confirm pops up above it, so the pill keeps its width. */
@@ -500,10 +508,6 @@
 }
 
 @media (any-pointer: coarse) {
-  .pill {
-    padding: 4px;
-  }
-
   .pill > button {
     min-height: 44px;
   }
@@ -516,20 +520,13 @@
     min-height: 44px;
   }
 
-  /* Touch gets 44px targets, so compact drops the labels and separators to fit a phone. */
+  /* Touch gets 44px targets, so compact drops the separators to fit a phone. */
   .pillCompact {
     gap: 4px;
   }
 
-  .pillCompact .pillSep,
-  .pillCompact .toolLabel {
+  .pillCompact .pillSep {
     display: none;
-  }
-
-  .pillCompact > button[aria-pressed],
-  .pillCompact .seg button {
-    width: 44px;
-    padding: 0;
   }
 }
 
@@ -766,27 +763,68 @@
   stroke-linejoin: round;
 }
 
-/* The Tutorial's way in: at the foot of the panel, or of its ⋯ popover when there's no panel. */
-.learn {
+/* How to play beside Clear, under Hint; Clear's confirm takes the whole row. */
+.btnRow {
   display: grid;
-  gap: var(--space-1);
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
 }
 
+.btnRow > button,
+.btnRow > .howTo {
+  padding: 0 10px;
+  font-size: 15px;
+}
+
+.btnRow > button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btnRow > .confirm {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  padding: var(--space-3);
+  border-radius: var(--r-lg);
+}
+
+.btnRow > .confirm > span {
+  grid-column: 1 / -1;
+}
+
+/* The Tutorial's way in, as a house button. */
 .howTo {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  justify-self: start;
-  gap: var(--space-2);
-  font: 600 14px var(--font-ui);
-  color: var(--ink-soft);
-  text-underline-offset: 3px;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  font: 600 16px var(--font-ui);
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+  background: var(--card-2);
+  border-radius: var(--r-pill);
+  box-shadow: 0 var(--press) 0 var(--line-soft);
+  transition:
+    transform 80ms linear,
+    box-shadow 80ms linear;
 }
 
 .howTo:hover {
-  color: var(--ink);
+  transform: translateY(-1px);
+  box-shadow: 0 calc(var(--press) + 1px) 0 var(--line-soft);
+}
+
+.howTo:active {
+  transform: translateY(var(--press));
+  box-shadow: 0 0 0 transparent;
 }
 
 .howTo svg {
+  flex: none;
   width: 16px;
   height: 16px;
   fill: none;
@@ -796,7 +834,66 @@
   stroke-linejoin: round;
 }
 
-/* The rail: the panel, then the controls card under it. Its width comes from layout.ts. */
+/* The rail's last row: the assists, set and forget, behind a disclosure. */
+.disclosure {
+  position: relative;
+}
+
+.disclosure > button {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  justify-content: flex-start;
+  font-size: 14px;
+  border-radius: 10px;
+  --btn-bg: color-mix(in srgb, var(--ink) 8%, transparent);
+  --btn-edge: transparent;
+}
+
+.disclosure > button:hover:not(:disabled),
+.disclosure > button:active:not(:disabled) {
+  transform: none;
+}
+
+.disclosure > button[aria-expanded='true'] {
+  --btn-bg: var(--card-2);
+}
+
+.disclosure > button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.disclosure small {
+  margin-left: auto;
+  font: 700 12px var(--font-mono);
+  color: var(--ink-soft);
+}
+
+[aria-expanded='true'] > .chevron {
+  transform: rotate(180deg);
+}
+
+.assistsPop {
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  top: calc(100% + 10px);
+  z-index: 4;
+  padding: var(--space-3) 14px;
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow:
+    0 6px 0 var(--shade),
+    0 0 0 2px var(--line-soft);
+}
+
+.assistsPop[data-up] {
+  top: auto;
+  bottom: calc(100% + 10px);
+}
+
+/* The rail's column; its width comes from layout.ts. */
 .side {
   flex: none;
   display: grid;
@@ -832,24 +929,6 @@
     0 5px 0 var(--shade);
 }
 
-.panelBack {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  font: 600 15px var(--font-ui);
-}
-
-.panelBack a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.panelBack a:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
 .count {
   padding: 3px 10px;
   font: 700 13px var(--font-mono);
@@ -859,40 +938,9 @@
   border-radius: var(--r-pill);
 }
 
-.panelHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px var(--space-3);
-}
-
-.panelHead .title {
-  flex-basis: 100%;
-}
-
 .panelBody {
   display: grid;
   gap: var(--space-3);
-}
-
-.progress {
-  display: grid;
-  gap: 4px;
-}
-
-.bar {
-  height: 8px;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--ink) 14%, transparent);
-  border-radius: var(--r-pill);
-}
-
-.bar i {
-  display: block;
-  height: 100%;
-  background: var(--blue);
-  border-radius: inherit;
-  transition: width 200ms ease;
 }
 
 .panel .foilNote {
@@ -927,21 +975,15 @@
   min-height: 48px;
 }
 
-.panelHint .confirm,
-.panelFoot .confirm {
+.panelHint .confirm {
   display: grid;
   grid-template-columns: 1fr auto;
   padding: var(--space-3);
   border-radius: var(--r-lg);
 }
 
-.panelHint .confirm > span,
-.panelFoot .confirm > span {
+.panelHint .confirm > span {
   grid-column: 1 / -1;
-}
-
-.panelFoot .confirm {
-  flex-basis: 100%;
 }
 
 .switches {
@@ -993,28 +1035,6 @@
 
 .switches [aria-checked='true'] i::after {
   transform: translateX(14px);
-}
-
-.panelFoot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.panelFoot > button {
-  min-height: 32px;
-  padding: 0 var(--space-2);
-  font-size: 14px;
-  color: var(--ink-soft);
-  --btn-bg: transparent;
-  --btn-edge: transparent;
-}
-
-.panelFoot > button svg {
-  width: 16px;
-  height: 16px;
 }
 
 /* Solved: the slot row stays, and the play controls under it give way to these. */
@@ -1094,8 +1114,7 @@
 }
 
 @media (any-pointer: coarse) {
-  .switches button,
-  .panelFoot > button {
+  .switches button {
     min-height: 44px;
   }
 }
@@ -1219,10 +1238,6 @@
     display: none;
   }
 
-  .title {
-    font-size: 18px;
-  }
-
   .seg button {
     padding: 0 12px;
   }
@@ -1232,14 +1247,16 @@
   .colClues,
   .rowClues,
   .linkButton,
-  .bar i,
+  .howTo,
   .switches i,
   .switches i::after {
     transition: none;
   }
 
   .linkButton:hover,
-  .linkButton:active {
+  .linkButton:active,
+  .howTo:hover,
+  .howTo:active {
     transform: none;
   }
 }

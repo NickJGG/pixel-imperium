@@ -33,6 +33,12 @@ describe('pickNext', () => {
     expect(pickNext({ left: 0, top: 0, right: 100, bottom: 100 }, 'Right', [aside, near])?.name).toBe('near')
   })
 
+  it('prefers a far target level with it over a near one off its row', () => {
+    const back = { name: 'back', left: 100, top: 10, right: 200, bottom: 40 }
+    const slot = { name: 'slot', left: 900, top: 70, right: 950, bottom: 130 }
+    expect(pickNext({ left: 1000, top: 8, right: 1032, bottom: 40 }, 'Left', [slot, back])?.name).toBe('back')
+  })
+
   it('counts a wide target spanning the centre as straight ahead', () => {
     const bar = { name: 'bar', left: -500, top: 400, right: 1000, bottom: 440 }
     expect(pickNext(from(1, 2), 'Down', [bar])?.name).toBe('bar')

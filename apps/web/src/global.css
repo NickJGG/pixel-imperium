@@ -102,6 +102,7 @@ button:active:not(:disabled) {
 
 button:disabled {
   opacity: 0.45;
+  box-shadow: none;
   cursor: default;
 }
 
