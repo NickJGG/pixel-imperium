@@ -1,0 +1,71 @@
+/* A note about one cell: `.bubble` alone where it sits in flow, plus `.tag` where it's pinned beside the cell. */
+.bubble {
+  --tone: var(--red);
+  margin: 0;
+  padding: 8px 10px;
+  font: 400 14px/1.35 var(--font-ui);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--tone) 22%, var(--card-2));
+  border: 2px solid var(--tone);
+  border-radius: var(--r-md);
+}
+
+.bubble b {
+  color: var(--pink);
+}
+
+.bubble[data-tone='guess'] {
+  --tone: var(--gold);
+}
+
+.bubble[data-tone='aside'] {
+  --tone: var(--blue);
+}
+
+.tag {
+  position: absolute;
+  z-index: 2;
+  box-shadow: 0 4px 0 var(--shade);
+  animation: pop 0.15s ease-out;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.tag::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  width: 10px;
+  height: 10px;
+  background: inherit;
+  border: 2px solid var(--tone);
+  transform: rotate(45deg);
+}
+
+.tag[data-rise]::before {
+  top: auto;
+  bottom: 12px;
+}
+
+.tag[data-side='right']::before {
+  left: -7px;
+  border-top: 0;
+  border-right: 0;
+}
+
+.tag[data-side='left']::before {
+  right: -7px;
+  border-bottom: 0;
+  border-left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tag {
+    animation: none;
+  }
+}

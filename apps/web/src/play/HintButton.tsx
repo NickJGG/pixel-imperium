@@ -98,13 +98,7 @@ export function HintButton({ store, confirmFirst, note, popover = false, request
   return confirm || button
 }
 
-export function hintText({ kind, index }: HintResponse, cells: readonly Cell[], width: number): string {
-  const where = `row ${Math.floor(index / width) + 1}, column ${(index % width) + 1}`
-  if (kind === 'reveal') return `Hint: ${where} is filled`
-  return `Hint: ${where} shouldn't be ${cells[index] === 'marked' ? 'crossed' : 'filled'}`
-}
-
-/** `hintText` for a tag beside the hinted cell. */
+/** What a hint says, for a tag beside its cell. */
 export function cellHintText({ kind, index }: HintResponse, cells: readonly Cell[]): string {
   if (kind === 'reveal') return 'Hint: this cell is filled.'
   return `Hint: this cell shouldn't be ${cells[index] === 'marked' ? 'crossed out' : 'filled'}.`

@@ -9,6 +9,7 @@ import type { BoardFlag } from '../play/Board.tsx'
 import type { Beat, Draw } from './lessons.ts'
 import type { BoardBox, CalloutAt } from './placement.ts'
 import { rich } from './rich.tsx'
+import cellTag from '../play/CellTag.module.css'
 import styles from './BeatLayer.module.css'
 
 const TAG_WIDTH = 210
@@ -62,7 +63,7 @@ export function Dock({ view, tag }: { view: BeatView | null; tag: Tag | null }) 
   return (
     <div className={styles.dock}>
       {tag && (
-        <p className={styles.dockTag} data-tone={tag.tone} role="status">
+        <p className={cellTag.bubble} data-tone={tag.tone} role="status">
           {rich(tag.text)}
         </p>
       )}
@@ -195,7 +196,7 @@ function FloatTag({ board, tag }: { board: BoardBox; tag: Tag }) {
     width: px(TAG_WIDTH),
   }
   return (
-    <p className={styles.tag} data-tone={tag.tone} data-side={right ? 'right' : 'left'} style={style} role="status">
+    <p className={`${cellTag.bubble} ${cellTag.tag}`} data-tone={tag.tone} data-side={right ? 'right' : 'left'} style={style} role="status">
       {rich(tag.text)}
     </p>
   )

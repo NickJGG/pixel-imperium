@@ -123,6 +123,16 @@
   margin: 0;
 }
 
+/* Out of flow, so it never grows the dock and refits the board. */
+.dockNote {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + var(--space-2));
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .dockRow {
   display: flex;
   align-items: center;
@@ -292,6 +302,7 @@
 }
 
 .board {
+  position: relative;
   margin: auto;
   display: grid;
   grid-template-columns: var(--row-depth) var(--fit-width);
@@ -317,6 +328,29 @@
 .board[data-zoomed] .rowStrip,
 .board[data-zoomed] .colStrip {
   cursor: grab;
+}
+
+/* Sized to the room on its side of the cell, so it never spills out of the board and scrolls the stage. */
+.hintTag {
+  --x: calc(var(--row-depth) + var(--pan-x) + var(--hint-col) * var(--cell));
+  --y: calc(var(--col-depth) + var(--pan-y) + (var(--hint-row) + 0.5) * var(--cell));
+  top: calc(var(--y) - 20px);
+  pointer-events: none;
+}
+
+.hintTag[data-rise] {
+  top: auto;
+  bottom: calc(100% - var(--y) - 20px);
+}
+
+.hintTag[data-side='right'] {
+  left: calc(var(--x) + var(--cell) + 10px);
+  width: min(210px, 100% - var(--x) - var(--cell) - 10px);
+}
+
+.hintTag[data-side='left'] {
+  right: calc(100% - var(--x) + 10px);
+  width: min(210px, var(--x) - 10px);
 }
 
 .corner {

@@ -9,8 +9,7 @@
 }
 
 .drawings > *,
-.callout,
-.tag {
+.callout {
   position: absolute;
 }
 
@@ -183,15 +182,11 @@
   }
 }
 
-.pop p,
-.tag,
-.dockTag {
+.pop p {
   margin: 0;
 }
 
-.pop b,
-.tag b,
-.dockTag b {
+.pop b {
   color: var(--pink);
 }
 
@@ -233,57 +228,6 @@
   color: var(--pink);
 }
 
-.tag,
-.dockTag {
-  --tone: var(--red);
-  padding: 8px 10px;
-  font-size: 14px;
-  line-height: 1.35;
-  color: var(--ink);
-  background: color-mix(in srgb, var(--tone) 22%, var(--card-2));
-  border: 2px solid var(--tone);
-  border-radius: var(--r-md);
-}
-
-.tag[data-tone='guess'],
-.dockTag[data-tone='guess'] {
-  --tone: var(--gold);
-}
-
-.tag[data-tone='aside'],
-.dockTag[data-tone='aside'] {
-  --tone: var(--blue);
-}
-
-.tag {
-  z-index: 2;
-  box-shadow: 0 4px 0 var(--shade);
-  animation: pop 0.15s ease-out;
-}
-
-.tag::before {
-  content: '';
-  position: absolute;
-  top: 12px;
-  width: 10px;
-  height: 10px;
-  background: inherit;
-  border: 2px solid var(--tone);
-  transform: rotate(45deg);
-}
-
-.tag[data-side='right']::before {
-  left: -7px;
-  border-top: 0;
-  border-right: 0;
-}
-
-.tag[data-side='left']::before {
-  right: -7px;
-  border-bottom: 0;
-  border-left: 0;
-}
-
 /* Under the board, inside the play card. */
 .dock {
   align-self: stretch;
@@ -321,8 +265,7 @@
   .ghost[data-sliding],
   .both,
   .beckon,
-  .pop,
-  .tag {
+  .pop {
     animation: none;
   }
 

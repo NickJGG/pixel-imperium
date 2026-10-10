@@ -33,7 +33,8 @@ import { ClearButton, LoopIcon } from './ClearButton.tsx'
 import { ColClues, RowClues } from './Clues.tsx'
 import { Dock } from './Dock.tsx'
 import { useBoardGestures } from './gestures.ts'
-import { HintButton, hintText } from './HintButton.tsx'
+import { HintButton } from './HintButton.tsx'
+import { HintTag } from './HintTag.tsx'
 import { RAIL_WIDTH, boardTracks, fitCellSize, useRail } from './layout.ts'
 import { createLineHints } from './line-hints.ts'
 import { Minimap } from './Minimap.tsx'
@@ -443,6 +444,7 @@ function Play({
                 <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={assists} />
                 <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={assists} />
                 <Board store={store} cellSize={cellSize} view={boardView} />
+                {hint && <HintTag hint={hint} cells={cells} view={boardView} />}
               </div>
             )}
           </div>
@@ -470,16 +472,10 @@ function Play({
                   {foilChip}
                   <div className={styles.panelHint}>
                     {hintButton(false)}
-                    {hint ? (
-                      <p role="status">
-                        <Dymo tone="pink">{hintText(hint, cells, puzzle.width)}</Dymo>
+                    {hintFailed && (
+                      <p className={styles.panelNote} role="status">
+                        {HINT_FAILED}
                       </p>
-                    ) : (
-                      hintFailed && (
-                        <p className={styles.panelNote} role="status">
-                          {HINT_FAILED}
-                        </p>
-                      )
                     )}
                     {firstSolve && hinted && (
                       <span className={styles.foilNote} data-lost>
@@ -516,7 +512,7 @@ function Play({
               <PadControls owner="board" solved={false} {...controls} />
             </>
           }
-          status={hint ? hintText(hint, cells, puzzle.width) : hintFailed && HINT_FAILED}
+          note={hintFailed && <Dymo tone="pink">Couldn't reach the album</Dymo>}
         />
       )}
       {afterOpen && (
