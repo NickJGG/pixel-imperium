@@ -1,4 +1,4 @@
-/* The play screen: the board on a card, laid on the album's cobalt cover. */
+/* The lesson screen: the board on a card, laid on the album's cobalt cover. */
 .play {
   flex: 1;
   min-height: 0;
@@ -13,26 +13,132 @@
   background-size: 14px 14px;
 }
 
-.crumb {
+/* /play: the board's surface under the slim spine, with the album page as a rail or the tools in a dock. */
+.shell {
+  position: relative;
+  flex: 1;
+  min-height: 0;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-3);
-  font: 600 15px var(--font-ui);
+  flex-direction: column;
+  --focus: var(--on-cover);
+  color: var(--on-cover);
+  background-color: var(--cover);
+  background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 1.6px);
+  background-size: 14px 14px;
 }
 
-.crumb a {
+.shellBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.surface {
+  position: relative;
+  flex: 1;
+  align-self: stretch;
+  min-width: 0;
+  --inset: var(--space-3);
+  --focus: var(--blue);
+  color: var(--ink);
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: 0 5px 0 var(--shade);
+}
+
+/* Out of flow, so the board can't prop the stage open: the fit reads the stage, and a stage the board held open would never shrink back. */
+.surface > .stage {
+  position: absolute;
+  inset: var(--inset);
+  width: auto;
+}
+
+/* The puzzle in the spine's slot: the way back, the title, its size and progress. */
+.barBack {
+  flex: none;
+  font: 700 18px var(--font-ui);
   color: inherit;
   text-decoration: none;
 }
 
-.crumb a:hover {
+.barCrumb {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.barBack:hover .barCrumb {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
+.barTitle {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 17px;
+  line-height: 1.1;
+}
+
+.barSize,
+.barPercent {
+  flex: none;
+  font: 700 12px var(--font-mono);
+}
+
+.barSize {
+  opacity: 0.85;
+}
+
+.barPercent {
+  padding: 2px 8px;
+  background: rgb(255 255 255 / 0.18);
+  border-radius: var(--r-pill);
+}
+
+/* The tools along the bottom where there's no rail. */
+.playDock {
+  flex: none;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  min-height: 64px;
+  padding: 6px var(--space-2) calc(6px + env(safe-area-inset-bottom, 0px));
+  --focus: var(--blue);
+  color: var(--ink);
+  background: var(--card);
+  box-shadow: 0 -2px 0 var(--line-soft);
+}
+
+.playDock > p {
+  margin: 0;
+}
+
+.dockRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.playDock .pill {
+  position: static;
+  transform: none;
+  padding: 0;
+  box-shadow: none;
+}
+
+.playDock .morePop {
+  top: auto;
+  bottom: calc(100% + 14px);
+}
+
 .tag {
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -48,7 +154,7 @@
   stroke-linejoin: round;
 }
 
-/* The gap and the panel's width come from layout.ts, which fits the board around them. */
+/* The lesson's board card and its side column; the gap comes from layout.ts. */
 .desk {
   flex: 1;
   min-height: 0;
@@ -87,25 +193,9 @@
   line-height: 1.1;
 }
 
-.size,
-.percent {
+.size {
   font: 700 13px var(--font-mono);
   color: var(--ink-soft);
-}
-
-.percent {
-  padding: 2px 8px;
-  color: var(--on-blue);
-  background: var(--blue);
-  border-radius: var(--r-pill);
-}
-
-/* Compact's status tag and ⋯, pushed to the end of the card head. */
-.headEnd {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
 }
 
 .more {
@@ -144,20 +234,6 @@
   box-shadow:
     0 5px 0 var(--shade),
     0 16px 32px -12px var(--shade);
-}
-
-/* Small enough to sit in the header; the fly target when there's no room for the panel. */
-.slotChip {
-  flex: none;
-  width: 44px;
-}
-
-.slotChip small {
-  display: none;
-}
-
-.slotChip b {
-  font-size: 11px;
 }
 
 .stage {
@@ -313,25 +389,6 @@
   outline: none;
 }
 
-/* Without the side page, the board centres above an empty band as tall as layout.ts's PILL_BAND, which the pill floats over. */
-.stageWrap {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  align-self: stretch;
-  display: flex;
-}
-
-.playStage {
-  flex-direction: column;
-}
-
-.playStage::after {
-  content: '';
-  flex: none;
-  height: var(--pill-band);
-}
-
 .pill {
   position: absolute;
   left: 50%;
@@ -401,14 +458,6 @@
   white-space: normal;
   background: none;
   box-shadow: none;
-}
-
-/* The controller's strip, in the board card's bottom padding under the pill. */
-.strip {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 5px;
 }
 
 /* Compact's Hint: its first-hint confirm pops up above it, so the pill keeps its width. */
@@ -625,17 +674,6 @@
   --btn-edge: transparent;
 }
 
-/* Above the board or the dock: the hint on show, or what foil is riding on this puzzle. */
-.hintLine {
-  margin: 0;
-  min-height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font: 600 14px var(--font-ui);
-}
-
 .foilNote {
   display: inline-flex;
   align-items: center;
@@ -758,11 +796,12 @@
   stroke-linejoin: round;
 }
 
-/* The side column: the panel, then the controls card under it. Its width and gap come from layout.ts. */
+/* The rail: the panel, then the controls card under it. Its width comes from layout.ts. */
 .side {
   flex: none;
   display: grid;
   align-content: start;
+  gap: var(--space-3);
 }
 
 .controls {
@@ -1078,14 +1117,19 @@
   display: none;
 }
 
-/* Compact's after card, stacked under the board card once the pill has gone. */
+/* The dock's after card, risen over the dock and the foot of the surface. */
 .afterCard {
-  padding: var(--space-4);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
   --focus: var(--blue);
   color: var(--ink);
   background: var(--card);
-  border-radius: var(--r-lg);
-  box-shadow: 0 5px 0 var(--shade);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  box-shadow: 0 -2px 0 var(--line-soft);
 }
 
 .afterCard > .afterStamp {
@@ -1094,21 +1138,6 @@
 
 .panelAfter.afterCard .closing {
   color: var(--gold);
-}
-
-/* The board card shrinks to the board, so the after card may push the page into a short scroll. */
-.settled {
-  overflow-y: auto;
-}
-
-.settled .desk,
-.settled .stageWrap,
-.settled .stage {
-  flex: none;
-}
-
-.settled .playStage::after {
-  display: none;
 }
 
 /* Solid, unlike a stamp inked on paper: these hang off the page over the cover or the board. */
@@ -1175,6 +1204,19 @@
 
   .card {
     padding: var(--space-3) 10px var(--space-4);
+  }
+
+  .shellBody {
+    padding: var(--space-2);
+  }
+
+  .surface {
+    --inset: var(--space-2);
+  }
+
+  .barCrumb,
+  .barSize {
+    display: none;
   }
 
   .title {

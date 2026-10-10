@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PILL_BAND, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, clueDepth, clueSlot, fitCellSize, fitPlay } from './layout.ts'
+import { clueDepth, clueSlot, fitCellSize, railFor } from './layout.ts'
 
 const square = (n: number, clue: number[] = [1]) => ({
   width: n,
@@ -40,54 +40,28 @@ describe('fitCellSize', () => {
   })
 })
 
-describe('fitPlay', () => {
-  it('shows the side page when the board keeps its size beside it', () => {
-    const fit = fitPlay({ width: 1200, height: 500 }, square(5))
-    expect(fit).toEqual({ cellSize: 40, sidePage: true })
-  })
-
-  it('never shrinks the board to make room for the side page', () => {
-    const available = { width: 700, height: 700 }
-    const fit = fitPlay(available, square(10))
-    expect(fit.cellSize).toBe(fitCellSize({ width: 700, height: 700 - PILL_BAND }, square(10)))
-    expect(fit.sidePage).toBe(false)
-  })
-
-  it('hides the side page when the board overflows at its smallest size', () => {
-    expect(fitPlay({ width: 300, height: 300 }, square(30)).sidePage).toBe(false)
-  })
-
-  it('needs room for the side page plus its gap', () => {
-    const board = 40 * (5 + 1.2)
-    expect(fitPlay({ width: board + SIDE_PAGE_WIDTH + SIDE_PAGE_GAP, height: 1000 }, square(5)).sidePage).toBe(true)
-    expect(fitPlay({ width: board + SIDE_PAGE_WIDTH + SIDE_PAGE_GAP - 1, height: 1000 }, square(5)).sidePage).toBe(false)
-  })
-
-  it('keeps the board above the pill band without the side page', () => {
-    for (const n of [5, 10, 15, 20, 30]) {
-      for (const height of [400, 520, 640, 777, 900]) {
-        const fit = fitPlay({ width: 460, height }, square(n))
-        expect(fit.sidePage).toBe(false)
-        expect(boardSize(fit.cellSize, square(n)).height).toBeLessThanOrEqual(height - PILL_BAND)
-      }
+describe('railFor', () => {
+  it('gives landscape windows at least 600 tall the rail', () => {
+    for (const size of [
+      { width: 1218, height: 990 },
+      { width: 1366, height: 768 },
+      { width: 1920, height: 1080 },
+      { width: 800, height: 600 },
+      { width: 700, height: 700 },
+    ]) {
+      expect(railFor(size)).toBe(true)
     }
   })
 
-  it('takes the band from the height only without the side page', () => {
-    const height = 40 * (10 + 1.2)
-    expect(fitPlay({ width: 2000, height }, square(10))).toEqual({ cellSize: 40, sidePage: true })
-    expect(fitPlay({ width: 2000, height: height - 1 }, square(10)).cellSize).toBe(39)
-    expect(fitPlay({ width: 460, height: height + PILL_BAND }, square(10))).toEqual({ cellSize: 40, sidePage: false })
-    expect(fitPlay({ width: 460, height: height + PILL_BAND - 1 }, square(10)).cellSize).toBe(39)
-  })
-
-  it('decides the side page at the full height, before the band shrinks the board', () => {
-    const puzzle = square(10)
-    const height = 40 * 11.2
-    const width = boardSize(40, puzzle).width + SIDE_PAGE_WIDTH + SIDE_PAGE_GAP - 1
-    expect(fitPlay({ width, height }, puzzle)).toEqual({
-      cellSize: fitCellSize({ width, height: height - PILL_BAND }, puzzle),
-      sidePage: false,
-    })
+  it('gives portrait windows and short landscape ones the dock', () => {
+    for (const size of [
+      { width: 390, height: 844 },
+      { width: 820, height: 1180 },
+      { width: 844, height: 390 },
+      { width: 1200, height: 599 },
+      { width: 699, height: 700 },
+    ]) {
+      expect(railFor(size)).toBe(false)
+    }
   })
 })

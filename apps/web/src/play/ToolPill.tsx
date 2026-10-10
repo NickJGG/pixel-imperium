@@ -6,9 +6,8 @@ import { ToolToggle } from './ToolToggle.tsx'
 import styles from './Play.module.css'
 
 /**
- * The tools overlaid at the foot of the board card. `fitPlay` keeps the board clear of it.
- * `compact` packs it for the layout without the panel: icons only on touch, and `children` (Hint) at the end.
- * `docked` sets it in the controls card under the panel instead.
+ * The tools. `compact` packs them into the dock where there's no rail: icons only on touch, and
+ * `children` (Hint) at the end. `docked` sets them in the controls card under the rail's panel.
  */
 export function ToolPill({
   store,

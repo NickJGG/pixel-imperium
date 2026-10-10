@@ -5,6 +5,7 @@ import { AccountMenu, SignInMenu } from './AccountMenu.tsx'
 import { AlbumIcon, AutoIcon, DayIcon, NightIcon, PlayIcon, ProfileIcon, SoundIcon } from './album/icons.tsx'
 import { useCurrentCampaign } from './campaign/last-campaign.ts'
 import { type ContinueAt, campaignProgress, continueAt } from './campaign/progress.ts'
+import { setPlaySlot } from './playSlot.ts'
 import { type Theme, updateSettings, useSettings } from './settings.ts'
 import styles from './App.module.css'
 
@@ -33,19 +34,23 @@ function CrownMark() {
   )
 }
 
-/** The cobalt spine bar across the top. On phones it compacts and Continue moves to the `ThumbBar`. */
+/**
+ * The cobalt spine bar across the top. On phones it compacts and Continue moves to the `ThumbBar`.
+ * On /play it slims, and PlayPage fills its puzzle slot with the way back and the puzzle.
+ */
 export function AppHeader() {
   const { theme, sound } = useSettings()
   const next = useContinue()
   const playing = useRouterState({ select: s => s.location.pathname.startsWith('/play/') })
   return (
-    <header className={styles.spine}>
+    <header className={styles.spine} data-playing={playing || undefined}>
       <Link to="/" className={styles.logo}>
         <CrownMark />
         <span className={styles.wordmark}>
           <span>Pixel</span> Imperium
         </span>
       </Link>
+      {playing && <span ref={setPlaySlot} className={styles.puzzle} />}
       {next && !playing && (
         <span className={styles.continue}>
           <span className={styles.nextUp}>

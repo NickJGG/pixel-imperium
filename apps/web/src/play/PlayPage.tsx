@@ -1,9 +1,9 @@
 import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
 import type { Campaign, Province, PuzzleClues } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
-import { Slot } from '../album/Slot.tsx'
 import { paperStyle } from '../album/paper.ts'
 import { Stamp } from '../album/Stamp.tsx'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
@@ -18,6 +18,7 @@ import { PadGlyph, PanelTag } from '../pad/PadGlyph.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
 import { firstFocusable, focusDefault } from '../pad/spatial.ts'
+import { usePlaySlot } from '../playSlot.ts'
 import { getSettings, useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
 import { useShouldOffer, useShouldOfferTechniques } from '../tutorial/asked.ts'
@@ -32,7 +33,7 @@ import { ColClues, RowClues } from './Clues.tsx'
 import { ControlsCard } from './ControlsCard.tsx'
 import { useBoardGestures } from './gestures.ts'
 import { HintButton, hintText } from './HintButton.tsx'
-import { PILL_BAND, SIDE_PAGE_GAP, SIDE_PAGE_WIDTH, boardTracks, fitPlay } from './layout.ts'
+import { RAIL_WIDTH, boardTracks, fitCellSize, useRail } from './layout.ts'
 import { createLineHints } from './line-hints.ts'
 import { Minimap } from './Minimap.tsx'
 import { MoreMenu } from './MoreMenu.tsx'
@@ -130,36 +131,13 @@ function Play({
   const assists = useMemo(() => ({ fade: fadeClues, impossible: impossibleLines }), [fadeClues, impossibleLines])
 
   const stageRef = useRef<HTMLDivElement>(null)
-  const crumbRef = useRef<HTMLDivElement>(null)
-  const headRef = useRef<HTMLElement>(null)
-  const statusRef = useRef<HTMLParagraphElement>(null)
-  const sidePageShown = useRef(false)
-  const settledRef = useRef(false)
-  const fitHeight = useRef(0)
-  const [fit, setFit] = useState<{ cellSize: number; sidePage: boolean } | null>(null)
+  const [cellSize, setCellSize] = useState(0)
   useLayoutEffect(() => {
-    // The fit is always made against the stage wide gives: the panel's width goes back on while it
-    // shows, and compact's crumb, card head and status line go back on while they show.
-    // Otherwise each layout's room could pick the other one, and the two would flip forever.
-    const compactChrome = () =>
-      [crumbRef, headRef, statusRef].reduce((sum, { current: el }) => {
-        if (!el) return sum
-        return sum + el.getBoundingClientRect().height + parseFloat(getComputedStyle(el.parentElement!).rowGap)
-      }, 0)
-    const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry!.contentRect
-      const room = sidePageShown.current ? SIDE_PAGE_WIDTH + SIDE_PAGE_GAP : 0
-      // Settled, the card shrinks to the board, so its height would only shrink the board with it.
-      if (!settledRef.current) fitHeight.current = height + compactChrome()
-      const next = fitPlay({ width: width + room, height: fitHeight.current }, puzzle)
-      sidePageShown.current = next.sidePage
-      setFit(next)
-    })
+    const observer = new ResizeObserver(([entry]) => setCellSize(fitCellSize(entry!.contentRect, puzzle)))
     observer.observe(stageRef.current!)
     return () => observer.disconnect()
   }, [puzzle])
-  const cellSize = fit?.cellSize ?? 0
-  const wide = fit?.sidePage ?? false
+  const wide = useRail()
 
   useUndoKeys(store)
 
@@ -228,8 +206,9 @@ function Play({
     const float = floatRef.current!
     const board = stageRef.current!.querySelector(`.${styles.board} > canvas`)!.getBoundingClientRect()
     let choreography: Choreography
-    if (moment === 'flying') {
-      const slot = slotRef.current!.getBoundingClientRect()
+    // Until the dock has a slot to fly to, its solve only pops.
+    if (moment === 'flying' && slotRef.current) {
+      const slot = slotRef.current.getBoundingClientRect()
       float.style.width = `${slot.width * Math.min(1, puzzle.width / puzzle.height)}px`
       choreography = flyIn(float, board, slot, tiltOf(puzzle.id))
     } else {
@@ -242,14 +221,15 @@ function Play({
     return choreography.cancel
   }, [moment, fitting, puzzle.id])
 
-  const cardRef = useRef<HTMLDivElement>(null)
+  const surfaceRef = useRef<HTMLDivElement>(null)
+  const dockRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLElement>(null)
   useEffect(() => {
     if (moment !== 'landed') return
     play(conquest ? 'chime' : 'thunk')
     rumble(conquest ? 'conquest' : 'solve')
     if (reducedMotion()) return
-    return confetti((panelRef.current ?? cardRef.current)!, styles.burst!)
+    return confetti((panelRef.current ?? surfaceRef.current)!, styles.burst!)
   }, [moment, conquest])
 
   const hideSticker = moment === 'waiting' || moment === 'flying'
@@ -258,7 +238,7 @@ function Play({
   usePadPage({
     parent: solved ? `/c/${campaign.id}/${province.id}` : undefined,
     panel: () => {
-      if (!wide) return cardRef.current?.querySelector<HTMLElement>('[data-pad-menu]') ?? null
+      if (!wide) return dockRef.current?.querySelector<HTMLElement>('[data-pad-menu]') ?? null
       const panel = panelRef.current
       return panel && (panel.querySelector<HTMLElement>(`.${styles.panelHint} button`) ?? firstFocusable(panel))
     },
@@ -271,11 +251,6 @@ function Play({
     const active = document.activeElement
     if (active === document.body || stageRef.current?.contains(active)) focusDefault()
   }, [done])
-  // Compact after a solve: the pill leaves, the card shrinks to the board and the after card stacks below.
-  const settled = solved && done && !wide && fit !== null
-  useLayoutEffect(() => {
-    settledRef.current = settled
-  }, [settled])
   const left = province.puzzles.filter(p => storage.loadSolved(p.id) === null).length
   const art = palette ?? Array<null>(puzzle.width * puzzle.height).fill(null)
   // Read at each render: the first solve settles it, and an account's server answer can overrule the device.
@@ -402,101 +377,52 @@ function Play({
     </>
   )
 
-  const stage = (
-    <div className={styles.stageWrap}>
-      <div
-        ref={stageRef}
-        className={`${styles.stage} ${styles.playStage}`}
-        style={{ '--pill-band': `${wide ? 0 : PILL_BAND}px` } as CSSProperties}
-      >
-        {cellSize > 0 && (
-          <div
-            ref={boardRef}
-            className={styles.board}
-            data-revealed={palette !== null || undefined}
-            style={boardTracks(puzzle, cellSize) as CSSProperties}
-          >
-            <Minimap store={store} view={boardView} cellSize={cellSize} />
-            <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={assists} />
-            <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={assists} />
-            <Board store={store} cellSize={cellSize} view={boardView} />
-          </div>
-        )}
-      </div>
-      {!solved && !wide && (
-        <ToolPill store={store} compact>
-          {hintButton(true)}
-        </ToolPill>
-      )}
-    </div>
-  )
+  const playSlot = usePlaySlot()
+  const barPuzzle =
+    playSlot &&
+    createPortal(
+      <>
+        <Link
+          to="/c/$campaignId/$provinceId"
+          params={{ campaignId: campaign.id, provinceId: province.id }}
+          className={styles.barBack}
+          aria-label={`Back to ${province.name}`}
+        >
+          ← <span className={styles.barCrumb}>{province.name}</span>
+        </Link>
+        <h1 className={styles.barTitle}>
+          #{number} {puzzle.title}
+        </h1>
+        <span className={styles.barSize}>
+          {puzzle.width}×{puzzle.height}
+        </span>
+        {!solved && <span className={styles.barPercent}>{percent}%</span>}
+        {!done && tag}
+      </>,
+      playSlot,
+    )
 
-  // One tree for both layouts, so switching between them never remounts the stage or the board.
+  // One tree for both layouts, so switching between them never remounts the surface or the board.
   return (
-    <main className={settled ? `${styles.play} ${styles.settled}` : styles.play}>
-      {!wide && (
-        <div ref={crumbRef} className={styles.crumb}>
-          <Link to="/c/$campaignId/$provinceId" params={{ campaignId: campaign.id, provinceId: province.id }}>
-            ← {province.name}
-          </Link>
-        </div>
-      )}
-      <div className={styles.desk} style={{ gap: SIDE_PAGE_GAP }}>
-        <div ref={cardRef} className={styles.card}>
-          {!wide && (
-            <header ref={headRef} className={styles.cardHead}>
-              <span ref={setSlot} className={styles.slotChip} aria-label={`Slot ${number}`}>
-                {solved && !hideSticker ? (
-                  <Slot number={number} width={puzzle.width} height={puzzle.height}>
-                    {sticker}
-                  </Slot>
-                ) : (
-                  <Slot number={number} width={puzzle.width} height={puzzle.height} gold={number === GOLD_SLOT} next />
-                )}
-              </span>
-              <h1 className={styles.title}>
-                #{number} {puzzle.title}
-              </h1>
-              {!solved && percent > 0 && <span className={styles.percent}>{percent}%</span>}
-              <div className={styles.headEnd}>
-                {tag}
-                {!solved && (
-                  <MoreMenu store={store} paper={paperStyle(provinceIndex)}>
-                    <SlotRow province={province} number={number} storage={storage} hideSticker={hideSticker} />
-                    <AssistSwitches />
-                    <div className={styles.panelFoot}>
-                      {learn}
-                      <ClearButton store={store} solved={false} disabled={!canClear} />
-                    </div>
-                    <PadControls owner="board" solved={false} {...controls} />
-                  </MoreMenu>
-                )}
+    <main className={styles.shell}>
+      {barPuzzle}
+      <div className={styles.shellBody}>
+        <div ref={surfaceRef} className={styles.surface}>
+          <div ref={stageRef} className={styles.stage}>
+            {cellSize > 0 && (
+              <div
+                ref={boardRef}
+                className={styles.board}
+                data-revealed={palette !== null || undefined}
+                style={boardTracks(puzzle, cellSize) as CSSProperties}
+              >
+                <Minimap store={store} view={boardView} cellSize={cellSize} />
+                <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={assists} />
+                <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={assists} />
+                <Board store={store} cellSize={cellSize} view={boardView} />
               </div>
-            </header>
-          )}
-          {!wide && !done && (
-            // Kept through the fly-in so the board doesn't move under the sticker.
-            <p ref={statusRef} className={styles.hintLine} role="status">
-              {hint ? (
-                <Dymo tone="pink">{hintText(hint, cells, puzzle.width)}</Dymo>
-              ) : hintFailed ? (
-                "Couldn't reach the album for a hint. Try again in a moment."
-              ) : (
-                firstSolve && (
-                  <span className={styles.foilNote} data-lost={hinted || undefined}>
-                    <i aria-hidden="true" />
-                    {hinted ? 'Hint used: regular sticker' : 'Foil still possible'}
-                  </span>
-                )
-              )}
-            </p>
-          )}
-          {stage}
-          {!wide && (
-            <div className={styles.strip}>
-              <PadStrip />
-            </div>
-          )}
+            )}
+          </div>
           {moment === 'landed' && !wide && !conquest && (
             <Stamp thunk className={styles.cardStamp}>
               New sticker!
@@ -508,7 +434,7 @@ function Play({
           )}
         </div>
         {wide && (
-          <div className={styles.side} style={{ width: SIDE_PAGE_WIDTH, gap: SIDE_PAGE_GAP }}>
+          <div className={styles.side} style={{ width: RAIL_WIDTH }}>
             <PuzzlePanel
               ref={panelRef}
               slotRef={setSlot}
@@ -527,7 +453,7 @@ function Play({
                       </Stamp>
                     )
               }
-              tag={!done && tag}
+              tag={null}
             >
               {done ? (
                 <div className={styles.panelAfter}>
@@ -588,9 +514,34 @@ function Play({
           </div>
         )}
       </div>
+      {!wide && (
+        // Stays through the solve, under the after card, so the board never refits under the sticker.
+        <div ref={dockRef} className={styles.playDock} inert={solved}>
+          <PadStrip />
+          <div className={styles.dockRow}>
+            <ToolPill store={store} compact>
+              {hintButton(true)}
+            </ToolPill>
+            <MoreMenu store={store} paper={paperStyle(provinceIndex)}>
+              <SlotRow province={province} number={number} storage={storage} hideSticker={hideSticker} />
+              <AssistSwitches />
+              <div className={styles.panelFoot}>
+                {learn}
+                <ClearButton store={store} solved={false} disabled={!canClear} />
+              </div>
+              <PadControls owner="board" solved={false} {...controls} />
+            </MoreMenu>
+          </div>
+          <p className={styles.visuallyHidden} role="status">
+            {hint
+              ? hintText(hint, cells, puzzle.width)
+              : hintFailed && "Couldn't reach the album for a hint. Try again in a moment."}
+          </p>
+        </div>
+      )}
       {!wide && done && (
         <div className={`${styles.panelAfter} ${styles.afterCard}`}>
-          {conquest && conquestStamp(styles.afterStamp)}
+          {conquest ? conquestStamp(styles.afterStamp) : tag}
           {afterBody}
         </div>
       )}

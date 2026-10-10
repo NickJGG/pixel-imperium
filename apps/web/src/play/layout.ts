@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react'
 import type { Clues } from '@pixel-imperium/nonogram'
 
 /** Depth of one clue number, in fit cells, before `clueSlot` clamps it to pixels. */
@@ -8,12 +9,15 @@ const MAX_SLOT = 32
 const MIN_CELL = 6
 const MAX_CELL = 40
 
-/** The side page beside the play card, and the gap between them. */
-export const SIDE_PAGE_WIDTH = 280
+/** The album page's rail beside the play surface. */
+export const RAIL_WIDTH = 280
+
+/** The lesson page's gap between its board card and its side column. */
 export const SIDE_PAGE_GAP = 16
 
-/** The band at the bottom of the play stage kept clear for the tool pill overlaid there. */
-export const PILL_BAND = 52
+/** Windows that get the rail; every other shape gets the bottom dock. */
+export const RAIL_QUERY = '(orientation: landscape) and (min-height: 600px)'
+const RAIL_MIN_HEIGHT = 600
 
 interface FitPuzzle {
   width: number
@@ -66,17 +70,15 @@ export function boardTracks(puzzle: FitPuzzle, fitCell: number): Record<string, 
   }
 }
 
-/**
- * The board is sized first, against `available` as if there were no side page; the side page then
- * shows only if the board at that size still fits beside it. Without the side page the tools float
- * over the stage, so the board refits above `PILL_BAND`.
- */
-export function fitPlay(
-  available: { width: number; height: number },
-  puzzle: FitPuzzle,
-): { cellSize: number; sidePage: boolean } {
-  const boardWidth = (cell: number) => cell * puzzle.width + clueDepth(puzzle.clues.rows, clueSlot(cell))
-  const cellSize = fitCellSize(available, puzzle)
-  if (boardWidth(cellSize) <= available.width - SIDE_PAGE_WIDTH - SIDE_PAGE_GAP) return { cellSize, sidePage: true }
-  return { cellSize: fitCellSize({ width: available.width, height: available.height - PILL_BAND }, puzzle), sidePage: false }
+/** `RAIL_QUERY` for a window size, as matchMedia reads it: a square window counts as landscape. */
+export const railFor = ({ width, height }: { width: number; height: number }) =>
+  width >= height && height >= RAIL_MIN_HEIGHT
+
+const subscribeRail = (onChange: () => void) => {
+  const query = matchMedia(RAIL_QUERY)
+  query.addEventListener('change', onChange)
+  return () => query.removeEventListener('change', onChange)
 }
+
+/** Whether the window's shape gets the rail. */
+export const useRail = () => useSyncExternalStore(subscribeRail, () => matchMedia(RAIL_QUERY).matches)
