@@ -102,6 +102,36 @@
   border-radius: var(--r-xs);
 }
 
+/* The fog over a province a Conquest just opened, dropping away once the stamp has landed. */
+.curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  background: linear-gradient(180deg, var(--card) 0%, var(--desk) 100%);
+  pointer-events: none;
+  animation: curtain 1.3s cubic-bezier(0.5, 0, 0.8, 0.4) 0.6s both;
+}
+
+.curtainLock {
+  font-size: 40px; /* token-exempt: icon size */
+  opacity: 0.7;
+}
+
+@keyframes curtain {
+  to {
+    transform: translateY(105%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .curtain {
+    display: none;
+  }
+}
+
 @media (max-width: 720px) {
   .worlds {
     flex-direction: column;

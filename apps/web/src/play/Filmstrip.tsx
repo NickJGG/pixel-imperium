@@ -62,6 +62,8 @@ export function PageHead(props: RowProps) {
 interface FilmProps extends RowProps {
   /** How much of the board is filled, shown under the current slot until it's solved. */
   percent: number | null
+  /** The sticker has just landed in the current slot. */
+  glow?: boolean
 }
 
 /**
@@ -69,7 +71,7 @@ interface FilmProps extends RowProps {
  * current slot centred and ringed; `slotRef` is that slot, where the sticker flies.
  */
 export function Filmstrip(props: FilmProps) {
-  const { province, number, storage, slotRef, percent } = props
+  const { province, number, storage, slotRef, percent, glow } = props
   const current = province.puzzles[number - 1]!
   const has = stuck(props)
   const listRef = useRef<HTMLOListElement>(null)
@@ -94,7 +96,7 @@ export function Filmstrip(props: FilmProps) {
       <ol ref={listRef} className={styles.filmSlots}>
         {province.puzzles.map((p, i) =>
           p === current ? (
-            <li key={p.id} ref={currentRef} className={styles.filmCurrent} aria-current="page">
+            <li key={p.id} ref={currentRef} className={styles.filmCurrent} aria-current="page" data-glow={glow || undefined}>
               <span ref={slotRef} className={styles.filmSlot}>
                 {has(p.id) ? (
                   <SlotFace puzzle={p} number={number} storage={storage} />

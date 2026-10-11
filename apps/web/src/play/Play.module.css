@@ -912,14 +912,6 @@
   font-weight: 500;
 }
 
-.tabChip {
-  padding: 1px var(--space-2);
-  font-size: var(--fs-14);
-  color: var(--on-tab);
-  background: var(--tab);
-  border-radius: var(--r-sm);
-}
-
 /* How to play beside Clear, under Hint; Clear's confirm takes the whole row. */
 .btnRow {
   display: grid;
@@ -1235,26 +1227,91 @@
   display: none;
 }
 
-/* Solid, unlike a stamp inked on paper: these hang off the rail or the sheet. */
-.railStamp,
-.sheetStamp {
-  position: absolute;
-  z-index: 2;
+.conquestStamp {
+  justify-self: start;
   width: 88px;
   height: 88px;
-  padding: var(--space-2);
   font-size: var(--fs-10);
   letter-spacing: -0.06em;
 }
 
-.railStamp {
-  right: var(--space-4);
-  bottom: var(--space-6);
+/* "Into the <next>", in the next province's colour. */
+.panelAfter > a.into {
+  --btn-bg: var(--tab);
+  --btn-ink: var(--on-tab);
+  --btn-edge: color-mix(in srgb, var(--tab) 55%, black);
+  min-height: 60px;
+  font-size: var(--fs-18);
 }
 
-.sheetStamp {
-  top: -64px;
-  right: var(--space-3);
+/* The solve's banner: a band across the whole screen on the Worlds slant, in what was earned. */
+.banner {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.band {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  margin: 0 calc(-1 * var(--space-14));
+  padding: var(--space-5) var(--space-14);
+  color: var(--on-tab);
+  background: var(--tab);
+  box-shadow:
+    0 8px 0 var(--shade),
+    inset 0 -6px 0 color-mix(in srgb, var(--sticker) 35%, transparent);
+  transform: rotate(calc(-1 * var(--slant-angle)));
+}
+
+.band[data-kind='foil'] {
+  background: var(--foil);
+}
+
+.band[data-kind='gold'] {
+  color: var(--on-gold);
+  background: var(--foil-gold);
+}
+
+.band[data-conquest] {
+  padding-block: var(--space-7);
+}
+
+.bandSticker {
+  flex: none;
+  width: 84px;
+}
+
+.bandSticker > * {
+  width: 100%;
+}
+
+.bandStamp {
+  flex: none;
+}
+
+.bandKick {
+  display: block;
+  font: var(--type-kicker);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bandTitle {
+  display: block;
+  font: var(--type-hero);
+  font-size: clamp(var(--fs-28), 3.4vw, 2.75rem);
+  letter-spacing: -0.05em;
+}
+
+.band[data-conquest] .bandTitle {
+  font-size: clamp(var(--fs-40), 5vw, 3.5rem);
 }
 
 /* The sticker in flight; sticker-moment.ts positions it in viewport coordinates. */
@@ -1272,14 +1329,17 @@
   width: 100%;
 }
 
-.burst {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  image-rendering: pixelated;
-  z-index: 3;
+/* The current slot once its sticker lands. */
+.filmSlots > .filmCurrent[data-glow] {
+  animation: slot-glow 1.4s ease-out;
+}
+
+@keyframes slot-glow {
+  20% {
+    box-shadow:
+      0 0 0 2px var(--gold-dk),
+      0 0 18px 6px var(--gold);
+  }
 }
 
 .visuallyHidden {
@@ -1328,7 +1388,8 @@
     transition: none;
   }
 
-  .afterSheet {
+  .afterSheet,
+  .filmSlots > .filmCurrent[data-glow] {
     animation: none;
   }
 }

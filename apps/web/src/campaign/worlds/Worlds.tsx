@@ -46,6 +46,15 @@ export function World({
   )
 }
 
+/** Fog over a `World` a Conquest just opened, falling away like a curtain. Plays once, on mount. */
+export function Curtain() {
+  return (
+    <span className={styles.curtain} aria-hidden="true">
+      <Lock className={styles.curtainLock} />
+    </span>
+  )
+}
+
 const stateLabel: Record<ProvinceState, string> = {
   conquered: 'conquered',
   active: 'open',

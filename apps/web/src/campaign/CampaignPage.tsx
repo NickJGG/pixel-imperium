@@ -1,4 +1,4 @@
-import { type CSSProperties, useState } from 'react'
+import { type CSSProperties, useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { Campaign, CampaignSummary, Province } from '@pixel-imperium/protocol'
 import { PlayIcon } from '../album/icons.tsx'
@@ -6,10 +6,12 @@ import { Stamp } from '../album/Stamp.tsx'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { useAccount } from '../account.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
+import { play } from '../sound.ts'
+import { markConquestsSeen, unseenConquests } from './conquests-seen.ts'
 import { type ProvinceProgress, campaignProgress, continueAt } from './progress.ts'
 import { GOLD_SLOT, PuzzleSlot } from './PuzzleSlot.tsx'
 import { type StickerEntry, latestStickers } from './stickers.ts'
-import { Spine, World, Worlds } from './worlds/Worlds.tsx'
+import { Curtain, Spine, World, Worlds } from './worlds/Worlds.tsx'
 import styles from './Home.module.css'
 
 interface Props {
@@ -19,6 +21,8 @@ interface Props {
    * here once there's more than one.
    */
   campaigns: CampaignSummary[]
+  /** Dev: replays the unveil for this province id, or `true` for the latest conquered one. */
+  previewConquest?: string | true | undefined
 }
 
 /** A conquered province's collage holds this many of its stickers. */
@@ -26,20 +30,33 @@ const COLLAGE = 9
 
 export function CampaignPage(props: Props) {
   const { generation } = useAccount()
-  return <Overview key={`${generation}:${props.campaign.id}`} {...props} />
+  return <Overview key={`${generation}:${props.campaign.id}:${props.previewConquest}`} {...props} />
 }
 
 /**
  * Home: every province as a column. The active one is wide with its slots and Continue; a conquered one is a
  * collage of its stickers under the Conquered stamp; the next and the locked ones are thin spines in the fog.
+ * The first visit after a Conquest unveils it: the stamp slams onto the conquered column and the fog drops
+ * off the province it opened.
  */
-function Overview({ campaign }: Props) {
+function Overview({ campaign, previewConquest }: Props) {
   const { storage } = useAccount()
-  const [{ progress, latest }] = useState(() => ({
-    progress: campaignProgress(campaign, storage),
-    latest: latestStickers(campaign, storage),
-  }))
+  const [{ progress, latest, unveil }] = useState(() => {
+    const progress = campaignProgress(campaign, storage)
+    const conquered = campaign.provinces.filter((_, i) => progress.provinces[i]!.state === 'conquered').map(p => p.id)
+    const preview = previewConquest === true ? conquered.slice(-1) : previewConquest ? [previewConquest] : null
+    return {
+      progress,
+      latest: latestStickers(campaign, storage),
+      unveil: new Set(preview ?? unseenConquests(campaign.id, conquered)),
+    }
+  })
   const next = continueAt(campaign, progress, id => storage.loadSolved(id) !== null)
+  useEffect(() => {
+    if (unveil.size === 0) return
+    if (!previewConquest) markConquestsSeen(campaign.id, [...unveil])
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) play('thunk')
+  }, [campaign.id, unveil, previewConquest])
 
   return (
     <main className={styles.home}>
@@ -57,6 +74,7 @@ function Overview({ campaign }: Props) {
                 progress={p}
                 storage={storage}
                 padDefault={next?.province === province}
+                curtain={index > 0 && unveil.has(campaign.provinces[index - 1]!.id)}
               />
             )
           }
@@ -72,7 +90,9 @@ function Overview({ campaign }: Props) {
               {p.state === 'conquered' && (
                 <>
                   <Collage stickers={latest.filter(s => s.province === index && s.palette !== null).slice(0, COLLAGE)} />
-                  <Stamp className={styles.stamp}>Conquered</Stamp>
+                  <Stamp thunk={unveil.has(province.id)} className={styles.stamp}>
+                    Conquered
+                  </Stamp>
                 </>
               )}
             </Spine>
@@ -90,6 +110,7 @@ function ActiveWorld({
   progress: { solved, total },
   storage,
   padDefault,
+  curtain,
 }: {
   campaign: Campaign
   province: Province
@@ -97,6 +118,8 @@ function ActiveWorld({
   progress: ProvinceProgress
   storage: ProgressStorage
   padDefault: boolean
+  /** Just opened by a Conquest home hasn't shown yet: the fog falls away off it. */
+  curtain: boolean
 }) {
   const next = province.puzzles.find(p => storage.loadSolved(p.id) === null)
   const number = next ? province.puzzles.indexOf(next) + 1 : 0
@@ -142,6 +165,7 @@ function ActiveWorld({
           </Link>
         </div>
       </div>
+      {curtain && <Curtain />}
     </World>
   )
 }

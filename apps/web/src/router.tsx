@@ -49,9 +49,19 @@ async function loadCampaign(id: string) {
   return campaign
 }
 
+/**
+ * Dev only: `?conquest` replays home's unveil for the latest conquered province, `?conquest=<provinceId>` for
+ * that one, without marking it seen.
+ */
+const unveilSearch = (search: Record<string, unknown>): { conquest?: string | true } =>
+  import.meta.env.DEV && 'conquest' in search
+    ? { conquest: typeof search.conquest === 'string' && search.conquest !== '' ? search.conquest : true }
+    : {}
+
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  validateSearch: unveilSearch,
   loader: async () => {
     const campaigns = await fetchCampaigns()
     const id = pickCampaign(campaigns)
@@ -59,19 +69,21 @@ const homeRoute = createRoute({
   },
   component: () => {
     const data = homeRoute.useLoaderData()
+    const { conquest } = homeRoute.useSearch()
     if (!data) return <main className={styles.message}>No campaigns yet.</main>
-    return <CampaignPage {...data} />
+    return <CampaignPage {...data} previewConquest={conquest} />
   },
 })
 
 const campaignRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/c/$campaignId',
+  validateSearch: unveilSearch,
   loader: async ({ params }) => {
     const [campaign, campaigns] = await Promise.all([loadCampaign(params.campaignId), fetchCampaigns()])
     return { campaign, campaigns }
   },
-  component: () => <CampaignPage {...campaignRoute.useLoaderData()} />,
+  component: () => <CampaignPage {...campaignRoute.useLoaderData()} previewConquest={campaignRoute.useSearch().conquest} />,
   notFoundComponent: () => <NotFound>There’s no campaign by that name.</NotFound>,
 })
 
@@ -84,7 +96,12 @@ const provinceRoute = createRoute({
     if (!province) throw notFound()
     return { campaign, province }
   },
-  component: () => <ProvincePage {...provinceRoute.useLoaderData()} />,
+  /** Dev only: `?conquest` opens the province as if a Conquest had just unlocked it, fog dropping away. */
+  validateSearch: (search: Record<string, unknown>): { conquest?: true } =>
+    import.meta.env.DEV && 'conquest' in search ? { conquest: true } : {},
+  component: () => (
+    <ProvincePage {...provinceRoute.useLoaderData()} previewUnlock={provinceRoute.useSearch().conquest === true} />
+  ),
   notFoundComponent: () => (
     <NotFound>There’s no province called “{provinceRoute.useParams().provinceId}”. It might have been renamed.</NotFound>
   ),

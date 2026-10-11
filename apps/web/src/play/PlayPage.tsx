@@ -39,7 +39,7 @@ import { createLineHints } from './line-hints.ts'
 import { Minimap } from './Minimap.tsx'
 import { encodeCells } from './progress-storage.ts'
 import { Filmstrip, PageHead, SlotRow } from './Filmstrip.tsx'
-import { type Choreography, confetti, flyIn, popOnly } from './sticker-moment.ts'
+import { type Pose, celebrate, popOnly } from './sticker-moment.ts'
 import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
 import { ToolPill } from './ToolPill.tsx'
 import { useUndoKeys } from './useUndoKeys.ts'
@@ -77,12 +77,20 @@ function useStoreValue<T>(store: PlayStore, select: (s: PlayState) => T): T {
 }
 
 /**
- * A solve played in this visit. `waiting` holds for the reveal, `flying` carries the sticker to its
- * slot, `landed` stamps it. A replay's re-solve only `popping`s, then the sticker is `kept`.
+ * A solve played in this visit. `waiting` holds for the reveal, `banner` slams the banner in and hands its
+ * sticker on to the slot, and then it has `landed`. A replay's re-solve only `popping`s, then the sticker is
+ * `kept`. The `?conquest` preview plays the banner with no sticker.
  */
-type Moment = 'waiting' | 'flying' | 'landed' | 'popping' | 'kept'
+type Moment = 'waiting' | 'banner' | 'landed' | 'popping' | 'kept'
 
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
+
+const slantAngle = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--slant-angle'))
+
+const centerOf = (el: Element) => {
+  const r = el.getBoundingClientRect()
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+}
 
 function Play({
   puzzle,
@@ -180,13 +188,14 @@ function Play({
     }
   }, [solved, boardView])
 
-  const [moment, setMoment] = useState<Moment | null>(null)
+  const [moment, setMoment] = useState<Moment | null>(() => (previewConquest && !reducedMotion() ? 'banner' : null))
   const before = useRef({ solved, replaying })
   useLayoutEffect(() => {
     const prev = before.current
     before.current = { solved, replaying }
-    if (!solved) setMoment(null)
-    else if (!prev.solved) {
+    if (!solved) {
+      if (prev.solved) setMoment(null)
+    } else if (!prev.solved) {
       if (!prev.replaying) setMoment('waiting')
       else if (!reducedMotion()) setMoment('popping')
       else {
@@ -196,49 +205,84 @@ function Play({
     }
   }, [solved, replaying])
 
+  // Read at each render: the first solve settles it, and an account's server answer can overrule the device.
+  const foil = storage.loadFoil(puzzle.id)
+  const gold = number === GOLD_SLOT
+  const kind = conquest || gold ? 'gold' : foil ? 'foil' : 'plain'
+  const cheer = () => {
+    play(conquest ? 'chime' : 'thunk')
+    rumble(conquest ? 'conquest' : 'solve')
+  }
+
   useEffect(() => {
     if (moment !== 'waiting' || fitting || !(palette || revealFailed)) return
-    if (reducedMotion()) return setMoment('landed')
-    const timer = setTimeout(() => setMoment('flying'), palette ? REVEAL_MS : 0)
+    if (reducedMotion()) {
+      cheer()
+      return setMoment('landed')
+    }
+    const timer = setTimeout(() => setMoment('banner'), palette ? REVEAL_MS : 0)
     return () => clearTimeout(timer)
   }, [moment, fitting, palette, revealFailed])
 
+  const shellRef = useRef<HTMLElement>(null)
+  const bandRef = useRef<HTMLDivElement>(null)
+  const bandStickerRef = useRef<HTMLSpanElement>(null)
   const floatRef = useRef<HTMLDivElement>(null)
   const slotRef = useRef<HTMLElement | null>(null)
   const setSlot = (el: HTMLElement | null) => {
     slotRef.current = el
   }
   useLayoutEffect(() => {
-    if ((moment !== 'flying' && moment !== 'popping') || fitting) return
-    const float = floatRef.current!
-    const board = stageRef.current!.querySelector(`.${styles.board} > canvas`)!.getBoundingClientRect()
-    let choreography: Choreography
-    if (moment === 'flying' && slotRef.current) {
-      const slot = slotRef.current.getBoundingClientRect()
-      float.style.width = `${slot.width * Math.min(1, puzzle.width / puzzle.height)}px`
-      choreography = flyIn(float, board, slot, tiltOf(puzzle.id))
-    } else {
-      choreography = popOnly(float, board)
-    }
+    if (moment !== 'banner') return
+    const angle = -slantAngle()
+    const tilt = tiltOf(puzzle.id)
+    const float = floatRef.current
+    const sticker = bandStickerRef.current
+    const slot = slotRef.current
+    const choreography = celebrate({
+      band: bandRef.current!,
+      angle,
+      shake: kind === 'plain' ? null : shellRef.current,
+      onLand: cheer,
+      handOff:
+        float && sticker && slot
+          ? {
+              float,
+              sticker,
+              from: (): Pose => {
+                const face = sticker.firstElementChild as HTMLElement
+                return { ...centerOf(face), width: face.offsetWidth, angle: angle + tilt }
+              },
+              // The slot's sticker fills its square inner box, narrowed for a tall picture.
+              to: (): Pose => {
+                const box = slot.firstElementChild ?? slot
+                return { ...centerOf(box), width: box.clientWidth * Math.min(1, puzzle.width / puzzle.height), angle: tilt }
+              },
+            }
+          : undefined,
+    })
     choreography.finished.then(
-      () => setMoment(moment === 'flying' ? 'landed' : 'kept'),
+      () => setMoment('landed'),
       () => {},
     )
     return choreography.cancel
-  }, [moment, fitting, puzzle.id])
+  }, [moment])
 
-  const afterRef = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    if (moment !== 'popping' || fitting) return
+    const board = stageRef.current!.querySelector(`.${styles.board} > canvas`)!.getBoundingClientRect()
+    const choreography = popOnly(floatRef.current!, board)
+    choreography.finished.then(
+      () => setMoment('kept'),
+      () => {},
+    )
+    return choreography.cancel
+  }, [moment, fitting])
+
   const dockRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLElement>(null)
-  useEffect(() => {
-    if (moment !== 'landed') return
-    play(conquest ? 'chime' : 'thunk')
-    rumble(conquest ? 'conquest' : 'solve')
-    if (reducedMotion()) return
-    return confetti((panelRef.current ?? afterRef.current)!, styles.burst!)
-  }, [moment, conquest])
 
-  const hideSticker = moment === 'waiting' || moment === 'flying'
+  const hideSticker = moment === 'waiting' || moment === 'banner'
   const done = previewConquest || (solved && !hideSticker)
   // Up before the flight, once the fit glide is over, so the sticker has a slot to fly to.
   const afterOpen = !wide && (done || (hideSticker && !fitting))
@@ -260,17 +304,15 @@ function Play({
   }, [done])
   const left = province.puzzles.filter(p => storage.loadSolved(p.id) === null).length
   const art = palette ?? Array<null>(puzzle.width * puzzle.height).fill(null)
-  // Read at each render: the first solve settles it, and an account's server answer can overrule the device.
-  const foil = storage.loadFoil(puzzle.id)
-  const sticker = (
+  const sticker = (tilt = 0) => (
     <Sticker
       title={puzzle.title}
       width={puzzle.width}
       height={puzzle.height}
       palette={art}
       foil={foil}
-      gold={number === GOLD_SLOT}
-      tilt={tiltOf(puzzle.id)}
+      gold={gold}
+      tilt={tilt}
     />
   )
 
@@ -285,7 +327,7 @@ function Play({
     </Dymo>
   ) : moment === 'landed' && foil ? (
     <Dymo tone="pink" className={styles.tag}>
-      +1 foil
+      Foil sticker!
     </Dymo>
   ) : (
     unverified && <Dymo className={styles.tag}>Imported: replay to verify</Dymo>
@@ -304,18 +346,6 @@ function Play({
   const controls = { lines: true, zoom: true, back: 'Back to page' }
 
   const following = campaign.provinces[provinceIndex + 1]
-  const stamp = (className: string | undefined) =>
-    conquest
-      ? done && (
-          <Stamp thunk tone={following ? 'pink' : 'gold'} className={className}>
-            {following ? 'Page complete' : 'Album complete'}
-          </Stamp>
-        )
-      : moment === 'landed' && (
-          <Stamp thunk className={className}>
-            New sticker!
-          </Stamp>
-        )
   const message = conquest ? (
     <p role="status">
       <b>{province.name} conquered.</b>
@@ -336,7 +366,10 @@ function Play({
   const onward = !conquest ? (
     next && (
       <Link to="/play/$id" params={{ id: next.id }} data-variant="primary" data-pad-default>
-        Next: {next.title}
+        Next
+        <small>
+          #{province.puzzles.indexOf(next) + 1} {next.title}
+        </small>
         <ArrowIcon />
         <PadGlyph button="A" />
       </Link>
@@ -345,13 +378,12 @@ function Play({
     <Link
       to="/c/$campaignId/$provinceId"
       params={{ campaignId: campaign.id, provinceId: following.id }}
+      className={styles.into}
+      style={paperStyle(provinceIndex + 1)}
       data-variant="primary"
       data-pad-default
     >
-      Open
-      <span className={styles.tabChip} style={paperStyle(provinceIndex + 1)}>
-        {following.name.replace(/^The /, '')}
-      </span>
+      Into {following.name.replace(/^The /, 'the ')}
       <ArrowIcon />
       <PadGlyph button="A" />
     </Link>
@@ -368,7 +400,7 @@ function Play({
       data-variant="paper"
       data-pad-default={!onward || undefined}
     >
-      Back to page
+      {province.name}
       <PadGlyph button="B" />
     </Link>
   )
@@ -394,7 +426,13 @@ function Play({
 
   const afterBody = (
     <>
-      {!conquest && tag}
+      {conquest ? (
+        <Stamp tone={following ? 'pink' : 'gold'} className={styles.conquestStamp}>
+          {following ? 'Conquered' : 'Album complete'}
+        </Stamp>
+      ) : (
+        tag
+      )}
       {message}
       {closing}
       {onward}
@@ -425,7 +463,7 @@ function Play({
   // One tree for both layouts: the strip, rail and top line sit in fixed child positions around the
   // surface, so switching between them never remounts the surface or the board.
   return (
-    <main className={styles.shell} data-rail={wide || undefined} style={paperStyle(provinceIndex)}>
+    <main ref={shellRef} className={styles.shell} data-rail={wide || undefined} style={paperStyle(provinceIndex)}>
       {!wide && (
         <header className={styles.topLine}>
           {backLink(styles.topBack)}
@@ -442,7 +480,14 @@ function Play({
         </header>
       )}
       <div className={styles.shellBody}>
-        {wide && <Filmstrip {...slotRow} slotRef={setSlot} percent={solved ? null : percent} />}
+        {wide && (
+          <Filmstrip
+            {...slotRow}
+            slotRef={setSlot}
+            percent={solved ? null : percent}
+            glow={solved && moment === 'landed'}
+          />
+        )}
         <div className={styles.surface}>
           <div ref={stageRef} className={styles.stage}>
             {cellSize > 0 && (
@@ -517,7 +562,6 @@ function Play({
               </div>
             )}
             {!done && <PanelTag />}
-            {stamp(styles.railStamp)}
             {offer}
           </aside>
         )}
@@ -544,7 +588,7 @@ function Play({
         />
       )}
       {afterOpen && (
-        <div ref={afterRef} className={`${styles.sheet} ${styles.afterSheet}`} style={paperStyle(provinceIndex)}>
+        <div className={`${styles.sheet} ${styles.afterSheet}`} style={paperStyle(provinceIndex)}>
           <div className={styles.sheetFace}>
             <SlotRow {...slotRow} slotRef={setSlot} />
             {/* Laid out but unseen until the sticker lands, so the slot row can't shift under its flight. */}
@@ -552,12 +596,35 @@ function Play({
               {afterBody}
             </div>
           </div>
-          {stamp(styles.sheetStamp)}
         </div>
       )}
-      {(moment === 'flying' || moment === 'popping') && !fitting && (
+      {moment === 'banner' && (
+        <div className={styles.banner} aria-hidden="true">
+          <div ref={bandRef} className={styles.band} data-kind={kind} data-conquest={conquest || undefined}>
+            {solved && (
+              <span ref={bandStickerRef} className={styles.bandSticker}>
+                {sticker(tiltOf(puzzle.id))}
+              </span>
+            )}
+            {conquest && (
+              <Stamp tone="gold" className={styles.bandStamp}>
+                Conquered
+              </Stamp>
+            )}
+            <span>
+              <span className={styles.bandKick}>
+                {conquest
+                  ? `${province.puzzles.length} / ${province.puzzles.length} · Province ${provinceIndex + 1}`
+                  : ['Stage clear', foil && 'Foil', gold && 'Gold'].filter(Boolean).join(' · ')}
+              </span>
+              <span className={styles.bandTitle}>{conquest ? `${province.name} is yours` : `#${number} ${puzzle.title}`}</span>
+            </span>
+          </div>
+        </div>
+      )}
+      {((moment === 'banner' && solved) || (moment === 'popping' && !fitting)) && (
         <div ref={floatRef} className={styles.float} aria-hidden="true">
-          {sticker}
+          {sticker()}
         </div>
       )}
     </main>

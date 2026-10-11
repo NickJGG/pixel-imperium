@@ -8,18 +8,27 @@ import type { ProgressStorage } from '../play/progress-storage.ts'
 import { NextUp } from './NextUp.tsx'
 import { type CampaignProgress, campaignProgress, isOpen, tierGroups } from './progress.ts'
 import { PuzzleSlot } from './PuzzleSlot.tsx'
-import { Spine, World, Worlds } from './worlds/Worlds.tsx'
+import { Curtain, Spine, World, Worlds } from './worlds/Worlds.tsx'
 import styles from './Province.module.css'
 
-export function ProvincePage({ campaign, province }: { campaign: Campaign; province: Province }) {
+export function ProvincePage({
+  campaign,
+  province,
+  previewUnlock = false,
+}: {
+  campaign: Campaign
+  province: Province
+  /** Dev: opens the province, locked or not, and drops the fog off it as a Conquest would. */
+  previewUnlock?: boolean
+}) {
   const { storage } = useAccount()
   const progress = campaignProgress(campaign, storage)
   const { state } = progress.provinces[campaign.provinces.indexOf(province)]!
 
-  if (!isOpen(state)) return <LockedProvince campaign={campaign} province={province} progress={progress} />
+  if (!isOpen(state) && !previewUnlock) return <LockedProvince campaign={campaign} province={province} progress={progress} />
   return (
     <Zoomed campaign={campaign} province={province} progress={progress}>
-      <OpenProvince campaign={campaign} province={province} progress={progress} storage={storage} />
+      <OpenProvince campaign={campaign} province={province} progress={progress} storage={storage} curtain={previewUnlock} />
     </Zoomed>
   )
 }
@@ -76,11 +85,13 @@ function OpenProvince({
   province,
   progress,
   storage,
+  curtain,
 }: {
   campaign: Campaign
   province: Province
   progress: CampaignProgress
   storage: ProgressStorage
+  curtain: boolean
 }) {
   const index = campaign.provinces.indexOf(province)
   const { state, solved, total } = progress.provinces[index]!
@@ -154,6 +165,7 @@ function OpenProvince({
           )
         )}
       </div>
+      {curtain && <Curtain />}
     </World>
   )
 }
