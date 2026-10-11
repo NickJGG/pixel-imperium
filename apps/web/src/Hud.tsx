@@ -15,7 +15,7 @@ const themeLabel: Record<Theme, string> = { dark: 'Night', light: 'Day', auto: '
 const themeIcon: Record<Theme, ReactNode> = { dark: <NightIcon />, light: <DayIcon />, auto: <AutoIcon /> }
 
 /** Pages whose Worlds columns run under the HUD, edge to edge; everywhere else it takes its own row. */
-const floats = (pathname: string) => /^\/(?:c\/[^/]+\/?)?$/.test(pathname)
+const floats = (pathname: string) => /^\/(?:c\/[^/]+(?:\/[^/]+)?\/?)?$/.test(pathname)
 
 /** The next puzzle in the campaign last shown, recomputed on every navigation since solves land between them. */
 function useContinue(): ContinueAt | null {
@@ -77,34 +77,45 @@ export function ThemeButton({ className, variant, size }: PillProps) {
   )
 }
 
-/** The logo sticker top-left and a cluster of pills top-right: Learn, sound, theme and the account. */
-export function Hud() {
+/** Learn, sound, theme and the account, every pill one style: the HUD's top-right, and the top of Play's rail. */
+export function HudPills({ className }: { className?: string | undefined }) {
   const pathname = useRouterState({ select: s => s.location.pathname })
   return (
-    <header className={styles.hud} data-float={floats(pathname) || undefined}>
+    <span className={className ? `${styles.tools} ${className}` : styles.tools}>
+      <Link
+        to="/learn"
+        search={isBackPath(pathname) ? { back: pathname } : {}}
+        className={styles.learn}
+        data-variant="paper"
+        aria-label="Learn"
+      >
+        <LearnIcon />
+        <span className={styles.label}>Learn</span>
+      </Link>
+      <SoundButton className={styles.round} />
+      <ThemeButton className={styles.round} />
+      <span className={styles.account}>
+        <AccountMenu />
+      </span>
+    </span>
+  )
+}
+
+/**
+ * The logo sticker top-left and the pills top-right. `float` lays it over the page instead of in its own
+ * row; by default that follows the route.
+ */
+export function Hud({ float }: { float?: boolean }) {
+  const pathname = useRouterState({ select: s => s.location.pathname })
+  return (
+    <header className={styles.hud} data-float={(float ?? floats(pathname)) || undefined}>
       <Link to="/" className={styles.logo}>
         <CrownMark className={styles.mark} />
         <span className={styles.wordmark}>
           <span>Pixel</span> Imperium
         </span>
       </Link>
-      <span className={styles.tools}>
-        <Link
-          to="/learn"
-          search={isBackPath(pathname) ? { back: pathname } : {}}
-          className={styles.learn}
-          data-variant="paper"
-          aria-label="Learn"
-        >
-          <LearnIcon />
-          <span className={styles.label}>Learn</span>
-        </Link>
-        <SoundButton className={styles.round} />
-        <ThemeButton className={styles.round} />
-        <span className={styles.account}>
-          <AccountMenu />
-        </span>
-      </span>
+      <HudPills />
     </header>
   )
 }

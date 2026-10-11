@@ -13,18 +13,22 @@
   background-size: 14px 14px;
 }
 
-/* /play: the board's surface under the slim spine, with the album page as a rail or the tools in a dock. */
+/*
+ * /play on its province's paper: the filmstrip, the board's surface and the rail side by side, or a top
+ * line, the surface and the dock stacked.
+ */
 .shell {
   position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  --focus: var(--on-cover);
-  color: var(--on-cover);
-  background-color: var(--cover);
-  background-image: var(--cover-dots);
-  background-size: 14px 14px;
+  --focus: var(--blue);
+  --paper-dk: color-mix(in srgb, var(--paper) 80%, black);
+  /* The province's tab colour darkened: Play's stand-in for the pink cursor and targets. */
+  --tab-dk: color-mix(in srgb, var(--tab) 25%, black);
+  color: var(--ink);
+  background: var(--paper) radial-gradient(color-mix(in srgb, var(--ink) 9%, transparent) 1.5px, transparent 1.6px) 0 0 / 18px 18px;
 }
 
 .shellBody {
@@ -36,6 +40,16 @@
   padding: var(--space-4);
 }
 
+.shell[data-rail] .shellBody {
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+}
+
+.shell[data-rail] .surface {
+  margin: var(--space-4);
+}
+
 .surface {
   position: relative;
   flex: 1;
@@ -43,8 +57,16 @@
   min-width: 0;
   --inset: var(--space-3);
   --focus: var(--blue);
+  --surface: color-mix(in srgb, var(--paper) var(--surface-paper), var(--surface-lift, var(--tab)));
+  --board-bg: var(--surface);
+  --board-line: color-mix(in srgb, var(--surface) 85%, var(--ink));
+  --board-line-major: color-mix(in srgb, var(--surface) 45%, var(--ink));
+  --board-mark: color-mix(in srgb, var(--surface) 40%, var(--ink));
+  --board-crosshair: color-mix(in srgb, var(--tab) 22%, transparent);
+  --board-cursor: var(--tab-dk);
+  --board-target: var(--tab-dk);
   color: var(--ink);
-  background: var(--card);
+  background: var(--surface);
   border-radius: var(--r-lg);
   box-shadow: 0 5px 0 var(--shade);
 }
@@ -56,8 +78,18 @@
   width: auto;
 }
 
-/* The puzzle in the spine's slot: the way back, the title, its size and progress. */
-.barBack {
+/* The puzzle over the surface where there's no rail: the way back, the title, its size and progress. */
+.topLine {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: var(--space-2) var(--space-4) 0;
+  white-space: nowrap;
+}
+
+.topBack {
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -67,18 +99,18 @@
   text-decoration: none;
 }
 
-.barCrumb {
+.topBack > span {
   font-size: var(--fs-14);
   font-weight: 600;
   opacity: 0.8;
 }
 
-.barBack:hover .barCrumb {
+.topBack:hover > span {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-.barTitle {
+.topTitle {
   min-width: 0;
   margin: 0;
   overflow: hidden;
@@ -87,19 +119,194 @@
   line-height: 1;
 }
 
-.barSize,
-.barPercent {
+.topMeta,
+.topPercent {
   flex: none;
   font: 700 var(--fs-12)/1 var(--font-mono);
 }
 
-.barSize {
+.topMeta {
   opacity: 0.85;
 }
 
-.barPercent {
+.topPercent {
   padding: var(--space-1) var(--space-2);
-  background: var(--on-cover-tint-strong);
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  border-radius: var(--r-pill);
+}
+
+.topTools {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.round {
+  width: 36px;
+  padding: 0;
+}
+
+/* The province's slots down the left, on its paper darkened like the rail. */
+.film {
+  flex: none;
+  width: 96px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) 0 0;
+  background: var(--paper-dk);
+  box-shadow: inset -4px 0 0 var(--gutter-shade);
+}
+
+.filmMark {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  background: var(--sticker);
+  border-radius: var(--r-md);
+  transform: rotate(-3deg);
+  box-shadow: 0 3px 0 var(--shade);
+}
+
+.filmMark svg {
+  width: 36px;
+  height: 24px;
+}
+
+.filmHead {
+  display: grid;
+  justify-items: center;
+  margin: 0;
+  padding: 0 var(--space-2);
+  font: var(--type-micro);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.filmHead span {
+  opacity: 0.7;
+}
+
+/* Padded so the current slot's ring and the slots' hover lift are never clipped by the scroll. */
+.filmSlots {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) 0 var(--space-4);
+  overflow-y: auto;
+  scrollbar-width: none;
+  list-style: none;
+}
+
+.filmSlots > li {
+  flex: none;
+  width: 64px;
+}
+
+.filmSlots small {
+  display: none;
+}
+
+.filmSlots > .filmCurrent {
+  width: 80px;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  margin: var(--space-1) 0;
+  padding: var(--space-2) var(--space-1);
+  background: color-mix(in srgb, var(--tab-dk) 14%, transparent);
+  border-radius: var(--r-lg);
+  box-shadow: 0 0 0 2px var(--tab-dk);
+}
+
+.filmSlot {
+  display: block;
+  width: 64px;
+}
+
+.filmCaption {
+  display: grid;
+  justify-items: center;
+  font: var(--type-micro);
+}
+
+/* Play's right rail on the province's darker paper: the HUD pills, the title, progress, then the tools. */
+.rail {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  color: var(--ink);
+  background: var(--paper-dk);
+  box-shadow: inset 4px 0 0 var(--gutter-shade);
+}
+
+.railPills {
+  flex-wrap: wrap;
+  margin-left: 0;
+}
+
+.railTitle {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+}
+
+.railBack {
+  display: inline-flex;
+  gap: var(--space-1);
+  font: var(--type-kicker);
+  text-transform: uppercase;
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+.railBack:hover > span {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.railName {
+  margin: 0;
+  font-size: var(--fs-16);
+}
+
+.railMeta {
+  margin: 0;
+  font: var(--type-kicker);
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.progress {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.progress > span {
+  display: flex;
+  justify-content: space-between;
+  font: var(--type-kicker);
+  text-transform: uppercase;
+}
+
+.progress > i {
+  height: 8px;
+  background:
+    linear-gradient(var(--tab), var(--tab)) 0 0 / var(--percent) 100% no-repeat,
+    color-mix(in srgb, var(--ink) 14%, transparent);
   border-radius: var(--r-pill);
 }
 
@@ -423,9 +630,24 @@
   color: var(--on-blue);
 }
 
-.impossible {
-  background: var(--t-forge);
+.surface .active {
+  background: var(--tab);
   color: var(--on-tab);
+}
+
+.surface .impossible {
+  background: var(--red);
+  color: var(--on-red);
+}
+
+.surface .highlighted {
+  background: var(--tab-dk);
+  color: var(--sticker);
+}
+
+.impossible {
+  background: var(--red);
+  color: var(--on-red);
 }
 
 .highlighted {
@@ -819,23 +1041,6 @@
   box-shadow: 0 5px 0 var(--shade);
 }
 
-/* The puzzle's panel, on the province's paper beside the board. */
-.panel {
-  position: relative;
-  flex: none;
-  display: grid;
-  align-content: start;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-4) var(--space-6);
-  --focus: var(--blue);
-  color: var(--ink);
-  background: var(--paper);
-  border-radius: var(--r-sm) var(--r-lg) var(--r-lg) var(--r-sm);
-  box-shadow:
-    inset 8px 0 10px -6px var(--shade),
-    0 5px 0 var(--shade);
-}
-
 .count {
   padding: 3px var(--space-3);
   font: 700 var(--fs-14) var(--font-mono);
@@ -850,13 +1055,13 @@
   gap: var(--space-3);
 }
 
-.panel .foilNote {
+.rail .foilNote {
   justify-self: start;
   font: var(--type-small);
   background: color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
-.panel .foilNote[data-lost] {
+.rail .foilNote[data-lost] {
   padding: 0;
   color: var(--ink-soft);
   background: none;
@@ -1030,8 +1235,8 @@
   display: none;
 }
 
-/* Solid, unlike a stamp inked on paper: these hang off the page over the cover or the board. */
-.panelStamp,
+/* Solid, unlike a stamp inked on paper: these hang off the rail or the sheet. */
+.railStamp,
 .sheetStamp {
   position: absolute;
   z-index: 2;
@@ -1042,9 +1247,9 @@
   letter-spacing: -0.06em;
 }
 
-.panelStamp {
-  right: -18px;
-  bottom: -62px;
+.railStamp {
+  right: var(--space-4);
+  bottom: var(--space-6);
 }
 
 .sheetStamp {
@@ -1104,8 +1309,8 @@
     --inset: var(--space-2);
   }
 
-  .barCrumb,
-  .barSize {
+  .topBack > span,
+  .topMeta {
     display: none;
   }
 

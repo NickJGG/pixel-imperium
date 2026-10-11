@@ -1,7 +1,6 @@
 import { Outlet, createRootRoute, createRoute, createRouter, notFound, redirect, useRouterState } from '@tanstack/react-router'
 import { accountReady, useAccount } from './account.ts'
 import { fetchCampaign, fetchCampaigns, fetchProfile, fetchPuzzle } from './api.ts'
-import { AppHeader } from './AppHeader.tsx'
 import { LoadError, Loading, NotFound } from './EdgeStates.tsx'
 import { CampaignPage } from './campaign/CampaignPage.tsx'
 import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
@@ -23,12 +22,12 @@ import styles from './App.module.css'
 
 function Root() {
   const { needsHandle } = useAccount()
-  // Play keeps the old spine for its title until it gets its own rail.
+  // Play carries the HUD's pills in its own rail or top line.
   const playing = useRouterState({ select: s => s.location.pathname.startsWith('/play/') })
   return (
     <PadProvider>
       <div className={styles.app}>
-        {playing ? <AppHeader /> : <Hud />}
+        {!playing && <Hud />}
         {needsHandle ? <HandlePicker /> : <Outlet />}
         <ThumbBar />
         <ImportPrompt />

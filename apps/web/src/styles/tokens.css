@@ -10,6 +10,50 @@
  * whatever the theme), foil (the sticker shimmer), scrim and gutter shade, radii, spacing, and the
  * Worlds slant: the lean of the cut between province columns, and how far it runs across a full-height column.
  */
+
+/* Registered so the canvas, which reads these at draw time, gets a resolved colour even where Play mixes them. */
+@property --board-bg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --board-line {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --board-line-major {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --board-mark {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --board-crosshair {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --board-cursor {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --board-target {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
 :root {
   color-scheme: dark;
 
@@ -98,6 +142,8 @@
   --sticker: #f6f7ff;
   --card: #17224f;
   --card-2: #22306a;
+  /* Play's board card: this much of the province's paper, the rest its tab colour (Night) or the card (Day). */
+  --surface-paper: 85%;
   --line-soft: #36477f;
   --shade: rgba(0, 0, 0, 0.5);
   --tape: rgba(214, 224, 255, 0.5);
@@ -144,6 +190,8 @@
     --sticker: #ffffff;
     --card: #ffffff;
     --card-2: #eef1ff;
+    --surface-paper: 45%;
+    --surface-lift: var(--card);
     --line-soft: #c9d3f0;
     --shade: rgba(10, 20, 60, 0.32);
     --tape: rgba(196, 212, 255, 0.75);
@@ -180,6 +228,8 @@
   --sticker: #ffffff;
   --card: #ffffff;
   --card-2: #eef1ff;
+  --surface-paper: 45%;
+  --surface-lift: var(--card);
   --line-soft: #c9d3f0;
   --shade: rgba(10, 20, 60, 0.32);
   --tape: rgba(196, 212, 255, 0.75);

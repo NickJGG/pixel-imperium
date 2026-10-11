@@ -9,8 +9,8 @@ const MAX_SLOT = 32
 const MIN_CELL = 6
 const MAX_CELL = 40
 
-/** The album page's rail beside the play surface. */
-export const RAIL_WIDTH = 280
+/** Play's right rail: the HUD pills, the title, progress and the tools. */
+export const RAIL_WIDTH = 300
 
 /** The lesson page's gap between its board card and its side column. */
 export const SIDE_PAGE_GAP = 16

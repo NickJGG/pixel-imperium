@@ -1,8 +1,7 @@
 import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { createPortal } from 'react-dom'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
-import type { Campaign, Province, PuzzleClues } from '@pixel-imperium/protocol'
+import type { Campaign, Province, PuzzleClues, Tier } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
 import { paperStyle } from '../album/paper.ts'
 import { Stamp } from '../album/Stamp.tsx'
@@ -18,7 +17,7 @@ import { PadGlyph, PanelTag } from '../pad/PadGlyph.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
 import { firstFocusable, focusDefault } from '../pad/spatial.ts'
-import { usePlaySlot } from '../playSlot.ts'
+import { Hud, HudPills, SoundButton, ThemeButton } from '../Hud.tsx'
 import { getSettings, useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
 import { useShouldOffer, useShouldOfferTechniques } from '../tutorial/asked.ts'
@@ -39,7 +38,7 @@ import { RAIL_WIDTH, boardTracks, fitCellSize, useRail } from './layout.ts'
 import { createLineHints } from './line-hints.ts'
 import { Minimap } from './Minimap.tsx'
 import { encodeCells } from './progress-storage.ts'
-import { PageHead, PuzzlePanel, SlotRow } from './PuzzlePanel.tsx'
+import { Filmstrip, PageHead, SlotRow } from './Filmstrip.tsx'
 import { type Choreography, confetti, flyIn, popOnly } from './sticker-moment.ts'
 import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
 import { ToolPill } from './ToolPill.tsx'
@@ -55,7 +54,12 @@ export function PlayPage() {
   const province = campaign.provinces.find(p => p.id === puzzle.provinceId)!
   const progress = campaignProgress(campaign, account.storage)
   if (!isOpen(progress.provinces[campaign.provinces.indexOf(province)]!.state)) {
-    return <LockedProvince campaign={campaign} province={province} progress={progress} />
+    return (
+      <>
+        <Hud float />
+        <LockedProvince campaign={campaign} province={province} progress={progress} />
+      </>
+    )
   }
   return (
     <Play
@@ -401,36 +405,44 @@ function Play({
     </>
   )
 
-  const playSlot = usePlaySlot()
-  const barPuzzle =
-    playSlot &&
-    createPortal(
-      <>
-        <Link
-          to="/c/$campaignId/$provinceId"
-          params={{ campaignId: campaign.id, provinceId: province.id }}
-          className={styles.barBack}
-          aria-label={`Back to ${province.name}`}
-        >
-          ← <span className={styles.barCrumb}>{province.name}</span>
-        </Link>
-        <h1 className={styles.barTitle}>
-          #{number} {puzzle.title}
-        </h1>
-        <span className={styles.barSize}>
-          {puzzle.width}×{puzzle.height}
-        </span>
-        {!solved && <span className={styles.barPercent}>{percent}%</span>}
-        {!done && tag}
-      </>,
-      playSlot,
-    )
+  const meta = [`${puzzle.width}×${puzzle.height}`, puzzle.tier && TIER_NAME[puzzle.tier]].filter(Boolean).join(' · ')
+  const backLink = (className: string | undefined) => (
+    <Link
+      to="/c/$campaignId/$provinceId"
+      params={{ campaignId: campaign.id, provinceId: province.id }}
+      className={className}
+      aria-label={`Back to ${province.name}`}
+    >
+      ← <span>{province.name}</span>
+    </Link>
+  )
+  const offer = offerTutorial ? (
+    <ChoiceCard track={TRACKS.tutorial} copy={TUTORIAL_OFFER} puzzleId={puzzle.id} />
+  ) : (
+    offerTechniques && <ChoiceCard track={TRACKS.techniques} copy={techniquesOffer(province)} puzzleId={puzzle.id} />
+  )
 
-  // One tree for both layouts, so switching between them never remounts the surface or the board.
+  // One tree for both layouts: the strip, rail and top line sit in fixed child positions around the
+  // surface, so switching between them never remounts the surface or the board.
   return (
-    <main className={styles.shell}>
-      {barPuzzle}
+    <main className={styles.shell} data-rail={wide || undefined} style={paperStyle(provinceIndex)}>
+      {!wide && (
+        <header className={styles.topLine}>
+          {backLink(styles.topBack)}
+          <h1 className={styles.topTitle}>
+            #{number} {puzzle.title}
+          </h1>
+          <span className={styles.topMeta}>{meta}</span>
+          {!solved && <span className={styles.topPercent}>{percent}%</span>}
+          {!done && tag}
+          <span className={styles.topTools}>
+            <SoundButton className={styles.round} variant="flat" size="compact" />
+            <ThemeButton className={styles.round} variant="flat" size="compact" />
+          </span>
+        </header>
+      )}
       <div className={styles.shellBody}>
+        {wide && <Filmstrip {...slotRow} slotRef={setSlot} percent={solved ? null : percent} />}
         <div className={styles.surface}>
           <div ref={stageRef} className={styles.stage}>
             {cellSize > 0 && (
@@ -448,50 +460,66 @@ function Play({
               </div>
             )}
           </div>
-          {offerTutorial && <ChoiceCard track={TRACKS.tutorial} copy={TUTORIAL_OFFER} puzzleId={puzzle.id} />}
-          {offerTechniques && (
-            <ChoiceCard track={TRACKS.techniques} copy={techniquesOffer(province)} puzzleId={puzzle.id} />
-          )}
+          {!wide && offer}
         </div>
         {wide && (
-          <div className={styles.side} style={{ width: RAIL_WIDTH }}>
-            <PuzzlePanel
-              ref={panelRef}
-              slotRef={setSlot}
-              {...slotRow}
-              index={provinceIndex}
-              stamp={stamp(styles.panelStamp)}
-            >
-              {done ? (
-                <div className={styles.panelAfter}>
-                  {afterBody}
-                  <PadControls solved {...controls} />
+          <aside
+            ref={panelRef}
+            className={styles.rail}
+            style={{ width: RAIL_WIDTH }}
+            data-pad-panel
+            aria-label={`#${number} ${puzzle.title}`}
+          >
+            <HudPills className={styles.railPills} />
+            <div className={styles.railTitle}>
+              {backLink(styles.railBack)}
+              <h1 className={styles.railName}>
+                <Dymo>
+                  #{number} {puzzle.title}
+                </Dymo>
+              </h1>
+              <p className={styles.railMeta}>{meta}</p>
+              {!done && tag}
+            </div>
+            {!solved && (
+              <div className={styles.progress}>
+                <span>
+                  Progress <b>{percent}%</b>
+                </span>
+                <i style={{ '--percent': `${percent}%` } as CSSProperties} />
+              </div>
+            )}
+            {done ? (
+              <div className={styles.panelAfter}>
+                {afterBody}
+                <PadControls solved {...controls} />
+              </div>
+            ) : (
+              <div className={styles.panelBody} inert={solved}>
+                {foilChip}
+                <div className={styles.panelHint}>
+                  {hintButton(false)}
+                  {hintFailed && (
+                    <p className={styles.panelNote} role="status">
+                      {HINT_FAILED}
+                    </p>
+                  )}
+                  {firstSolve && hinted && (
+                    <span className={styles.foilNote} data-lost>
+                      <i aria-hidden="true" />
+                      Hint used: regular sticker
+                    </span>
+                  )}
                 </div>
-              ) : (
-                <div className={styles.panelBody} inert={solved}>
-                  {foilChip}
-                  <div className={styles.panelHint}>
-                    {hintButton(false)}
-                    {hintFailed && (
-                      <p className={styles.panelNote} role="status">
-                        {HINT_FAILED}
-                      </p>
-                    )}
-                    {firstSolve && hinted && (
-                      <span className={styles.foilNote} data-lost>
-                        <i aria-hidden="true" />
-                        Hint used: regular sticker
-                      </span>
-                    )}
-                  </div>
-                  {actions}
-                  {pad ? <PadControls solved={false} {...controls} /> : <ToolPill store={store} docked />}
-                  <AssistsDisclosure store={store} />
-                </div>
-              )}
-              {!done && <PanelTag />}
-            </PuzzlePanel>
-          </div>
+                {actions}
+                {pad ? <PadControls solved={false} {...controls} /> : <ToolPill store={store} docked />}
+                <AssistsDisclosure store={store} />
+              </div>
+            )}
+            {!done && <PanelTag />}
+            {stamp(styles.railStamp)}
+            {offer}
+          </aside>
         )}
       </div>
       {!wide && (
@@ -535,6 +563,8 @@ function Play({
     </main>
   )
 }
+
+const TIER_NAME: Record<Tier, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
 
 const HINT_FAILED = "Couldn't reach the album for a hint. Try again in a moment."
 
