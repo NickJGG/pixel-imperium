@@ -65,25 +65,7 @@
   position: relative;
 }
 
-.pill {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  margin-top: var(--space-2);
-  padding: 0 20px;
-  font: 600 16px var(--font-ui);
-  color: var(--ink);
-  text-decoration: none;
-  background: var(--card-2);
-  border-radius: var(--r-pill);
-  box-shadow: 0 var(--press) 0 var(--line-soft);
-}
-
-.pill:active {
-  transform: translateY(var(--press));
-  box-shadow: none;
-}
-
+.back,
 .state > button {
   margin-top: var(--space-2);
 }
@@ -133,9 +115,5 @@
 @media (prefers-reduced-motion: reduce) {
   .slots > i {
     animation: none;
-  }
-
-  .pill:active {
-    transform: none;
   }
 }

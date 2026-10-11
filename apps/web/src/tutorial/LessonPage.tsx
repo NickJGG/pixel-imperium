@@ -526,7 +526,7 @@ function HandoffView({ track, handoff }: { track: Track; handoff: Handoff }) {
             </span>
           ))}
         </div>
-        <Link to={handoff.to} className={playStyles.linkButton} data-pad-default>
+        <Link to={handoff.to} data-variant="primary" data-pad-default>
           {handoff.action}
         </Link>
       </section>

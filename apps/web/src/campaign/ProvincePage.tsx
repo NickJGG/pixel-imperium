@@ -125,6 +125,7 @@ export function LockedProvince({
               to="/c/$campaignId/$provinceId"
               params={{ campaignId: campaign.id, provinceId: active.id }}
               className={styles.paperLink}
+              data-variant="paper"
             >
               Back to {active.name.replace(/^The /, 'the ')}
             </Link>

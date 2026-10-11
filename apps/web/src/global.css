@@ -36,17 +36,28 @@ a {
 }
 
 /*
- * The house button: a pill sitting on a solid shadow that it drops onto when pressed. Bare buttons
- * are paper; `data-variant` picks primary, blue, danger or ghost. Variants only set the three
- * --btn-* colours, so a module can recolour a button without restating the press.
+ * The house button: a pill sitting on a solid shadow that it drops onto when pressed. Every
+ * <button> gets it; a link opts in by naming a `data-variant`, so plain text links stay text.
+ *   data-variant  paper (the default for bare buttons), primary (the play action), blue, danger,
+ *                 ghost (an underlined text action), flat (no face, no edge, no lift), chip.
+ *   data-size     compact: 36px, for chrome and dense rows. Default 44px.
+ * Selected states, by meaning:
+ *   chosen  one of a set, or an open disclosure: aria-pressed / aria-expanded="true" inverts to ink.
+ *   on      a standalone on/off chip: data-variant="chip" with aria-pressed="true" turns blue.
+ * Coloured variants keep their colour when pressed or expanded.
+ * Inside data-surface="cobalt", paper becomes a white sticker and flat a white tint, until a
+ * data-surface="paper" (a menu sheet opened from the spine) sets them back.
+ * Variants only set the three --btn-* colours, so a module can recolour a button without restating the press.
  */
-button {
-  --btn-bg: var(--card-2);
+button,
+a:where([data-variant]) {
+  --btn-bg: var(--line-soft);
   --btn-ink: var(--ink);
-  --btn-edge: var(--line-soft);
+  --btn-edge: var(--shade);
 
   font: 600 16px var(--font-ui);
   color: var(--btn-ink);
+  text-decoration: none;
   background: var(--btn-bg);
   border: 0;
   border-radius: var(--r-pill);
@@ -64,25 +75,13 @@ button {
     box-shadow 80ms linear;
 }
 
-button[data-variant='primary'] {
-  --btn-bg: var(--pink);
-  --btn-ink: var(--on-pink);
-  --btn-edge: var(--pink-dk);
+:is(button, a):where([data-size='compact']) {
+  min-height: 36px;
+  padding: 0 16px;
+  font-size: 15px;
 }
 
-button[data-variant='blue'] {
-  --btn-bg: var(--blue);
-  --btn-ink: var(--on-blue);
-  --btn-edge: var(--blue-dk);
-}
-
-button[data-variant='danger'] {
-  --btn-bg: var(--red);
-  --btn-ink: var(--on-red);
-  --btn-edge: var(--red-dk);
-}
-
-button[data-variant='ghost'] {
+:is(button, a)[data-variant='ghost'] {
   --btn-bg: transparent;
   --btn-edge: transparent;
   padding: 0 var(--space-2);
@@ -90,14 +89,80 @@ button[data-variant='ghost'] {
   text-underline-offset: 3px;
 }
 
-button:hover:not(:disabled) {
+:is(button, a)[data-variant='flat'],
+:is(button, a)[data-variant='chip'] {
+  --btn-bg: transparent;
+  --btn-edge: transparent;
+}
+
+:is(button, a)[data-variant='chip'] {
+  border: 2px solid var(--line-soft);
+}
+
+:is(button, a)[data-variant='flat']:hover:not(:disabled, [aria-pressed='true'], [aria-expanded='true']) {
+  --btn-bg: var(--card-2);
+}
+
+/* Before the coloured variants, so they outrank it. */
+button:is([aria-pressed='true'], [aria-expanded='true']) {
+  --btn-bg: var(--ink);
+  --btn-ink: var(--card);
+  --btn-edge: transparent;
+}
+
+:is(button, a)[data-variant='primary'] {
+  --btn-bg: var(--pink);
+  --btn-ink: var(--on-pink);
+  --btn-edge: var(--pink-dk);
+}
+
+:is(button, a)[data-variant='blue'] {
+  --btn-bg: var(--blue);
+  --btn-ink: var(--on-blue);
+  --btn-edge: var(--blue-dk);
+}
+
+:is(button, a)[data-variant='danger'] {
+  --btn-bg: var(--red);
+  --btn-ink: var(--on-red);
+  --btn-edge: var(--red-dk);
+}
+
+button[data-variant='chip'][aria-pressed='true'] {
+  --btn-bg: var(--blue);
+  --btn-ink: var(--on-blue);
+  --btn-edge: transparent;
+  border-color: var(--blue);
+}
+
+[data-surface='cobalt'] :is(button:not([data-variant]), :is(button, a)[data-variant='paper']):not([data-surface='paper'] *) {
+  --btn-bg: var(--sticker);
+  --btn-ink: #2348e8;
+  --btn-edge: var(--cover-dk);
+}
+
+[data-surface='cobalt'] :is(button, a)[data-variant='flat']:not([data-surface='paper'] *),
+[data-surface='cobalt'] :is(button, a)[data-variant='flat']:hover:not([data-surface='paper'] *) {
+  --btn-bg: rgb(255 255 255 / 0.14);
+  --btn-ink: var(--on-cover);
+  --btn-edge: transparent;
+}
+
+button:hover:not(:disabled),
+a:where([data-variant]):hover {
   transform: translateY(-1px);
   box-shadow: 0 calc(var(--press) + 1px) 0 var(--btn-edge);
 }
 
-button:active:not(:disabled) {
+button:active:not(:disabled),
+a:where([data-variant]):active {
   transform: translateY(var(--press));
   box-shadow: 0 0 0 transparent;
+}
+
+:is(button, a)[data-variant='flat']:is(:hover, :active):not(:disabled),
+:is(button, a)[data-variant='chip']:is(:hover, :active):not(:disabled) {
+  transform: none;
 }
 
 button:disabled {
@@ -106,7 +171,8 @@ button:disabled {
   cursor: default;
 }
 
-button svg {
+button svg,
+a:where([data-variant]) svg {
   width: 18px;
   height: 18px;
   fill: none;
@@ -124,12 +190,14 @@ button svg {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  button {
+  button,
+  a:where([data-variant]) {
     transition: none;
   }
 
   button:hover:not(:disabled),
-  button:active:not(:disabled) {
+  button:active:not(:disabled),
+  a:where([data-variant]):is(:hover, :active) {
     transform: none;
   }
 }

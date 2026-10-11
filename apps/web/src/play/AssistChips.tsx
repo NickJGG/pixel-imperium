@@ -18,6 +18,8 @@ export function AssistChips() {
         <button
           key={key}
           type="button"
+          data-variant="chip"
+          data-size="compact"
           aria-pressed={settings[key]}
           title={title}
           onClick={() => updateSettings({ [key]: !settings[key] })}

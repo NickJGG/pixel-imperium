@@ -33,6 +33,8 @@ export function ToolPill({
       <span className={`${styles.pillSep} ${styles.touchOnly}`} />
       <button
         type="button"
+        data-variant="flat"
+        data-size="compact"
         aria-pressed={lockLine}
         aria-label={compact ? 'Straight lines' : undefined}
         title="Drags stay in one row or column. Or hold Shift"
@@ -48,6 +50,8 @@ export function ToolPill({
       <button
         type="button"
         className={styles.pillIcon}
+        data-variant="flat"
+        data-size="compact"
         aria-label="Undo"
         disabled={!canUndo}
         onClick={() => store.undo()}
@@ -61,6 +65,8 @@ export function ToolPill({
       <button
         type="button"
         className={styles.pillIcon}
+        data-variant="flat"
+        data-size="compact"
         aria-label="Redo"
         disabled={!canRedo}
         onClick={() => store.redo()}

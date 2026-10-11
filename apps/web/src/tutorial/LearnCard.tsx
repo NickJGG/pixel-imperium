@@ -7,7 +7,6 @@ import { BlankGrid } from './LearnPage.tsx'
 import { lessonPuzzle } from './lessons.ts'
 import { TRACKS, type Track, firstUnfinished, lessonKey, startedTrack } from './tracks.ts'
 import cover from '../campaign/Cover.module.css'
-import playStyles from '../play/Play.module.css'
 import styles from './Learn.module.css'
 
 const ORDER = [TRACKS.tutorial, TRACKS.techniques]
@@ -81,13 +80,13 @@ export function LearnCard({ recommended }: { recommended: boolean }) {
       })}
       <div className={styles.cardFoot}>
         {next ? (
-          <Link {...to(next.track, next.lesson.id)} className={playStyles.linkButton}>
+          <Link {...to(next.track, next.lesson.id)} data-variant="primary">
             {fresh ? 'Start' : 'Continue'}
           </Link>
         ) : (
           <Link
             {...to(TRACKS.tutorial, TRACKS.tutorial.lessons[0]!.id)}
-            className={`${playStyles.linkButton} ${playStyles.paper}`}
+            data-variant="paper"
           >
             Replay from lesson 1
           </Link>

@@ -51,33 +51,6 @@
   stroke-linejoin: round;
 }
 
-.paperLink {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 20px;
-  font: 600 16px var(--font-ui);
-  color: var(--ink);
-  text-decoration: none;
-  background: var(--card-2);
-  border-radius: var(--r-pill);
-  box-shadow: 0 var(--press) 0 var(--line-soft);
-  transition:
-    transform 80ms linear,
-    box-shadow 80ms linear;
-}
-
-.paperLink:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 calc(var(--press) + 1px) 0 var(--line-soft);
-}
-
-.paperLink:active {
-  transform: translateY(var(--press));
-  box-shadow: none;
-}
-
 /* A locked province: its page's slots blurred out under a round seal. */
 .locked {
   position: relative;
@@ -274,13 +247,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .slotLink:hover,
-  .paperLink:hover {
+  .slotLink:hover {
     transform: none;
   }
 
-  .slotLink,
-  .paperLink {
+  .slotLink {
     transition: none;
   }
 }

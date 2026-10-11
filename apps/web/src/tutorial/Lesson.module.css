@@ -292,12 +292,6 @@
   font-size: 13px;
 }
 
-.knowHow {
-  --btn-bg: transparent;
-  --btn-edge: transparent;
-  border: 2px solid var(--line-soft);
-}
-
 /* Below the board when there's no room beside it; the page scrolls instead of squeezing the board. */
 @media (max-width: 860px) {
   .page {

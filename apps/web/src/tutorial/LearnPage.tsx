@@ -13,7 +13,6 @@ import { clearUnseen, getUnseen, useLessonsDone } from './done.ts'
 import type { LearnBack } from './handoff.ts'
 import { lessonPuzzle } from './lessons.ts'
 import { TRACKS, type Track, firstUnfinished, lessonKey } from './tracks.ts'
-import playStyles from '../play/Play.module.css'
 import styles from './Learn.module.css'
 
 export function LearnPage({ back }: { back: LearnBack }) {
@@ -35,7 +34,7 @@ export function LearnPage({ back }: { back: LearnBack }) {
             <h1>Learn</h1>
             <p>Guided pictures that teach you to read the clues. Free, and nothing is lost.</p>
           </div>
-          <Link to={back.to} className={`${playStyles.linkButton} ${playStyles.paper}`}>
+          <Link to={back.to} data-variant="paper">
             ← {back.label}
           </Link>
         </header>
@@ -80,11 +79,11 @@ function TrackSection({ track, paper, done, fresh, back, tag }: TrackProps) {
           {next ? tag : <Dymo className={styles.complete}>Complete</Dymo>}
         </h2>
         {!next ? (
-          <Link {...to(lessons[0]!.id)} className={`${playStyles.linkButton} ${playStyles.paper}`}>
+          <Link {...to(lessons[0]!.id)} data-variant="paper">
             Replay from lesson 1
           </Link>
         ) : (
-          <Link {...to(next.id)} className={playStyles.linkButton} data-pad-default>
+          <Link {...to(next.id)} data-variant="primary" data-pad-default>
             {count === 0 ? `Start: ${next.title}` : `Continue: ${lessons.indexOf(next) + 1}. ${next.title}`}
           </Link>
         )}

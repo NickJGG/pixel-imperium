@@ -55,10 +55,6 @@
   gap: var(--space-3);
 }
 
-.settings {
-  min-height: 38px;
-}
-
 .editor {
   gap: var(--space-4);
 }
@@ -80,9 +76,6 @@
 
 /* A sticker to tap, not a pill: no paper, no press shadow. */
 .pick {
-  --btn-bg: transparent;
-  --btn-edge: transparent;
-
   position: relative;
   display: block;
   width: 100%;
@@ -93,12 +86,6 @@
 
 .pick > :first-child {
   width: 100%;
-}
-
-.pick[aria-pressed='true'] {
-  --btn-bg: color-mix(in srgb, var(--blue) 22%, transparent);
-  outline: 3px solid var(--blue);
-  outline-offset: 0;
 }
 
 .pick:disabled {

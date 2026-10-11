@@ -16,6 +16,8 @@ export function ToolToggle({ store, compact = false }: { store: PlayStore; compa
           <button
             key={m}
             type="button"
+            data-variant="flat"
+            data-size="compact"
             aria-pressed={mode === m}
             aria-label={compact ? label : undefined}
             title={compact ? label : undefined}

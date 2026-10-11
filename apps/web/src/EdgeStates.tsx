@@ -14,7 +14,7 @@ export function NotFound({ children }: { children: ReactNode }) {
           This page fell out of the album
         </h1>
         <p>{children}</p>
-        <Link to="/" className={styles.pill}>
+        <Link to="/" className={styles.back} data-variant="paper">
           Back to the cover
         </Link>
       </section>

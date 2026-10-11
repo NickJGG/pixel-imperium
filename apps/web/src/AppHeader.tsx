@@ -43,7 +43,7 @@ export function AppHeader() {
   const next = useContinue()
   const playing = useRouterState({ select: s => s.location.pathname.startsWith('/play/') })
   return (
-    <header className={styles.spine} data-playing={playing || undefined}>
+    <header className={styles.spine} data-surface="cobalt" data-playing={playing || undefined}>
       <Link to="/" className={styles.logo}>
         <CrownMark />
         <span className={styles.wordmark}>
@@ -62,7 +62,7 @@ export function AppHeader() {
               </>
             )}
           </span>
-          <Link to="/play/$id" params={{ id: next.puzzle.id }} className={styles.pill}>
+          <Link to="/play/$id" params={{ id: next.puzzle.id }} data-variant="primary">
             {next.fresh ? 'Start' : 'Continue'}
           </Link>
         </span>
@@ -71,6 +71,8 @@ export function AppHeader() {
         <button
           type="button"
           className={styles.round}
+          data-variant="flat"
+          data-size="compact"
           aria-label={sound ? 'Sound on. Turn it off.' : 'Sound off. Turn it on.'}
           aria-pressed={sound}
           onClick={() => updateSettings({ sound: !sound })}
@@ -80,6 +82,8 @@ export function AppHeader() {
         <button
           type="button"
           className={styles.round}
+          data-variant="flat"
+          data-size="compact"
           aria-label={`Theme: ${themeLabel[theme]}. Switch to ${themeLabel[nextTheme[theme]]}.`}
           onClick={() => updateSettings({ theme: nextTheme[theme] })}
         >
@@ -131,6 +135,7 @@ export function ThumbBar() {
             </>
           }
           triggerClassName={styles.thumbItem}
+          triggerVariant="flat"
         />
       )}
     </nav>

@@ -31,6 +31,8 @@ export function PageSheet({ store, solved, paper, children }: Props) {
         ref={buttonRef}
         type="button"
         className={styles.sheetButton}
+        data-variant="flat"
+        data-size="compact"
         data-pad-menu
         aria-label="Page and assists"
         title="Page and assists"

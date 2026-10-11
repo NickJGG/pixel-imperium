@@ -59,11 +59,6 @@
   box-shadow: 0 2px 0 var(--shade);
 }
 
-.spine[data-playing] .round {
-  width: 34px;
-  min-height: 34px;
-}
-
 .puzzle {
   flex: 1;
   min-width: 0;
@@ -75,47 +70,30 @@
 
 .continue {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   min-width: 0;
+  height: 36px;
   margin-left: auto;
-  padding: 4px 6px 4px 14px;
+  padding: 0 0 0 14px;
   background: rgb(255 255 255 / 0.14);
   border-radius: var(--r-pill);
   font: 600 14px var(--font-ui);
 }
 
 .nextUp {
+  align-self: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.pill {
-  display: inline-flex;
-  align-items: center;
+/* The cluster's end cap: a 32px face on its 4px press edge fills the cluster's 36px. */
+.continue > a {
   flex: none;
-  min-height: 34px;
+  min-height: 32px;
   padding: 0 14px;
-  background: var(--sticker);
-  color: var(--cover);
-  border-radius: var(--r-pill);
-  font: 600 14px var(--font-ui);
-  text-decoration: none;
-  box-shadow: 0 var(--press) 0 var(--cover-dk);
-  transition:
-    transform 80ms linear,
-    box-shadow 80ms linear;
-}
-
-.pill:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 calc(var(--press) + 1px) 0 var(--cover-dk);
-}
-
-.pill:active {
-  transform: translateY(var(--press));
-  box-shadow: none;
+  font-size: 14px;
 }
 
 .tools {
@@ -130,28 +108,12 @@
 }
 
 .spine .round {
-  --btn-bg: rgb(255 255 255 / 0.14);
-  --btn-ink: var(--on-cover);
-  --btn-edge: transparent;
-  width: 38px;
-  min-height: 38px;
+  width: 36px;
   padding: 0;
 }
 
-.spine .signIn {
-  --btn-bg: var(--sticker);
-  --btn-ink: #2348e8;
-  --btn-edge: var(--cover-dk);
-  min-height: 38px;
-  padding: 0 16px;
-}
-
 .spine .avatar {
-  --btn-bg: transparent;
-  --btn-ink: var(--on-cover);
-  --btn-edge: transparent;
-  min-height: 38px;
-  padding: 0 0 0 var(--space-1);
+  padding: 0 14px 0 1px;
   font-size: 14px;
 }
 
@@ -226,8 +188,6 @@
 }
 
 .menu .item {
-  --btn-bg: transparent;
-  --btn-edge: transparent;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -238,11 +198,6 @@
   font: 600 16px var(--font-ui);
   color: var(--ink);
   text-decoration: none;
-  transform: none;
-}
-
-.menu .item:hover {
-  background: var(--card-2);
   transform: none;
 }
 
@@ -293,10 +248,10 @@
   color: var(--pink);
 }
 
+/* No ink fill while its sign-in sheet is open: the sheet itself shows that. */
 .thumbBar button.thumbItem {
   --btn-bg: transparent;
   --btn-ink: var(--ink);
-  --btn-edge: transparent;
   min-height: 0;
   padding: 0;
   font-size: 12px;
@@ -458,9 +413,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pill,
-  .pill:hover,
-  .pill:active,
   .fab:active {
     transition: none;
     transform: none;

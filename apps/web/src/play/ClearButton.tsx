@@ -38,7 +38,7 @@ export function ClearButton({ store, solved, disabled = false }: Props) {
       <button
         ref={buttonRef}
         type="button"
-        data-variant={solved ? 'blue' : 'danger'}
+        data-variant={solved ? 'paper' : 'danger'}
         disabled={disabled}
         onClick={() => setConfirming(true)}
       >
@@ -54,7 +54,7 @@ export function ClearButton({ store, solved, disabled = false }: Props) {
       <button
         ref={confirmRef}
         type="button"
-        className={styles.danger}
+        data-variant="danger"
         onClick={() => {
           setConfirming(false)
           store.clear({ autoMarkEmptyLines: getSettings().autoMarkEmptyLines })
@@ -62,7 +62,7 @@ export function ClearButton({ store, solved, disabled = false }: Props) {
       >
         {label}
       </button>
-      <button type="button" className={styles.ghost} onClick={() => setConfirming(false)}>
+      <button type="button" data-variant="ghost" onClick={() => setConfirming(false)}>
         Cancel
       </button>
     </div>

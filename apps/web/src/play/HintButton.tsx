@@ -80,7 +80,7 @@ export function HintButton({ store, confirmFirst, note, popover = false, request
       <button ref={confirmRef} type="button" data-variant="primary" onClick={() => void hint()}>
         Use a hint
       </button>
-      <button type="button" className={styles.ghost} onClick={() => setConfirming(false)}>
+      <button type="button" data-variant="ghost" onClick={() => setConfirming(false)}>
         Cancel
       </button>
       {note && <span className={styles.note}>{note}</span>}

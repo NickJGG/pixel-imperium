@@ -331,7 +331,7 @@ function Play({
   )
   const onward = !conquest ? (
     next && (
-      <Link to="/play/$id" params={{ id: next.id }} className={styles.linkButton} data-pad-default>
+      <Link to="/play/$id" params={{ id: next.id }} data-variant="primary" data-pad-default>
         Next: {next.title}
         <ArrowIcon />
         <PadGlyph button="A" />
@@ -341,7 +341,7 @@ function Play({
     <Link
       to="/c/$campaignId/$provinceId"
       params={{ campaignId: campaign.id, provinceId: following.id }}
-      className={styles.linkButton}
+      data-variant="primary"
       data-pad-default
     >
       Open
@@ -352,7 +352,7 @@ function Play({
       <PadGlyph button="A" />
     </Link>
   ) : (
-    <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} className={styles.linkButton} data-pad-default>
+    <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} data-variant="primary" data-pad-default>
       Back to the cover
       <PadGlyph button="A" />
     </Link>
@@ -361,7 +361,7 @@ function Play({
     <Link
       to="/c/$campaignId/$provinceId"
       params={{ campaignId: campaign.id, provinceId: province.id }}
-      className={`${styles.linkButton} ${styles.paper}`}
+      data-variant="paper"
       data-pad-default={!onward || undefined}
     >
       Back to page

@@ -5,7 +5,6 @@ import { Dymo } from '../album/Dymo.tsx'
 import { usePadContain } from '../pad/PadProvider.tsx'
 import { asked } from './asked.ts'
 import type { Track } from './tracks.ts'
-import playStyles from '../play/Play.module.css'
 import styles from './Lesson.module.css'
 
 export interface OfferCopy {
@@ -87,12 +86,13 @@ export function ChoiceCard({ track, copy, puzzleId }: { track: Track; copy: Offe
           to="/learn/$track/$lesson"
           params={{ track: track.id, lesson: track.lessons[0]!.id }}
           search={{ back: `/play/${puzzleId}` }}
-          className={`${playStyles.linkButton} ${styles.learn}`}
+          className={styles.learn}
+          data-variant="primary"
           onClick={mark}
         >
           {copy.learn}
         </Link>
-        <button type="button" className={styles.knowHow} onClick={mark}>
+        <button type="button" data-variant="chip" onClick={mark}>
           {copy.decline}
         </button>
         {copy.footer && <p className={styles.choiceFoot}>{copy.footer}</p>}

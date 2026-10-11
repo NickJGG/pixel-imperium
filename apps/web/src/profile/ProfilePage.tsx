@@ -91,7 +91,7 @@ export function ProfilePage() {
                   Edit showcase
                 </button>
               )}
-              <Link to="/settings" className={`${cover.pill} ${styles.settings}`}>
+              <Link to="/settings" data-variant="paper" data-size="compact">
                 Settings
               </Link>
             </div>

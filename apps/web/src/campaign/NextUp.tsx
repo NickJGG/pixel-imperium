@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import type { PuzzleSummary } from '@pixel-imperium/protocol'
 import type { ProgressStorage } from '../play/progress-storage.ts'
-import playStyles from '../play/Play.module.css'
 import { SlotFace } from './PuzzleSlot.tsx'
 import styles from './Campaign.module.css'
 
@@ -30,7 +29,7 @@ export function NextUp({ puzzle: p, number, storage, fresh }: Props) {
           {p.width}×{p.height}
         </p>
       </div>
-      <Link to="/play/$id" params={{ id: p.id }} className={playStyles.linkButton}>
+      <Link to="/play/$id" params={{ id: p.id }} data-variant="primary">
         {fresh ? 'Start' : 'Continue'}
       </Link>
     </div>

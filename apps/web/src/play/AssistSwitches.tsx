@@ -11,6 +11,7 @@ export function AssistSwitches() {
         <button
           key={key}
           type="button"
+          data-variant="flat"
           role="switch"
           aria-checked={settings[key]}
           title={title}

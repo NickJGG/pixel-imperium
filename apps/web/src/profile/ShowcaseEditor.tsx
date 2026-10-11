@@ -53,6 +53,7 @@ export function ShowcaseEditor({ stickers, picks, onChange, onClose }: Props) {
               <button
                 type="button"
                 className={styles.pick}
+                data-variant="flat"
                 aria-pressed={at !== -1}
                 aria-label={`#${s.number} ${s.puzzle.title}${at === -1 ? '' : `, pick ${at + 1}`}`}
                 disabled={at === -1 && full}

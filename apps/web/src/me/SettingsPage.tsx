@@ -114,7 +114,7 @@ function HandleCard({ handle }: { handle: string }) {
       <Link to="/u/$handle" params={{ handle }} className={styles.handle}>
         @{handle}
       </Link>
-      <button type="button" className={styles.small} onClick={() => setEditing(true)}>
+      <button type="button" data-size="compact" onClick={() => setEditing(true)}>
         Change
       </button>
     </div>
@@ -149,6 +149,8 @@ function PlaySettings() {
             <button
               key={t.value}
               type="button"
+              data-variant="flat"
+              data-size="compact"
               aria-pressed={theme === t.value}
               onClick={() => updateSettings({ theme: t.value })}
             >
@@ -225,7 +227,7 @@ function LinkedProviders({ linked, reload }: ReturnType<typeof useLinkedAccounts
                   Unlink
                 </button>
               ) : (
-                <button type="button" className={styles.small} disabled={busy} onClick={() => connect(p.id)}>
+                <button type="button" data-size="compact" disabled={busy} onClick={() => connect(p.id)}>
                   Link
                 </button>
               )}

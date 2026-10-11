@@ -161,42 +161,6 @@
   background: var(--sticker);
 }
 
-/* Link pills that press down like the house button. */
-.pill {
-  --pill-bg: var(--card-2);
-  --pill-ink: var(--ink);
-  --pill-edge: var(--line-soft);
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  max-width: 100%;
-  padding: 0 20px;
-  overflow: hidden;
-  font: 600 16px var(--font-ui);
-  color: var(--pill-ink);
-  text-decoration: none;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  background: var(--pill-bg);
-  border-radius: var(--r-pill);
-  box-shadow: 0 var(--press) 0 var(--pill-edge);
-  transition:
-    transform 80ms linear,
-    box-shadow 80ms linear;
-}
-
-.pill:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 calc(var(--press) + 1px) 0 var(--pill-edge);
-}
-
-.pill:active {
-  transform: translateY(var(--press));
-  box-shadow: none;
-}
-
 .desk {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
@@ -342,13 +306,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stickerLink,
-  .pill {
+  .stickerLink {
     transition: none;
   }
 
-  .stickerLink:hover,
-  .pill:hover {
+  .stickerLink:hover {
     transform: none;
   }
 

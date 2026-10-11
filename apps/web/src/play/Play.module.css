@@ -146,19 +146,7 @@
 
 .sheetButton {
   width: 44px;
-  min-height: 36px;
   padding: 0;
-  --btn-bg: transparent;
-  --btn-edge: transparent;
-}
-
-.sheetButton:hover:not(:disabled) {
-  --btn-bg: var(--card-2);
-}
-
-.sheetButton[aria-expanded='true'] {
-  --btn-bg: var(--ink);
-  --btn-ink: var(--card);
 }
 
 .sheet {
@@ -361,6 +349,7 @@
 .minimap {
   display: block;
   border-radius: 2px;
+  outline: 1px solid #fff;
   opacity: 0;
   pointer-events: none;
   transition: opacity 200ms ease;
@@ -475,28 +464,6 @@
   align-items: center;
   gap: 6px;
   white-space: nowrap;
-}
-
-.pill > button {
-  min-height: 36px;
-  padding: 0 14px;
-  font-size: 15px;
-  --btn-bg: transparent;
-  --btn-edge: transparent;
-}
-
-.pill > button:hover:not(:disabled),
-.pill > button:active:not(:disabled) {
-  transform: none;
-}
-
-.pill > button:hover:not(:disabled, [aria-pressed='true']) {
-  --btn-bg: var(--card-2);
-}
-
-.pill > button[aria-pressed='true'] {
-  --btn-bg: var(--ink);
-  --btn-ink: var(--card);
 }
 
 .pill > button svg {
@@ -623,24 +590,6 @@
   box-shadow: 0 3px 0 var(--line-soft);
 }
 
-.seg button {
-  min-height: 36px;
-  padding: 0 16px;
-  font-size: 15px;
-  --btn-bg: transparent;
-  --btn-edge: transparent;
-}
-
-.seg button:hover:not(:disabled),
-.seg button:active:not(:disabled) {
-  transform: none;
-}
-
-.seg button[aria-pressed='true'] {
-  --btn-bg: var(--ink);
-  --btn-ink: var(--card);
-}
-
 .seg svg {
   width: 13px;
   height: 13px;
@@ -673,23 +622,8 @@
 }
 
 .chips button {
-  min-height: 36px;
   padding: 0 12px;
   font-size: 13px;
-  --btn-bg: transparent;
-  --btn-edge: transparent;
-  border: 2px solid var(--line-soft);
-}
-
-.chips button:hover:not(:disabled),
-.chips button:active:not(:disabled) {
-  transform: none;
-}
-
-.chips button[aria-pressed='true'] {
-  --btn-bg: var(--blue);
-  --btn-ink: var(--on-blue);
-  border-color: var(--blue);
 }
 
 .chips svg {
@@ -729,17 +663,6 @@
   color: var(--ink-soft);
 }
 
-.confirm .danger {
-  --btn-bg: var(--red);
-  --btn-ink: var(--on-red);
-  --btn-edge: var(--red-dk);
-}
-
-.confirm .ghost {
-  --btn-bg: transparent;
-  --btn-edge: transparent;
-}
-
 .foilNote {
   display: inline-flex;
   align-items: center;
@@ -767,60 +690,12 @@
   font-weight: 500;
 }
 
-.linkButton {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  padding: 0 20px;
-  font: 600 16px var(--font-ui);
-  color: var(--on-pink);
-  text-decoration: none;
-  white-space: nowrap;
-  background: var(--pink);
-  border-radius: var(--r-pill);
-  box-shadow: 0 var(--press) 0 var(--pink-dk);
-  transition:
-    transform 80ms linear,
-    box-shadow 80ms linear;
-}
-
-.linkButton:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 calc(var(--press) + 1px) 0 var(--pink-dk);
-}
-
-.linkButton:active {
-  transform: translateY(var(--press));
-  box-shadow: 0 0 0 transparent;
-}
-
-.linkButton.paper {
-  color: var(--ink);
-  background: var(--line-soft);
-  box-shadow: 0 var(--press) 0 var(--shade);
-}
-
-.linkButton.paper:hover {
-  box-shadow: 0 calc(var(--press) + 1px) 0 var(--shade);
-}
-
 .tabChip {
   padding: 1px 8px;
   font-size: 14px;
   color: var(--on-tab);
   background: var(--tab);
   border-radius: var(--r-sm);
-}
-
-.linkButton svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 
 /* How to play beside Clear, under Hint; Clear's confirm takes the whole row. */
@@ -853,45 +728,17 @@
   grid-column: 1 / -1;
 }
 
-/* The Tutorial's way in, as a house button. */
+/* The Tutorial's way in; it holds a New tag. */
 .howTo {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   gap: 6px;
-  min-height: 44px;
-  font: 600 16px var(--font-ui);
-  color: var(--ink);
-  text-decoration: none;
-  white-space: nowrap;
-  background: var(--card-2);
-  border-radius: var(--r-pill);
-  box-shadow: 0 var(--press) 0 var(--line-soft);
-  transition:
-    transform 80ms linear,
-    box-shadow 80ms linear;
-}
-
-.howTo:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 calc(var(--press) + 1px) 0 var(--line-soft);
-}
-
-.howTo:active {
-  transform: translateY(var(--press));
-  box-shadow: 0 0 0 transparent;
 }
 
 .howTo svg {
   flex: none;
   width: 16px;
   height: 16px;
-  fill: none;
-  stroke: currentColor;
   stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 
 /* The rail's last row: the assists, set and forget, behind a disclosure. */
@@ -906,17 +753,17 @@
   justify-content: flex-start;
   font-size: 14px;
   border-radius: 10px;
-  --btn-bg: color-mix(in srgb, var(--ink) 8%, transparent);
   --btn-edge: transparent;
+}
+
+/* A tinted row while closed; open, it takes the house chosen state. */
+.disclosure > button:not([aria-expanded='true']) {
+  --btn-bg: color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
 .disclosure > button:hover:not(:disabled),
 .disclosure > button:active:not(:disabled) {
   transform: none;
-}
-
-.disclosure > button[aria-expanded='true'] {
-  --btn-bg: var(--card-2);
 }
 
 .disclosure > button svg {
@@ -1052,19 +899,12 @@
 }
 
 .switches button {
-  min-height: 32px;
+  min-height: 36px;
   padding: 0;
   justify-content: space-between;
   font-size: 14px;
   text-align: left;
   white-space: normal;
-  --btn-bg: transparent;
-  --btn-edge: transparent;
-}
-
-.switches button:hover:not(:disabled),
-.switches button:active:not(:disabled) {
-  transform: none;
 }
 
 .switches i {
@@ -1128,7 +968,7 @@
   color: var(--gold-dk);
 }
 
-.panelAfter > .linkButton {
+.panelAfter > a {
   justify-content: center;
   min-height: 48px;
 }
@@ -1144,16 +984,10 @@
 }
 
 .panelActions > button,
-.panelActions > .linkButton {
+.panelActions > a {
   justify-content: center;
   padding: 0 var(--space-3);
   font-size: 14px;
-}
-
-.panelActions > button {
-  --btn-bg: var(--line-soft);
-  --btn-ink: var(--ink);
-  --btn-edge: var(--shade);
 }
 
 .panelActions > button svg {
@@ -1283,8 +1117,6 @@
 @media (prefers-reduced-motion: reduce) {
   .colClues,
   .rowClues,
-  .linkButton,
-  .howTo,
   .switches i,
   .switches i::after,
   .afterSheet .panelAfter {
@@ -1293,12 +1125,5 @@
 
   .afterSheet {
     animation: none;
-  }
-
-  .linkButton:hover,
-  .linkButton:active,
-  .howTo:hover,
-  .howTo:active {
-    transform: none;
   }
 }

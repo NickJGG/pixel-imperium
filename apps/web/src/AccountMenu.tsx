@@ -11,13 +11,15 @@ export function AccountMenu() {
   const { data, isPending } = useSession()
   const router = useRouter()
   if (isPending) return null
-  if (!data) return <SignInMenu trigger="Sign in" triggerClassName={styles.signIn} />
+  if (!data) return <SignInMenu trigger="Sign in" triggerVariant="paper" triggerSize="compact" />
 
   const { handle, image } = data.user
   return (
     <Menu
       label={`Account: @${handle}`}
       triggerClassName={styles.avatar}
+      triggerVariant="flat"
+      triggerSize="compact"
       trigger={
         <>
           <span className={styles.face}>
@@ -31,13 +33,13 @@ export function AccountMenu() {
         </>
       }
     >
-      <Link to="/u/$handle" params={{ handle }} role="menuitem" className={styles.item}>
+      <Link to="/u/$handle" params={{ handle }} role="menuitem" className={styles.item} data-variant="flat">
         <span className={styles.ico}>
           <AlbumIcon />
         </span>
         My album
       </Link>
-      <Link to="/settings" role="menuitem" className={styles.item}>
+      <Link to="/settings" role="menuitem" className={styles.item} data-variant="flat">
         <span className={styles.ico}>
           <SettingsIcon />
         </span>
@@ -47,6 +49,7 @@ export function AccountMenu() {
         type="button"
         role="menuitem"
         className={styles.item}
+        data-variant="flat"
         onClick={() => void signOutAccount().then(() => router.invalidate())}
       >
         <span className={styles.ico}>
@@ -58,16 +61,22 @@ export function AccountMenu() {
   )
 }
 
-interface SignInMenuProps {
+interface TriggerProps {
+  triggerClassName?: string | undefined
+  /** The trigger's house-button `data-variant` and `data-size`. */
+  triggerVariant?: 'paper' | 'flat' | undefined
+  triggerSize?: 'compact' | undefined
+}
+
+interface SignInMenuProps extends TriggerProps {
   trigger: ReactNode
-  triggerClassName: string | undefined
   /** Opens above the trigger, for the thumb bar. */
   up?: boolean
 }
 
-export function SignInMenu({ trigger, triggerClassName, up }: SignInMenuProps) {
+export function SignInMenu({ trigger, up, ...triggerProps }: SignInMenuProps) {
   return (
-    <Menu label="Sign in" trigger={trigger} triggerClassName={triggerClassName} up={up}>
+    <Menu label="Sign in" trigger={trigger} up={up} {...triggerProps}>
       <h2>Keep your album safe</h2>
       <p>Sign in to earn foil and keep your stickers on any device.</p>
       {PROVIDERS.map(p => (
@@ -84,15 +93,14 @@ export function SignInMenu({ trigger, triggerClassName, up }: SignInMenuProps) {
   )
 }
 
-interface MenuProps {
+interface MenuProps extends TriggerProps {
   label: string
   trigger: ReactNode
-  triggerClassName: string | undefined
   up?: boolean | undefined
   children: ReactNode
 }
 
-function Menu({ label, trigger, triggerClassName, up, children }: MenuProps) {
+function Menu({ label, trigger, triggerClassName, triggerVariant, triggerSize, up, children }: MenuProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -118,6 +126,8 @@ function Menu({ label, trigger, triggerClassName, up, children }: MenuProps) {
         type="button"
         data-pad-menu
         className={triggerClassName}
+        data-variant={triggerVariant}
+        data-size={triggerSize}
         aria-label={label}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -129,6 +139,7 @@ function Menu({ label, trigger, triggerClassName, up, children }: MenuProps) {
         <div
           ref={menuRef}
           className={`${styles.menu} ${up ? styles.up : ''}`}
+          data-surface="paper"
           role="menu"
           onClick={e => (e.target as Element).closest('[role="menuitem"]') && setOpen(false)}
         >
