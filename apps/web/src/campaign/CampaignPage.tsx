@@ -36,6 +36,7 @@ export function CampaignPage(props: Props) {
 /**
  * Home: every province as a column. The active one is wide with its slots and Continue; a conquered one is a
  * collage of its stickers under the Conquered stamp; the next and the locked ones are thin spines in the fog.
+ * On a phone they're a carousel, a screen each, opening on the active one.
  * The first visit after a Conquest unveils it: the stamp slams onto the conquered column and the fog drops
  * off the province it opened.
  */
@@ -61,7 +62,7 @@ function Overview({ campaign, previewConquest }: Props) {
   return (
     <main className={styles.home}>
       <h1 className={styles.srOnly}>{campaign.name}</h1>
-      <Worlds>
+      <Worlds carousel>
         {campaign.provinces.map((province, index) => {
           const p = progress.provinces[index]!
           if (p.state === 'active') {
@@ -125,7 +126,7 @@ function ActiveWorld({
   const number = next ? province.puzzles.indexOf(next) + 1 : 0
   const id = `province-${province.id}`
   return (
-    <World index={index} className={styles.active} labelledBy={id}>
+    <World index={index} className={styles.active} labelledBy={id} start={padDefault}>
       <div className={styles.open}>
         <p className={styles.kicker}>
           Province {index + 1} · {solved} / {total} collected

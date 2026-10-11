@@ -164,4 +164,52 @@
   .spine > :last-child {
     margin-left: auto;
   }
+
+  /* A screen per column, the neighbours peeking either side. */
+  .worlds[data-carousel] {
+    flex-direction: row;
+    gap: var(--space-3);
+    padding: var(--space-2) 0 var(--space-4);
+    overflow: auto hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .worlds[data-carousel] > .world {
+    flex: 0 0 84%;
+    overflow-y: auto;
+    border-radius: var(--r-lg);
+    scroll-snap-align: center;
+  }
+
+  .worlds[data-carousel] > .world:first-child {
+    margin-left: 8%;
+  }
+
+  .worlds[data-carousel] > .world:last-child {
+    margin-right: 8%;
+  }
+
+  .worlds[data-carousel] > .spine {
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-4);
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .worlds[data-carousel] > .spine > :last-child {
+    margin-left: 0;
+  }
+
+  .worlds[data-carousel] .name {
+    font: var(--type-title);
+    font-size: var(--fs-40);
+    text-align: center;
+    white-space: normal;
+  }
+
+  .worlds[data-carousel] .lock {
+    font-size: 40px; /* token-exempt: icon size */
+  }
 }

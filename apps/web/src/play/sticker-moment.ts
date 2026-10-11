@@ -1,7 +1,8 @@
 /**
  * The solve moment's choreography, run with the Web Animations API in viewport coordinates. A first solve's
  * banner slams in across the screen carrying the sticker, holds, and snaps shut; the sticker hangs where the
- * banner left it, then flies to its slot. A replay's re-solve just pops the sticker out of the board.
+ * banner left it, then flies to its slot, or on a phone pops straight into it. A replay's re-solve just pops
+ * the sticker out of the board.
  */
 import { play } from '../sound.ts'
 
@@ -69,9 +70,8 @@ export interface Celebration {
 
 interface HandOff {
   float: HTMLElement
-  /** The banner's own copy, hidden as the float takes its place. */
-  sticker: HTMLElement
-  from: () => Pose
+  /** The banner's own copy, hidden as the float takes its place, and its pose; absent, the float pops in at `to`. */
+  from?: { sticker: HTMLElement; pose: () => Pose } | undefined
   to: () => Pose
 }
 
@@ -99,25 +99,40 @@ export function celebrate({ band, angle, shake, onLand, handOff }: Celebration):
       ).catch(() => {})
     }
     await wait(1000)
-    const from = handOff?.from()
+    const from = handOff?.from && { ...handOff.from, pose: handOff.from.pose() }
     if (handOff && from) {
-      handOff.float.style.width = `${from.width}px`
-      handOff.float.style.transform = at(from.x, from.y, 1, from.angle)
-      handOff.sticker.style.visibility = 'hidden'
+      handOff.float.style.width = `${from.pose.width}px`
+      handOff.float.style.transform = at(from.pose.x, from.pose.y, 1, from.pose.angle)
+      from.sticker.style.visibility = 'hidden'
       play('pop')
     }
     await animate(band, [pose(1), pose(1, 0)], { duration: 360, easing: 'ease-in' })
-    if (!handOff || !from) return
+    if (!handOff) return
     await wait(300)
-    play('peel')
     const to = handOff.to()
+    if (!from) {
+      play('pop')
+      handOff.float.style.width = `${to.width}px`
+      await animate(
+        handOff.float,
+        [
+          { transform: at(to.x, to.y, 0, to.angle - 20) },
+          { transform: at(to.x, to.y, 1.25, to.angle + 4), offset: 0.6 },
+          { transform: at(to.x, to.y, 1, to.angle) },
+        ],
+        { duration: 420, easing: 'cubic-bezier(.3, 1.6, .5, 1)' },
+      )
+      return
+    }
+    play('peel')
+    const { pose: start } = from
     await animate(
       handOff.float,
       [
-        { width: `${from.width}px`, transform: at(from.x, from.y, 1, from.angle) },
+        { width: `${start.width}px`, transform: at(start.x, start.y, 1, start.angle) },
         {
-          width: `${(from.width + to.width) / 2}px`,
-          transform: at((from.x + to.x) / 2, Math.min(from.y, to.y) - 50, 1, (from.angle + to.angle) / 2 + 10),
+          width: `${(start.width + to.width) / 2}px`,
+          transform: at((start.x + to.x) / 2, Math.min(start.y, to.y) - 50, 1, (start.angle + to.angle) / 2 + 10),
           offset: 0.45,
         },
         { width: `${to.width}px`, transform: at(to.x, to.y, 1, to.angle) },

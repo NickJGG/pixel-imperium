@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useAccount } from './account.ts'
-import { AccountMenu, SignInMenu } from './AccountMenu.tsx'
+import { AccountMenu, ThumbMenu } from './AccountMenu.tsx'
 import { AlbumIcon, AutoIcon, DayIcon, LearnIcon, NightIcon, PlayIcon, ProfileIcon, SoundIcon } from './album/icons.tsx'
 import { useCurrentCampaign } from './campaign/last-campaign.ts'
 import { type ContinueAt, campaignProgress, continueAt } from './campaign/progress.ts'
@@ -103,7 +103,7 @@ export function HudPills({ className }: { className?: string | undefined }) {
 
 /**
  * The logo sticker top-left and the pills top-right. `float` lays it over the page instead of in its own
- * row; by default that follows the route.
+ * row; by default that follows the route. On a phone only sound and theme stay: the thumb bar has the rest.
  */
 export function Hud({ float }: { float?: boolean }) {
   const pathname = useRouterState({ select: s => s.location.pathname })
@@ -115,15 +115,17 @@ export function Hud({ float }: { float?: boolean }) {
           <span>Pixel</span> Imperium
         </span>
       </Link>
-      <HudPills />
+      <HudPills className={styles.pagePills} />
     </header>
   )
 }
 
-/** The phone's bottom bar: Album, a raised Continue, and Profile. Hidden while playing and on wider screens. */
+/**
+ * The phone's bottom bar: Album, a raised Continue, and Profile, whose menu also holds Learn and the account.
+ * Hidden while playing and on wider screens.
+ */
 export function ThumbBar() {
   const next = useContinue()
-  const { account } = useAccount()
   const playing = useRouterState({ select: s => s.location.pathname.startsWith('/play/') })
   if (playing) return null
 
@@ -145,24 +147,15 @@ export function ThumbBar() {
       ) : (
         <span />
       )}
-      {account ? (
-        <Link to="/u/$handle" params={{ handle: account.handle }} className={app.thumbItem}>
-          <ProfileIcon />
-          Profile
-        </Link>
-      ) : (
-        <SignInMenu
-          up
-          trigger={
-            <>
-              <ProfileIcon />
-              Profile
-            </>
-          }
-          triggerClassName={app.thumbItem}
-          triggerVariant="flat"
-        />
-      )}
+      <ThumbMenu
+        trigger={
+          <>
+            <ProfileIcon />
+            Profile
+          </>
+        }
+        triggerClassName={app.thumbItem}
+      />
     </nav>
   )
 }

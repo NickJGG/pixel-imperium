@@ -86,12 +86,8 @@
     font-size: 11px; /* token-exempt: brand logo */
   }
 
-  .learn {
-    width: 44px;
-    padding: 0;
-  }
-
-  .label {
+  .pagePills > .learn,
+  .pagePills > .account {
     display: none;
   }
 }

@@ -121,6 +121,7 @@
 @media (max-width: 720px) {
   .open {
     height: auto;
+    min-height: 100%;
     padding: var(--space-6) var(--space-4);
     overflow: visible;
   }
@@ -133,8 +134,7 @@
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
-  .collage,
-  .stamp {
-    display: none;
+  .collage {
+    flex-basis: 260px;
   }
 }

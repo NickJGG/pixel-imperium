@@ -245,14 +245,19 @@ function Play({
       shake: kind === 'plain' ? null : shellRef.current,
       onLand: cheer,
       handOff:
-        float && sticker && slot
+        float && slot
           ? {
               float,
-              sticker,
-              from: (): Pose => {
-                const face = sticker.firstElementChild as HTMLElement
-                return { ...centerOf(face), width: face.offsetWidth, angle: angle + tilt }
-              },
+              from:
+                wide && sticker
+                  ? {
+                      sticker,
+                      pose: (): Pose => {
+                        const face = sticker.firstElementChild as HTMLElement
+                        return { ...centerOf(face), width: face.offsetWidth, angle: angle + tilt }
+                      },
+                    }
+                  : undefined,
               // The slot's sticker fills its square inner box, narrowed for a tall picture.
               to: (): Pose => {
                 const box = slot.firstElementChild ?? slot
