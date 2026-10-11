@@ -101,7 +101,7 @@
 
 .bracket span {
   position: absolute;
-  padding: 2px 6px;
+  padding: 2px var(--space-2);
   white-space: nowrap;
   font: var(--type-kicker);
   color: var(--on-tone);
@@ -124,7 +124,7 @@
 .callout {
   z-index: 1;
   pointer-events: auto;
-  padding: 14px 16px;
+  padding: var(--space-4);
   background: var(--card-2);
   border: 2px solid var(--pink);
   border-radius: var(--r-lg);
@@ -191,7 +191,7 @@
 }
 
 .pop kbd {
-  padding: 1px 6px;
+  padding: 1px var(--space-2);
   font: var(--type-kicker);
   color: var(--ink);
   background: var(--card);
@@ -204,7 +204,7 @@
   justify-content: space-between;
   align-items: center;
   gap: var(--space-2);
-  margin-top: 10px;
+  margin-top: var(--space-3);
   font: var(--type-kicker);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -213,7 +213,7 @@
 
 .beatFoot button {
   min-height: 36px;
-  padding: 0 14px;
+  padding: 0 var(--space-4);
   font-size: var(--fs-14);
   text-transform: none;
   letter-spacing: normal;
@@ -221,7 +221,7 @@
 
 .pointsDown {
   display: block;
-  margin-top: 6px;
+  margin-top: var(--space-2);
   font: var(--type-kicker);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -232,7 +232,7 @@
 .dock {
   align-self: stretch;
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
   font: 400 var(--fs-16)/1.45 var(--font-ui);
   color: var(--ink);
 }
@@ -242,7 +242,7 @@
 }
 
 .dockBeat {
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-4);
   background: var(--card-2);
   border: 2px solid var(--pink);
   border-radius: var(--r-lg);

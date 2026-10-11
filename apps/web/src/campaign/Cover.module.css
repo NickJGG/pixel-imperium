@@ -2,15 +2,15 @@
   flex: 1;
   overflow-y: auto;
   /* Centres a 1200px column while the scrollbar stays at the window edge. */
-  padding: var(--space-6) max(var(--space-7), calc((100% - 1200px) / 2 + var(--space-7))) 56px;
+  padding: var(--space-6) max(var(--space-7), calc((100% - 1200px) / 2 + var(--space-7))) var(--space-14); /* token-exempt: 1200px column */
 }
 
 /* The album's cobalt board cover, its spine down the left edge. */
 .cover {
   position: relative;
   display: grid;
-  gap: 18px;
-  padding: 22px 22px 22px 34px;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-6) var(--space-6) calc(var(--space-6) + var(--space-3));
   --focus: var(--on-cover);
   color: var(--on-cover);
   background-color: var(--cover);
@@ -28,17 +28,17 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 28px;
+  gap: var(--space-7);
 }
 
 .stats {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .coverTitle {
   justify-self: start;
-  padding: 10px 14px 8px;
+  padding: var(--space-3) var(--space-4) var(--space-2);
   color: var(--cover);
   background: var(--sticker);
   border-radius: var(--r-md);
@@ -58,7 +58,7 @@
 }
 
 .volume {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   font: 600 var(--fs-12) var(--font-ui);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -72,8 +72,8 @@
 }
 
 .slaps > * + * {
-  margin-left: -12px;
-  margin-top: 36px;
+  margin-left: -12px; /* token-exempt: sticker overlap */
+  margin-top: 36px; /* token-exempt: sticker stagger */
 }
 
 .stickerLink {
@@ -93,7 +93,7 @@
 
 .startHere {
   display: inline-block;
-  padding: 12px 16px 10px;
+  padding: var(--space-3) var(--space-4);
   font: var(--type-name);
   color: var(--on-pink);
   text-decoration: none;
@@ -142,7 +142,7 @@
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .bar > i {
@@ -178,7 +178,7 @@
 .card {
   display: grid;
   gap: var(--space-3);
-  padding: 18px;
+  padding: var(--space-5);
   color: var(--ink);
   background: var(--card);
   border-radius: var(--r-lg);
@@ -212,7 +212,7 @@
 .week {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .week > i {
@@ -236,12 +236,12 @@
 .facts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
 }
 
 .facts > div {
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   background: var(--card-2);
   border-radius: var(--r-sm);
 }
@@ -265,7 +265,7 @@
 
   .band {
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 14px 12px;
+    gap: var(--space-4) var(--space-3);
   }
 
   .stats {
@@ -280,16 +280,16 @@
 
 @media (max-width: 760px) {
   .page {
-    padding: var(--space-4) var(--space-4) 40px;
+    padding: var(--space-4) var(--space-4) var(--space-10);
   }
 
   .cover {
-    padding: 18px 16px 18px 28px;
+    padding: var(--space-5) var(--space-4) var(--space-5) var(--space-7);
   }
 
   .desk {
-    gap: 22px;
-    margin-top: 22px;
+    gap: var(--space-6);
+    margin-top: var(--space-6);
   }
 
   .total strong {

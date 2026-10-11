@@ -3,7 +3,7 @@
   place-items: center;
   width: 92px;
   height: 92px;
-  padding: 8px;
+  padding: var(--space-2);
   text-align: center;
   font: var(--type-label);
   color: var(--pink);

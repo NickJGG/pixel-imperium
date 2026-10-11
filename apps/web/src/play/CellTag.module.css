@@ -2,7 +2,7 @@
 .bubble {
   --tone: var(--red);
   margin: 0;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   font: 400 var(--fs-14)/1.35 var(--font-ui);
   color: var(--ink);
   background: color-mix(in srgb, var(--tone) 22%, var(--card-2));

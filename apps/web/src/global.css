@@ -63,7 +63,7 @@ a:where([data-variant]) {
   border-radius: var(--r-pill);
   box-shadow: 0 var(--press) 0 var(--btn-edge);
   min-height: 44px;
-  padding: 0 20px;
+  padding: 0 var(--space-5);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -77,7 +77,7 @@ a:where([data-variant]) {
 
 :is(button, a):where([data-size='compact']) {
   min-height: 36px;
-  padding: 0 16px;
+  padding: 0 var(--space-4);
   font-size: var(--fs-14);
 }
 

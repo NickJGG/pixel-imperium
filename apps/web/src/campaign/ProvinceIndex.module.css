@@ -1,6 +1,6 @@
 .index {
   display: grid;
-  gap: 6px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -11,8 +11,8 @@
   display: grid;
   grid-template-columns: 12px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 6px 10px;
-  padding: 6px 10px;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
   font: 600 var(--fs-16) var(--font-ui);
   background: var(--on-cover-tint);
   border-radius: var(--r-sm);
@@ -49,12 +49,12 @@
 .index small {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-2);
   font: var(--type-kicker);
 }
 
 .complete {
-  padding: 3px 6px 2px;
+  padding: 3px var(--space-2) 2px;
   font-size: var(--fs-10);
 }
 
@@ -86,8 +86,8 @@
 
 .index[data-layout='row'] li {
   grid-template-columns: 12px minmax(0, 1fr);
-  gap: 2px 8px;
-  padding: 7px 10px 6px;
+  gap: 2px var(--space-2);
+  padding: var(--space-2) var(--space-3);
   font-size: var(--fs-14);
 }
 
@@ -117,7 +117,7 @@
   }
 
   .index[data-layout='row'] li {
-    padding: 6px 8px 5px;
+    padding: var(--space-2);
     font-size: var(--fs-12);
   }
 }

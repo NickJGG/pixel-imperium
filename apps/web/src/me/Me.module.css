@@ -1,16 +1,16 @@
 .page {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-6) var(--space-4) 56px;
+  padding: var(--space-6) var(--space-4) var(--space-14);
 }
 
 /* The album's inside back cover: cobalt board, its spine down the right edge. */
 .backCover {
   display: grid;
-  gap: 18px;
+  gap: var(--space-5);
   width: min(960px, 100%);
   margin: 0 auto;
-  padding: 22px 34px 24px 22px;
+  padding: var(--space-6) calc(var(--space-6) + var(--space-3)) var(--space-6) var(--space-6);
   --focus: var(--on-cover);
   color: var(--on-cover);
   background-color: var(--cover);
@@ -45,7 +45,7 @@
 
 .card {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
   padding: var(--space-4);
   color: var(--ink);
   background: var(--card);
@@ -85,7 +85,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   font-size: var(--fs-16);
 }
 
@@ -146,8 +146,8 @@
 
 .seg {
   display: inline-flex;
-  gap: 4px;
-  padding: 4px;
+  gap: var(--space-1);
+  padding: var(--space-1);
   background: var(--card-2);
   border-radius: var(--r-pill);
   box-shadow: 0 3px 0 var(--line-soft);
@@ -242,7 +242,7 @@
 .card .handleInput input {
   flex: 1;
   min-height: 0;
-  padding: 10px 2px;
+  padding: var(--space-3) 2px;
   font: var(--type-heading);
   letter-spacing: -0.03em;
   background: transparent;
@@ -278,7 +278,7 @@
 .picker {
   width: min(460px, 100%);
   margin: 0 auto;
-  padding: 26px 22px 20px;
+  padding: var(--space-7) var(--space-6) var(--space-5);
   border-radius: var(--r-xl);
   box-shadow: 0 6px 0 var(--shade);
 }
@@ -289,11 +289,11 @@
 
 @media (max-width: 760px) {
   .page {
-    padding: var(--space-4) var(--space-4) 40px;
+    padding: var(--space-4) var(--space-4) var(--space-10);
   }
 
   .backCover {
-    padding: 18px 26px 20px 16px;
+    padding: var(--space-5) var(--space-7) var(--space-5) var(--space-4);
   }
 
   .heading {

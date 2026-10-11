@@ -2,7 +2,7 @@
 .glyph {
   display: none;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-2);
   font: 700 var(--fs-12)/1 var(--font-ui);
   white-space: nowrap;
   pointer-events: none;
@@ -48,7 +48,7 @@
 
 .glyph > b[data-wide] {
   width: auto;
-  padding: 0 6px;
+  padding: 0 var(--space-2);
 }
 
 /* Outranks the toolbars' `.pill > button svg`, for a glyph pinned on a tool. */
@@ -81,7 +81,7 @@
 }
 
 .panelTag > .glyph {
-  padding: 3px 9px 3px 3px;
+  padding: 3px var(--space-3) 3px 3px;
   color: var(--ink);
   background: var(--card);
   border-radius: var(--r-pill);
@@ -102,7 +102,7 @@
 .list li {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .list .glyph {

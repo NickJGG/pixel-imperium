@@ -1,7 +1,7 @@
 .sticker {
   position: relative;
   display: inline-block;
-  padding: 4px;
+  padding: var(--space-1);
   background: var(--sticker);
   border-radius: var(--r-sm);
   transform: rotate(var(--tilt, 0deg));
