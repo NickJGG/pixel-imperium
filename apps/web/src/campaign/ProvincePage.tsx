@@ -1,47 +1,94 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { type CSSProperties, Fragment, type ReactNode, useEffect, useRef } from 'react'
+import { type CSSProperties, Fragment, type ReactNode, useEffect, useRef, useState } from 'react'
 import type { Campaign, Province, Tier } from '@pixel-imperium/protocol'
 import { Lock } from '../album/Lock.tsx'
 import { Stamp } from '../album/Stamp.tsx'
 import { useAccount } from '../account.ts'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import type { ProgressStorage } from '../play/progress-storage.ts'
+import { play } from '../sound.ts'
+import { markConquestsSeen, unseenConquests } from './conquests-seen.ts'
 import { NextUp } from './NextUp.tsx'
 import { type CampaignProgress, campaignProgress, isOpen, tierGroups } from './progress.ts'
 import { PuzzleSlot } from './PuzzleSlot.tsx'
-import { Curtain, Spine, World, Worlds, morph, morphName } from './worlds/Worlds.tsx'
+import { Curtain, Spine, World, Worlds, morph, morphName, usePhone } from './worlds/Worlds.tsx'
 import styles from './Province.module.css'
 
 /**
- * The album: one province's page at a time, every other province a spine beside it. Moving to another province
- * (a spine, ←/→, LB/RB) replaces this page in history, so Back leaves the album in one step.
+ * The album: one province's page at a time, every other province a spine beside it; on a phone, a carousel of
+ * whole pages. Moving to another province (a spine, a swipe, ←/→, LB/RB) replaces this page in history, so Back
+ * leaves the album in one step.
+ * The first time it shows the province a Conquest opened, that Conquest is unveiled: the Conquered stamp slams
+ * onto the conquered province and the fog drops off the new one. On a phone that's two beats: the stamp on the
+ * conquered page, then a glide over to the new one as its fog drops.
  */
-export function ProvincePage({
+export function ProvincePage(props: {
+  campaign: Campaign
+  province: Province
+  /** Dev: replays the unveil for this conquered province id, or `true` for the latest conquered one. */
+  previewConquest?: string | true | undefined
+}) {
+  const { generation } = useAccount()
+  return <Album key={`${generation}:${props.campaign.id}`} {...props} />
+}
+
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/** How long a phone holds on the conquered page for its stamp before gliding on to the province it opened. */
+const STAMP_BEAT = 900
+
+function Album({
   campaign,
   province,
   previewConquest,
 }: {
   campaign: Campaign
   province: Province
-  /** Dev: opens the province, locked or not, and drops the fog off it as a Conquest would. */
   previewConquest?: string | true | undefined
 }) {
   const { storage } = useAccount()
   const navigate = useNavigate()
+  const phone = usePhone()
   const progress = campaignProgress(campaign, storage)
   const index = campaign.provinces.indexOf(province)
-  const { state } = progress.provinces[index]!
 
-  const step = (dir: -1 | 1) => {
-    const to = campaign.provinces[index + dir]
-    if (!to) return
+  const preview = previewConquest !== undefined
+  const [unveil, setUnveil] = useState<ReadonlySet<string>>(() => {
+    const conquered = campaign.provinces.filter((_, i) => progress.provinces[i]!.state === 'conquered').map(p => p.id)
+    const ids = previewConquest === true ? conquered.slice(-1) : previewConquest ? [previewConquest] : null
+    return new Set(ids ?? unseenConquests(campaign.id, conquered))
+  })
+  const opened = campaign.provinces.findLast((_, i) => i > 0 && unveil.has(campaign.provinces[i - 1]!.id))
+  const unveiling = opened === province
+  // Leaving the province it opened ends the unveil, so coming back doesn't replay it.
+  const [shown, setShown] = useState(province)
+  if (shown !== province) {
+    setShown(province)
+    if (shown === opened) setUnveil(new Set())
+  }
+  const [stampBeat, setStampBeat] = useState(() => unveiling && phone && !reducedMotion())
+
+  useEffect(() => {
+    if (!unveiling) return
+    if (!preview) markConquestsSeen(campaign.id, [...unveil])
+    if (!reducedMotion()) play('thunk')
+  }, [unveiling, preview, campaign.id, unveil])
+  useEffect(() => {
+    if (!stampBeat) return
+    const t = setTimeout(() => setStampBeat(false), STAMP_BEAT)
+    return () => clearTimeout(t)
+  }, [stampBeat])
+
+  const goTo = (to: Province | undefined, viewTransition: boolean) => {
+    if (!to || to === province) return
     void navigate({
       to: '/c/$campaignId/$provinceId',
       params: { campaignId: campaign.id, provinceId: to.id },
       replace: true,
-      viewTransition: morph(),
+      viewTransition,
     })
   }
+  const step = (dir: -1 | 1) => goTo(campaign.provinces[index + dir], morph())
   usePadPage({ step })
   const stepRef = useRef(step)
   stepRef.current = step
@@ -59,33 +106,75 @@ export function ProvincePage({
     return () => removeEventListener('keydown', onKey)
   }, [])
 
-  const preview = previewConquest !== undefined
+  const conquered = (p: Province) =>
+    progress.provinces[campaign.provinces.indexOf(p)]!.state === 'conquered' || unveil.has(p.id)
+  const thunk = (p: Province) => unveiling && unveil.has(p.id)
+  const page = (p: Province) => {
+    const i = campaign.provinces.indexOf(p)
+    const current = p === province
+    const start = stampBeat ? i === index - 1 : current
+    return isOpen(progress.provinces[i]!.state) || p === opened ? (
+      <OpenProvince
+        key={p.id}
+        campaign={campaign}
+        province={p}
+        progress={progress}
+        storage={storage}
+        current={current}
+        start={start}
+        stamp={conquered(p) && <ConqueredStamp thunk={thunk(p)} className={styles.headStamp} />}
+        curtain={unveiling && current ? (phone ? 'late' : true) : false}
+      />
+    ) : (
+      <LockedColumn key={p.id} campaign={campaign} province={p} progress={progress} current={current} start={start} />
+    )
+  }
+
+  if (phone) {
+    return (
+      <main className={styles.page}>
+        <Worlds carousel onSnap={i => goTo(campaign.provinces[i], false)}>
+          {campaign.provinces.map(page)}
+        </Worlds>
+      </main>
+    )
+  }
   return (
-    <Zoomed campaign={campaign} province={province} progress={progress}>
-      {isOpen(state) || preview ? (
-        <OpenProvince campaign={campaign} province={province} progress={progress} storage={storage} curtain={preview} />
-      ) : (
-        <LockedColumn campaign={campaign} province={province} progress={progress} />
-      )}
+    <Zoomed campaign={campaign} province={province} progress={progress} conquered={conquered} thunk={thunk}>
+      {page(province)}
     </Zoomed>
+  )
+}
+
+function ConqueredStamp({ thunk, className }: { thunk: boolean; className: string | undefined }) {
+  return (
+    <Stamp thunk={thunk} className={className}>
+      Conquered
+    </Stamp>
   )
 }
 
 /**
  * A province's page as Worlds zoomed in on it: its column fills the screen, the others stand as thin spines
- * either side. `children` is its column.
+ * either side, the conquered ones stamped. `children` is its column.
  */
 function Zoomed({
   campaign,
   province,
   progress,
+  conquered,
+  thunk,
   children,
 }: {
   campaign: Campaign
   province: Province
   progress: CampaignProgress
+  conquered: (p: Province) => boolean
+  /** Whose stamp slams down as it appears. */
+  thunk: (p: Province) => boolean
   children: ReactNode
 }) {
+  const phone = usePhone()
   return (
     <main className={styles.page}>
       <Worlds>
@@ -101,6 +190,7 @@ function Zoomed({
               state={state}
               count={`${solved}/${total}`}
               thin
+              stamp={!phone && conquered(p) && <ConqueredStamp thunk={thunk(p)} className={styles.spineStamp} />}
             />
           )
         })}
@@ -123,13 +213,23 @@ function OpenProvince({
   province,
   progress,
   storage,
+  current,
+  start,
+  stamp,
   curtain,
 }: {
   campaign: Campaign
   province: Province
   progress: CampaignProgress
   storage: ProgressStorage
-  curtain: boolean
+  /** The page the URL names, holding the pad's default. */
+  current: boolean
+  /** Where a carousel rests. */
+  start: boolean
+  /** The Conquered stamp, beside the count on a phone; on a desktop the spine carries it. */
+  stamp: ReactNode
+  /** The fog dropping off it, `late` to wait for a carousel's glide over. */
+  curtain: boolean | 'late'
 }) {
   const index = campaign.provinces.indexOf(province)
   const { state, solved, total } = progress.provinces[index]!
@@ -139,7 +239,7 @@ function OpenProvince({
   const id = `province-${province.id}`
 
   return (
-    <World index={index} labelledBy={id} style={morphName(province)}>
+    <World index={index} labelledBy={id} style={morphName(province)} start={start}>
       <div className={styles.zoom}>
         <header className={styles.head}>
           <div className={styles.title}>
@@ -151,6 +251,7 @@ function OpenProvince({
               {province.name}
             </h1>
           </div>
+          {stamp}
           <span className={styles.count}>
             {solved} / {total}
           </span>
@@ -176,7 +277,7 @@ function OpenProvince({
                         number={number}
                         storage={storage}
                         next={puzzle === next}
-                        padDefault={puzzle === (next ?? province.puzzles[0])}
+                        padDefault={current && puzzle === (next ?? province.puzzles[0])}
                       />
                     </li>
                   ))}
@@ -203,16 +304,21 @@ function OpenProvince({
           )
         )}
       </div>
-      {curtain && <Curtain />}
+      {curtain && <Curtain late={curtain === 'late'} />}
     </World>
   )
 }
 
 /** Shown in place of a puzzle in a province the player hasn't reached: the province's page in the fog. */
 export function LockedProvince(props: { campaign: Campaign; province: Province; progress: CampaignProgress }) {
+  const { campaign, progress } = props
   return (
-    <Zoomed {...props}>
-      <LockedColumn {...props} />
+    <Zoomed
+      {...props}
+      conquered={p => progress.provinces[campaign.provinces.indexOf(p)]!.state === 'conquered'}
+      thunk={() => false}
+    >
+      <LockedColumn {...props} current start />
     </Zoomed>
   )
 }
@@ -222,18 +328,23 @@ function LockedColumn({
   campaign,
   province,
   progress,
+  current,
+  start,
 }: {
   campaign: Campaign
   province: Province
   progress: CampaignProgress
+  current: boolean
+  start: boolean
 }) {
   const index = campaign.provinces.indexOf(province)
+  const titleId = `locked-${province.id}`
   const active = campaign.provinces.find((_, i) => progress.provinces[i]!.state === 'active')
   const sizes = [...province.puzzles].sort((a, b) => a.width * a.height - b.width * b.height).map(p => `${p.width}×${p.height}`)
   const range = sizes.length === 0 ? '' : sizes[0] === sizes.at(-1) ? sizes[0] : `${sizes[0]} to ${sizes.at(-1)}`
 
   return (
-    <World index={index} fog labelledBy="locked-title" style={morphName(province)}>
+    <World index={index} fog labelledBy={titleId} style={morphName(province)} start={start}>
       <div className={`${styles.zoom} ${styles.locked}`}>
         <div className={styles.sealed} aria-hidden="true">
           <div className={styles.ghosts}>
@@ -250,7 +361,7 @@ function LockedColumn({
         </div>
         <div className={styles.lockedMsg}>
           <p className={styles.kicker}>Province {index + 1}</p>
-          <h1 id="locked-title" className={styles.name}>
+          <h1 id={titleId} className={styles.name}>
             {province.name}
           </h1>
           <p>
@@ -267,6 +378,7 @@ function LockedColumn({
               viewTransition={morph()}
               className={styles.paperLink}
               data-variant="paper"
+              data-pad-default={current || undefined}
             >
               Back to {active.name.replace(/^The /, 'the ')}
             </Link>

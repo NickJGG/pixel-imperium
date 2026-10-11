@@ -125,6 +125,20 @@
   font-size: var(--fs-10);
 }
 
+/* A conquered province's stamp: on its spine on a desktop, beside its count on a phone. */
+.spineStamp,
+.head .headStamp {
+  flex: none;
+  width: 60px;
+  height: 60px;
+  padding: var(--space-1);
+  font-size: var(--fs-10);
+}
+
+.head .headStamp {
+  display: none;
+}
+
 /* A locked province: its slots blurred out under a round seal. */
 .locked {
   grid-template-rows: none;
@@ -215,6 +229,11 @@
 
   .head {
     flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .head .headStamp {
+    display: inline-grid;
   }
 
   .name {

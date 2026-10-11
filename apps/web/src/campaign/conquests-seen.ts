@@ -22,7 +22,7 @@ function save(seen: Seen): void {
   } catch {}
 }
 
-/** The `conquered` province ids home hasn't unveiled yet. */
+/** The `conquered` province ids the province page hasn't unveiled yet. */
 export function unseenConquests(campaignId: string, conquered: readonly string[]): string[] {
   const seen = load()
   const ids = seen[campaignId]

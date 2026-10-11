@@ -56,6 +56,10 @@
   --spine-w: 72px;
 }
 
+.spine[data-stamped][data-thin] {
+  --spine-w: 84px;
+}
+
 .spine[data-state='locked'],
 .world[data-fog] {
   color: var(--ink-soft);
@@ -118,6 +122,11 @@
 .curtainLock {
   font-size: 40px; /* token-exempt: icon size */
   opacity: 0.7;
+}
+
+/* After the stamp's beat and the carousel's glide over. */
+.curtain[data-late] {
+  animation-delay: 1.7s;
 }
 
 @keyframes curtain {
