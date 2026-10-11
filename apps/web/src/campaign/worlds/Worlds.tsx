@@ -14,6 +14,12 @@ import styles from './Worlds.module.css'
 
 const PHONE = '(max-width: 720px)'
 
+/** Whether a move between provinces morphs, the clicked column widening into the page: not under reduced motion. */
+export const morph = () => !matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/** Pairs a province's column across a morph, wide on one page and a spine on the other. */
+export const morphName = (province: Pick<Province, 'id'>): CSSProperties => ({ viewTransitionName: `province-${province.id}` })
+
 export function Worlds({
   children,
   className,
@@ -92,7 +98,8 @@ const stateLabel: Record<ProvinceState, string> = {
 
 /**
  * A narrow column standing on its edge: the province's name leaning sideways, then a count, or the lock with
- * "Next" on the province that opens after the active one. A locked one is in fog. Links to the province's page.
+ * "Next" on the province that opens after the active one. A locked one is in fog. Links to the province's page,
+ * morphing into it in place of this one.
  */
 export function Spine({
   campaignId,
@@ -101,8 +108,6 @@ export function Spine({
   state,
   count,
   thin = false,
-  children,
-  className,
 }: {
   campaignId: string
   province: Province
@@ -112,22 +117,20 @@ export function Spine({
   count?: string | undefined
   /** Beside an opened province: a smaller name. */
   thin?: boolean
-  /** Above the name, e.g. a conquered province's collage. */
-  children?: ReactNode
-  className?: string | undefined
 }) {
   const open = state === 'active' || state === 'conquered'
   return (
     <Link
       to="/c/$campaignId/$provinceId"
       params={{ campaignId, provinceId: province.id }}
-      className={[styles.world, styles.spine, className].filter(Boolean).join(' ')}
-      style={paperStyle(index)}
+      replace
+      viewTransition={morph()}
+      className={`${styles.world} ${styles.spine}`}
+      style={{ ...paperStyle(index), ...morphName(province) }}
       data-state={state}
       data-thin={thin || undefined}
       aria-label={`${province.name}, ${stateLabel[state]}`}
     >
-      {children}
       <span className={styles.name}>{province.name}</span>
       {open ? (
         count && <span className={styles.count}>{count}</span>

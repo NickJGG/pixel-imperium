@@ -26,10 +26,7 @@ const DONE = "That's everything you need."
 
 export async function loadHandoff(back: string | undefined): Promise<Handoff> {
   const puzzleId = back?.match(/^\/play\/(.+)$/)?.[1]
-  const fallback: Handoff =
-    back && back !== '/'
-      ? { to: back, heading: 'Back to the album.', text: DONE, action: 'Back to the album' }
-      : { to: '/', heading: 'Back to the cover.', text: DONE, action: 'Back to the cover' }
+  const fallback: Handoff = { to: back ?? '/', heading: 'Back to the album.', text: DONE, action: 'Back to the album' }
   const page = back?.match(/^\/c\/([\w-]+)\/([\w-]+)$/)
   if (page) return provinceHandoff(page[1]!, page[2]!, fallback)
   if (back && back !== '/' && !puzzleId) return fallback
@@ -71,7 +68,7 @@ export interface LearnBack {
 
 export async function loadLearnBack(back: string | undefined): Promise<LearnBack> {
   const to = back ?? '/'
-  const label = to === '/' || /^\/c\/[\w-]+$/.test(to) ? 'Back to the cover' : 'Back to the album'
+  const label = 'Back to the album'
   const puzzleId = to.match(/^\/play\/(.+)$/)?.[1]
   const page = to.match(/^\/c\/([\w-]+)(?:\/([\w-]+))?$/)
   try {

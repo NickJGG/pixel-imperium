@@ -393,8 +393,8 @@ function Play({
       <PadGlyph button="A" />
     </Link>
   ) : (
-    <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} data-variant="primary" data-pad-default>
-      Back to the cover
+    <Link to="/" data-variant="primary" data-pad-default>
+      To {campaign.provinces.at(-1)!.name.replace(/^The /, 'the ')}
       <PadGlyph button="A" />
     </Link>
   )

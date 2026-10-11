@@ -1,34 +1,72 @@
-import { Link } from '@tanstack/react-router'
-import { type CSSProperties, Fragment, type ReactNode } from 'react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { type CSSProperties, Fragment, type ReactNode, useEffect, useRef } from 'react'
 import type { Campaign, Province, Tier } from '@pixel-imperium/protocol'
 import { Lock } from '../album/Lock.tsx'
 import { Stamp } from '../album/Stamp.tsx'
 import { useAccount } from '../account.ts'
+import { usePadPage } from '../pad/PadProvider.tsx'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { NextUp } from './NextUp.tsx'
 import { type CampaignProgress, campaignProgress, isOpen, tierGroups } from './progress.ts'
 import { PuzzleSlot } from './PuzzleSlot.tsx'
-import { Curtain, Spine, World, Worlds } from './worlds/Worlds.tsx'
+import { Curtain, Spine, World, Worlds, morph, morphName } from './worlds/Worlds.tsx'
 import styles from './Province.module.css'
 
+/**
+ * The album: one province's page at a time, every other province a spine beside it. Moving to another province
+ * (a spine, ←/→, LB/RB) replaces this page in history, so Back leaves the album in one step.
+ */
 export function ProvincePage({
   campaign,
   province,
-  previewUnlock = false,
+  previewConquest,
 }: {
   campaign: Campaign
   province: Province
   /** Dev: opens the province, locked or not, and drops the fog off it as a Conquest would. */
-  previewUnlock?: boolean
+  previewConquest?: string | true | undefined
 }) {
   const { storage } = useAccount()
+  const navigate = useNavigate()
   const progress = campaignProgress(campaign, storage)
-  const { state } = progress.provinces[campaign.provinces.indexOf(province)]!
+  const index = campaign.provinces.indexOf(province)
+  const { state } = progress.provinces[index]!
 
-  if (!isOpen(state) && !previewUnlock) return <LockedProvince campaign={campaign} province={province} progress={progress} />
+  const step = (dir: -1 | 1) => {
+    const to = campaign.provinces[index + dir]
+    if (!to) return
+    void navigate({
+      to: '/c/$campaignId/$provinceId',
+      params: { campaignId: campaign.id, provinceId: to.id },
+      replace: true,
+      viewTransition: morph(),
+    })
+  }
+  usePadPage({ step })
+  const stepRef = useRef(step)
+  stepRef.current = step
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+      const target = e.target as HTMLElement
+      if (target.closest('input, textarea, select, [contenteditable], dialog')) return
+      if (document.querySelector('dialog[open]')) return
+      e.preventDefault()
+      stepRef.current(e.key === 'ArrowLeft' ? -1 : 1)
+    }
+    addEventListener('keydown', onKey)
+    return () => removeEventListener('keydown', onKey)
+  }, [])
+
+  const preview = previewConquest !== undefined
   return (
     <Zoomed campaign={campaign} province={province} progress={progress}>
-      <OpenProvince campaign={campaign} province={province} progress={progress} storage={storage} curtain={previewUnlock} />
+      {isOpen(state) || preview ? (
+        <OpenProvince campaign={campaign} province={province} progress={progress} storage={storage} curtain={preview} />
+      ) : (
+        <LockedColumn campaign={campaign} province={province} progress={progress} />
+      )}
     </Zoomed>
   )
 }
@@ -101,7 +139,7 @@ function OpenProvince({
   const id = `province-${province.id}`
 
   return (
-    <World index={index} labelledBy={id}>
+    <World index={index} labelledBy={id} style={morphName(province)}>
       <div className={styles.zoom}>
         <header className={styles.head}>
           <div className={styles.title}>
@@ -170,8 +208,17 @@ function OpenProvince({
   )
 }
 
-/** Shown in place of a province, or one of its puzzles, that the player hasn't reached: its column in the fog. */
-export function LockedProvince({
+/** Shown in place of a puzzle in a province the player hasn't reached: the province's page in the fog. */
+export function LockedProvince(props: { campaign: Campaign; province: Province; progress: CampaignProgress }) {
+  return (
+    <Zoomed {...props}>
+      <LockedColumn {...props} />
+    </Zoomed>
+  )
+}
+
+/** A province the player hasn't reached: its column in the fog. */
+function LockedColumn({
   campaign,
   province,
   progress,
@@ -186,46 +233,46 @@ export function LockedProvince({
   const range = sizes.length === 0 ? '' : sizes[0] === sizes.at(-1) ? sizes[0] : `${sizes[0]} to ${sizes.at(-1)}`
 
   return (
-    <Zoomed campaign={campaign} province={province} progress={progress}>
-      <World index={index} fog labelledBy="locked-title">
-        <div className={`${styles.zoom} ${styles.locked}`}>
-          <div className={styles.sealed} aria-hidden="true">
-            <div className={styles.ghosts}>
-              {province.puzzles.map(p => (
-                <i key={p.id} />
-              ))}
-            </div>
-            <div className={styles.seal}>
-              <span>
-                <Lock className={styles.sealLock} />
-                Locked
-              </span>
-            </div>
+    <World index={index} fog labelledBy="locked-title" style={morphName(province)}>
+      <div className={`${styles.zoom} ${styles.locked}`}>
+        <div className={styles.sealed} aria-hidden="true">
+          <div className={styles.ghosts}>
+            {province.puzzles.map(p => (
+              <i key={p.id} />
+            ))}
           </div>
-          <div className={styles.lockedMsg}>
-            <p className={styles.kicker}>Province {index + 1}</p>
-            <h1 id="locked-title" className={styles.name}>
-              {province.name}
-            </h1>
-            <p>
-              {progress.provinces[index]!.state === 'next' && active
-                ? `${province.name} opens once you conquer ${active.name}.`
-                : 'This province is still in the fog. Conquer the provinces before it first.'}
-              {range && ` ${province.puzzles.length} slots, ${range}.`}
-            </p>
-            {active && (
-              <Link
-                to="/c/$campaignId/$provinceId"
-                params={{ campaignId: campaign.id, provinceId: active.id }}
-                className={styles.paperLink}
-                data-variant="paper"
-              >
-                Back to {active.name.replace(/^The /, 'the ')}
-              </Link>
-            )}
+          <div className={styles.seal}>
+            <span>
+              <Lock className={styles.sealLock} />
+              Locked
+            </span>
           </div>
         </div>
-      </World>
-    </Zoomed>
+        <div className={styles.lockedMsg}>
+          <p className={styles.kicker}>Province {index + 1}</p>
+          <h1 id="locked-title" className={styles.name}>
+            {province.name}
+          </h1>
+          <p>
+            {progress.provinces[index]!.state === 'next' && active
+              ? `${province.name} opens once you conquer ${active.name}.`
+              : 'This province is still in the fog. Conquer the provinces before it first.'}
+            {range && ` ${province.puzzles.length} slots, ${range}.`}
+          </p>
+          {active && (
+            <Link
+              to="/c/$campaignId/$provinceId"
+              params={{ campaignId: campaign.id, provinceId: active.id }}
+              replace
+              viewTransition={morph()}
+              className={styles.paperLink}
+              data-variant="paper"
+            >
+              Back to {active.name.replace(/^The /, 'the ')}
+            </Link>
+          )}
+        </div>
+      </div>
+    </World>
   )
 }

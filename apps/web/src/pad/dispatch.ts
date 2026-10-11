@@ -23,6 +23,8 @@ export interface PadPage {
   menu?: (() => void) | undefined
   /** Holds back A, while a solve's reveal plays. */
   hold?: boolean | undefined
+  /** LB/RB's action, off a board: to the page before or after, e.g. the next province. */
+  step?: ((dir: -1 | 1) => void) | undefined
 }
 
 export interface Dispatcher {
@@ -103,6 +105,8 @@ export function createDispatcher(navigate: (href: string) => void): Dispatcher {
         if (!now?.hold && active instanceof HTMLElement) active.click()
       } else if (button === 'B') back()
       else if (button === 'View') view()
+      else if (button === 'LB') now?.step?.(-1)
+      else if (button === 'RB') now?.step?.(1)
       else if (button === 'Menu') {
         if (now?.menu) now.menu()
         else openPageMenu()

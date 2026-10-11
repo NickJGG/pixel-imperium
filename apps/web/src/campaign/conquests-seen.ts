@@ -1,6 +1,6 @@
 /**
- * Which Conquests home has already unveiled, per campaign on this device, so the unveil plays once. A campaign
- * home has never recorded starts from what's conquered now, so a save from before the unveil existed doesn't
+ * Which Conquests the province page has already unveiled, per campaign on this device, so the unveil plays once.
+ * A campaign it has never recorded starts from what's conquered now, so a save from before the unveil existed doesn't
  * replay every province it has already won.
  */
 const KEY = 'pixel-imperium:conquests-seen'

@@ -15,7 +15,7 @@ export function NotFound({ children }: { children: ReactNode }) {
         </h1>
         <p>{children}</p>
         <Link to="/" className={styles.back} data-variant="paper">
-          Back to the cover
+          Back to the album
         </Link>
       </section>
     </main>

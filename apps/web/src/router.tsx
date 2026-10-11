@@ -1,10 +1,10 @@
 import { Outlet, createRootRoute, createRoute, createRouter, notFound, redirect, useRouterState } from '@tanstack/react-router'
-import { accountReady, useAccount } from './account.ts'
+import { accountReady, getAccount, useAccount } from './account.ts'
 import { fetchCampaign, fetchCampaigns, fetchProfile, fetchPuzzle } from './api.ts'
 import { LoadError, Loading, NotFound } from './EdgeStates.tsx'
-import { CampaignPage } from './campaign/CampaignPage.tsx'
 import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
 import { ProvincePage } from './campaign/ProvincePage.tsx'
+import { campaignProgress, continueAt } from './campaign/progress.ts'
 import { ImportPrompt } from './ImportPrompt.tsx'
 import { Hud, ThumbBar } from './Hud.tsx'
 import { HandlePicker } from './me/HandlePicker.tsx'
@@ -50,7 +50,7 @@ async function loadCampaign(id: string) {
 }
 
 /**
- * Dev only: `?conquest` replays home's unveil for the latest conquered province, `?conquest=<provinceId>` for
+ * Dev only: `?conquest` replays the unveil for the latest conquered province, `?conquest=<provinceId>` for
  * that one, without marking it seen.
  */
 const unveilSearch = (search: Record<string, unknown>): { conquest?: string | true } =>
@@ -58,49 +58,53 @@ const unveilSearch = (search: Record<string, unknown>): { conquest?: string | tr
     ? { conquest: typeof search.conquest === 'string' && search.conquest !== '' ? search.conquest : true }
     : {}
 
+/** The album opens on the province being worked through, or the last once every one is conquered. */
+async function openAlbum(campaignId: string, search: { conquest?: string | true }): Promise<never> {
+  const campaign = await loadCampaign(campaignId)
+  const { storage } = getAccount()
+  const progress = campaignProgress(campaign, storage)
+  const province =
+    continueAt(campaign, progress, id => storage.loadSolved(id) !== null)?.province ?? campaign.provinces.at(-1)
+  if (!province) throw notFound()
+  throw redirect({
+    to: '/c/$campaignId/$provinceId',
+    params: { campaignId: campaign.id, provinceId: province.id },
+    search,
+    replace: true,
+  })
+}
+
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   validateSearch: unveilSearch,
-  loader: async () => {
-    const campaigns = await fetchCampaigns()
-    const id = pickCampaign(campaigns)
-    return id === null ? null : { campaign: await loadCampaign(id), campaigns }
+  beforeLoad: async ({ search }) => {
+    const id = pickCampaign(await fetchCampaigns())
+    if (id !== null) await openAlbum(id, search)
   },
-  component: () => {
-    const data = homeRoute.useLoaderData()
-    const { conquest } = homeRoute.useSearch()
-    if (!data) return <main className={styles.message}>No campaigns yet.</main>
-    return <CampaignPage {...data} previewConquest={conquest} />
-  },
+  component: () => <main className={styles.message}>No campaigns yet.</main>,
 })
 
 const campaignRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/c/$campaignId',
   validateSearch: unveilSearch,
-  loader: async ({ params }) => {
-    const [campaign, campaigns] = await Promise.all([loadCampaign(params.campaignId), fetchCampaigns()])
-    return { campaign, campaigns }
-  },
-  component: () => <CampaignPage {...campaignRoute.useLoaderData()} previewConquest={campaignRoute.useSearch().conquest} />,
+  beforeLoad: ({ params, search }) => openAlbum(params.campaignId, search),
   notFoundComponent: () => <NotFound>There’s no campaign by that name.</NotFound>,
 })
 
 const provinceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/c/$campaignId/$provinceId',
+  validateSearch: unveilSearch,
   loader: async ({ params }) => {
     const campaign = await loadCampaign(params.campaignId)
     const province = campaign.provinces.find(p => p.id === params.provinceId)
     if (!province) throw notFound()
     return { campaign, province }
   },
-  /** Dev only: `?conquest` opens the province as if a Conquest had just unlocked it, fog dropping away. */
-  validateSearch: (search: Record<string, unknown>): { conquest?: true } =>
-    import.meta.env.DEV && 'conquest' in search ? { conquest: true } : {},
   component: () => (
-    <ProvincePage {...provinceRoute.useLoaderData()} previewUnlock={provinceRoute.useSearch().conquest === true} />
+    <ProvincePage {...provinceRoute.useLoaderData()} previewConquest={provinceRoute.useSearch().conquest} />
   ),
   notFoundComponent: () => (
     <NotFound>There’s no province called “{provinceRoute.useParams().provinceId}”. It might have been renamed.</NotFound>
