@@ -113,19 +113,18 @@
 }
 
 .spine .avatar {
-  padding: 0 var(--space-4) 0 1px;
+  padding: 0 var(--space-4) 0 var(--space-1);
   font-size: var(--fs-14);
 }
 
 .face {
   display: block;
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   padding: 3px;
   background: var(--sticker);
   border-radius: 50%;
   transform: rotate(6deg);
-  box-shadow: 0 2px 0 var(--shade);
 }
 
 .face > * {
@@ -147,6 +146,7 @@
 /* Menu sheets */
 .menuRoot {
   position: relative;
+  display: flex;
 }
 
 .menu {
