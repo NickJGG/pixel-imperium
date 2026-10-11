@@ -349,7 +349,7 @@
 .minimap {
   display: block;
   border-radius: var(--r-xs);
-  outline: 1px solid #fff;
+  outline: 1px solid #fff; /* token-exempt: white frame on the minimap in both themes */
   opacity: 0;
   pointer-events: none;
   transition: opacity 200ms ease;
