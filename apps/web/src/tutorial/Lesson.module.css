@@ -1,5 +1,46 @@
 /* The Lesson screen borrows the play screen's layout (Play.module.css); this adds the coach and handoff. */
 
+/*
+ * Wide: Play's shell on the track's paper. The stage stays in flow here, so a docked beat can sit under the
+ * board; Lesson boards never zoom, so the board can't prop it open.
+ */
+.shell .surface {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--inset);
+}
+
+.shell .surface > .stage {
+  position: relative;
+  inset: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.railBody {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.railTools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.coachTrack {
+  align-self: flex-start;
+}
+
+.coachMeta {
+  margin: 0;
+  font: var(--type-kicker);
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
 /* Where the side page sits on a puzzle: the coach, then the controls card under it. */
 .side {
   flex: none;
@@ -9,7 +50,7 @@
   flex-direction: column;
 }
 
-/* On a page of the Marches. */
+/* On its track's paper. */
 .coach {
   position: relative;
   flex: 1;

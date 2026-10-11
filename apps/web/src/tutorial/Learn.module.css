@@ -1,142 +1,164 @@
 .page {
   flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Clear of the floating HUD at the top. */
+.column {
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  gap: var(--space-3);
+  height: 100%;
+  padding: calc(var(--space-14) + var(--space-10)) var(--space-3) var(--space-7);
   overflow-y: auto;
-  padding: var(--space-6) var(--space-4) var(--space-14);
 }
 
-.learn {
-  display: grid;
-  gap: var(--space-6);
-  width: min(1040px, 100%);
-  margin: 0 auto;
+.back {
+  align-self: flex-start;
+  display: inline-flex;
+  gap: var(--space-1);
+  font: var(--type-kicker);
+  text-transform: uppercase;
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.8;
 }
 
-.head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  justify-content: space-between;
-  gap: var(--space-3);
+.back:hover > span {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-.head h1 {
+.kicker {
   margin: 0;
-  font: var(--type-title);
-  letter-spacing: -0.04em;
+  font: var(--type-kicker);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
 }
 
-.head p {
-  margin: var(--space-1) 0 0;
-  color: var(--ink-soft);
-}
-
-/* A page of the album per track, the Basics on the Marches' paper and the Techniques on the Coast's. */
-.track {
-  padding: var(--space-5);
-  --focus: var(--blue);
-  color: var(--ink);
-  background-color: var(--paper);
-  background-image: var(--cover-dots-faint);
-  background-size: 10px 10px;
-  border-radius: var(--r-sm) var(--r-lg) var(--r-lg) var(--r-sm);
-  box-shadow:
-    inset 8px 0 10px -6px var(--shade),
-    0 5px 0 var(--shade);
-}
-
-.trackTop {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-1);
-}
-
-.trackTop h2 {
+.name {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
   margin: 0;
-  font: var(--type-heading);
-  letter-spacing: -0.04em;
+  font: var(--type-hero);
+  font-size: clamp(var(--fs-40), 4.5vw, 4rem);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
 }
 
-.trackTop .complete {
+.name > * {
+  letter-spacing: normal;
+}
+
+.name .complete {
   background: var(--gold);
   color: var(--on-gold);
 }
 
-.meta {
-  margin: 0 0 var(--space-4);
-  color: var(--ink-soft);
-}
-
-.label {
-  font: var(--type-kicker);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
+.blurb {
+  max-width: 44ch;
+  margin: 0;
+  font: var(--type-body);
+  opacity: 0.8;
 }
 
 .lessons {
   list-style: none;
-  margin: 0;
-  padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
   gap: var(--space-4);
+  max-width: 640px;
+  margin: var(--space-3) 0;
+  padding: 0;
 }
 
 .lesson {
-  position: relative;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--space-2);
   height: 100%;
-  padding: var(--space-3);
   color: inherit;
   text-decoration: none;
-  background: var(--card);
-  border-radius: var(--r-md);
-  box-shadow: 0 3px 0 var(--shade);
+  border-radius: var(--r-sm);
 }
 
-.lesson:hover {
-  outline: 2px solid var(--tab);
+.lesson:hover .caption b {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-.lesson[data-current] {
-  outline: 3px solid var(--pink);
+.caption {
+  display: grid;
+  gap: var(--space-1);
+  font: var(--type-micro);
+  text-transform: uppercase;
+  opacity: 0.85;
 }
 
-/* The current lesson's pink ring would hide focus: keep it inside, and ring focus outside it. */
-.lesson[data-current]:focus-visible,
-:root[data-pad] .lesson[data-current]:focus {
-  outline: 3px solid var(--focus, var(--blue));
-  outline-offset: 4px;
-  box-shadow:
-    inset 0 0 0 3px var(--pink),
-    0 3px 0 var(--shade);
+.caption b {
+  font: var(--type-small);
+  line-height: 1.2;
+  text-transform: none;
 }
 
-.here {
-  position: absolute;
-  top: -10px;
-  left: 10px;
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.actions > a {
+  min-height: 56px;
+  padding: 0 var(--space-6);
+}
+
+.actions small {
+  font: var(--type-small);
+  opacity: 0.8;
+}
+
+/* A Lesson's slot, shared with the Lesson's filmstrip. */
+.slot {
+  position: relative;
+  display: block;
+}
+
+/* A done Lesson's picture printed in its slot: the slot's edge kept, and none of a sticker's backing. */
+.slot > .print {
+  padding: 14%;
+  border: 2px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  background: color-mix(in srgb, var(--sticker) 55%, transparent);
+}
+
+.slot > .print canvas {
+  display: block;
+  image-rendering: pixelated;
 }
 
 .check {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: -6px;
+  right: -6px;
   z-index: 1;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   display: grid;
   place-items: center;
-  font: 700 14px var(--font-ui); /* token-exempt: check glyph in a fixed circle */
+  font: 700 13px var(--font-ui); /* token-exempt: check glyph in a fixed circle */
   color: var(--on-ok);
   background: var(--ok);
   border-radius: 50%;
@@ -159,170 +181,25 @@
   }
 }
 
-.thumb {
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  padding: var(--space-3);
-  background: var(--board-bg);
-  border-radius: var(--r-sm);
-}
-
-.thumb canvas,
-.thumb svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-
-.gridLines {
-  stroke: var(--board-line);
-  stroke-width: 0.08;
-}
-
-.gridEdge {
-  fill: none;
-  stroke: var(--line-soft);
-  stroke-width: 0.15;
-}
-
-.title {
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-.size {
-  font: var(--type-kicker);
-  color: var(--ink-soft);
-}
-
-/* Home's Learn card. */
-.cardHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.cardHead a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.cardHead a:hover {
-  color: var(--ink);
-}
-
-.cardHead .complete {
-  background: var(--gold);
-  color: var(--on-gold);
-}
-
-.cardFoot {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.mini {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.miniHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin: 0;
-  font: 600 var(--fs-16) var(--font-ui);
-}
-
-.miniHead > span {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.miniHead > span > * {
-  padding: 3px var(--space-2) 2px;
-  font-size: var(--fs-10);
-}
-
-.miniHead small {
-  flex: none;
-  font: var(--type-kicker);
-  color: var(--ink-soft);
-}
-
-.miniLessons {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--space-3);
-}
-
-.miniLesson {
-  position: relative;
-  display: grid;
-  gap: var(--space-1);
-  height: 100%;
-  padding: var(--space-2);
-  font: 600 var(--fs-12)/1.15 var(--font-ui);
-  color: var(--ink-soft);
-  text-align: center;
-  text-decoration: none;
-  background: var(--card-2);
-  border-radius: var(--r-md);
-  box-shadow: 0 3px 0 var(--shade);
-}
-
-.miniLesson:hover {
-  color: var(--ink);
-}
-
-.miniLesson canvas,
-.miniLesson svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  image-rendering: pixelated;
-}
-
-.miniLesson[data-current] {
-  outline: 3px solid var(--pink);
-}
-
-.miniLesson[data-current]:focus-visible,
-:root[data-pad] .miniLesson[data-current]:focus {
-  outline: 3px solid var(--focus, var(--blue));
-  outline-offset: 4px;
-  box-shadow:
-    inset 0 0 0 3px var(--pink),
-    0 3px 0 var(--shade);
-}
-
-.miniLesson .check {
-  top: -6px;
-  right: -6px;
-  width: 20px;
-  height: 20px;
-  font-size: 12px; /* token-exempt: check glyph in a fixed circle */
-}
-
 /* On the How to play link, sized to sit inside it. */
 span.newTag {
   padding: 3px var(--space-2) 2px;
   font-size: var(--fs-10);
 }
 
-@media (max-width: 560px) {
+@media (max-width: 720px) {
+  .column {
+    height: auto;
+    padding: var(--space-6) var(--space-4);
+    overflow: visible;
+  }
+
+  .name {
+    font-size: var(--fs-40);
+  }
+
   .lessons {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

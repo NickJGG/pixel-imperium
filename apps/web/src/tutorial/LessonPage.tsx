@@ -17,6 +17,7 @@ import { PanelTag } from '../pad/PadGlyph.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
 import { firstFocusable, focusDefault } from '../pad/spatial.ts'
+import { Hud, HudPills } from '../Hud.tsx'
 import { REVEAL_GUARD_MS } from '../pad/tuning.ts'
 import { useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
@@ -26,7 +27,7 @@ import { ColClues, RowClues } from '../play/Clues.tsx'
 import { ControlsCard } from '../play/ControlsCard.tsx'
 import { useBoardGestures } from '../play/gestures.ts'
 import { HintButton, cellHintText } from '../play/HintButton.tsx'
-import { SIDE_PAGE_GAP, boardTracks, clueDepth, clueSlot, fitCellSize } from '../play/layout.ts'
+import { RAIL_WIDTH, SIDE_PAGE_GAP, boardTracks, clueDepth, clueSlot, fitCellSize } from '../play/layout.ts'
 import { createLineHints } from '../play/line-hints.ts'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { type PlayState, PlayStore, crosshairOf } from '../play/store.ts'
@@ -35,6 +36,7 @@ import { useUndoKeys } from '../play/useUndoKeys.ts'
 import { BoardView } from '../play/viewport.ts'
 import { type BeatView, BeatLayer, Dock, type Tag } from './BeatLayer.tsx'
 import type { Handoff } from './handoff.ts'
+import { LessonFilm } from './LessonFilm.tsx'
 import { type Lesson as LessonData, type LessonPuzzle, lessonPuzzle } from './lessons.ts'
 import { markDone, useLessonsDone } from './done.ts'
 import { type BoardBox, placeCallout } from './placement.ts'
@@ -310,84 +312,123 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
     stage,
     boardLeft: Math.max(0, (stage.width - board.rowDepth - width * cellSize) / 2),
   })
-  const view: BeatView = { key: beatKey, beat: shownBeat, index: beat, count: shown.beats.length, talk, onNext: next }
+  const view: BeatView = {
+    key: beatKey,
+    beat: shownBeat,
+    index: beat,
+    count: shown.beats.length,
+    talk,
+    onNext: next,
+    tools: stacked ? 'below' : 'beside',
+  }
   const anchor = solved ? undefined : shownBeat.anchor
 
+  const tools = (
+    <>
+      <div className={stacked ? playStyles.dock : styles.railTools}>
+        <ToolToggle store={store} />
+        {free && !solved && (
+          <span className={anchor === 'hint' ? beatStyles.beckon : undefined}>
+            <HintButton
+              store={store}
+              confirmFirst
+              note={FREE_HINT_NOTE}
+              request={async cells => hintFor(puzzle.palette, cells)}
+              onError={() => {}}
+            />
+          </span>
+        )}
+      </div>
+      {free && (
+        <div className={anchor === 'assists' ? beatStyles.beckon : undefined}>
+          <AssistChips />
+        </div>
+      )}
+    </>
+  )
+  const meta = `${lesson.picture} · ${width}×${height}`
+
+  // One tree for both layouts, like Play's: the strip, header and rail sit in fixed child positions around the
+  // stage, so switching between them never remounts the board.
   return (
-    <main className={`${playStyles.play} ${styles.page}`}>
-      <div className={`${playStyles.desk} ${styles.desk}`} style={{ gap: SIDE_PAGE_GAP }}>
-        <div className={`${playStyles.card} ${styles.card}`}>
-          <header className={playStyles.cardHead}>
-            <Dymo tone="pink">{track.label}</Dymo>
-            <span className={playStyles.size}>
-              {lesson.picture} · {width}×{height}
-            </span>
-          </header>
-          <div ref={stageRef} className={`${playStyles.stage} ${styles.stage}`}>
-            {cellSize > 0 && (
-              <div
-                ref={boardRef}
-                className={`${playStyles.board} ${styles.board}`}
-                data-revealed={palette !== null || undefined}
-                style={boardTracks(puzzle, cellSize) as CSSProperties}
-              >
-                <div />
-                <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={clueAssists} highlight={about.cols} />
-                <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={clueAssists} highlight={about.rows} />
-                <Board
-                  store={store}
-                  cellSize={cellSize}
-                  view={boardView}
-                  assists={free ? undefined : FIXED}
-                  highlight={highlight}
-                  flag={boardFlag}
-                  onTalkNext={talk ? next : undefined}
-                />
-                {!solved && <BeatLayer board={board} view={view} lines={about} at={at} tag={stacked ? null : tag} />}
-              </div>
+    <>
+      {stacked && <Hud />}
+      <main
+        className={stacked ? `${playStyles.play} ${styles.page}` : `${playStyles.shell} ${styles.shell}`}
+        data-rail={!stacked || undefined}
+        style={paperStyle(track.paper)}
+      >
+        <div className={stacked ? `${playStyles.desk} ${styles.desk}` : playStyles.shellBody} style={stacked ? { gap: SIDE_PAGE_GAP } : undefined}>
+          {!stacked && <LessonFilm track={track} index={index} back={foot.learn ? foot.back : null} />}
+          <div className={stacked ? `${playStyles.card} ${styles.card}` : `${playStyles.surface} ${styles.surface}`}>
+            {stacked && (
+              <header className={playStyles.cardHead}>
+                <Dymo tone="pink">{track.label}</Dymo>
+                <span className={playStyles.size}>{meta}</span>
+              </header>
             )}
-          </div>
-          {!solved && <Dock view={at === 'dock' ? view : null} tag={stacked ? tag : null} />}
-          <div className={playStyles.tools} inert={solved}>
-            <div className={playStyles.dock}>
-              <ToolToggle store={store} />
-              {free && !solved && (
-                <span className={anchor === 'hint' ? beatStyles.beckon : undefined}>
-                  <HintButton
+            <div ref={stageRef} className={`${playStyles.stage} ${styles.stage}`}>
+              {cellSize > 0 && (
+                <div
+                  ref={boardRef}
+                  className={`${playStyles.board} ${styles.board}`}
+                  data-revealed={palette !== null || undefined}
+                  style={boardTracks(puzzle, cellSize) as CSSProperties}
+                >
+                  <div />
+                  <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={clueAssists} highlight={about.cols} />
+                  <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={clueAssists} highlight={about.rows} />
+                  <Board
                     store={store}
-                    confirmFirst
-                    note={FREE_HINT_NOTE}
-                    request={async cells => hintFor(puzzle.palette, cells)}
-                    onError={() => {}}
+                    cellSize={cellSize}
+                    view={boardView}
+                    assists={free ? undefined : FIXED}
+                    highlight={highlight}
+                    flag={boardFlag}
+                    onTalkNext={talk ? next : undefined}
                   />
-                </span>
+                  {!solved && <BeatLayer board={board} view={view} lines={about} at={at} tag={stacked ? null : tag} />}
+                </div>
               )}
             </div>
-            {free && (
-              <div className={anchor === 'assists' ? beatStyles.beckon : undefined}>
-                <AssistChips />
+            {!solved && <Dock view={at === 'dock' ? view : null} tag={stacked ? tag : null} />}
+            {stacked && (
+              <div className={playStyles.tools} inert={solved}>
+                {tools}
               </div>
             )}
           </div>
+          <div
+            className={stacked ? styles.side : `${playStyles.rail} ${styles.rail}`}
+            style={stacked ? { gap: SIDE_PAGE_GAP } : { width: RAIL_WIDTH }}
+            data-pad-panel={!stacked || undefined}
+          >
+            {!stacked && <HudPills className={playStyles.railPills} />}
+            <Coach
+              ref={coachRef}
+              track={track}
+              lesson={lesson}
+              index={index}
+              step={step}
+              log={log}
+              now={beatKey}
+              solved={solved}
+              foot={foot}
+              rail={!stacked}
+              meta={meta}
+              onNext={onNext}
+              onFinish={onFinish}
+            />
+            {!stacked && (
+              <div className={styles.railBody} inert={solved}>
+                {tools}
+              </div>
+            )}
+            {!stacked && <ControlsCard solved={solved} lines={free} zoom={false} back="All lessons" />}
+          </div>
         </div>
-        <div className={styles.side} style={{ gap: SIDE_PAGE_GAP }}>
-          <Coach
-            ref={coachRef}
-            track={track}
-            lesson={lesson}
-            index={index}
-            step={step}
-            log={log}
-            now={beatKey}
-            solved={solved}
-            foot={foot}
-            onNext={onNext}
-            onFinish={onFinish}
-          />
-          {!stacked && <ControlsCard solved={solved} lines={free} zoom={false} back="All lessons" />}
-        </div>
-      </div>
-    </main>
+      </main>
+    </>
   )
 }
 
@@ -422,11 +463,15 @@ interface CoachProps {
   now: string
   solved: boolean
   foot: Foot
+  /** In the rail, where the filmstrip stands in for the Lesson dots and the rail is the pad's panel. */
+  rail: boolean
+  /** The picture and its size, shown under the title in the rail. */
+  meta: string
   onNext: () => void
   onFinish: () => void
 }
 
-function Coach({ ref, track, lesson, index, step, log, now, solved, foot, onNext, onFinish }: CoachProps) {
+function Coach({ ref, track, lesson, index, step, log, now, solved, foot, rail, meta, onNext, onFinish }: CoachProps) {
   const { steps } = lesson
   const { lessons } = track
   const last = index === lessons.length - 1
@@ -438,8 +483,12 @@ function Coach({ ref, track, lesson, index, step, log, now, solved, foot, onNext
     if (list) list.scrollTop = list.scrollHeight
   }, [log.length])
   return (
-    <aside ref={ref} className={styles.coach} style={paperStyle(0)} aria-labelledby="lesson-title" data-pad-panel>
-      {foot.learn ? (
+    <aside ref={ref} className={styles.coach} aria-labelledby="lesson-title" data-pad-panel={!rail || undefined}>
+      {rail ? (
+        <Dymo tone="pink" className={styles.coachTrack}>
+          {track.label}
+        </Dymo>
+      ) : foot.learn ? (
         <ol className={styles.lessons} aria-label="Lessons">
           {lessons.map((l, i) => (
             <li key={l.id} data-state={dotState(i)}>
@@ -467,6 +516,7 @@ function Coach({ ref, track, lesson, index, step, log, now, solved, foot, onNext
       <h1 id="lesson-title" className={styles.coachTitle}>
         {solved ? `${lesson.picture} revealed!` : lesson.title}
       </h1>
+      {rail && <p className={styles.coachMeta}>{meta}</p>}
       {steps.length > 1 && (
         <ol className={styles.steps} aria-label={solved ? 'All steps done' : `Step ${step + 1} of ${steps.length}`}>
           {steps.map((_, i) => (
@@ -503,7 +553,7 @@ function Coach({ ref, track, lesson, index, step, log, now, solved, foot, onNext
           </button>
         )}
       </div>
-      {!solved && <PanelTag />}
+      {!solved && !rail && <PanelTag />}
     </aside>
   )
 }
@@ -514,22 +564,25 @@ function HandoffView({ track, handoff }: { track: Track; handoff: Handoff }) {
   const { lessons } = track
   const pictures = useMemo(() => lessons.map(lessonPuzzle), [lessons])
   return (
-    <main className={styles.handoffPage}>
-      <section className={styles.handoff} aria-labelledby="handoff-title">
-        <Dymo tone="pink">{track.doneDymo}</Dymo>
-        <h1 id="handoff-title">{handoff.heading}</h1>
-        <p>{handoff.text}</p>
-        <div className={styles.minis}>
-          {pictures.map((p: LessonPuzzle, k) => (
-            <span key={k} className={styles.mini} style={{ '--tilt': `${TILTS[k]}deg`, '--w': p.width } as CSSProperties}>
-              <PixelArt title={lessons[k]!.picture} width={p.width} height={p.height} palette={p.palette} />
-            </span>
-          ))}
-        </div>
-        <Link to={handoff.to} data-variant="primary" data-pad-default>
-          {handoff.action}
-        </Link>
-      </section>
-    </main>
+    <>
+      <Hud />
+      <main className={styles.handoffPage}>
+        <section className={styles.handoff} aria-labelledby="handoff-title">
+          <Dymo tone="pink">{track.doneDymo}</Dymo>
+          <h1 id="handoff-title">{handoff.heading}</h1>
+          <p>{handoff.text}</p>
+          <div className={styles.minis}>
+            {pictures.map((p: LessonPuzzle, k) => (
+              <span key={k} className={styles.mini} style={{ '--tilt': `${TILTS[k]}deg`, '--w': p.width } as CSSProperties}>
+                <PixelArt title={lessons[k]!.picture} width={p.width} height={p.height} palette={p.palette} />
+              </span>
+            ))}
+          </div>
+          <Link to={handoff.to} data-variant="primary" data-pad-default>
+            {handoff.action}
+          </Link>
+        </section>
+      </main>
+    </>
   )
 }

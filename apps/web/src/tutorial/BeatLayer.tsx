@@ -29,6 +29,8 @@ export interface BeatView {
   count: number
   talk: boolean
   onNext: () => void
+  /** Where the Hint button and assists are, for a beat that points at them. */
+  tools: 'below' | 'beside'
 }
 
 interface LayerProps {
@@ -78,11 +80,15 @@ export function Dock({ view, tag }: { view: BeatView | null; tag: Tag | null }) 
 
 const ANCHORS = { assists: 'the assists', hint: 'the Hint button' }
 
-function BeatBody({ view: { key, beat, index, count, talk, onNext } }: { view: BeatView }) {
+function BeatBody({ view: { key, beat, index, count, talk, onNext, tools } }: { view: BeatView }) {
   return (
     <div key={key} className={styles.pop}>
       <p>{rich(beat.text)}</p>
-      {beat.anchor && <span className={styles.pointsDown}>↓ {ANCHORS[beat.anchor]}, below</span>}
+      {beat.anchor && (
+        <span className={styles.pointsDown}>
+          {tools === 'below' ? `↓ ${ANCHORS[beat.anchor]}, below` : `→ ${ANCHORS[beat.anchor]}, on the right`}
+        </span>
+      )}
       <div className={styles.beatFoot}>
         <span>
           {index + 1} / {count}

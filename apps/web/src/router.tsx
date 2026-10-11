@@ -22,8 +22,8 @@ import styles from './App.module.css'
 
 function Root() {
   const { needsHandle } = useAccount()
-  // Play carries the HUD's pills in its own rail or top line.
-  const playing = useRouterState({ select: s => s.location.pathname.startsWith('/play/') })
+  // Play and a Lesson carry the HUD's pills in their own rail or top line, or place the HUD themselves.
+  const playing = useRouterState({ select: s => /^\/(?:play\/|learn\/[^/]+\/[^/]+)/.test(s.location.pathname) })
   return (
     <PadProvider>
       <div className={styles.app}>
