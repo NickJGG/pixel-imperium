@@ -6,6 +6,12 @@
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
   pointer-events: none;
+  view-transition-name: hud;
+}
+
+/* Otherwise the HUD sits in the root snapshot, under the province morph's groups. */
+::view-transition-group(hud) {
+  z-index: 1;
 }
 
 @media (min-width: 721px) {
