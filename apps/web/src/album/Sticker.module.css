@@ -87,7 +87,7 @@
 
 .backing::after {
   content: '?';
-  font: 400 14px/1 var(--font-display);
+  font: var(--type-name);
   color: var(--ink-soft);
   opacity: 0.6;
 }

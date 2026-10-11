@@ -11,7 +11,7 @@
 }
 
 .nameplate small {
-  font: 600 11px var(--font-ui);
+  font: 600 var(--fs-12) var(--font-ui);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--cobalt-ink-soft);
@@ -19,7 +19,7 @@
 
 .nameplate b {
   overflow-wrap: anywhere;
-  font: 400 22px/1.1 var(--font-display);
+  font: var(--type-heading);
   letter-spacing: -0.04em;
   color: var(--cobalt-ink);
 }

@@ -39,7 +39,7 @@
 
 .caption {
   margin: 0;
-  font: 600 14px var(--font-ui);
+  font: var(--type-small);
 }
 
 .side {
@@ -61,7 +61,7 @@
 
 .hint {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fs-16);
   color: var(--ink-soft);
 }
 
@@ -101,7 +101,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  font: 400 12px/1 var(--font-display);
+  font: var(--type-label);
   color: var(--on-pink);
   background: var(--pink);
   box-shadow: 0 2px 0 var(--pink-dk);
@@ -132,7 +132,7 @@
 
 .latest time,
 .stamps time {
-  font: 700 11px var(--font-mono);
+  font: var(--type-kicker);
   color: var(--ink-soft);
   white-space: nowrap;
 }
@@ -163,17 +163,17 @@
 }
 
 .big b {
-  font: 400 40px/1 var(--font-display);
+  font: var(--type-hero);
   letter-spacing: -0.05em;
 }
 
 .big span {
-  font: 600 15px var(--font-ui);
+  font: 600 var(--fs-16) var(--font-ui);
   color: var(--ink-soft);
 }
 
 .foilBig b {
-  font-size: 26px;
+  font-size: var(--fs-28);
   color: var(--pink);
 }
 
@@ -208,21 +208,21 @@
 }
 
 .facts dt {
-  font: 600 14px var(--font-ui);
+  font: var(--type-small);
   color: var(--ink-soft);
   white-space: nowrap;
 }
 
 .facts dd {
   margin: 0 0 0 auto;
-  font: 700 14px var(--font-mono);
+  font: 700 var(--fs-14) var(--font-mono);
   text-align: right;
   white-space: nowrap;
 }
 
 .facts small {
   margin-left: 4px;
-  font: 600 12px var(--font-ui);
+  font: 600 var(--fs-12) var(--font-ui);
   color: var(--ink-soft);
 }
 
@@ -277,7 +277,7 @@
   justify-content: space-between;
   gap: 6px;
   margin: 0;
-  font: 600 12px var(--font-ui);
+  font: 600 var(--fs-12) var(--font-ui);
   color: var(--ink-soft);
 }
 
@@ -306,7 +306,7 @@
   justify-items: center;
   gap: 6px;
   width: 92px;
-  font: 600 12px/1.2 var(--font-ui);
+  font: 600 var(--fs-12)/1.2 var(--font-ui);
   text-align: center;
   color: var(--ink-soft);
 }
@@ -315,7 +315,7 @@
   width: 76px;
   height: 76px;
   padding: 6px;
-  font-size: 9px;
+  font-size: var(--fs-10);
 }
 
 .stamps > [data-off] .stamp {
@@ -345,6 +345,6 @@
   }
 
   .big b {
-    font-size: 32px;
+    font-size: var(--fs-28);
   }
 }

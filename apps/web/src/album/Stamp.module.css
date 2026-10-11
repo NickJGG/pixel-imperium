@@ -5,7 +5,7 @@
   height: 92px;
   padding: 8px;
   text-align: center;
-  font: 400 12px/1.1 var(--font-display);
+  font: var(--type-label);
   color: var(--pink);
   border: 3px double currentColor;
   border-radius: 50%;

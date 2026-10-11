@@ -14,14 +14,14 @@
 }
 
 .slot > b {
-  font: 400 13px var(--font-display);
+  font: var(--type-label);
   opacity: 0.55;
 }
 
 .slot > small {
   position: absolute;
   bottom: 3px;
-  font: 700 9px var(--font-mono);
+  font: var(--type-micro);
   text-transform: uppercase;
   opacity: 0.6;
 }
@@ -58,7 +58,7 @@
   top: -8px;
   right: -8px;
   padding: 1px 5px;
-  font: 700 10px var(--font-mono);
+  font: var(--type-micro);
   background: var(--pink);
   color: var(--on-pink);
   border-radius: var(--r-pill);
@@ -86,7 +86,7 @@
 }
 
 .lock {
-  font-size: 16px;
+  font-size: 16px; /* token-exempt: icon size */
   opacity: 0.8;
 }
 

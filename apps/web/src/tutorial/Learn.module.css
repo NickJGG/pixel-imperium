@@ -21,7 +21,7 @@
 
 .head h1 {
   margin: 0;
-  font: 400 30px/1.1 var(--font-display);
+  font: var(--type-title);
   letter-spacing: -0.04em;
 }
 
@@ -59,7 +59,7 @@
   align-items: center;
   gap: 10px;
   margin: 0;
-  font: 400 20px/1.2 var(--font-display);
+  font: var(--type-heading);
   letter-spacing: -0.04em;
 }
 
@@ -74,7 +74,7 @@
 }
 
 .label {
-  font: 700 12px var(--font-mono);
+  font: var(--type-kicker);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -136,7 +136,7 @@
   height: 24px;
   display: grid;
   place-items: center;
-  font: 700 14px var(--font-ui);
+  font: 700 14px var(--font-ui); /* token-exempt: check glyph in a fixed circle */
   color: var(--on-ok);
   background: var(--ok);
   border-radius: 50%;
@@ -194,7 +194,7 @@
 }
 
 .size {
-  font: 700 11px var(--font-mono);
+  font: var(--type-kicker);
   color: var(--ink-soft);
 }
 
@@ -236,7 +236,7 @@
   justify-content: space-between;
   gap: var(--space-2);
   margin: 0;
-  font: 600 15px var(--font-ui);
+  font: 600 var(--fs-16) var(--font-ui);
 }
 
 .miniHead > span {
@@ -248,12 +248,12 @@
 
 .miniHead > span > * {
   padding: 3px 6px 2px;
-  font-size: 10px;
+  font-size: var(--fs-10);
 }
 
 .miniHead small {
   flex: none;
-  font: 700 12px var(--font-mono);
+  font: var(--type-kicker);
   color: var(--ink-soft);
 }
 
@@ -272,7 +272,7 @@
   gap: 4px;
   height: 100%;
   padding: 6px;
-  font: 600 11px/1.15 var(--font-ui);
+  font: 600 var(--fs-12)/1.15 var(--font-ui);
   color: var(--ink-soft);
   text-align: center;
   text-decoration: none;
@@ -311,20 +311,16 @@
   right: -6px;
   width: 20px;
   height: 20px;
-  font-size: 12px;
+  font-size: 12px; /* token-exempt: check glyph in a fixed circle */
 }
 
 /* On the How to play link, sized to sit inside it. */
 span.newTag {
   padding: 3px 6px 2px;
-  font-size: 10px;
+  font-size: var(--fs-10);
 }
 
 @media (max-width: 560px) {
-  .head h1 {
-    font-size: 24px;
-  }
-
   .lessons {
     grid-template-columns: repeat(2, 1fr);
   }

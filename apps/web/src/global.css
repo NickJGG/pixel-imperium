@@ -14,7 +14,7 @@ body,
 }
 
 body {
-  font: 500 17px/1.5 var(--font-ui);
+  font: var(--type-body);
   background-color: var(--desk);
   background-image: radial-gradient(var(--desk-dot) 1.5px, transparent 1.6px);
   background-size: 18px 18px;
@@ -55,7 +55,7 @@ a:where([data-variant]) {
   --btn-ink: var(--ink);
   --btn-edge: var(--shade);
 
-  font: 600 16px var(--font-ui);
+  font: var(--type-button);
   color: var(--btn-ink);
   text-decoration: none;
   background: var(--btn-bg);
@@ -78,7 +78,7 @@ a:where([data-variant]) {
 :is(button, a):where([data-size='compact']) {
   min-height: 36px;
   padding: 0 16px;
-  font-size: 15px;
+  font-size: var(--fs-14);
 }
 
 :is(button, a)[data-variant='ghost'] {

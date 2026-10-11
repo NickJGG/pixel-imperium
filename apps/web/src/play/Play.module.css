@@ -62,13 +62,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font: 700 18px/1 var(--font-ui);
+  font: 700 var(--fs-18)/1 var(--font-ui);
   color: inherit;
   text-decoration: none;
 }
 
 .barCrumb {
-  font-size: 14px;
+  font-size: var(--fs-14);
   font-weight: 600;
   opacity: 0.8;
 }
@@ -83,14 +83,14 @@
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 17px;
+  font-size: var(--fs-18);
   line-height: 1;
 }
 
 .barSize,
 .barPercent {
   flex: none;
-  font: 700 12px/1 var(--font-mono);
+  font: 700 var(--fs-12)/1 var(--font-mono);
 }
 
 .barSize {
@@ -178,12 +178,12 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  font: 600 15px var(--font-ui);
+  font: 600 var(--fs-16) var(--font-ui);
 }
 
 .sheetHead {
   margin: 0;
-  font: 700 12px var(--font-mono);
+  font: var(--type-kicker);
   text-transform: uppercase;
   color: var(--ink-soft);
 }
@@ -222,7 +222,7 @@
 
 .sheet .foilNote {
   justify-self: start;
-  font: 600 13px var(--font-ui);
+  font: var(--type-small);
   background: color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
@@ -277,7 +277,7 @@
 }
 
 .size {
-  font: 700 13px var(--font-mono);
+  font: 700 var(--fs-14) var(--font-mono);
   color: var(--ink-soft);
 }
 
@@ -513,7 +513,7 @@
 .hintAnchor > button {
   min-height: 36px;
   padding: 0 14px;
-  font-size: 15px;
+  font-size: var(--fs-14);
 }
 
 .hintAnchor > .hintPop {
@@ -623,7 +623,7 @@
 
 .chips button {
   padding: 0 12px;
-  font-size: 13px;
+  font-size: var(--fs-14);
 }
 
 .chips svg {
@@ -659,7 +659,7 @@
   flex-basis: 100%;
   text-align: center;
   font-weight: 400;
-  font-size: 13px;
+  font-size: var(--fs-14);
   color: var(--ink-soft);
 }
 
@@ -692,7 +692,7 @@
 
 .tabChip {
   padding: 1px 8px;
-  font-size: 14px;
+  font-size: var(--fs-14);
   color: var(--on-tab);
   background: var(--tab);
   border-radius: var(--r-sm);
@@ -708,7 +708,7 @@
 .btnRow > button,
 .btnRow > .howTo {
   padding: 0 10px;
-  font-size: 15px;
+  font-size: var(--fs-14);
 }
 
 .btnRow > button svg {
@@ -751,7 +751,7 @@
   min-height: 36px;
   padding: 0 10px;
   justify-content: flex-start;
-  font-size: 14px;
+  font-size: var(--fs-14);
   border-radius: var(--r-md);
   --btn-edge: transparent;
 }
@@ -773,7 +773,7 @@
 
 .disclosure small {
   margin-left: auto;
-  font: 700 12px var(--font-mono);
+  font: var(--type-kicker);
   color: var(--ink-soft);
 }
 
@@ -838,7 +838,7 @@
 
 .count {
   padding: 3px 10px;
-  font: 700 13px var(--font-mono);
+  font: 700 var(--fs-14) var(--font-mono);
   white-space: nowrap;
   background: var(--ink);
   color: var(--desk);
@@ -852,7 +852,7 @@
 
 .panel .foilNote {
   justify-self: start;
-  font: 600 13px var(--font-ui);
+  font: var(--type-small);
   background: color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
@@ -864,7 +864,7 @@
 
 .panelNote {
   margin: 0;
-  font: 600 13px/1.35 var(--font-ui);
+  font: 600 var(--fs-14)/1.35 var(--font-ui);
   color: var(--ink-soft);
 }
 
@@ -902,7 +902,7 @@
   min-height: 36px;
   padding: 0;
   justify-content: space-between;
-  font-size: 14px;
+  font-size: var(--fs-14);
   text-align: left;
   white-space: normal;
 }
@@ -949,12 +949,12 @@
 
 .panelAfter p {
   margin: 0;
-  font: 600 14px/1.35 var(--font-ui);
+  font: 600 var(--fs-14)/1.35 var(--font-ui);
 }
 
 .panelAfter b {
   display: block;
-  font: 400 14px var(--font-display);
+  font: var(--type-name);
   letter-spacing: -0.03em;
 }
 
@@ -963,7 +963,7 @@
 }
 
 .panelAfter .closing {
-  font: 400 13px/1.4 var(--font-display);
+  font: 400 var(--fs-14)/1.4 var(--font-display);
   letter-spacing: -0.03em;
   color: var(--gold-dk);
 }
@@ -987,7 +987,7 @@
 .panelActions > a {
   justify-content: center;
   padding: 0 var(--space-3);
-  font-size: 14px;
+  font-size: var(--fs-14);
 }
 
 .panelActions > button svg {
@@ -1038,7 +1038,7 @@
   width: 88px;
   height: 88px;
   padding: 6px;
-  font-size: 10px;
+  font-size: var(--fs-10);
   letter-spacing: -0.06em;
 }
 

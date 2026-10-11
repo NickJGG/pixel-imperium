@@ -30,7 +30,7 @@
 }
 
 .label {
-  font: 700 12px var(--font-mono);
+  font: var(--type-kicker);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -39,12 +39,12 @@
 .title {
   max-width: 18ch;
   margin: 0;
-  font-size: 24px;
+  font-size: var(--fs-28);
   line-height: 1.1;
 }
 
 .detail {
-  font: 700 12px var(--font-mono);
+  font: var(--type-kicker);
   color: var(--ink-soft);
 }
 

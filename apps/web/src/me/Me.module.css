@@ -33,7 +33,7 @@
 
 .heading {
   margin: 0;
-  font-size: 28px;
+  font-size: var(--fs-28);
 }
 
 .cards {
@@ -55,7 +55,7 @@
 
 .card h2 {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fs-16);
   letter-spacing: -0.03em;
 }
 
@@ -68,7 +68,7 @@
   min-width: 0;
   min-height: 44px;
   padding: 0 var(--space-3);
-  font: 700 16px var(--font-mono);
+  font: 700 var(--fs-16) var(--font-mono);
   color: var(--ink);
   background: var(--card-2);
   border: 0;
@@ -86,17 +86,17 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  font-size: 15px;
+  font-size: var(--fs-16);
 }
 
 .soft {
-  font-size: 15px;
+  font-size: var(--fs-16);
   color: var(--ink-soft);
 }
 
 .handle {
   overflow-wrap: anywhere;
-  font: 400 18px var(--font-display);
+  font: var(--type-heading);
   letter-spacing: -0.03em;
   color: var(--ink);
   text-decoration: none;
@@ -184,12 +184,12 @@
 .confirm {
   display: grid;
   gap: var(--space-2);
-  font-size: 15px;
+  font-size: var(--fs-16);
 }
 
 .hint,
 .bad {
-  font: 700 13px var(--font-mono);
+  font: 700 var(--fs-14) var(--font-mono);
 }
 
 .hint {
@@ -212,7 +212,7 @@
 }
 
 .handleForm label {
-  font: 600 14px var(--font-ui);
+  font: var(--type-small);
 }
 
 .handleForm > button {
@@ -235,7 +235,7 @@
 }
 
 .handleInput > span {
-  font: 400 18px var(--font-display);
+  font: var(--type-heading);
   color: var(--ink-soft);
 }
 
@@ -243,7 +243,7 @@
   flex: 1;
   min-height: 0;
   padding: 10px 2px;
-  font: 400 18px var(--font-display);
+  font: var(--type-heading);
   letter-spacing: -0.03em;
   background: transparent;
   border: 0;
@@ -257,7 +257,7 @@
 }
 
 .good {
-  font: 600 13px var(--font-ui);
+  font: var(--type-small);
   color: var(--ok);
 }
 
@@ -297,7 +297,7 @@
   }
 
   .heading {
-    font-size: 22px;
+    font-size: var(--fs-18);
   }
 }
 

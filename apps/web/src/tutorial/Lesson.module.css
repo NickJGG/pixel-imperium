@@ -42,7 +42,7 @@
   height: 26px;
   display: grid;
   place-items: center;
-  font: 700 12px var(--font-mono);
+  font: var(--type-kicker);
   color: var(--ink-soft);
   background: var(--card);
   border-radius: var(--r-sm);
@@ -79,7 +79,7 @@
 
 .coachTitle {
   margin: 0;
-  font: 400 20px/1.15 var(--font-display);
+  font: var(--type-heading);
   letter-spacing: -0.03em;
 }
 
@@ -92,7 +92,7 @@
   gap: var(--space-2);
   max-height: 240px;
   overflow: auto;
-  font-size: 14px;
+  font-size: var(--fs-14);
   line-height: 1.4;
   color: var(--ink-soft);
 }
@@ -113,7 +113,7 @@
 
 .log kbd {
   padding: 1px 5px;
-  font: 700 11px var(--font-mono);
+  font: var(--type-kicker);
   color: var(--ink);
   background: var(--card);
   border-radius: var(--r-xs);
@@ -122,7 +122,7 @@
 
 .doneText {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--fs-16);
   line-height: 1.5;
 }
 
@@ -145,7 +145,7 @@
 }
 
 .skip {
-  font: 600 14px var(--font-ui);
+  font: var(--type-small);
   color: var(--ink-soft);
   text-underline-offset: 3px;
 }
@@ -180,7 +180,7 @@
 
 .handoff h1 {
   margin: 0;
-  font: 400 26px/1.1 var(--font-display);
+  font: var(--type-title);
   letter-spacing: -0.03em;
 }
 
@@ -241,13 +241,13 @@
 
 .choice h2 {
   margin: 0;
-  font: 400 22px/1.15 var(--font-display);
+  font: var(--type-heading);
   letter-spacing: -0.03em;
 }
 
 .choice p {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fs-16);
   color: var(--ink-soft);
 }
 
@@ -261,7 +261,7 @@
   right: 8px;
   width: 36px;
   min-height: 36px;
-  font-size: 18px;
+  font-size: 18px; /* token-exempt: close glyph */
   text-decoration: none;
   color: var(--ink-soft);
 }
@@ -282,14 +282,14 @@
 
 .chips li {
   padding: 3px 8px;
-  font: 700 11px var(--font-mono);
+  font: var(--type-kicker);
   color: var(--ink-soft);
   background: var(--card);
   border-radius: var(--r-pill);
 }
 
 .choice .choiceFoot {
-  font-size: 13px;
+  font-size: var(--fs-14);
 }
 
 /* Below the board when there's no room beside it; the page scrolls instead of squeezing the board. */

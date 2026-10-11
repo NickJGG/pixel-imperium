@@ -3,7 +3,10 @@
  * die-cut stickers, pink and blue accents. Night is the main design and sits on bare :root;
  * Day appears twice: once for the system preference (unless Night is forced) and once for
  * an explicit data-theme="light". The canvas reads the --board-* values at draw time.
- * Theme-invariant groups: cobalt (ink and dot pattern for things that sit on the cover blue,
+ * Type is in rem so it follows the browser's font-size setting: an --fs-* scale, and --type-*
+ * roles as `font` shorthands (hero, title, heading, name, label in display; body, button, small
+ * in ui; kicker, micro in mono). Case and letter-spacing stay with the module.
+ * Theme-invariant groups: type, cobalt (ink and dot pattern for things that sit on the cover blue,
  * whatever the theme), foil (the sticker shimmer), scrim and gutter shade, radii, spacing.
  */
 :root {
@@ -12,6 +15,25 @@
   --font-display: 'Rubik Mono One', 'Arial Black', system-ui, sans-serif;
   --font-ui: 'Fredoka', 'Trebuchet MS', system-ui, sans-serif;
   --font-mono: 'Space Mono', ui-monospace, monospace;
+
+  --fs-10: 0.625rem;
+  --fs-12: 0.75rem;
+  --fs-14: 0.875rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-28: 1.75rem;
+  --fs-40: 2.5rem;
+
+  --type-hero: 400 var(--fs-40) / 1 var(--font-display);
+  --type-title: 400 var(--fs-28) / 1.1 var(--font-display);
+  --type-heading: 400 var(--fs-18) / 1.15 var(--font-display);
+  --type-name: 400 var(--fs-16) / 1.15 var(--font-display);
+  --type-label: 400 var(--fs-12) / 1.1 var(--font-display);
+  --type-body: 500 var(--fs-16) / 1.5 var(--font-ui);
+  --type-button: 600 var(--fs-16) var(--font-ui);
+  --type-small: 600 var(--fs-14) var(--font-ui);
+  --type-kicker: 700 var(--fs-12) var(--font-mono);
+  --type-micro: 700 var(--fs-10) var(--font-mono);
 
   --r-xl: 16px;
   --r-lg: 14px;

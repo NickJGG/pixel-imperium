@@ -41,7 +41,7 @@
   place-items: center;
   width: 26px;
   height: 26px;
-  font: 400 12px var(--font-display);
+  font: var(--type-label);
   color: var(--spine);
   background: var(--sticker);
   border-radius: 50%;
@@ -49,7 +49,7 @@
 
 .name {
   writing-mode: vertical-rl;
-  font: 600 14px var(--font-ui);
+  font: var(--type-small);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

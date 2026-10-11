@@ -48,7 +48,7 @@
 
 .title {
   margin: 0;
-  font-size: clamp(22px, 3.4vw, 32px);
+  font-size: clamp(var(--fs-18), 3.4vw, var(--fs-28));
   line-height: 1;
   letter-spacing: -0.03em;
 }
@@ -59,7 +59,7 @@
 
 .volume {
   margin: 4px 0 0;
-  font: 600 12px var(--font-ui);
+  font: 600 var(--fs-12) var(--font-ui);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -94,7 +94,7 @@
 .startHere {
   display: inline-block;
   padding: 12px 16px 10px;
-  font: 400 15px/1 var(--font-display);
+  font: var(--type-name);
   color: var(--on-pink);
   text-decoration: none;
   background: var(--pink);
@@ -123,17 +123,17 @@
 
 .total {
   margin: 0;
-  font: 500 15px var(--font-ui);
+  font: 500 var(--fs-16) var(--font-ui);
 }
 
 .total strong {
   display: block;
-  font: 400 44px/1 var(--font-display);
+  font: var(--type-hero);
   letter-spacing: -0.04em;
 }
 
 .total em {
-  font-size: 18px;
+  font-size: var(--fs-18);
   font-style: normal;
   opacity: 0.7;
 }
@@ -187,7 +187,7 @@
 
 .label {
   margin: 0;
-  font: 700 12px var(--font-mono);
+  font: var(--type-kicker);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -247,7 +247,7 @@
 }
 
 .facts dt {
-  font: 700 10px var(--font-mono);
+  font: var(--type-micro);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -255,7 +255,7 @@
 
 .facts dd {
   margin: 2px 0 0;
-  font: 400 18px var(--font-display);
+  font: var(--type-heading);
 }
 
 @media (max-width: 900px) {
@@ -293,7 +293,7 @@
   }
 
   .total strong {
-    font-size: 34px;
+    font-size: var(--fs-28);
   }
 
   .stickerLink {

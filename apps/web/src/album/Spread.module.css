@@ -44,20 +44,20 @@
 
 .name {
   margin: 0;
-  font: 400 26px/1 var(--font-display);
+  font: var(--type-title);
   letter-spacing: -0.04em;
 }
 
 .theme {
   margin: var(--space-1) 0 0;
-  font: 600 15px var(--font-ui);
+  font: 600 var(--fs-16) var(--font-ui);
   opacity: 0.75;
 }
 
 .count {
   margin-left: auto;
   padding: 3px 10px;
-  font: 700 14px var(--font-mono);
+  font: 700 var(--fs-14) var(--font-mono);
   white-space: nowrap;
   background: var(--ink);
   color: var(--desk);
@@ -90,7 +90,7 @@
 .caption {
   margin: 0;
   max-width: 52ch;
-  font: italic 500 17px var(--font-ui);
+  font: italic 500 var(--fs-16) var(--font-ui);
 }
 
 .stamp {
@@ -122,7 +122,7 @@
   }
 
   .name {
-    font-size: 20px;
+    font-size: var(--fs-18);
   }
 
   .slots {
@@ -135,12 +135,12 @@
   }
 
   .caption {
-    font-size: 15px;
+    font-size: var(--fs-14);
   }
 
   .stamp {
     width: 76px;
     height: 76px;
-    font-size: 10px;
+    font-size: var(--fs-10);
   }
 }

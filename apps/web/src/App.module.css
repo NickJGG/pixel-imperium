@@ -29,7 +29,7 @@
   background: var(--sticker);
   color: var(--cobalt-ink);
   border-radius: var(--r-md);
-  font: 400 15px/1 var(--font-display);
+  font: 400 15px/1 var(--font-display); /* token-exempt: brand logo */
   letter-spacing: -0.03em;
   text-decoration: none;
   white-space: nowrap;
@@ -48,14 +48,14 @@
 
 /* On /play: slim, full width, with the puzzle beside the logo. The bottom padding clears the spine's edge. */
 .spine[data-playing] {
-  height: 48px;
+  min-height: 48px;
   gap: 12px;
   padding: 0 var(--space-4) 4px;
 }
 
 .spine[data-playing] .logo {
   padding: 5px 9px 4px;
-  font-size: 11px;
+  font-size: 11px; /* token-exempt: brand logo */
   box-shadow: 0 2px 0 var(--shade);
 }
 
@@ -73,12 +73,12 @@
   align-items: flex-start;
   gap: 10px;
   min-width: 0;
-  height: 36px;
+  min-height: 36px;
   margin-left: auto;
   padding: 0 0 0 14px;
   background: var(--on-cover-tint);
   border-radius: var(--r-pill);
-  font: 600 14px var(--font-ui);
+  font: var(--type-small);
 }
 
 .nextUp {
@@ -93,7 +93,7 @@
   flex: none;
   min-height: 32px;
   padding: 0 14px;
-  font-size: 14px;
+  font-size: var(--fs-14);
 }
 
 .tools {
@@ -114,7 +114,7 @@
 
 .spine .avatar {
   padding: 0 14px 0 1px;
-  font-size: 14px;
+  font-size: var(--fs-14);
 }
 
 .face {
@@ -140,7 +140,7 @@
 .face i {
   background: var(--pink);
   color: var(--on-pink);
-  font: 400 13px var(--font-display);
+  font: var(--type-label);
   font-style: normal;
 }
 
@@ -172,13 +172,13 @@
 
 .menu h2 {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fs-16);
   letter-spacing: -0.03em;
 }
 
 .menu p {
   margin: 0 0 var(--space-1);
-  font-size: 14px;
+  font-size: var(--fs-14);
   line-height: 1.4;
   color: var(--ink-soft);
 }
@@ -195,7 +195,7 @@
   min-height: 0;
   padding: var(--space-2) 10px;
   border-radius: var(--r-md);
-  font: 600 16px var(--font-ui);
+  font: var(--type-button);
   color: var(--ink);
   text-decoration: none;
   transform: none;
@@ -206,7 +206,7 @@
   place-items: center;
   width: 30px;
   height: 30px;
-  font-size: 16px;
+  font-size: 16px; /* token-exempt: icon size */
   background: var(--card-2);
   border-radius: var(--r-sm);
   transform: rotate(-4deg);
@@ -227,13 +227,13 @@
   display: grid;
   justify-items: center;
   gap: 2px;
-  font: 600 12px var(--font-ui);
+  font: 600 var(--fs-12) var(--font-ui);
   color: var(--ink);
   text-decoration: none;
 }
 
 .thumbItem > svg {
-  font-size: 22px;
+  font-size: 22px; /* token-exempt: icon size */
 }
 
 .thumbBar > :first-child {
@@ -254,7 +254,7 @@
   --btn-ink: var(--ink);
   min-height: 0;
   padding: 0;
-  font-size: 12px;
+  font-size: var(--fs-12);
 }
 
 .fab {
@@ -263,7 +263,7 @@
   width: 64px;
   height: 64px;
   margin-top: -30px;
-  font-size: 26px;
+  font-size: 26px; /* token-exempt: icon size */
   background: var(--pink);
   color: var(--on-pink);
   border-radius: 50%;
@@ -296,7 +296,7 @@
 
 .dialog h2 {
   margin: 0 0 var(--space-3);
-  font-size: 22px;
+  font-size: var(--fs-18);
   line-height: 1.05;
 }
 
@@ -385,7 +385,7 @@
   }
 
   .logo {
-    font-size: 12px;
+    font-size: 12px; /* token-exempt: brand logo */
   }
 
   .continue,

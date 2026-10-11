@@ -19,7 +19,7 @@
   align-items: center;
   gap: 5px;
   flex: none;
-  font: 600 14px var(--font-ui);
+  font: var(--type-label);
   white-space: nowrap;
   text-decoration: none;
   background: var(--tab);
@@ -54,11 +54,10 @@
 .chips .tab {
   padding: 4px 10px;
   border-radius: var(--r-md);
-  font-size: 13px;
 }
 
 .count {
-  font: 700 12px var(--font-mono);
+  font: var(--type-kicker);
 }
 
 .locked {

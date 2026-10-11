@@ -9,7 +9,7 @@
 .back {
   display: inline-block;
   margin-bottom: var(--space-3);
-  font: 700 14px var(--font-mono);
+  font: 700 var(--fs-14) var(--font-mono);
   color: var(--ink-soft);
   text-decoration: none;
 }
@@ -38,7 +38,7 @@
   align-items: center;
   gap: 3px;
   padding: 3px 6px 2px;
-  font-size: 10px;
+  font-size: var(--fs-10);
 }
 
 .replay svg {
@@ -112,14 +112,14 @@
   gap: var(--space-1);
   width: 100%;
   height: 100%;
-  font: 400 14px/1.15 var(--font-display);
+  font: var(--type-name);
   color: var(--on-tab);
   background: var(--tab);
   border-radius: 50%;
 }
 
 .sealLock {
-  font-size: 36px;
+  font-size: 36px; /* token-exempt: icon size */
 }
 
 .lockedMsg {
@@ -131,13 +131,13 @@
 
 .lockedMsg p {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--fs-16);
   color: var(--ink-soft);
 }
 
 .lockedName {
   margin: 0;
-  font: 400 24px/1.1 var(--font-display);
+  font: var(--type-title);
   letter-spacing: -0.03em;
 }
 
@@ -146,7 +146,7 @@
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  font: 600 14px var(--font-ui);
+  font: var(--type-small);
   color: var(--desk);
   background: var(--ink);
   border-radius: var(--r-pill);
@@ -196,7 +196,7 @@
 
 .nextLabel {
   margin: 0 0 2px;
-  font: 700 12px var(--font-mono);
+  font: var(--type-kicker);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   opacity: 0.7;
@@ -205,7 +205,7 @@
 .nextName {
   margin: 0;
   overflow: hidden;
-  font: 400 16px/1.15 var(--font-display);
+  font: var(--type-name);
   letter-spacing: -0.03em;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -213,7 +213,7 @@
 
 .nextSize {
   margin: 2px 0 0;
-  font: 600 14px var(--font-ui);
+  font: var(--type-small);
   opacity: 0.7;
 }
 
