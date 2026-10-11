@@ -9,7 +9,7 @@
   --focus: var(--on-cover);
   color: var(--on-cover);
   background-color: var(--cover);
-  background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 1.6px);
+  background-image: var(--cover-dots);
   background-size: 14px 14px;
 }
 
@@ -23,7 +23,7 @@
   --focus: var(--on-cover);
   color: var(--on-cover);
   background-color: var(--cover);
-  background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 1.6px);
+  background-image: var(--cover-dots);
   background-size: 14px 14px;
 }
 
@@ -99,7 +99,7 @@
 
 .barPercent {
   padding: 4px 8px;
-  background: rgb(255 255 255 / 0.18);
+  background: var(--on-cover-tint-strong);
   border-radius: var(--r-pill);
 }
 
@@ -348,7 +348,7 @@
 
 .minimap {
   display: block;
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   outline: 1px solid #fff;
   opacity: 0;
   pointer-events: none;
@@ -540,7 +540,7 @@
   align-self: stretch;
   margin: 4px 0;
   background: var(--line-soft);
-  border-radius: 2px;
+  border-radius: var(--r-xs);
 }
 
 @media (any-pointer: coarse) {
@@ -611,7 +611,7 @@
   width: 12px;
   height: 12px;
   background: currentColor;
-  border-radius: 2px;
+  border-radius: var(--r-xs);
 }
 
 .chips {
@@ -675,8 +675,8 @@
 .foilNote i {
   width: 14px;
   height: 14px;
-  border-radius: 3px;
-  background: linear-gradient(120deg, #ff9ad0, #9ff, #fff6a0, #c8a0ff);
+  border-radius: var(--r-xs);
+  background: var(--foil);
 }
 
 .foilNote[data-lost] i {
@@ -752,7 +752,7 @@
   padding: 0 10px;
   justify-content: flex-start;
   font-size: 14px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   --btn-edge: transparent;
 }
 

@@ -36,7 +36,7 @@
   --focus: var(--blue);
   color: var(--ink);
   background-color: var(--paper);
-  background-image: radial-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1.2px);
+  background-image: var(--cover-dots-faint);
   background-size: 10px 10px;
   border-radius: var(--r-sm) var(--r-lg) var(--r-lg) var(--r-sm);
   box-shadow:
@@ -137,7 +137,7 @@
   display: grid;
   place-items: center;
   font: 700 14px var(--font-ui);
-  color: #0b1a0e;
+  color: var(--on-ok);
   background: var(--ok);
   border-radius: 50%;
   box-shadow: 0 2px 0 var(--shade);

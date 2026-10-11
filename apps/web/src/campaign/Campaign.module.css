@@ -10,12 +10,12 @@
   display: inline-block;
   margin-bottom: var(--space-3);
   font: 700 14px var(--font-mono);
-  color: var(--text-muted);
+  color: var(--ink-soft);
   text-decoration: none;
 }
 
 .back:hover {
-  color: var(--text);
+  color: var(--ink);
 }
 
 .slotLink {
@@ -86,7 +86,7 @@
 .ghosts > i {
   aspect-ratio: 1;
   border: 2px dashed var(--ink);
-  border-radius: 5px;
+  border-radius: var(--r-xs);
 }
 
 .seal {

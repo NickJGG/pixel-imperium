@@ -25,7 +25,7 @@
   color: var(--on-pink);
   background: color-mix(in srgb, var(--pink) 42%, transparent);
   border: 3px dashed var(--pink);
-  border-radius: 9px;
+  border-radius: var(--r-md);
 }
 
 .ghost[data-tone='blue'] {
@@ -62,7 +62,7 @@
 
 .both {
   border: 4px solid var(--pink);
-  border-radius: 7px;
+  border-radius: var(--r-sm);
   animation: pulse 1.3s ease-in-out infinite alternate;
 }
 
@@ -79,7 +79,7 @@
   --tone: var(--gold);
   --on-tone: var(--on-gold);
   border: 3px solid var(--tone);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
 }
 
 .bracket[data-tone='bad'] {
@@ -106,7 +106,7 @@
   font: 700 12px var(--font-mono);
   color: var(--on-tone);
   background: var(--tone);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
 }
 
 .bracket[data-axis='row'] span {
@@ -195,7 +195,7 @@
   font: 700 12px var(--font-mono);
   color: var(--ink);
   background: var(--card);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   box-shadow: 0 2px 0 var(--shade);
 }
 

@@ -22,12 +22,12 @@
   color: var(--on-cover);
   text-decoration: none;
   background-color: var(--spine);
-  background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 1.6px);
+  background-image: var(--cover-dots);
   background-size: 14px 14px;
-  border-radius: 4px 4px 0 0;
+  border-radius: var(--r-xs) var(--r-xs) 0 0;
   box-shadow:
-    inset 4px 0 0 rgb(255 255 255 / 0.18),
-    inset -6px 0 0 rgb(0 0 0 / 0.2);
+    inset 4px 0 0 var(--on-cover-tint-strong),
+    inset -6px 0 0 rgb(0 0 0 / 0.2); /* token-exempt: spine shadow, same on both themes */
   transition: height 120ms;
 }
 

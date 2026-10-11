@@ -14,7 +14,7 @@
   gap: 6px 10px;
   padding: 6px 10px;
   font: 600 15px var(--font-ui);
-  background: rgb(255 255 255 / 0.1);
+  background: var(--on-cover-tint);
   border-radius: var(--r-sm);
 }
 
@@ -23,7 +23,7 @@
   width: 12px;
   height: 12px;
   background: var(--tab);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
 }
 
 .index li[data-locked] {
@@ -31,7 +31,7 @@
 }
 
 .index li:has(a):hover {
-  background: rgb(255 255 255 / 0.18);
+  background: var(--on-cover-tint-strong);
 }
 
 .index a {
@@ -68,8 +68,8 @@
 
 .strip > i {
   height: 6px;
-  background: rgb(255 255 255 / 0.15);
-  border-radius: 1px;
+  background: var(--on-cover-tint);
+  border-radius: var(--r-xs);
 }
 
 .strip > [data-mark='filled'] {

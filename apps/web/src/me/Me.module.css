@@ -14,12 +14,12 @@
   --focus: var(--on-cover);
   color: var(--on-cover);
   background-color: var(--cover);
-  background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 1.6px);
+  background-image: var(--cover-dots);
   background-size: 14px 14px;
   border-radius: var(--r-xl) var(--r-sm) var(--r-sm) var(--r-xl);
   box-shadow:
     inset -10px 0 0 var(--cover-dk),
-    inset -13px 0 0 rgb(255 255 255 / 0.18),
+    inset -13px 0 0 var(--on-cover-tint-strong),
     6px 8px 0 var(--shade);
 }
 

@@ -14,12 +14,12 @@
   font: 600 11px var(--font-ui);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #4d6196;
+  color: var(--cobalt-ink-soft);
 }
 
 .nameplate b {
   overflow-wrap: anywhere;
   font: 400 22px/1.1 var(--font-display);
   letter-spacing: -0.04em;
-  color: #2348e8;
+  color: var(--cobalt-ink);
 }

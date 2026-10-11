@@ -3,6 +3,8 @@
  * die-cut stickers, pink and blue accents. Night is the main design and sits on bare :root;
  * Day appears twice: once for the system preference (unless Night is forced) and once for
  * an explicit data-theme="light". The canvas reads the --board-* values at draw time.
+ * Theme-invariant groups: cobalt (ink and dot pattern for things that sit on the cover blue,
+ * whatever the theme), foil (the sticker shimmer), scrim and gutter shade, radii, spacing.
  */
 :root {
   color-scheme: dark;
@@ -15,6 +17,7 @@
   --r-lg: 14px;
   --r-md: 10px;
   --r-sm: 6px;
+  --r-xs: 3px;
   --r-pill: 999px;
   --press: 4px;
 
@@ -41,6 +44,21 @@
   --on-cover: #ffffff;
   --label-tape: #1b1b28;
   --on-label-tape: #f4f4ff;
+  --on-ok: #0b2a12;
+
+  --cobalt-ink: #2348e8;
+  --cobalt-ink-soft: #4d6196;
+  --on-cover-tint: rgb(255 255 255 / 0.14);
+  --on-cover-tint-strong: rgb(255 255 255 / 0.18);
+  --cover-dots: radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 1.6px);
+  --cover-dots-faint: radial-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1.2px);
+
+  --foil: linear-gradient(135deg, #ffb3de, #b3fff6 25%, #fff3b0 50%, #d9b8ff 75%, #b3d4ff);
+  --foil-sheen: linear-gradient(115deg, transparent 10%, #ff9ad0 28%, #9ff 42%, #fff6a0 56%, #c8a0ff 72%, transparent 90%);
+  --foil-gold: linear-gradient(135deg, #ffe58a, var(--gold) 40%, #fff3b8 55%, var(--gold-dk));
+
+  --scrim: rgb(5 9 30 / 0.6);
+  --gutter-shade: rgba(10, 30, 80, 0.16);
 
   --desk: #0b1230;
   --desk-dot: rgba(120, 150, 255, 0.08);
@@ -82,26 +100,6 @@
   --board-aside: var(--blue);
   --board-reveal: var(--blue);
   --board-target: var(--pink);
-
-  /* Pre-album names, kept until every page is restyled. */
-  --bg: var(--desk);
-  --surface: var(--card);
-  --text: var(--ink);
-  --text-muted: var(--ink-soft);
-  --line: var(--ink);
-  --shadow: var(--shade);
-  --brand-bg: var(--cover);
-  --brand-text: var(--on-cover);
-  --blank-border: var(--line-soft);
-  --a1: var(--pink);
-  --on-a1: var(--on-pink);
-  --a2: var(--blue);
-  --on-a2: var(--on-blue);
-  --bad: var(--red);
-  --on-bad: var(--on-red);
-  --font-pixel: var(--font-display);
-  --bw: 2px;
-  --sh: 4px;
 }
 
 @media (prefers-color-scheme: light) {

@@ -24,12 +24,12 @@
 
 /* The gutter: each page darkens into the fold. */
 .page:first-child {
-  background: linear-gradient(to left, rgba(10, 30, 80, 0.16), transparent 22px);
+  background: linear-gradient(to left, var(--gutter-shade), transparent 22px);
 }
 
 .page:nth-child(2) {
   background:
-    linear-gradient(to right, rgba(10, 30, 80, 0.16), transparent 22px),
+    linear-gradient(to right, var(--gutter-shade), transparent 22px),
     color-mix(in srgb, var(--paper) 92%, var(--ink));
 }
 

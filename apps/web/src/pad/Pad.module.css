@@ -23,12 +23,12 @@
   color: var(--card);
   background: var(--face);
   border-radius: var(--r-pill);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--face) 60%, #000);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--face) 60%, #000); /* token-exempt: darkens whatever face the glyph has */
 }
 
 .glyph[data-button='A'] > b {
   --face: var(--ok);
-  color: #0d2612;
+  color: var(--on-ok);
 }
 
 .glyph[data-button='B'] > b {

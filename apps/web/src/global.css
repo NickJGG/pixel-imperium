@@ -137,13 +137,13 @@ button[data-variant='chip'][aria-pressed='true'] {
 
 [data-surface='cobalt'] :is(button:not([data-variant]), :is(button, a)[data-variant='paper']):not([data-surface='paper'] *) {
   --btn-bg: var(--sticker);
-  --btn-ink: #2348e8;
+  --btn-ink: var(--cobalt-ink);
   --btn-edge: var(--cover-dk);
 }
 
 [data-surface='cobalt'] :is(button, a)[data-variant='flat']:not([data-surface='paper'] *),
 [data-surface='cobalt'] :is(button, a)[data-variant='flat']:hover:not([data-surface='paper'] *) {
-  --btn-bg: rgb(255 255 255 / 0.14);
+  --btn-bg: var(--on-cover-tint);
   --btn-ink: var(--on-cover);
   --btn-edge: transparent;
 }

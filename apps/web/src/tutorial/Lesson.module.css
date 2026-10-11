@@ -20,7 +20,7 @@
   --focus: var(--blue);
   color: var(--ink);
   background-color: var(--paper);
-  background-image: radial-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1.2px);
+  background-image: var(--cover-dots-faint);
   background-size: 10px 10px;
   border-radius: var(--r-sm) var(--r-lg) var(--r-lg) var(--r-sm);
   box-shadow:
@@ -62,12 +62,12 @@
   width: 22px;
   height: 6px;
   background: var(--line-soft);
-  border-radius: 3px;
+  border-radius: var(--r-xs);
 }
 
 .lessons li[data-state='done'],
 .steps li[data-state='done'] {
-  color: #0b2a12;
+  color: var(--on-ok);
   background: var(--ok);
 }
 
@@ -116,7 +116,7 @@
   font: 700 11px var(--font-mono);
   color: var(--ink);
   background: var(--card);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   box-shadow: 0 2px 0 var(--shade);
 }
 
@@ -159,7 +159,7 @@
   padding: var(--space-6) var(--space-4);
   color: var(--on-cover);
   background-color: var(--cover);
-  background-image: radial-gradient(rgb(255 255 255 / 0.12) 1.5px, transparent 1.6px);
+  background-image: var(--cover-dots);
   background-size: 14px 14px;
 }
 
