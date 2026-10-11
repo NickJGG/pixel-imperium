@@ -1,142 +1,173 @@
 import { type CSSProperties, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import type { Campaign, CampaignSummary } from '@pixel-imperium/protocol'
-import { Sticker } from '../album/Sticker.tsx'
-import { VolumeShelf } from '../album/VolumeShelf.tsx'
+import type { Campaign, CampaignSummary, Province } from '@pixel-imperium/protocol'
+import { PlayIcon } from '../album/icons.tsx'
+import { Stamp } from '../album/Stamp.tsx'
+import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { useAccount } from '../account.ts'
-import { LearnCard } from '../tutorial/LearnCard.tsx'
-import { campaignProgress, continueAt, techniquesRecommended } from './progress.ts'
-import { ProvinceIndex } from './ProvinceIndex.tsx'
-import { ProvinceSpread } from './ProvincePage.tsx'
-import { GOLD_SLOT } from './PuzzleSlot.tsx'
-import { SHOWCASE_SIZE, type StickerEntry, coverStickers, latestStickers, showcaseOf } from './stickers.ts'
-import { ThisWeek } from './ThisWeek.tsx'
-import styles from './Cover.module.css'
+import type { ProgressStorage } from '../play/progress-storage.ts'
+import { type ProvinceProgress, campaignProgress, continueAt } from './progress.ts'
+import { GOLD_SLOT, PuzzleSlot } from './PuzzleSlot.tsx'
+import { type StickerEntry, latestStickers } from './stickers.ts'
+import { Spine, World, Worlds } from './worlds/Worlds.tsx'
+import styles from './Home.module.css'
 
 interface Props {
   campaign: Campaign
-  /** Every live campaign; the shelf of volumes shows only when there's more than one. */
+  /**
+   * Every live campaign. Only one is live, so home has no shelf of volumes yet; `VolumeShelf` comes back
+   * here once there's more than one.
+   */
   campaigns: CampaignSummary[]
 }
 
-/** Where the showcase's stickers land on the cover, biggest first. */
-const SLAPS = [
-  { tilt: 10, width: 96 },
-  { tilt: -8, width: 72 },
-  { tilt: 5, width: 64 },
-]
+/** A conquered province's collage holds this many of its stickers. */
+const COLLAGE = 9
 
 export function CampaignPage(props: Props) {
   const { generation } = useAccount()
-  return <Cover key={`${generation}:${props.campaign.id}`} {...props} />
+  return <Overview key={`${generation}:${props.campaign.id}`} {...props} />
 }
 
-/** Home, the desk: the album's cover as a band, the active province's spread, and this week and Learn beside it. */
-function Cover({ campaign, campaigns }: Props) {
-  const { storage, account } = useAccount()
-  const [{ progress, latest, now }] = useState(() => ({
+/**
+ * Home: every province as a column. The active one is wide with its slots and Continue; a conquered one is a
+ * collage of its stickers under the Conquered stamp; the next and the locked ones are thin spines in the fog.
+ */
+function Overview({ campaign }: Props) {
+  const { storage } = useAccount()
+  const [{ progress, latest }] = useState(() => ({
     progress: campaignProgress(campaign, storage),
     latest: latestStickers(campaign, storage),
-    now: new Date(),
   }))
-  const isSolved = (id: string) => storage.loadSolved(id) !== null
-  const next = continueAt(campaign, progress, isSolved)
-  const solved = progress.provinces.reduce((n, p) => n + p.solved, 0)
-  const total = progress.provinces.reduce((n, p) => n + p.total, 0)
-  const foil = latest.filter(s => s.foil && !s.unverified).length
-  const showcase = showcaseOf(coverStickers(latest), storage.loadShowcase(), account ? SHOWCASE_SIZE : 2).stickers
-  const province = next?.province ?? campaign.provinces.at(-1)
+  const next = continueAt(campaign, progress, id => storage.loadSolved(id) !== null)
 
   return (
-    <main className={styles.page}>
-      <section className={styles.cover} aria-labelledby="cover-title">
-        <div className={styles.band}>
-          <div className={styles.coverTitle}>
-            <h1 id="cover-title" className={styles.title}>
-              <span>Pixel</span> Imperium
-            </h1>
-            <p className={styles.volume}>Sticker album · {campaign.name}</p>
-          </div>
-          <div className={styles.stats}>
-            <p className={styles.total}>
-              <strong>
-                {solved} <em>/ {total}</em>
-              </strong>
-              stickers collected{foil > 0 && ` · ${foil} foil`}
-            </p>
-            <div className={styles.bar} aria-hidden="true">
-              {progress.provinces.map((p, i) => (
-                <i
-                  key={campaign.provinces[i]!.id}
-                  style={{ '--p': `${(p.solved / Math.max(1, p.total)) * 100}%` } as CSSProperties}
-                />
-              ))}
-            </div>
-          </div>
-          <div className={styles.slaps}>
-            {showcase.length > 0
-              ? showcase.map((s, i) => (
-                  <StickerLink key={s.puzzle.id} sticker={s} {...SLAPS[i]!} />
-                ))
-              : next?.fresh && (
-                  <Link to="/play/$id" params={{ id: next.puzzle.id }} className={styles.startHere}>
-                    Start here
-                  </Link>
-                )}
-          </div>
-        </div>
-        <ProvinceIndex
-          campaign={campaign}
-          progress={progress}
-          layout="row"
-          name={p => (
-            <Link to="/c/$campaignId/$provinceId" params={{ campaignId: campaign.id, provinceId: p.id }}>
-              {p.name.replace(/^The /, '')}
-            </Link>
-          )}
-        />
-      </section>
-      {campaigns.length > 1 && <VolumeShelf campaigns={campaigns} current={campaign.id} />}
-
-      <div className={styles.desk}>
-        {province && (
-          <ProvinceSpread
-            campaign={campaign}
-            province={province}
-            progress={progress}
-            storage={storage}
-            caption={progress.conquered ? campaign.closingLine : undefined}
-          />
-        )}
-        <div className={styles.side}>
-          {latest.length > 0 && <ThisWeek campaign={campaign} storage={storage} stickers={latest} foil={foil} now={now} />}
-          <LearnCard recommended={techniquesRecommended(campaign, progress)} />
-        </div>
-      </div>
+    <main className={styles.home}>
+      <h1 className={styles.srOnly}>{campaign.name}</h1>
+      <Worlds>
+        {campaign.provinces.map((province, index) => {
+          const p = progress.provinces[index]!
+          if (p.state === 'active') {
+            return (
+              <ActiveWorld
+                key={province.id}
+                campaign={campaign}
+                province={province}
+                index={index}
+                progress={p}
+                storage={storage}
+                padDefault={next?.province === province}
+              />
+            )
+          }
+          return (
+            <Spine
+              key={province.id}
+              campaignId={campaign.id}
+              province={province}
+              index={index}
+              state={p.state}
+              className={p.state === 'conquered' ? `${styles.conquered} ${progress.conquered ? styles.fill : ''}` : undefined}
+            >
+              {p.state === 'conquered' && (
+                <>
+                  <Collage stickers={latest.filter(s => s.province === index && s.palette !== null).slice(0, COLLAGE)} />
+                  <Stamp className={styles.stamp}>Conquered</Stamp>
+                </>
+              )}
+            </Spine>
+          )
+        })}
+      </Worlds>
     </main>
   )
 }
 
-function StickerLink({ sticker: s, tilt, width }: { sticker: StickerEntry; tilt: number; width: number }) {
-  const { puzzle } = s
+function ActiveWorld({
+  campaign,
+  province,
+  index,
+  progress: { solved, total },
+  storage,
+  padDefault,
+}: {
+  campaign: Campaign
+  province: Province
+  index: number
+  progress: ProvinceProgress
+  storage: ProgressStorage
+  padDefault: boolean
+}) {
+  const next = province.puzzles.find(p => storage.loadSolved(p.id) === null)
+  const number = next ? province.puzzles.indexOf(next) + 1 : 0
+  const id = `province-${province.id}`
   return (
-    <Link
-      to="/play/$id"
-      params={{ id: puzzle.id }}
-      className={styles.stickerLink}
-      style={{ '--w': `${width}px` } as CSSProperties}
-      aria-label={`#${s.number} ${puzzle.title}${s.unverified ? ', imported' : ''}`}
-    >
-      <Sticker
-        title={puzzle.title}
-        width={puzzle.width}
-        height={puzzle.height}
-        palette={s.palette ?? Array<null>(puzzle.width * puzzle.height).fill(null)}
-        gold={s.number === GOLD_SLOT}
-        unverified={s.unverified}
-        foil={s.foil}
-        tilt={tilt}
-      />
-    </Link>
+    <World index={index} className={styles.active} labelledBy={id}>
+      <div className={styles.open}>
+        <p className={styles.kicker}>
+          Province {index + 1} · {solved} / {total} collected
+        </p>
+        <h2 id={id} className={styles.name}>
+          {province.name}
+        </h2>
+        <p className={styles.theme}>{province.theme}</p>
+        <div className={styles.mini}>
+          {province.puzzles.map((p, i) => (
+            <PuzzleSlot key={p.id} puzzle={p} number={i + 1} storage={storage} next={p === next} />
+          ))}
+        </div>
+        <div className={styles.actions}>
+          {next && (
+            <Link
+              to="/play/$id"
+              params={{ id: next.id }}
+              className={styles.continue}
+              data-variant="primary"
+              data-pad-default={padDefault || undefined}
+            >
+              <PlayIcon />
+              {solved === 0 ? 'Start' : 'Continue'}
+              <small>
+                #{number} {next.title}
+              </small>
+            </Link>
+          )}
+          <Link
+            to="/c/$campaignId/$provinceId"
+            params={{ campaignId: campaign.id, provinceId: province.id }}
+            className={styles.openLink}
+            data-variant="paper"
+          >
+            Open {province.name.replace(/^The /, 'the ')}
+          </Link>
+        </div>
+      </div>
+    </World>
+  )
+}
+
+/** A conquered province's stickers, slapped down in two loose columns. Decorative: the spine names it. */
+function Collage({ stickers }: { stickers: StickerEntry[] }) {
+  return (
+    <span className={styles.collage} aria-hidden="true">
+      {stickers.map((s, k) => (
+        <span
+          key={s.puzzle.id}
+          className={styles.slap}
+          style={{ '--x': `${(k % 2) * 46 + ((k * 7) % 14)}%`, '--y': `${k * 10}%` } as CSSProperties}
+        >
+          <Sticker
+            title={s.puzzle.title}
+            width={s.puzzle.width}
+            height={s.puzzle.height}
+            palette={s.palette!}
+            gold={s.number === GOLD_SLOT}
+            foil={s.foil}
+            unverified={s.unverified}
+            tilt={tiltOf(s.puzzle.id) * 2}
+          />
+        </span>
+      ))}
+    </span>
   )
 }

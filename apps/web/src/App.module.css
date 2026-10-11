@@ -1,17 +1,19 @@
 .app {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-/* The spine bar: the album's cobalt spine laid across the top. */
+/* The slim cobalt spine over /play, with the puzzle beside the logo. The bottom padding clears its 4px edge. */
 .spine {
   position: relative;
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-3) max(var(--space-7), calc((100% - 1200px) / 2 + var(--space-7))) calc(var(--space-3) + 4px); /* token-exempt: bottom clears the 4px inset edge */
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: 0 var(--space-4) var(--space-1);
   --focus: var(--on-cover);
   color: var(--on-cover);
   background-color: var(--cover);
@@ -25,16 +27,16 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5em;
-  padding: var(--space-3) var(--space-3) var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-1);
   background: var(--sticker);
   color: var(--cobalt-ink);
   border-radius: var(--r-md);
-  font: 400 15px/1 var(--font-display); /* token-exempt: brand logo */
+  font: 400 11px/1 var(--font-display); /* token-exempt: brand logo */
   letter-spacing: -0.03em;
   text-decoration: none;
   white-space: nowrap;
   transform: rotate(-3deg);
-  box-shadow: 0 3px 0 var(--shade);
+  box-shadow: 0 2px 0 var(--shade);
 }
 
 .mark {
@@ -46,19 +48,6 @@
   color: var(--pink);
 }
 
-/* On /play: slim, full width, with the puzzle beside the logo. The bottom padding clears the spine's edge. */
-.spine[data-playing] {
-  min-height: 48px;
-  gap: var(--space-3);
-  padding: 0 var(--space-4) var(--space-1);
-}
-
-.spine[data-playing] .logo {
-  padding: var(--space-2) var(--space-3) var(--space-1);
-  font-size: 11px; /* token-exempt: brand logo */
-  box-shadow: 0 2px 0 var(--shade);
-}
-
 .puzzle {
   flex: 1;
   min-width: 0;
@@ -68,34 +57,6 @@
   white-space: nowrap;
 }
 
-.continue {
-  display: inline-flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  min-width: 0;
-  min-height: 36px;
-  margin-left: auto;
-  padding: 0 0 0 var(--space-4);
-  background: var(--on-cover-tint);
-  border-radius: var(--r-pill);
-  font: var(--type-small);
-}
-
-.nextUp {
-  align-self: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* The cluster's end cap: a 32px face on its 4px press edge fills the cluster's 36px. */
-.continue > a {
-  flex: none;
-  min-height: 32px;
-  padding: 0 var(--space-4);
-  font-size: var(--fs-14);
-}
-
 .tools {
   display: flex;
   align-items: center;
@@ -103,16 +64,12 @@
   margin-left: auto;
 }
 
-.continue + .tools {
-  margin-left: 0;
-}
-
 .spine .round {
   width: 36px;
   padding: 0;
 }
 
-.spine .avatar {
+.avatar {
   padding: 0 var(--space-4) 0 var(--space-1);
   font-size: var(--fs-14);
 }
@@ -379,31 +336,17 @@
 }
 
 @media (max-width: 720px) {
-  .spine {
-    gap: var(--space-3);
-    padding: var(--space-3) var(--space-4) var(--space-4);
-  }
-
-  .logo {
-    font-size: 12px; /* token-exempt: brand logo */
-  }
-
-  .continue,
   .handle {
     display: none;
   }
 
-  .continue + .tools {
-    margin-left: auto;
-  }
-
-  .spine[data-playing] {
+  .spine {
     gap: var(--space-2);
     padding: 0 var(--space-3) var(--space-1);
   }
 
-  .spine[data-playing] .wordmark,
-  .spine[data-playing] .round {
+  .spine .wordmark,
+  .spine .round {
     display: none;
   }
 

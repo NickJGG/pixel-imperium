@@ -1,0 +1,140 @@
+.home {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Clear of the floating HUD at the top. */
+.open {
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  gap: var(--space-3);
+  height: 100%;
+  padding: calc(var(--space-14) + var(--space-10)) var(--space-3) var(--space-7);
+  overflow-y: auto;
+}
+
+.kicker {
+  margin: 0;
+  font: var(--type-kicker);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.name {
+  margin: 0;
+  font: var(--type-hero);
+  font-size: clamp(var(--fs-40), 5vw, 4.75rem);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+
+.theme {
+  margin: 0;
+  font: var(--type-heading);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.mini {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: var(--space-2);
+  max-width: 680px;
+  margin: var(--space-2) 0;
+}
+
+.mini small {
+  display: none;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.continue {
+  min-height: 64px;
+  padding: 0 var(--space-7);
+  font-size: var(--fs-18);
+}
+
+.continue small {
+  font: var(--type-small);
+  opacity: 0.8;
+}
+
+.openLink {
+  min-height: 56px;
+  padding: 0 var(--space-6);
+  --btn-bg: var(--sticker);
+  --btn-ink: var(--cobalt-ink);
+  --btn-edge: var(--cover-dk);
+}
+
+.conquered {
+  --spine-w: 150px;
+}
+
+/* With the whole campaign conquered there's no wide column, so the collages share the width. */
+.fill {
+  flex-grow: 1;
+}
+
+.collage {
+  position: relative;
+  flex: 0 1 300px;
+  align-self: stretch;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.slap {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: 44%;
+}
+
+.slap > * {
+  width: 100%;
+}
+
+.stamp {
+  flex: none;
+}
+
+@media (max-width: 720px) {
+  .open {
+    height: auto;
+    padding: var(--space-6) var(--space-4);
+    overflow: visible;
+  }
+
+  .name {
+    font-size: var(--fs-40);
+  }
+
+  .mini {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .collage,
+  .stamp {
+    display: none;
+  }
+}

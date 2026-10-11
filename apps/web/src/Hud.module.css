@@ -1,0 +1,97 @@
+.hud {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  pointer-events: none;
+}
+
+@media (min-width: 721px) {
+  .hud[data-float] {
+    position: absolute;
+    inset: 0 0 auto;
+  }
+}
+
+.hud > * {
+  pointer-events: auto;
+}
+
+.logo {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  background: var(--sticker);
+  color: var(--cobalt-ink);
+  border-radius: var(--r-md);
+  font: 400 15px/1 var(--font-display); /* token-exempt: brand logo */
+  letter-spacing: -0.03em;
+  text-decoration: none;
+  white-space: nowrap;
+  transform: rotate(-3deg);
+  box-shadow: 0 3px 0 var(--shade);
+}
+
+.mark {
+  width: 1.5em;
+  height: 1em;
+}
+
+.wordmark span {
+  color: var(--pink);
+}
+
+/* Every pill one style, whatever variant AccountMenu gives its trigger. */
+.tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.tools > :is(button, a),
+.account [data-pad-menu] {
+  --btn-bg: var(--line-soft);
+  --btn-ink: var(--ink);
+  --btn-edge: var(--shade);
+  min-height: 44px;
+  font-size: var(--fs-16);
+}
+
+.account [data-pad-menu][aria-expanded='true'] {
+  --btn-bg: var(--ink);
+  --btn-ink: var(--card);
+  --btn-edge: transparent;
+}
+
+.account {
+  display: flex;
+}
+
+.round {
+  width: 44px;
+  padding: 0;
+}
+
+@media (max-width: 720px) {
+  .hud {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .logo {
+    font-size: 11px; /* token-exempt: brand logo */
+  }
+
+  .learn {
+    width: 44px;
+    padding: 0;
+  }
+
+  .label {
+    display: none;
+  }
+}

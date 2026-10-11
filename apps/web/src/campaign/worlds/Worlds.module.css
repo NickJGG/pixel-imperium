@@ -1,0 +1,131 @@
+.worlds {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.world {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  margin-left: calc(-1 * var(--slant));
+  padding: 0 var(--slant);
+  color: var(--ink);
+  background: var(--paper) radial-gradient(color-mix(in srgb, var(--ink) 9%, transparent) 1.5px, transparent 1.6px) 0 0 / 18px 18px;
+  clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+}
+
+.world:first-child {
+  margin-left: 0;
+  padding-left: var(--space-7);
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+}
+
+.world:last-child {
+  padding-right: var(--space-7);
+  clip-path: polygon(var(--slant) 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.world::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--space-2);
+  background: var(--tab);
+}
+
+/* A spine's visible strip is its width less the slant; its padding centres the content in that strip. */
+.spine {
+  flex: 0 1 calc(var(--spine-w, 56px) + var(--slant));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: calc(var(--space-14) + var(--space-10)) calc(var(--slant) / 2) var(--space-6);
+  text-decoration: none;
+}
+
+.spine:first-child,
+.spine:last-child {
+  padding-inline: calc(var(--slant) / 2);
+}
+
+.spine[data-state='next'] {
+  --spine-w: 72px;
+}
+
+.spine[data-state='locked'] {
+  color: var(--ink-soft);
+  background: linear-gradient(180deg, var(--card) 0%, var(--desk) 100%);
+}
+
+.spine[data-state='locked']::before {
+  background: var(--line-soft);
+}
+
+.name {
+  font: var(--type-title);
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+  transform: skewX(calc(-1 * var(--slant-angle))) rotate(180deg);
+}
+
+.count {
+  font: var(--type-micro);
+  text-transform: uppercase;
+}
+
+.lock {
+  font-size: 20px; /* token-exempt: icon size */
+  opacity: 0.7;
+}
+
+/* The clip would cut a ring round the whole column, so focus rings the name instead. */
+.spine:focus-visible,
+:root[data-pad] .spine:focus {
+  outline: none;
+}
+
+.spine:focus-visible .name,
+:root[data-pad] .spine:focus .name {
+  outline: 3px solid var(--focus, var(--blue));
+  outline-offset: 6px;
+  border-radius: var(--r-xs);
+}
+
+@media (max-width: 720px) {
+  .worlds {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .world,
+  .world:first-child,
+  .world:last-child {
+    flex: none;
+    margin: 0;
+    padding: 0;
+    clip-path: none;
+  }
+
+  .spine,
+  .spine:first-child,
+  .spine:last-child {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .name {
+    font: var(--type-name);
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+
+  .spine > :last-child {
+    margin-left: auto;
+  }
+}

@@ -1,12 +1,13 @@
-import { Outlet, createRootRoute, createRoute, createRouter, notFound, redirect } from '@tanstack/react-router'
+import { Outlet, createRootRoute, createRoute, createRouter, notFound, redirect, useRouterState } from '@tanstack/react-router'
 import { accountReady, useAccount } from './account.ts'
 import { fetchCampaign, fetchCampaigns, fetchProfile, fetchPuzzle } from './api.ts'
-import { AppHeader, ThumbBar } from './AppHeader.tsx'
+import { AppHeader } from './AppHeader.tsx'
 import { LoadError, Loading, NotFound } from './EdgeStates.tsx'
 import { CampaignPage } from './campaign/CampaignPage.tsx'
 import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
 import { ProvincePage } from './campaign/ProvincePage.tsx'
 import { ImportPrompt } from './ImportPrompt.tsx'
+import { Hud, ThumbBar } from './Hud.tsx'
 import { HandlePicker } from './me/HandlePicker.tsx'
 import { SettingsPage } from './me/SettingsPage.tsx'
 import { PadProvider } from './pad/PadProvider.tsx'
@@ -22,10 +23,12 @@ import styles from './App.module.css'
 
 function Root() {
   const { needsHandle } = useAccount()
+  // Play keeps the old spine for its title until it gets its own rail.
+  const playing = useRouterState({ select: s => s.location.pathname.startsWith('/play/') })
   return (
     <PadProvider>
       <div className={styles.app}>
-        <AppHeader />
+        {playing ? <AppHeader /> : <Hud />}
         {needsHandle ? <HandlePicker /> : <Outlet />}
         <ThumbBar />
         <ImportPrompt />

@@ -78,3 +78,10 @@ export const SignOutIcon = () => (
     <path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />
   </Icon>
 )
+
+export const LearnIcon = () => (
+  <Icon>
+    <path d="M2 9l10-5 10 5-10 5z" />
+    <path d="M6 11v5c3 2.5 9 2.5 12 0v-5M22 9v5" />
+  </Icon>
+)
