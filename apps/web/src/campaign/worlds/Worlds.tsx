@@ -16,9 +16,10 @@ export function Worlds({ children, className }: { children: ReactNode; className
   return <div className={[styles.worlds, className].filter(Boolean).join(' ')}>{children}</div>
 }
 
-/** An open column in a province's paper, with its colour stripe across the top. */
+/** An opened column in a province's paper, with its colour stripe across the top. */
 export function World({
   index,
+  fog = false,
   children,
   className,
   style,
@@ -26,6 +27,8 @@ export function World({
 }: {
   /** The province's index in its campaign, for its paper. */
   index: number
+  /** Still locked: opened in the fog instead of its paper. */
+  fog?: boolean
   children: ReactNode
   className?: string | undefined
   style?: CSSProperties | undefined
@@ -35,6 +38,7 @@ export function World({
     <section
       className={[styles.world, className].filter(Boolean).join(' ')}
       style={{ ...paperStyle(index), ...style }}
+      data-fog={fog || undefined}
       aria-labelledby={labelledBy}
     >
       {children}
@@ -59,6 +63,7 @@ export function Spine({
   index,
   state,
   count,
+  thin = false,
   children,
   className,
 }: {
@@ -68,6 +73,8 @@ export function Spine({
   state: ProvinceState
   /** E.g. "17/30", shown when the province is open. */
   count?: string | undefined
+  /** Beside an opened province: a smaller name. */
+  thin?: boolean
   /** Above the name, e.g. a conquered province's collage. */
   children?: ReactNode
   className?: string | undefined
@@ -80,6 +87,7 @@ export function Spine({
       className={[styles.world, styles.spine, className].filter(Boolean).join(' ')}
       style={paperStyle(index)}
       data-state={state}
+      data-thin={thin || undefined}
       aria-label={`${province.name}, ${stateLabel[state]}`}
     >
       {children}

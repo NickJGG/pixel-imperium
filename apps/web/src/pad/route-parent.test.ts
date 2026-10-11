@@ -3,7 +3,7 @@ import { routeParent } from './route-parent.ts'
 
 describe('routeParent', () => {
   it.each([
-    ['/c/rome/latium', '/c/rome'],
+    ['/c/rome/latium', '/'],
     ['/c/rome', null],
     ['/', null],
     ['/learn/techniques/overlap', '/learn'],

@@ -3,7 +3,7 @@
  * every puzzle in it is solved, the first unconquered one is active, the one after it is next
  * (named, still locked) and the rest are locked.
  */
-import type { Campaign, Province, PuzzleSummary } from '@pixel-imperium/protocol'
+import type { Campaign, Province, PuzzleSummary, Tier } from '@pixel-imperium/protocol'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 
 export type ProvinceState = 'locked' | 'next' | 'active' | 'conquered'
@@ -81,6 +81,22 @@ export function continueAt(
   if (!province || number === 0) return null
   const fresh = progress.provinces.every(p => p.solved === 0)
   return { province, puzzle: province.puzzles[number - 1]!, number, fresh }
+}
+
+export interface TierGroup {
+  tier: Tier
+  /** Each with its 1-based slot number on the province's pages. */
+  slots: { puzzle: PuzzleSummary; number: number }[]
+}
+
+const TIERS: Tier[] = ['easy', 'medium', 'hard']
+
+/** A province's puzzles by tier, easiest first, leaving out empty tiers. An untiered puzzle (a draft) counts as easy. */
+export function tierGroups(province: Pick<Province, 'puzzles'>): TierGroup[] {
+  const slots = province.puzzles.map((puzzle, i) => ({ puzzle, number: i + 1 }))
+  return TIERS.map(tier => ({ tier, slots: slots.filter(s => (s.puzzle.tier ?? 'easy') === tier) })).filter(
+    g => g.slots.length > 0,
+  )
 }
 
 /** The province flagged to offer the Techniques has started. */

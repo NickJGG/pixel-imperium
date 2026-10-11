@@ -1,0 +1,248 @@
+.page {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* Clear of the floating HUD at the top. */
+.zoom {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--space-5);
+  height: 100%;
+  padding: calc(var(--space-14) + var(--space-10)) var(--space-3) var(--space-7);
+}
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-5);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+}
+
+.kicker {
+  margin: 0 0 var(--space-1);
+  font: var(--type-kicker);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.name {
+  margin: 0;
+  font: var(--type-hero);
+  font-size: clamp(var(--fs-40), 4vw, 3.75rem);
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+}
+
+.count {
+  flex: none;
+  padding: var(--space-1) var(--space-3);
+  font: 700 var(--fs-16) var(--font-mono);
+  white-space: nowrap;
+  background: var(--ink);
+  color: var(--desk);
+  border-radius: var(--r-pill);
+}
+
+/* Each tier's share of the width is its number of slot columns. */
+.shelves {
+  display: grid;
+  grid-template-columns: var(--shelves);
+  gap: var(--space-7);
+  min-height: 0;
+}
+
+.shelf {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 0;
+}
+
+.tier {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+  padding-bottom: var(--space-2);
+  font: var(--type-name);
+  border-bottom: 4px solid color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.tier small {
+  font: var(--type-kicker);
+  opacity: 0.7;
+}
+
+.slots {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
+  gap: var(--space-3);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Square to the row's height, unless the column is narrower. */
+.slots > li {
+  display: grid;
+  align-content: center;
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: 1;
+  justify-self: center;
+  min-height: 0;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-6);
+}
+
+.caption {
+  margin: 0;
+  max-width: 52ch;
+  font: italic 500 var(--fs-16) var(--font-ui);
+}
+
+.stamp {
+  flex: none;
+  width: 76px;
+  height: 76px;
+  font-size: var(--fs-10);
+}
+
+/* A locked province: its slots blurred out under a round seal. */
+.locked {
+  grid-template-rows: none;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-6);
+  text-align: center;
+}
+
+.sealed {
+  position: relative;
+  width: min(100%, 680px);
+  min-height: 170px;
+}
+
+.ghosts {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: var(--space-2);
+  width: 100%;
+  opacity: 0.35;
+  filter: blur(1.5px);
+}
+
+.ghosts > i {
+  aspect-ratio: 1;
+  border: 2px dashed var(--ink);
+  border-radius: var(--r-xs);
+}
+
+.seal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: 150px;
+  height: 150px;
+  padding: var(--space-2);
+  background: var(--sticker);
+  border-radius: 50%;
+  box-shadow:
+    0 3px 0 var(--shade),
+    0 8px 14px -6px var(--shade);
+  rotate: -8deg;
+}
+
+.seal > span {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  height: 100%;
+  font: var(--type-name);
+  color: var(--on-tab);
+  background: var(--tab);
+  border-radius: 50%;
+}
+
+.sealLock {
+  font-size: 36px; /* token-exempt: icon size */
+}
+
+.lockedMsg {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  max-width: 46ch;
+  color: var(--ink);
+}
+
+.lockedMsg p:not(.kicker) {
+  margin: 0;
+  font-size: var(--fs-16);
+  color: var(--ink-soft);
+}
+
+.lockedMsg .paperLink {
+  margin-top: var(--space-2);
+}
+
+@media (max-width: 720px) {
+  .zoom {
+    grid-template-rows: none;
+    height: auto;
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .head {
+    flex-wrap: wrap;
+  }
+
+  .name {
+    font-size: var(--fs-28);
+  }
+
+  .shelves {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+
+  .slots {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: none;
+    gap: var(--space-2);
+  }
+
+  .slots > li {
+    height: auto;
+    justify-self: stretch;
+  }
+
+  .foot {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .ghosts {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}

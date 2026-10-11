@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Campaign } from '@pixel-imperium/protocol'
+import type { Campaign, Province, Tier } from '@pixel-imperium/protocol'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { stubStorage } from '../test-storage.ts'
-import { campaignProgress, continueAt, nextPuzzle, provinceStates, techniquesRecommended } from './progress.ts'
+import { campaignProgress, continueAt, nextPuzzle, provinceStates, techniquesRecommended, tierGroups } from './progress.ts'
 
 const puzzle = (id: string) => ({ id, title: id, width: 5, height: 5, filledCount: 1 })
 
@@ -129,5 +129,31 @@ describe('techniquesRecommended', () => {
 
   it('never recommends them with no flagged province', () => {
     expect(techniquesRecommended(campaign, provinceStates(campaign, () => true))).toBe(false)
+  })
+})
+
+describe('tierGroups', () => {
+  const tiered = (id: string, tier?: Tier) => ({ ...puzzle(id), ...(tier ? { tier } : {}) })
+  const numbers = (province: Pick<Province, 'puzzles'>) =>
+    tierGroups(province).map(g => [g.tier, g.slots.map(s => s.number)])
+
+  it('groups the slots by tier, easiest first, keeping their numbers', () => {
+    const puzzles = [tiered('a', 'easy'), tiered('b', 'easy'), tiered('c', 'medium'), tiered('d', 'hard'), tiered('e', 'hard')]
+    expect(numbers({ puzzles })).toEqual([
+      ['easy', [1, 2]],
+      ['medium', [3]],
+      ['hard', [4, 5]],
+    ])
+  })
+
+  it('counts untiered puzzles as easy and leaves out empty tiers', () => {
+    expect(numbers({ puzzles: [tiered('a'), tiered('b', 'hard'), tiered('c')] })).toEqual([
+      ['easy', [1, 3]],
+      ['hard', [2]],
+    ])
+  })
+
+  it('has no groups for an empty province', () => {
+    expect(tierGroups({ puzzles: [] })).toEqual([])
   })
 })

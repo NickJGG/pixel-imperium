@@ -56,12 +56,14 @@
   --spine-w: 72px;
 }
 
-.spine[data-state='locked'] {
+.spine[data-state='locked'],
+.world[data-fog] {
   color: var(--ink-soft);
   background: linear-gradient(180deg, var(--card) 0%, var(--desk) 100%);
 }
 
-.spine[data-state='locked']::before {
+.spine[data-state='locked']::before,
+.world[data-fog]::before {
   background: var(--line-soft);
 }
 
@@ -71,6 +73,10 @@
   white-space: nowrap;
   writing-mode: vertical-rl;
   transform: skewX(calc(-1 * var(--slant-angle))) rotate(180deg);
+}
+
+.spine[data-thin] .name {
+  font: var(--type-heading);
 }
 
 .count {
