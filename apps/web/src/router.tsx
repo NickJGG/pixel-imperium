@@ -3,6 +3,8 @@ import { accountReady, getAccount, useAccount } from './account.ts'
 import { fetchCampaign, fetchCampaigns, fetchProfile, fetchPuzzle } from './api.ts'
 import { LoadError, NotFound } from './EdgeStates.tsx'
 import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
+import { DailyPlayPage } from './daily/DailyPlayPage.tsx'
+import { dailyId } from './daily/clock.ts'
 import { ProvincePage } from './campaign/ProvincePage.tsx'
 import { ProvinceSkeleton } from './campaign/ProvinceSkeleton.tsx'
 import { campaignProgress, continueAt } from './campaign/progress.ts'
@@ -33,7 +35,9 @@ import styles from './App.module.css'
 function Root() {
   const { needsHandle } = useAccount()
   // Play and a Lesson carry the HUD's pills in their own rail or top line, or place the HUD themselves.
-  const playing = useRouterState({ select: s => /^\/(?:play\/|learn\/[^/]+\/[^/]+)/.test(s.location.pathname) })
+  const playing = useRouterState({
+    select: s => /^\/(?:play\/|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+)/.test(s.location.pathname),
+  })
   return (
     <PadProvider>
       <div className={styles.app}>
@@ -160,6 +164,22 @@ const playRoute = createRoute({
   notFoundComponent: () => <NotFound>There’s no puzzle by that name.</NotFound>,
 })
 
+/** A Daily, by its date; whether it can still be played is the page's to say. */
+const dailyPlayRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/daily/$year/$month/$day',
+  loader: async ({ params: { year, month, day } }) => {
+    const date = `${year}-${month}-${day}`
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw notFound()
+    const [puzzle] = await Promise.all([fetchPuzzle(dailyId(date)), accountReady])
+    if (!puzzle || !('daily' in puzzle)) throw notFound()
+    return { puzzle, date }
+  },
+  component: DailyPlayPage,
+  pendingComponent: PlaySkeleton,
+  notFoundComponent: () => <NotFound>There’s no Daily to play for that date.</NotFound>,
+})
+
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/u/$handle',
@@ -269,6 +289,7 @@ export const router = createRouter({
     campaignRoute,
     provinceRoute,
     playRoute,
+    dailyPlayRoute,
     profileRoute,
     profileSpreadRoute,
     settingsRoute,

@@ -154,12 +154,21 @@
   --p-forge: #3f2414;
   --p-capital: #2a2152;
   --p-throne: #401632;
+  --p-winter: #1c2c42;
+  --p-spring: #173a2b;
+  --p-summer: #3b3112;
+  --p-autumn: #3f2016;
   --t-marches: #ffd34a;
   --t-coast: #5bc8ff;
   --t-wildwood: #5ec46f;
   --t-forge: #ff9a3d;
   --t-capital: #b48cff;
   --t-throne: #ff4fa3;
+  /* The Daily's seasons; the server's generated tints (SEASON_TINT) match these. */
+  --t-winter: #a9d8ff;
+  --t-spring: #8fe3a6;
+  --t-summer: #ffcf5c;
+  --t-autumn: #ff8a5c;
   --on-tab: #1b1b28;
 
   --board-bg: #17224f;
@@ -202,6 +211,10 @@
     --p-forge: #ffd7b8;
     --p-capital: #e4d8ff;
     --p-throne: #ffcfe6;
+    --p-winter: #dceeff;
+    --p-spring: #d4f5dc;
+    --p-summer: #fff0bd;
+    --p-autumn: #ffdccb;
 
     --board-bg: #ffffff;
     --board-fill: #13306b;
@@ -240,6 +253,10 @@
   --p-forge: #ffd7b8;
   --p-capital: #e4d8ff;
   --p-throne: #ffcfe6;
+  --p-winter: #dceeff;
+  --p-spring: #d4f5dc;
+  --p-summer: #fff0bd;
+  --p-autumn: #ffdccb;
 
   --board-bg: #ffffff;
   --board-fill: #13306b;

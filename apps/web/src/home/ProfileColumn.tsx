@@ -4,6 +4,7 @@ import type { Campaign, Profile } from '@pixel-imperium/protocol'
 import { HandleHero } from '../album/HandleHero.tsx'
 import { profileStickers, showcaseOf } from '../campaign/stickers.ts'
 import { World } from '../campaign/worlds/Worlds.tsx'
+import { solveTimes } from '../daily/clock.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { streakOf, weekOf } from '../profile/activity.ts'
 import { Showcase } from '../profile/Showcase.tsx'
@@ -33,10 +34,7 @@ export function ProfileColumn({
   style: CSSProperties
 }) {
   const [now] = useState(() => new Date())
-  const times = useMemo(
-    () => profile?.campaigns.flatMap(c => Object.values(c.solvedAt).map(at => new Date(at))) ?? [],
-    [profile],
-  )
+  const times = useMemo(() => (profile ? solveTimes([...profile.campaigns, ...profile.years]) : []), [profile])
   const stickers = useMemo(() => {
     const entry = profile?.campaigns.find(c => c.id === campaign.id)
     return entry ? profileStickers(campaign, entry, storage) : []

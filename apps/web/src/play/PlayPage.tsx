@@ -1,4 +1,13 @@
-import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import {
+  type CSSProperties,
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
 import type { Campaign, Province, PuzzleClues, Tier } from '@pixel-imperium/protocol'
@@ -51,6 +60,7 @@ const route = getRouteApi('/play/$id')
 
 export function PlayPage() {
   const { puzzle, campaign } = route.useLoaderData()
+  const previewConquest = route.useSearch().conquest === true
   const account = useAccount()
   const province = campaign.provinces.find(p => p.id === puzzle.provinceId)!
   const progress = campaignProgress(campaign, account.storage)
@@ -62,15 +72,54 @@ export function PlayPage() {
       </>
     )
   }
+  const index = campaign.provinces.indexOf(province)
+  const number = province.puzzles.findIndex(p => p.id === puzzle.id) + 1
   return (
     <Play
       key={`${account.generation}:${puzzle.id}`}
       puzzle={puzzle}
-      campaign={campaign}
-      province={province}
       account={account}
+      context={{
+        place: province.name,
+        paper: paperStyle(index),
+        back: `/c/${campaign.id}/${province.id}`,
+        here: `/play/${puzzle.id}`,
+        meta: [`${puzzle.width}×${puzzle.height}`, puzzle.tier && TIER_NAME[puzzle.tier]].filter(Boolean).join(' · '),
+        campaign,
+        album: { campaign, province, index, number, previewConquest },
+      }}
     />
   )
+}
+
+/**
+ * Where the puzzle belongs, for everything around the board. A campaign puzzle's `album` is its Province:
+ * the slots, gold slot, onward link, conquest and Techniques offer. A Daily has none of those.
+ */
+export interface PlayContext {
+  /** Whose page the sticker goes on: the Province's or the Month's name. */
+  place: string
+  paper: CSSProperties
+  /** That page, for the way back and for B once solved. */
+  back: string
+  /** This puzzle's own path, for Learn to hand back to. */
+  here: string
+  meta: string
+  /** Beside the meta while it's unsolved: how long is left to finish a Daily. */
+  chip?: ReactNode
+  /** For How to play's New tag. */
+  campaign?: Campaign
+  album?: AlbumPlace
+}
+
+interface AlbumPlace {
+  campaign: Campaign
+  province: Province
+  index: number
+  /** 1-based on the province's pages. */
+  number: number
+  /** Dev only: the after panel as if this solve had just conquered the province. */
+  previewConquest: boolean
 }
 
 function useStoreValue<T>(store: PlayStore, select: (s: PlayState) => T): T {
@@ -93,20 +142,18 @@ const centerOf = (el: Element) => {
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
 }
 
-function Play({
+export function Play({
   puzzle,
-  campaign,
-  province,
+  context,
   account: { storage, sync },
 }: {
   puzzle: PuzzleClues
-  campaign: Campaign
-  province: Province
+  context: PlayContext
   account: AccountState
 }) {
-  const provinceIndex = campaign.provinces.indexOf(province)
-  const number = province.puzzles.findIndex(p => p.id === puzzle.id) + 1
-  const isConquered = () => campaignProgress(campaign, storage).provinces[provinceIndex]!.state === 'conquered'
+  const { album, paper } = context
+  const isConquered = () =>
+    album !== undefined && campaignProgress(album.campaign, storage).provinces[album.index]!.state === 'conquered'
   const [store] = useState(
     () =>
       new PlayStore(puzzle, {
@@ -119,9 +166,10 @@ function Play({
   const boardRef = useBoardGestures(store, boardView)
   const solved = useStoreValue(store, s => s.solved)
   const [conqueredBefore] = useState(isConquered)
-  const previewConquest = route.useSearch().conquest === true
+  const previewConquest = album?.previewConquest === true
   const conquest = previewConquest || (solved && !conqueredBefore && isConquered())
-  const next = solved ? nextPuzzle(province.puzzles, puzzle.id, id => storage.loadSolved(id) !== null) : null
+  const next =
+    solved && album ? nextPuzzle(album.province.puzzles, puzzle.id, id => storage.loadSolved(id) !== null) : null
   const replaying = useStoreValue(store, s => s.replaying)
   const unverified = !solved && storage.loadSolved(puzzle.id) === 'unverified'
   const [firstSolve] = useState(() => storage.loadSolved(puzzle.id) === null)
@@ -134,7 +182,7 @@ function Play({
   const settings = useSettings()
   const pad = usePadMode()
   const offerTutorial = useShouldOffer(storage)
-  const offerTechniques = useShouldOfferTechniques(province, useLessonsDone()) && !offerTutorial
+  const offerTechniques = useShouldOfferTechniques(album?.province, useLessonsDone()) && !offerTutorial
   const fresh = useMemo(() => freshCells(puzzle, settings.autoMarkEmptyLines), [puzzle, settings.autoMarkEmptyLines])
   const canClear = useMemo(() => cells.some((c, i) => c !== fresh[i]), [cells, fresh])
   const crossRow = useStoreValue(store, s => (settings.crosshair ? (crosshairOf(s)?.row ?? null) : null))
@@ -208,7 +256,7 @@ function Play({
 
   // Read at each render: the first solve settles it, and an account's server answer can overrule the device.
   const foil = storage.loadFoil(puzzle.id)
-  const gold = number === GOLD_SLOT
+  const gold = album?.number === GOLD_SLOT
   const kind = conquest || gold ? 'gold' : foil ? 'foil' : 'plain'
   const cheer = () => {
     play(conquest ? 'chime' : 'thunk')
@@ -294,7 +342,7 @@ function Play({
   const afterOpen = !wide && (done || (hideSticker && !fitting))
 
   usePadPage({
-    parent: solved ? `/c/${campaign.id}/${province.id}` : undefined,
+    parent: solved ? context.back : undefined,
     panel: () => {
       if (!wide) return dockRef.current?.querySelector<HTMLElement>('[data-pad-menu]') ?? null
       const panel = panelRef.current
@@ -308,7 +356,8 @@ function Play({
     const active = document.activeElement
     if (active === document.body || stageRef.current?.contains(active)) focusDefault()
   }, [done])
-  const left = province.puzzles.filter(p => storage.loadSolved(p.id) === null).length
+  const left = album?.province.puzzles.filter(p => storage.loadSolved(p.id) === null).length ?? 0
+  const title = album ? `#${album.number} ${puzzle.title}` : puzzle.title
   const art = palette ?? Array<null>(puzzle.width * puzzle.height).fill(null)
   const sticker = (tilt = 0) => (
     <Sticker
@@ -351,30 +400,32 @@ function Play({
 
   const controls = { lines: true, zoom: true, back: 'Back to page' }
 
-  const following = campaign.provinces[provinceIndex + 1]
-  const message = conquest ? (
-    <p role="status">
-      <b>{province.name} conquered.</b>
-      {province.flavour && <span className={styles.flavour}>{province.flavour}</span>}
-    </p>
-  ) : (
-    <p role="status">
-      {moment === 'landed'
-        ? `${puzzle.title} is in ${province.name}. ${left === 0 ? 'Page complete.' : `${left} to go.`}`
-        : moment === 'kept'
-          ? `Solved again. ${puzzle.title} stays where it is.`
-          : `${puzzle.title} is in the album.`}
-    </p>
+  const following = album?.campaign.provinces[album.index + 1]
+  const tally = album ? ` ${left === 0 ? 'Page complete.' : `${left} to go.`}` : ''
+  const message =
+    conquest && album ? (
+      <p role="status">
+        <b>{album.province.name} conquered.</b>
+        {album.province.flavour && <span className={styles.flavour}>{album.province.flavour}</span>}
+      </p>
+    ) : (
+      <p role="status">
+        {moment === 'landed'
+          ? `${puzzle.title} is in ${context.place}.${tally}`
+          : moment === 'kept'
+            ? `Solved again. ${puzzle.title} stays where it is.`
+            : `${puzzle.title} is in the album.`}
+      </p>
+    )
+  const closing = conquest && album && !following && (
+    <p className={styles.closing}>{album.campaign.closingLine || `${album.campaign.name} is yours.`}</p>
   )
-  const closing = conquest && !following && (
-    <p className={styles.closing}>{campaign.closingLine || `${campaign.name} is yours.`}</p>
-  )
-  const onward = !conquest ? (
+  const onward = !album ? null : !conquest ? (
     next && (
       <Link to="/play/$id" params={{ id: next.id }} data-variant="primary" data-pad-default>
         Next
         <small>
-          #{province.puzzles.indexOf(next) + 1} {next.title}
+          #{album.province.puzzles.indexOf(next) + 1} {next.title}
         </small>
         <ArrowIcon />
         <PadGlyph button="A" />
@@ -383,9 +434,9 @@ function Play({
   ) : following ? (
     <Link
       to="/c/$campaignId/$provinceId"
-      params={{ campaignId: campaign.id, provinceId: following.id }}
+      params={{ campaignId: album.campaign.id, provinceId: following.id }}
       className={styles.into}
-      style={paperStyle(provinceIndex + 1)}
+      style={paperStyle(album.index + 1)}
       data-variant="primary"
       data-pad-default
     >
@@ -396,29 +447,24 @@ function Play({
   ) : (
     <Link
       to="/c/$campaignId/$provinceId"
-      params={{ campaignId: campaign.id, provinceId: campaign.provinces.at(-1)!.id }}
+      params={{ campaignId: album.campaign.id, provinceId: album.campaign.provinces.at(-1)!.id }}
       data-variant="primary"
       data-pad-default
     >
-      To {campaign.provinces.at(-1)!.name.replace(/^The /, 'the ')}
+      To {album.campaign.provinces.at(-1)!.name.replace(/^The /, 'the ')}
       <PadGlyph button="A" />
     </Link>
   )
   const backToPage = (
-    <Link
-      to="/c/$campaignId/$provinceId"
-      params={{ campaignId: campaign.id, provinceId: province.id }}
-      data-variant="paper"
-      data-pad-default={!onward || undefined}
-    >
-      {province.name}
+    <Link to={context.back} data-variant="paper" data-pad-default={!onward || undefined}>
+      {context.place}
       <PadGlyph button="B" />
     </Link>
   )
   const replay = <ClearButton store={store} solved />
   const actions = (
     <div className={styles.btnRow}>
-      <HowToPlay back={`/play/${puzzle.id}`} campaign={campaign} className={styles.howTo} />
+      <HowToPlay back={context.here} campaign={context.campaign} className={styles.howTo} />
       <ClearButton store={store} solved={false} disabled={!canClear} />
     </div>
   )
@@ -433,14 +479,14 @@ function Play({
       </span>
     )
   )
-  const slotRow = { province, number, storage, hideSticker }
+  const slotRow = album && { province: album.province, number: album.number, storage, hideSticker }
 
   const afterBody = (
     <>
-      {conquest ? (
+      {conquest && album ? (
         following ? (
           <CountPill conquered className={styles.conquestPill}>
-            {province.puzzles.length}/{province.puzzles.length}
+            {album.province.puzzles.length}/{album.province.puzzles.length}
           </CountPill>
         ) : (
           <CountPill tone="gold" className={styles.conquestPill}>
@@ -460,34 +506,30 @@ function Play({
     </>
   )
 
-  const meta = [`${puzzle.width}×${puzzle.height}`, puzzle.tier && TIER_NAME[puzzle.tier]].filter(Boolean).join(' · ')
+  const { meta } = context
+  const chip = !solved && context.chip
   const backLink = (className: string | undefined) => (
-    <Link
-      to="/c/$campaignId/$provinceId"
-      params={{ campaignId: campaign.id, provinceId: province.id }}
-      className={className}
-      aria-label={`Back to ${province.name}`}
-    >
-      ← <span>{province.name}</span>
+    <Link to={context.back} className={className} aria-label={`Back to ${context.place}`}>
+      ← <span>{context.place}</span>
     </Link>
   )
   const offer = offerTutorial ? (
-    <ChoiceCard track={TRACKS.tutorial} copy={TUTORIAL_OFFER} puzzleId={puzzle.id} />
+    <ChoiceCard track={TRACKS.tutorial} copy={TUTORIAL_OFFER} back={context.here} />
   ) : (
-    offerTechniques && <ChoiceCard track={TRACKS.techniques} copy={techniquesOffer(province)} puzzleId={puzzle.id} />
+    offerTechniques &&
+    album && <ChoiceCard track={TRACKS.techniques} copy={techniquesOffer(album.province)} back={context.here} />
   )
 
   // One tree for both layouts: the strip, rail and top line sit in fixed child positions around the
   // surface, so switching between them never remounts the surface or the board.
   return (
-    <main ref={shellRef} className={styles.shell} data-rail={wide || undefined} style={paperStyle(provinceIndex)}>
+    <main ref={shellRef} className={styles.shell} data-rail={wide || undefined} style={paper}>
       {!wide && (
         <header className={styles.topLine}>
           {backLink(styles.topBack)}
-          <h1 className={styles.topTitle}>
-            #{number} {puzzle.title}
-          </h1>
+          <h1 className={styles.topTitle}>{title}</h1>
           <span className={styles.topMeta}>{meta}</span>
+          {chip}
           {!solved && <span className={styles.topPercent}>{percent}%</span>}
           {!done && tag}
           <span className={styles.topTools}>
@@ -497,7 +539,7 @@ function Play({
         </header>
       )}
       <div className={styles.shellBody}>
-        {wide && (
+        {wide && slotRow && (
           <Filmstrip
             {...slotRow}
             slotRef={setSlot}
@@ -530,17 +572,16 @@ function Play({
             className={styles.rail}
             style={{ width: RAIL_WIDTH }}
             data-pad-panel
-            aria-label={`#${number} ${puzzle.title}`}
+            aria-label={title}
           >
             <HudPills className={styles.railPills} />
             <div className={styles.railTitle}>
               {backLink(styles.railBack)}
               <h1 className={styles.railName}>
-                <Dymo>
-                  #{number} {puzzle.title}
-                </Dymo>
+                <Dymo>{title}</Dymo>
               </h1>
               <p className={styles.railMeta}>{meta}</p>
+              {chip}
               {!done && tag}
             </div>
             {!solved && (
@@ -589,11 +630,15 @@ function Play({
           store={store}
           solved={solved}
           hint={hintButton(true)}
-          paper={paperStyle(provinceIndex)}
+          paper={paper}
           page={
             <>
-              <PageHead {...slotRow} />
-              <SlotRow {...slotRow} />
+              {slotRow && (
+                <>
+                  <PageHead {...slotRow} />
+                  <SlotRow {...slotRow} />
+                </>
+              )}
               {foilChip}
               {actions}
               <h2 className={styles.sheetHead}>Assists</h2>
@@ -605,9 +650,9 @@ function Play({
         />
       )}
       {afterOpen && (
-        <div className={`${styles.sheet} ${styles.afterSheet}`} style={paperStyle(provinceIndex)}>
+        <div className={`${styles.sheet} ${styles.afterSheet}`} style={paper}>
           <div className={styles.sheetFace}>
-            <SlotRow {...slotRow} slotRef={setSlot} />
+            {slotRow && <SlotRow {...slotRow} slotRef={setSlot} />}
             {/* Laid out but unseen until the sticker lands, so the slot row can't shift under its flight. */}
             <div className={styles.panelAfter} data-pending={!done || undefined}>
               {afterBody}
@@ -625,15 +670,16 @@ function Play({
             )}
             <span>
               <span className={styles.bandKick}>
-                {conquest ? (
+                {conquest && album ? (
                   <>
-                    <CheckIcon /> {province.puzzles.length} / {province.puzzles.length} · Province {provinceIndex + 1}
+                    <CheckIcon /> {album.province.puzzles.length} / {album.province.puzzles.length} · Province{' '}
+                    {album.index + 1}
                   </>
                 ) : (
-                  ['Stage clear', foil && 'Foil', gold && 'Gold'].filter(Boolean).join(' · ')
+                  [album ? 'Stage clear' : 'Daily clear', foil && 'Foil', gold && 'Gold'].filter(Boolean).join(' · ')
                 )}
               </span>
-              <span className={styles.bandTitle}>{conquest ? `${province.name} is yours` : `#${number} ${puzzle.title}`}</span>
+              <span className={styles.bandTitle}>{conquest && album ? `${album.province.name} is yours` : title}</span>
             </span>
           </div>
         </div>

@@ -62,9 +62,13 @@ export function shouldOffer(askedAt: string | null, storage: ProgressStorage): b
 export const useShouldOffer = (storage: ProgressStorage): boolean => shouldOffer(useAskedAt('tutorial'), storage)
 
 /** In the province flagged for them, never once asked, and none of them done yet. */
-export function shouldOfferTechniques(askedAt: string | null, province: Province, done: ReadonlySet<string>): boolean {
-  return askedAt === null && province.techniques === true && !startedTrack(TRACKS.techniques, done)
+export function shouldOfferTechniques(
+  askedAt: string | null,
+  province: Province | undefined,
+  done: ReadonlySet<string>,
+): boolean {
+  return askedAt === null && province?.techniques === true && !startedTrack(TRACKS.techniques, done)
 }
 
-export const useShouldOfferTechniques = (province: Province, done: ReadonlySet<string>): boolean =>
+export const useShouldOfferTechniques = (province: Province | undefined, done: ReadonlySet<string>): boolean =>
   shouldOfferTechniques(useAskedAt('techniques'), province, done)

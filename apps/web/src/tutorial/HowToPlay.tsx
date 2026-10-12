@@ -10,11 +10,22 @@ import styles from './Learn.module.css'
 
 /**
  * Opens Learn, which hands back to `back`. Tagged New once `campaign` recommends the Techniques and
- * none of them is done yet.
+ * none of them is done yet; never without one.
  */
-export function HowToPlay({ back, campaign, className }: { back: string; campaign: Campaign; className: string | undefined }) {
+export function HowToPlay({
+  back,
+  campaign,
+  className,
+}: {
+  back: string
+  campaign: Campaign | undefined
+  className: string | undefined
+}) {
   const { storage } = useAccount()
-  const recommended = useMemo(() => techniquesRecommended(campaign, campaignProgress(campaign, storage)), [campaign, storage])
+  const recommended = useMemo(
+    () => campaign !== undefined && techniquesRecommended(campaign, campaignProgress(campaign, storage)),
+    [campaign, storage],
+  )
   const done = useLessonsDone()
   const fresh = recommended && !startedTrack(TRACKS.techniques, done)
   return (

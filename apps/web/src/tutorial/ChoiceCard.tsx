@@ -42,7 +42,8 @@ export const techniquesOffer = (province: Province): OfferCopy => ({
  * Offers `track` over a puzzle, holding focus until answered. Learn, the decline button, ✕ and Escape
  * all count as asked, which is what takes the card away.
  */
-export function ChoiceCard({ track, copy, puzzleId }: { track: Track; copy: OfferCopy; puzzleId: string }) {
+/** `back` is the puzzle's page, where the track hands back to. */
+export function ChoiceCard({ track, copy, back }: { track: Track; copy: OfferCopy; back: string }) {
   const cardRef = useRef<HTMLDivElement>(null)
   const learnRef = useRef<HTMLAnchorElement>(null)
   const { mark } = asked(track.id)
@@ -85,7 +86,7 @@ export function ChoiceCard({ track, copy, puzzleId }: { track: Track; copy: Offe
           ref={learnRef}
           to="/learn/$track/$lesson"
           params={{ track: track.id, lesson: track.lessons[0]!.id }}
-          search={{ back: `/play/${puzzleId}` }}
+          search={{ back }}
           className={styles.learn}
           data-variant="primary"
           onClick={mark}

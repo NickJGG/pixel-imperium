@@ -17,7 +17,7 @@ export interface Handoff {
   action: string
 }
 
-const BACK = /^\/(?:play\/[\w-]+|c\/[\w-]+(?:\/[\w-]+)?|\?open=(?:learn|profile|settings|signin))?$/
+const BACK = /^\/(?:play\/[\w-]+|daily\/\d{4}\/\d{2}\/\d{2}|c\/[\w-]+(?:\/[\w-]+)?|\?open=(?:learn|profile|settings|signin))?$/
 
 /** Only the app's own pages, so `back` can't send the player off the site. */
 export const isBackPath = (back: unknown): back is string => typeof back === 'string' && BACK.test(back)
@@ -28,6 +28,8 @@ export function backLink(back: string): { to: string; search: Record<string, str
   return { to: to!, search: Object.fromEntries(new URLSearchParams(query)) }
 }
 
+const DAILY = /^\/daily\/\d{4}\/\d{2}\/\d{2}$/
+
 const DONE = "That's everything you need."
 
 export async function loadHandoff(back: string | undefined): Promise<Handoff> {
@@ -35,6 +37,10 @@ export async function loadHandoff(back: string | undefined): Promise<Handoff> {
   const fallback: Handoff = { to: back ?? '/', heading: 'Back home.', text: DONE, action: 'Back home' }
   const page = back?.match(/^\/c\/([\w-]+)\/([\w-]+)$/)
   if (page) return provinceHandoff(page[1]!, page[2]!, fallback)
+  if (back && DAILY.test(back)) {
+    const text = `${DONE} Your puzzle is just as you left it.`
+    return { to: back, heading: 'Back to the Daily.', text, action: 'Back to the Daily' }
+  }
   if (back && back !== '/' && !puzzleId) return fallback
   try {
     await accountReady
@@ -74,7 +80,7 @@ export interface LearnBack {
 
 export async function loadLearnBack(back: string | undefined): Promise<LearnBack> {
   const to = back ?? '/'
-  const label = 'Back home'
+  const label = DAILY.test(to) ? 'Back to the Daily' : 'Back home'
   const puzzleId = to.match(/^\/play\/(.+)$/)?.[1]
   const page = to.match(/^\/c\/([\w-]+)(?:\/([\w-]+))?$/)
   try {

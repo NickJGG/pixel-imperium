@@ -1,6 +1,6 @@
 import { type CSSProperties, type ReactNode, useLayoutEffect, useRef } from 'react'
 import { useParams } from '@tanstack/react-router'
-import { paperStyle } from '../album/paper.ts'
+import { paperStyle, seasonStyle } from '../album/paper.ts'
 import { currentCampaign } from '../campaign/last-campaign.ts'
 import { CrownMark, HudPills, SoundButton, ThemeButton } from '../Hud.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
@@ -24,19 +24,21 @@ function findPuzzle(id: string) {
 
 /**
  * A puzzle while it loads, on its province's paper (the fog without its campaign in memory): the filmstrip, the
- * board and the rail, or the top line, the board and the dock where there's no room for a rail.
+ * board and the rail, or the top line, the board and the dock where there's no room for a rail. A Daily is on its
+ * Month's season paper, with no filmstrip.
  */
 export function PlaySkeleton() {
-  const { id } = useParams({ from: '/play/$id' })
+  const { id, month } = useParams({ strict: false })
   const wide = useRail()
-  const found = findPuzzle(id)
+  const found = id === undefined ? null : findPuzzle(id)
+  const paper = found ? paperStyle(found.index) : month !== undefined ? seasonStyle(Number(month)) : FOG
   const board = <BoardGhost width={found?.puzzle.width ?? 15} height={found?.puzzle.height ?? 15} />
 
   return (
     <main
       className={styles.shell}
       data-rail={wide || undefined}
-      style={found ? paperStyle(found.index) : FOG}
+      style={paper}
       aria-busy="true"
     >
       <SrLoading />
@@ -51,7 +53,7 @@ export function PlaySkeleton() {
         </header>
       )}
       <div className={styles.shellBody}>
-        {wide && (
+        {wide && month === undefined && (
           <Film
             count={found?.count ?? 12}
             current={(found?.number ?? 1) - 1}
