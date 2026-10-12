@@ -1,10 +1,9 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
-import { Link, useRouter, useRouterState } from '@tanstack/react-router'
+import { Link, useRouter } from '@tanstack/react-router'
 import { signOutAccount } from './account.ts'
 import { usePadContain } from './pad/PadProvider.tsx'
-import { AlbumIcon, LearnIcon, SettingsIcon, SignOutIcon } from './album/icons.tsx'
+import { AlbumIcon, SettingsIcon, SignOutIcon } from './album/icons.tsx'
 import { PROVIDERS, signIn, useSession } from './auth.ts'
-import { isBackPath } from './tutorial/handoff.ts'
 import styles from './App.module.css'
 
 /** The avatar sticker and its menu sheet when signed in; a "Sign in" sheet when signed out. */
@@ -38,44 +37,16 @@ export function AccountMenu() {
   )
 }
 
-/**
- * The phone thumb bar's Profile: the account menu or the sign-in sheet, opening upwards, with Learn added
- * since the phone's HUD leaves both out.
- */
+/** The phone thumb bar's Profile: the account menu or the sign-in sheet, opening upwards, since the phone's HUD leaves both out. */
 export function ThumbMenu({ trigger, triggerClassName }: { trigger: ReactNode; triggerClassName: string | undefined }) {
   const { data, isPending } = useSession()
   if (isPending) return <span />
   const common = { trigger, triggerClassName, triggerVariant: 'flat', up: true } as const
-  if (!data) {
-    return (
-      <SignInMenu {...common}>
-        <LearnItem />
-      </SignInMenu>
-    )
-  }
+  if (!data) return <SignInMenu {...common} />
   return (
     <Menu label={`Account: @${data.user.handle}`} {...common}>
-      <LearnItem />
       <AccountItems handle={data.user.handle} />
     </Menu>
-  )
-}
-
-function LearnItem() {
-  const pathname = useRouterState({ select: s => s.location.pathname })
-  return (
-    <Link
-      to="/learn"
-      search={isBackPath(pathname) ? { back: pathname } : {}}
-      role="menuitem"
-      className={styles.item}
-      data-variant="flat"
-    >
-      <span className={styles.ico}>
-        <LearnIcon />
-      </span>
-      Learn
-    </Link>
   )
 }
 
@@ -122,11 +93,9 @@ interface SignInMenuProps extends TriggerProps {
   trigger: ReactNode
   /** Opens above the trigger, for the thumb bar. */
   up?: boolean
-  /** Below the providers. */
-  children?: ReactNode
 }
 
-function SignInMenu({ trigger, up, children, ...triggerProps }: SignInMenuProps) {
+function SignInMenu({ trigger, up, ...triggerProps }: SignInMenuProps) {
   return (
     <Menu label="Sign in" trigger={trigger} up={up} {...triggerProps}>
       <h2>Keep your album safe</h2>
@@ -141,7 +110,6 @@ function SignInMenu({ trigger, up, children, ...triggerProps }: SignInMenuProps)
           Sign in with {p.label}
         </button>
       ))}
-      {children}
     </Menu>
   )
 }

@@ -2,11 +2,11 @@ import type { ReactNode } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useAccount } from './account.ts'
 import { AccountMenu, ThumbMenu } from './AccountMenu.tsx'
-import { AlbumIcon, AutoIcon, DayIcon, LearnIcon, NightIcon, PlayIcon, ProfileIcon, SoundIcon } from './album/icons.tsx'
+import { AutoIcon, DayIcon, HomeIcon, NightIcon, PlayIcon, ProfileIcon, SoundIcon } from './album/icons.tsx'
 import { useCurrentCampaign } from './campaign/last-campaign.ts'
+import { homeMorph, isProvincePath } from './campaign/worlds/Worlds.tsx'
 import { type ContinueAt, campaignProgress, continueAt } from './campaign/progress.ts'
 import { type Theme, updateSettings, useSettings } from './settings.ts'
-import { isBackPath } from './tutorial/handoff.ts'
 import app from './App.module.css'
 import styles from './Hud.module.css'
 
@@ -77,21 +77,10 @@ export function ThemeButton({ className, variant, size }: PillProps) {
   )
 }
 
-/** Learn, sound, theme and the account, every pill one style: the HUD's top-right, and the top of Play's rail. */
+/** Sound, theme and the account, every pill one style: the HUD's top-right, and the top of Play's rail. */
 export function HudPills({ className }: { className?: string | undefined }) {
-  const pathname = useRouterState({ select: s => s.location.pathname })
   return (
     <span className={className ? `${styles.tools} ${className}` : styles.tools}>
-      <Link
-        to="/learn"
-        search={isBackPath(pathname) ? { back: pathname } : {}}
-        className={styles.learn}
-        data-variant="paper"
-        aria-label="Learn"
-      >
-        <LearnIcon />
-        <span className={styles.label}>Learn</span>
-      </Link>
       <SoundButton className={styles.round} />
       <ThemeButton className={styles.round} />
       <span className={styles.account}>
@@ -109,7 +98,7 @@ export function Hud({ float }: { float?: boolean }) {
   const pathname = useRouterState({ select: s => s.location.pathname })
   return (
     <header className={styles.hud} data-float={(float ?? floats(pathname)) || undefined}>
-      <Link to="/" className={styles.logo}>
+      <Link to="/" viewTransition={isProvincePath(pathname) && homeMorph('home')} className={styles.logo}>
         <CrownMark className={styles.mark} />
         <span className={styles.wordmark}>
           <span>Pixel</span> Imperium
@@ -121,7 +110,7 @@ export function Hud({ float }: { float?: boolean }) {
 }
 
 /**
- * The phone's bottom bar: Album, a raised Continue, and Profile, whose menu also holds Learn and the account.
+ * The phone's bottom bar: Home, a raised Continue, and Profile, whose menu holds the account.
  * Hidden while playing and on wider screens.
  */
 export function ThumbBar() {
@@ -130,10 +119,10 @@ export function ThumbBar() {
   if (playing) return null
 
   return (
-    <nav className={app.thumbBar} aria-label="Album navigation">
+    <nav className={app.thumbBar} aria-label="Main navigation">
       <Link to="/" className={app.thumbItem}>
-        <AlbumIcon />
-        Album
+        <HomeIcon />
+        Home
       </Link>
       {next ? (
         <Link

@@ -1,5 +1,6 @@
 import type { Tier } from '@pixel-imperium/protocol'
-import { type CSSProperties, type ReactNode, useEffect, useRef } from 'react'
+import { type CSSProperties, type ReactNode, useLayoutEffect, useRef } from 'react'
+import { pixelImage } from '../campaign/PixelArt.tsx'
 import { useSettings } from '../settings.ts'
 import { Lock } from './Lock.tsx'
 import styles from './Slot.module.css'
@@ -70,32 +71,32 @@ export function Slot({ number, width, height, started, cells, next, gold, tier, 
   )
 }
 
-/** The filled cells of a board in progress, one canvas pixel per cell in the board's own colours. */
+/** The filled cells of a board in progress, one image pixel per cell in the board's own colours. */
 function Board({ cells, width, height }: { cells: string; width: number; height: number }) {
-  const ref = useRef<HTMLCanvasElement>(null)
+  const ref = useRef<HTMLImageElement>(null)
   const { theme } = useSettings()
 
-  useEffect(() => {
-    const canvas = ref.current!
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    const css = getComputedStyle(canvas)
-    ctx.fillStyle = css.getPropertyValue('--board-bg').trim()
-    ctx.fillRect(0, 0, width, height)
-    ctx.fillStyle = css.getPropertyValue('--board-fill').trim()
-    for (let i = 0; i < cells.length; i++) {
-      if (cells[i] === '#') ctx.fillRect(i % width, Math.floor(i / width), 1, 1)
-    }
+  useLayoutEffect(() => {
+    const img = ref.current!
+    const css = getComputedStyle(img)
+    img.src = pixelImage(width, height, ctx => {
+      ctx.fillStyle = css.getPropertyValue('--board-bg').trim()
+      ctx.fillRect(0, 0, width, height)
+      ctx.fillStyle = css.getPropertyValue('--board-fill').trim()
+      for (let i = 0; i < cells.length; i++) {
+        if (cells[i] === '#') ctx.fillRect(i % width, Math.floor(i / width), 1, 1)
+      }
+    })
   }, [cells, width, height, theme])
 
   return (
-    <canvas
+    <img
       ref={ref}
       width={width}
       height={height}
       className={styles.board}
       style={{ '--ar': width / height } as CSSProperties}
-      aria-hidden="true"
+      alt=""
     />
   )
 }

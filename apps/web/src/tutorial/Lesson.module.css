@@ -247,7 +247,7 @@
   transform: rotate(var(--tilt));
 }
 
-.mini canvas {
+.mini img {
   display: block;
   width: 50px;
   image-rendering: pixelated;

@@ -5,7 +5,7 @@ import { CountPill } from '../album/CountPill.tsx'
 import { paperStyle } from '../album/paper.ts'
 import { SlotFace } from '../campaign/PuzzleSlot.tsx'
 import type { CampaignProgress, ContinueAt } from '../campaign/progress.ts'
-import { World } from '../campaign/worlds/Worlds.tsx'
+import { World, homeMorph } from '../campaign/worlds/Worlds.tsx'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { Crest } from './Crest.tsx'
 import { crestPixels } from './crest.ts'
@@ -41,7 +41,7 @@ export function CampaignColumn({
   const pixels = crestPixels(campaign, storage)
 
   return (
-    <World index={active} labelledBy="home-campaign" style={style} start={start}>
+    <World index={active} labelledBy="home-campaign" style={style} start={start} pair>
       <div className={styles.column}>
         <div className={styles.stack}>
           <p className={styles.kicker}>
@@ -94,6 +94,7 @@ export function CampaignColumn({
             <Link
               to="/c/$campaignId/$provinceId"
               params={{ campaignId: campaign.id, provinceId: province.id }}
+              viewTransition={homeMorph('province')}
               data-variant="paper"
               data-pad-default={!next || undefined}
             >

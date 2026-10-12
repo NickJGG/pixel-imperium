@@ -4,7 +4,7 @@ import type { Campaign, Profile } from '@pixel-imperium/protocol'
 import { paperStyle } from '../album/paper.ts'
 import { useAccount } from '../account.ts'
 import { campaignProgress, continueAt } from '../campaign/progress.ts'
-import { MenuSpine, Worlds, morph, usePhone, useStep } from '../campaign/worlds/Worlds.tsx'
+import { Backdrop, MenuSpine, Worlds, morph, usePhone, useStep } from '../campaign/worlds/Worlds.tsx'
 import { useLessonsDone } from '../tutorial/done.ts'
 import { CampaignColumn } from './CampaignColumn.tsx'
 import { LearnColumn } from './LearnColumn.tsx'
@@ -15,7 +15,7 @@ import { type Column, type Paper, columnsFor, learnPapers, openColumn, papers, s
 import styles from './Home.module.css'
 
 /** Pairs a column across a morph, wide when it's open and a spine when it isn't. */
-const morphName = (column: Column): CSSProperties => ({ viewTransitionName: `home-${column}` })
+const columnName = (column: Column): CSSProperties => ({ viewTransitionName: `home-${column}` })
 
 const paperOf = (paper: Paper) =>
   paper === 'cover' ? { index: 0, className: styles.cover } : { index: paper, className: undefined }
@@ -58,7 +58,7 @@ export function HomePage({ campaign, profile }: { campaign: Campaign; profile: P
 
   const wide = (column: Column, start: boolean) => {
     const { index, className } = paperOf(paper[column])
-    const common = { start, style: morphName(column) }
+    const common = { start, style: columnName(column) }
     switch (column) {
       case 'campaign':
         return (
@@ -90,6 +90,7 @@ export function HomePage({ campaign, profile }: { campaign: Campaign; profile: P
   return (
     <main className={styles.page}>
       <h1 className={styles.srOnly}>Home</h1>
+      <Backdrop index={active} />
       {phone ? (
         <Worlds carousel onSnap={i => goTo(columns[i], false)}>
           {columns.map(c => wide(c, c === open))}
@@ -105,7 +106,7 @@ export function HomePage({ campaign, profile }: { campaign: Campaign; profile: P
                 name={spineName[c]}
                 search={searchFor(c)}
                 className={className}
-                style={{ ...paperStyle(index), ...morphName(c) }}
+                style={{ ...paperStyle(index), ...columnName(c) }}
               />
             )
           })}

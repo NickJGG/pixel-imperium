@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { type CSSProperties, Fragment, type ReactNode, useEffect, useState } from 'react'
+import { type CSSProperties, Fragment, type ReactNode, useEffect, useRef, useState } from 'react'
 import type { Campaign, Province, Tier } from '@pixel-imperium/protocol'
 import { CountPill, UNVEIL_LANDS_MS } from '../album/CountPill.tsx'
 import { Lock } from '../album/Lock.tsx'
@@ -10,7 +10,7 @@ import { markConquestsSeen, unseenConquests } from './conquests-seen.ts'
 import { NextUp } from './NextUp.tsx'
 import { type CampaignProgress, campaignProgress, isOpen, tierGroups } from './progress.ts'
 import { PuzzleSlot } from './PuzzleSlot.tsx'
-import { Curtain, Spine, World, Worlds, morph, morphName, usePhone, useStep } from './worlds/Worlds.tsx'
+import { Backdrop, Curtain, Spine, World, Worlds, morph, morphName, usePhone, useSpineReach, useStep } from './worlds/Worlds.tsx'
 import styles from './Province.module.css'
 
 /**
@@ -150,8 +150,11 @@ function Zoomed({
   thunk: (p: Province) => boolean
   children: ReactNode
 }) {
+  const ref = useRef<HTMLElement>(null)
+  useSpineReach(ref)
   return (
-    <main className={styles.page}>
+    <main ref={ref} className={styles.page}>
+      <Backdrop index={campaign.provinces.indexOf(province)} />
       <Worlds>
         {campaign.provinces.map((p, i) => {
           if (p === province) return <Fragment key={p.id}>{children}</Fragment>
@@ -216,7 +219,7 @@ function OpenProvince({
   const id = `province-${province.id}`
 
   return (
-    <World index={index} labelledBy={id} style={morphName(province)} start={start}>
+    <World index={index} labelledBy={id} style={morphName(province)} start={start} pair={current}>
       <div className={styles.zoom}>
         <header className={styles.head}>
           <div className={styles.title}>

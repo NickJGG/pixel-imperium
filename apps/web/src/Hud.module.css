@@ -92,7 +92,6 @@
     font-size: 11px; /* token-exempt: brand logo */
   }
 
-  .pagePills > .learn,
   .pagePills > .account {
     display: none;
   }

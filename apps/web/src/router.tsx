@@ -5,6 +5,7 @@ import { LoadError, Loading, NotFound } from './EdgeStates.tsx'
 import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
 import { ProvincePage } from './campaign/ProvincePage.tsx'
 import { campaignProgress, continueAt } from './campaign/progress.ts'
+import { homeMorphDefault } from './campaign/worlds/Worlds.tsx'
 import { homeSearch } from './home/columns.ts'
 import { HomePage } from './home/HomePage.tsx'
 import { ImportPrompt } from './ImportPrompt.tsx'
@@ -254,6 +255,7 @@ export const router = createRouter({
     lessonRoute,
     techniquesRoute,
   ]),
+  defaultViewTransition: homeMorphDefault,
   defaultPendingComponent: Loading,
   defaultPendingMs: 300,
 })

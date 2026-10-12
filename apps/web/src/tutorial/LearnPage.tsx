@@ -9,7 +9,7 @@ import { useAccount } from '../account.ts'
 import { campaignProgress, techniquesRecommended } from '../campaign/progress.ts'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { clearUnseen, getUnseen, useLessonsDone } from './done.ts'
-import type { LearnBack } from './handoff.ts'
+import { type LearnBack, backLink } from './handoff.ts'
 import { lessonPuzzle } from './lessons.ts'
 import { LessonSlot } from './LessonSlot.tsx'
 import { TRACKS, type Track, firstUnfinished, lessonKey } from './tracks.ts'
@@ -36,7 +36,7 @@ export function LearnPage({ back }: { back: LearnBack }) {
           fresh={fresh}
           back={back.to}
           lead={
-            <Link to={back.to} className={styles.back}>
+            <Link {...backLink(back.to)} className={styles.back}>
               ← <span>{back.label}</span>
             </Link>
           }

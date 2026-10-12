@@ -35,7 +35,7 @@ import { ToolToggle } from '../play/ToolToggle.tsx'
 import { useUndoKeys } from '../play/useUndoKeys.ts'
 import { BoardView } from '../play/viewport.ts'
 import { type BeatView, BeatLayer, Dock, type Tag } from './BeatLayer.tsx'
-import type { Handoff } from './handoff.ts'
+import { type Handoff, backLink } from './handoff.ts'
 import { LessonFilm } from './LessonFilm.tsx'
 import { type Lesson as LessonData, type LessonPuzzle, lessonPuzzle } from './lessons.ts'
 import { markDone, useLessonsDone } from './done.ts'
@@ -539,7 +539,7 @@ function Coach({ ref, track, lesson, index, step, log, now, solved, foot, rail, 
       )}
       <div className={styles.foot}>
         {foot.handoff ? (
-          <Link to={foot.handoff.to} className={styles.skip}>
+          <Link {...backLink(foot.handoff.to)} className={styles.skip}>
             {track.skipText}
           </Link>
         ) : (
@@ -578,7 +578,7 @@ function HandoffView({ track, handoff }: { track: Track; handoff: Handoff }) {
               </span>
             ))}
           </div>
-          <Link to={handoff.to} data-variant="primary" data-pad-default>
+          <Link {...backLink(handoff.to)} data-variant="primary" data-pad-default>
             {handoff.action}
           </Link>
         </section>

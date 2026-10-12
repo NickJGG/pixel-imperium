@@ -144,7 +144,7 @@
   background: color-mix(in srgb, var(--sticker) 55%, transparent);
 }
 
-.slot > .print canvas {
+.slot > .print img {
   display: block;
   image-rendering: pixelated;
 }

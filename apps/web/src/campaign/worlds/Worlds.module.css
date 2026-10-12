@@ -12,7 +12,8 @@
   margin-left: calc(-1 * var(--slant));
   padding: 0 var(--slant);
   color: var(--ink);
-  background: var(--paper) radial-gradient(color-mix(in srgb, var(--ink) 9%, transparent) 1.5px, transparent 1.6px) 0 0 / 18px 18px;
+  /* Fixed, so every paper's dots sit on one grid and hold still under the Home morph's backdrop. */
+  background: var(--paper) radial-gradient(color-mix(in srgb, var(--ink) 9%, transparent) 1.5px, transparent 1.6px) 0 0 / 18px 18px fixed;
   clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
 }
 
@@ -178,6 +179,7 @@
     flex: none;
     margin: 0;
     padding: 0;
+    background-attachment: scroll;
     clip-path: none;
   }
 
@@ -268,4 +270,145 @@
   width: auto;
   height: 100%;
   translate: -50% 0;
+}
+
+/*
+ * Home ↔ a province page, over the page column's paper, dots and stripe standing still full width (the columns
+ * themselves go see-through): Home's spines slide off right and fade as its content fades out, then the province's
+ * spines grow out of the window's edges, clipped rather than squeezed, and its content fades in. The way home
+ * plays it in reverse. The columns don't pair, so nothing is stretched.
+ */
+.backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--paper) radial-gradient(color-mix(in srgb, var(--ink) 9%, transparent) 1.5px, transparent 1.6px) 0 0 / 18px 18px;
+}
+
+.backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--space-2);
+  background: var(--tab);
+}
+
+:root:active-view-transition-type(to-home, to-province) .backdrop {
+  display: block;
+}
+
+:root:active-view-transition-type(to-home, to-province) .world[data-pair] {
+  background: none;
+}
+
+:root:active-view-transition-type(to-home, to-province) .world[data-pair]::before {
+  display: none;
+}
+
+:root:active-view-transition-type(to-home, to-province)::view-transition-group(*),
+:root:active-view-transition-type(to-home, to-province)::view-transition-old(*),
+:root:active-view-transition-type(to-home, to-province)::view-transition-new(*) {
+  animation-duration: 1s;
+  animation-timing-function: cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+/* Going in. */
+:root:active-view-transition-type(to-province)::view-transition-group(.menuSpine) {
+  animation-name: off-right;
+}
+
+:root:active-view-transition-type(to-province)::view-transition-group(.provinceSpine) {
+  animation-name: reach-in;
+}
+
+:root:active-view-transition-type(to-province)::view-transition-new(.provinceSpine) {
+  animation-name: open-out;
+}
+
+:root:active-view-transition-type(to-province)::view-transition-old(.pageColumn) {
+  animation-name: fade-out-early;
+}
+
+:root:active-view-transition-type(to-province)::view-transition-new(.pageColumn) {
+  animation-name: fade-in-late;
+}
+
+/* Coming back plays it in reverse: Home's column is the new side now and the province's the old. */
+:root:active-view-transition-type(to-home)::view-transition-group(*),
+:root:active-view-transition-type(to-home)::view-transition-old(*),
+:root:active-view-transition-type(to-home)::view-transition-new(*) {
+  animation-direction: reverse;
+}
+
+:root:active-view-transition-type(to-home)::view-transition-group(.menuSpine) {
+  animation-name: off-right;
+}
+
+:root:active-view-transition-type(to-home)::view-transition-group(.provinceSpine) {
+  animation-name: reach-in;
+}
+
+:root:active-view-transition-type(to-home)::view-transition-old(.provinceSpine) {
+  animation-name: open-out;
+}
+
+:root:active-view-transition-type(to-home)::view-transition-old(.pageColumn) {
+  animation-name: fade-in-late;
+}
+
+:root:active-view-transition-type(to-home)::view-transition-new(.pageColumn) {
+  animation-name: fade-out-early;
+}
+
+:root:active-view-transition-type(to-home, to-province)::view-transition-old(.menuSpine),
+:root:active-view-transition-type(to-home, to-province)::view-transition-new(.menuSpine) {
+  animation-name: none;
+}
+
+@keyframes off-right {
+  to {
+    translate: 160% 0;
+    opacity: 0;
+  }
+}
+
+/* From the window edge to where it stands, keeping its centre on the same line as its width opens. */
+@keyframes reach-in {
+  0%,
+  40% {
+    translate: var(--reach) 0;
+  }
+
+  100% {
+    translate: 0 0;
+  }
+}
+
+@keyframes open-out {
+  0%,
+  40% {
+    clip-path: inset(0 50%);
+  }
+
+  100% {
+    clip-path: inset(0);
+  }
+}
+
+@keyframes fade-out-early {
+  40%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in-late {
+  0%,
+  60% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }

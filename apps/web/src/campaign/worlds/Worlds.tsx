@@ -4,7 +4,7 @@
  * cut; only a spine's sideways name leans with it. The outer edges of the first and last columns stay straight.
  * At phone widths there's no slant: the columns stack, or with `carousel` stand side by side a screen each.
  */
-import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
+import { type CSSProperties, type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { Province } from '@pixel-imperium/protocol'
 import { CountPill } from '../../album/CountPill.tsx'
@@ -33,6 +33,31 @@ export const usePhone = () => useSyncExternalStore(subscribePhone, () => matchMe
  * nor on a phone, where there are no spines to widen.
  */
 export const morph = () => !reducedMotion() && !matchMedia(PHONE).matches
+
+/**
+ * The morph between Home and a province page, typed so its CSS can tell it from a move between columns: over the
+ * province's paper standing still, Home's spines slide off right as its column's content fades, then the
+ * province's spines grow in from the edges and its page's content fades in. Backwards on the way home.
+ */
+export const homeMorph = (to: 'home' | 'province') => morph() && { types: [`to-${to}`] }
+
+const PROVINCE = /^\/c\/[^/]+\/[^/]+\/?$/
+
+export const isProvincePath = (pathname: string) => PROVINCE.test(pathname)
+
+/**
+ * The router's default, so Back and Forward between Home and a province page morph too; every other move that
+ * doesn't ask for a transition gets none. Left off where transitions can't be typed, as it would then morph them all.
+ */
+export const homeMorphDefault = typeof CSS !== 'undefined' &&
+  CSS.supports('selector(:active-view-transition-type(a))') && {
+    types: ({ fromLocation, toLocation }: { fromLocation?: { pathname: string }; toLocation: { pathname: string } }) => {
+      if (!fromLocation || !morph()) return false
+      if (isProvincePath(fromLocation.pathname) && toLocation.pathname === '/') return ['to-home']
+      if (fromLocation.pathname === '/' && isProvincePath(toLocation.pathname)) return ['to-province']
+      return false
+    },
+  }
 
 /** Pairs a province's column across a morph, wide on one page and a spine on the other. */
 export const morphName = (province: Pick<Province, 'id'>): CSSProperties => ({ viewTransitionName: `province-${province.id}` })
@@ -146,6 +171,7 @@ export function World({
   style,
   labelledBy,
   start = false,
+  pair = false,
 }: {
   /** The province's index in its campaign, for its paper. */
   index: number
@@ -157,18 +183,56 @@ export function World({
   labelledBy?: string | undefined
   /** Where a carousel rests. */
   start?: boolean
+  /** Home's Campaign column or a province's page, the two sides of the Home morph: see-through during it. */
+  pair?: boolean
 }) {
   return (
     <section
       className={[styles.world, className].filter(Boolean).join(' ')}
-      style={{ ...paperStyle(index), ...style }}
+      style={{ ...paperStyle(index), ...style, ...(pair && { viewTransitionClass: styles.pageColumn }) }}
       data-fog={fog || undefined}
       data-start={start || undefined}
+      data-pair={pair || undefined}
       aria-labelledby={labelledBy}
     >
       {children}
     </section>
   )
+}
+
+/**
+ * The page column's paper, dots and stripe across the whole window, shown only during the Home morph so they
+ * hold still while the spines and content move over them.
+ */
+export function Backdrop({ index }: { index: number }) {
+  return <span className={styles.backdrop} style={paperStyle(index)} aria-hidden="true" />
+}
+
+let reachSheet: HTMLStyleElement | undefined
+
+/**
+ * How far each province spine in `root` stands from the window edge it grows out of in the Home morph, as `--reach`
+ * on its transition group. A sheet, since a transition's pseudo-elements inherit from the root, not the spine; kept
+ * in the head, since the way home plays after the province page has gone.
+ */
+export function useSpineReach(root: RefObject<HTMLElement | null>): void {
+  useLayoutEffect(() => {
+    const sheet = (reachSheet ??= document.head.appendChild(document.createElement('style')))
+    const measure = () => {
+      const width = document.documentElement.clientWidth
+      sheet.textContent = [...root.current!.querySelectorAll<HTMLElement>(`.${styles.provinceSpine}`)]
+        .map(spine => {
+          const { left, width: w } = spine.getBoundingClientRect()
+          const centre = left + w / 2
+          const reach = centre < width / 2 ? -centre : width - centre
+          return `::view-transition-group(${spine.style.viewTransitionName}) { --reach: ${reach}px; }`
+        })
+        .join('\n')
+    }
+    measure()
+    addEventListener('resize', measure)
+    return () => removeEventListener('resize', measure)
+  })
 }
 
 /** Fog over a `World` a Conquest just opened, falling away like a curtain. Plays once, on mount. */
@@ -219,8 +283,8 @@ export function Spine({
       params={{ campaignId, provinceId: province.id }}
       replace
       viewTransition={morph()}
-      className={`${styles.world} ${styles.spine}`}
-      style={{ ...paperStyle(index), ...morphName(province) }}
+      className={`${styles.world} ${styles.spine} ${styles.provinceSpine}`}
+      style={{ ...paperStyle(index), ...morphName(province), viewTransitionClass: styles.provinceSpine }}
       data-state={state}
       data-thin={thin || undefined}
       data-conquered={state === 'conquered' || undefined}
@@ -265,7 +329,7 @@ export function MenuSpine({
       replace
       viewTransition={morph()}
       className={[styles.world, styles.spine, className].filter(Boolean).join(' ')}
-      style={style}
+      style={{ ...style, viewTransitionClass: styles.menuSpine }}
     >
       <span className={styles.stack}>
         <span className={styles.name}>{name}</span>

@@ -75,7 +75,7 @@ export function LearnColumn({
             <Link {...lessonLink(track, lesson.id)} data-variant="primary" data-pad-default>
               Next lesson
             </Link>
-            <Link to="/learn" data-variant="paper">
+            <Link to="/learn" search={{ back: '/?open=learn' }} data-variant="paper">
               Open Learn
             </Link>
           </div>

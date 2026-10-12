@@ -1,7 +1,7 @@
 /**
- * Where a track hands back to. `back` is the page it was entered from: a puzzle returns there, home
- * (or no `back`) goes on to the Continue target, a province page is named, and any other album page is
- * returned to as is. Learn's back pill names the same page.
+ * Where a track hands back to. `back` is the page it was entered from: a puzzle returns there, Home
+ * (or no `back`) goes on to the Continue target, a province page is named, and any other page, a Home
+ * column included, is returned to as is. Learn's back pill names the same page.
  */
 import type { Campaign } from '@pixel-imperium/protocol'
 import { accountReady, getAccount } from '../account.ts'
@@ -17,16 +17,22 @@ export interface Handoff {
   action: string
 }
 
-const BACK = /^\/(?:play\/[\w-]+|c\/[\w-]+(?:\/[\w-]+)?)?$/
+const BACK = /^\/(?:play\/[\w-]+|c\/[\w-]+(?:\/[\w-]+)?|\?open=(?:learn|profile|settings|signin))?$/
 
 /** Only the app's own pages, so `back` can't send the player off the site. */
 export const isBackPath = (back: unknown): back is string => typeof back === 'string' && BACK.test(back)
+
+/** A back path as a link's `to` and `search`, since a Home column's lives in the query. */
+export function backLink(back: string): { to: string; search: Record<string, string> } {
+  const [to, query] = back.split('?')
+  return { to: to!, search: Object.fromEntries(new URLSearchParams(query)) }
+}
 
 const DONE = "That's everything you need."
 
 export async function loadHandoff(back: string | undefined): Promise<Handoff> {
   const puzzleId = back?.match(/^\/play\/(.+)$/)?.[1]
-  const fallback: Handoff = { to: back ?? '/', heading: 'Back to the album.', text: DONE, action: 'Back to the album' }
+  const fallback: Handoff = { to: back ?? '/', heading: 'Back home.', text: DONE, action: 'Back home' }
   const page = back?.match(/^\/c\/([\w-]+)\/([\w-]+)$/)
   if (page) return provinceHandoff(page[1]!, page[2]!, fallback)
   if (back && back !== '/' && !puzzleId) return fallback
@@ -68,7 +74,7 @@ export interface LearnBack {
 
 export async function loadLearnBack(back: string | undefined): Promise<LearnBack> {
   const to = back ?? '/'
-  const label = 'Back to the album'
+  const label = 'Back home'
   const puzzleId = to.match(/^\/play\/(.+)$/)?.[1]
   const page = to.match(/^\/c\/([\w-]+)(?:\/([\w-]+))?$/)
   try {

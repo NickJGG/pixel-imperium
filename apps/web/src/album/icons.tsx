@@ -79,10 +79,10 @@ export const SignOutIcon = () => (
   </Icon>
 )
 
-export const LearnIcon = () => (
+export const HomeIcon = () => (
   <Icon>
-    <path d="M2 9l10-5 10 5-10 5z" />
-    <path d="M6 11v5c3 2.5 9 2.5 12 0v-5M22 9v5" />
+    <path d="M3 11l9-7 9 7" />
+    <path d="M5 9.5V20h5v-6h4v6h5V9.5" />
   </Icon>
 )
 
