@@ -66,6 +66,7 @@ export class ProgressSync {
         if (!res.solved) continue
         this.storage.saveSolved(id, 'verified')
         this.storage.savePalette(id, res.palette)
+        if (res.crest) this.storage.saveCrest(id, res.crest)
         if (res.foil !== null) this.storage.saveFoil(id, res.foil)
       } catch {}
     }
@@ -85,13 +86,14 @@ export class ProgressSync {
       return null
     }
     this.storage.clear()
-    for (const [id, { solved, progress, palette, foil, hinted, solvedAt }] of Object.entries(data.puzzles)) {
+    for (const [id, { solved, progress, palette, crest, foil, hinted, solvedAt }] of Object.entries(data.puzzles)) {
       if (progress) {
         this.storage.saveCells(id, progress.cells, progress.updatedAt)
         if (progress.replaying) this.storage.saveReplay(id)
       }
       if (solved) this.storage.saveSolved(id, solved)
       if (palette) this.storage.savePalette(id, palette)
+      if (crest) this.storage.saveCrest(id, crest)
       if (foil) this.storage.saveFoil(id, true)
       if (hinted) this.storage.saveHinted(id)
       if (solvedAt) this.storage.saveSolvedAt(id, solvedAt)

@@ -22,7 +22,7 @@ import {
   user,
   userSettings,
 } from './db/schema.ts'
-import { buildCampaign } from './campaigns.ts'
+import { type CrestDef, buildCampaign } from './campaigns.ts'
 import type { SeedPuzzle } from './puzzles.ts'
 import { createTestDeps, signedInUser, truncateAll } from './test-db.ts'
 
@@ -31,7 +31,7 @@ const diagonal: SeedPuzzle = { id: 'diag', title: 'Diagonal', palette: { r: '#f0
 const dot: SeedPuzzle = { id: 'dot', title: 'Dot', palette: { g: '#0f0' }, rows: ['g'] }
 
 /** A draft campaign, so the fixture can skip the size rules. */
-function fixture(id: string, provinces: Record<string, SeedPuzzle[]>) {
+function fixture(id: string, provinces: Record<string, SeedPuzzle[]>, crest?: CrestDef) {
   return buildCampaign({
     campaign: {
       id,
@@ -42,6 +42,7 @@ function fixture(id: string, provinces: Record<string, SeedPuzzle[]>) {
       provinces: Object.keys(provinces).map(p => ({ id: p, name: `Province ${p}`, theme: '', flavour: `${p} falls.`, minSize: 5, maxSize: 5 })),
     },
     provinces,
+    ...(crest && { crest }),
   })
 }
 
@@ -323,6 +324,41 @@ const getProgress = async (cookie: string) =>
 const putProgress = (cookie: string, updatedAt: string, cells = '#...', replaying = false) =>
   send('PUT', '/api/me/progress/diag', { cells, replaying, updatedAt }, cookie)
 
+describe('crest', () => {
+  const crested = createApp(
+    [fixture('c', { first: [diagonal], second: [dot] }, { palette: { k: '#123456', j: '#abcdef' }, rows: ['kj'], regions: ['21'] })],
+    { db, auth },
+  )
+  const solution = ['filled', 'empty', 'empty', 'filled']
+
+  it("serves its size and each puzzle's pixel, never a colour", async () => {
+    const body = await (await crested.request('/api/campaigns/c')).text()
+    const campaign = JSON.parse(body) as Campaign
+    expect(campaign.crest).toEqual({ width: 2, height: 1 })
+    expect(campaign.provinces.map(p => p.puzzles.map(z => z.crest))).toEqual([[1], [0]])
+    expect(body).not.toMatch(/#123456|#abcdef/)
+  })
+
+  it("releases a pixel's colour with a solve", async () => {
+    const res = await crested.request('/api/puzzles/diag/solve', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ cells: solution }),
+    })
+    expect(await res.json()).toMatchObject({ solved: true, crest: '#abcdef' })
+  })
+
+  it('syncs colours for verified solves only', async () => {
+    const { id, cookie } = await signedInUser(db, auth)
+    await db.insert(solveTable).values([
+      { userId: id, puzzleId: 'diag', verified: true },
+      { userId: id, puzzleId: 'dot', verified: false },
+    ])
+    const { puzzles } = (await (await crested.request('/api/me/progress', { headers: { cookie } })).json()) as MyProgress
+    expect([puzzles.diag?.crest, puzzles.dot?.crest]).toEqual(['#abcdef', null])
+  })
+})
+
 describe('/api/me', () => {
   it.each([
     ['GET', '/api/me/progress'],
@@ -355,11 +391,20 @@ describe('/api/me', () => {
           solved: 'verified',
           progress: { cells: '#..#', replaying: false, updatedAt: '2026-01-01T00:00:00.000Z' },
           palette: ['#f00', null, null, '#00f'],
+          crest: null,
           foil: false,
           hinted: false,
           solvedAt: '2026-01-03T00:00:00.000Z',
         },
-        other: { solved: 'unverified', progress: null, palette: null, foil: false, hinted: false, solvedAt: null },
+        other: {
+          solved: 'unverified',
+          progress: null,
+          palette: null,
+          crest: null,
+          foil: false,
+          hinted: false,
+          solvedAt: null,
+        },
       },
       assists,
       showcase: [],
@@ -473,6 +518,7 @@ describe('POST /api/me/import', () => {
         solved: 'verified',
         progress: expect.objectContaining({ cells: '#xx#', replaying: false }),
         palette: ['#f00', null, null, '#00f'],
+        crest: null,
         foil: false,
         hinted: false,
         solvedAt: expect.any(String),

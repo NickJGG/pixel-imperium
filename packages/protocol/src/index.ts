@@ -11,6 +11,8 @@ export interface PuzzleSummary {
   filledCount: number
   /** Relative to its province; absent in a draft province with no cuts. */
   tier?: Tier
+  /** Its row-major pixel in the campaign's Crest; in campaign payloads only, absent without a Crest. */
+  crest?: number
 }
 
 /** `GET /api/puzzles/:id`. Never includes the solution or palette. */
@@ -48,6 +50,8 @@ export interface Campaign {
   id: string
   name: string
   closingLine: string
+  /** Absent in a draft without one; colours come one per solve, beside the palette. */
+  crest?: { width: number; height: number }
   provinces: Province[]
 }
 
@@ -58,9 +62,12 @@ export interface SolveRequest {
 
 /**
  * On success, `palette` is row-major hex colors, `null` for empty cells. `foil` is the account's
- * sticker as recorded, `null` when signed out (the device decides).
+ * sticker as recorded, `null` when signed out (the device decides). `crest` is the puzzle's Crest
+ * pixel colour, absent when its campaign has no Crest.
  */
-export type SolveResponse = { solved: true; palette: (string | null)[]; foil: boolean | null } | { solved: false }
+export type SolveResponse =
+  | { solved: true; palette: (string | null)[]; foil: boolean | null; crest?: string }
+  | { solved: false }
 
 /** `POST /api/puzzles/:id/hint`; `cells` as in `SavedProgress`. */
 export interface HintRequest {
@@ -107,6 +114,8 @@ export interface PuzzleRecord {
   progress: SavedProgress | null
   /** Reveal colors, present only for a verified solve. */
   palette: (string | null)[] | null
+  /** Its Crest pixel colour, like `palette`. */
+  crest: string | null
   foil: boolean
   /** A hint was given on the puzzle, so a first solve won't be foil. */
   hinted: boolean

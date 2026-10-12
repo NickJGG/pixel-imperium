@@ -1,0 +1,31 @@
+{
+  "palette": { "s": "#5bc8ff", "S": "#ffc92e", "T": "#5ec46f", "t": "#2f7a3c", "b": "#6b4a2b", "m": "#8a8fa8", "M": "#f2f4fb", "g": "#ffc92e", "r": "#e0475b", "h": "#f3e3c3", "p": "#b9c2e0", "c": "#ff4fa3", "d": "#4d3a2a", "k": "#f0d58c", "e": "#2a7fd4", "E": "#7fd0ff", "F": "#ffd34a", "f": "#8cd06a" },
+  "rows": [
+    "sTsssTsssssMsSs",
+    "TTTsTTTsssmMmss",
+    "TtTTsgsgsgsmmmm",
+    "tTtTrpcpcprmmmM",
+    "TtTthppppphmmmm",
+    "bTbtrpgpgprkkmm",
+    "FFfFhppppphkEee",
+    "fFFrrppdpprrEee",
+    "FfFhhppdpphheEe",
+    "fFFfrhrhrhrkeee",
+    "FFfFFfFFkeEeeEe",
+    "fFFfFFfFeeeEeee"
+  ],
+  "regions": [
+    "333333344444444",
+    "333333344444444",
+    "333355555554444",
+    "333356666654444",
+    "333356666654444",
+    "333356666652244",
+    "111156666652222",
+    "111556666655222",
+    "111556666655222",
+    "111155555552222",
+    "111111112222222",
+    "111111112222222"
+  ]
+}

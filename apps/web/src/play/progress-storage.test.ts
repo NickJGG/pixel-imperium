@@ -46,6 +46,15 @@ describe('ProgressStorage', () => {
     expect(account.loadSolvedAt('a')).toBeNull()
   })
 
+  it('round-trips a crest colour, per account, and clears it', () => {
+    expect(account.loadCrest('a')).toBeNull()
+    account.saveCrest('a', '#123456')
+    expect(account.loadCrest('a')).toBe('#123456')
+    expect(signedOutStorage.loadCrest('a')).toBeNull()
+    account.clear()
+    expect(account.loadCrest('a')).toBeNull()
+  })
+
   it('round-trips the showcase in order, and keeps it through a clear', () => {
     expect(account.loadShowcase()).toEqual([])
     account.saveShowcase(['b', 'a'])

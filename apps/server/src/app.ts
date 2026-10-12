@@ -87,12 +87,13 @@ const summarize = ({ id, title, width, height, filledCount, tier }: PuzzleSummar
 export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps) {
   const byId = new Map(campaigns.flatMap(c => c.provinces.flatMap(p => p.puzzles)).map(p => [p.id, p]))
   const campaignPayloads = new Map(
-    campaigns.map(({ id, name, closingLine, provinces }): [string, CampaignPayload] => [
+    campaigns.map(({ id, name, closingLine, crest, provinces }): [string, CampaignPayload] => [
       id,
       {
         id,
         name,
         closingLine,
+        ...(crest && { crest: { width: crest.width, height: crest.height } }),
         provinces: provinces.map(({ id, name, theme, flavour, maxSize, techniques, puzzles }) => ({
           id,
           name,
@@ -100,12 +101,19 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
           flavour,
           maxSize,
           ...(techniques && { techniques }),
-          puzzles: puzzles.map(summarize),
+          puzzles: puzzles.map(p => {
+            const at = crest?.at.get(p.id)
+            return { ...summarize(p), ...(at !== undefined && { crest: at }) }
+          }),
         })),
       },
     ]),
   )
   const campaignsById = new Map(campaigns.map(c => [c.id, c]))
+  const crestColour = (puzzleId: string) => {
+    const p = byId.get(puzzleId)
+    return p && campaignsById.get(p.campaignId)?.crest?.colour.get(puzzleId)
+  }
   const notFound = (id: string): ApiError => ({ error: `no puzzle '${id}'` })
 
   /**
@@ -181,7 +189,8 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
           .where(and(eq(solve.userId, user.id), eq(solve.puzzleId, p.id)))
         foil = row!.foil
       }
-      return c.json<SolveResponse>({ solved: true, palette: p.palette, foil })
+      const crest = crestColour(p.id)
+      return c.json<SolveResponse>({ solved: true, palette: p.palette, foil, ...(crest && { crest }) })
     })
     .post('/puzzles/:id/hint', async c => {
       const p = byId.get(c.req.param('id'))
@@ -278,13 +287,22 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
       ])
       const records: Record<string, PuzzleRecord> = {}
       const record = (id: string) =>
-        (records[id] ??= { solved: null, progress: null, palette: null, foil: false, hinted: false, solvedAt: null })
+        (records[id] ??= {
+          solved: null,
+          progress: null,
+          palette: null,
+          crest: null,
+          foil: false,
+          hinted: false,
+          solvedAt: null,
+        })
       for (const s of solves) {
         const r = record(s.puzzleId)
         r.solved = s.verified ? 'verified' : 'unverified'
         r.foil = s.foil
         if (s.verified) {
           r.palette = byId.get(s.puzzleId)?.palette ?? null
+          r.crest = crestColour(s.puzzleId) ?? null
           r.solvedAt = s.solvedAt.toISOString()
         }
       }

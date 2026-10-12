@@ -17,7 +17,7 @@ function fakeApi(
   return {
     fetchProgress: vi.fn<SyncApi['fetchProgress']>(async () => progress),
     putProgress: vi.fn<SyncApi['putProgress']>(async () => ({ applied: true })),
-    solve: vi.fn<SyncApi['solve']>(async () => ({ solved: true, palette: ['#f00', null], foil: true })),
+    solve: vi.fn<SyncApi['solve']>(async () => ({ solved: true, palette: ['#f00', null], foil: true, crest: '#abc' })),
   }
 }
 
@@ -100,11 +100,20 @@ describe('ProgressSync', () => {
           solved: 'verified',
           progress: { cells: '#x', replaying: true, updatedAt: '2026-01-02T00:00:00.000Z' },
           palette: ['#f00', null],
+          crest: '#abc',
           foil: true,
           hinted: false,
           solvedAt: '2026-01-01T12:00:00.000Z',
         },
-        c: { solved: 'unverified', progress: null, palette: null, foil: false, hinted: true, solvedAt: null },
+        c: {
+          solved: 'unverified',
+          progress: null,
+          palette: null,
+          crest: null,
+          foil: false,
+          hinted: true,
+          solvedAt: null,
+        },
       },
       assists: null,
       showcase: ['b'],
@@ -123,6 +132,7 @@ describe('ProgressSync', () => {
     expect(storage.loadReplay('b')).toBe(true)
     expect(storage.loadSolved('b')).toBe('verified')
     expect(storage.loadPalette('b', 2)).toEqual(['#f00', null])
+    expect([storage.loadCrest('b'), storage.loadCrest('c')]).toEqual(['#abc', null])
     expect(storage.loadSolved('c')).toBe('unverified')
     expect([storage.loadFoil('b'), storage.loadHinted('b')]).toEqual([true, false])
     expect([storage.loadFoil('c'), storage.loadHinted('c')]).toEqual([false, true])
@@ -155,6 +165,7 @@ describe('ProgressSync', () => {
     expect(api.solve).toHaveBeenCalledExactlyOnceWith('a', { cells: ['filled', 'empty'] })
     expect(storage.loadSolved('a')).toBe('verified')
     expect(storage.loadPalette('a', 2)).toEqual(['#f00', null])
+    expect(storage.loadCrest('a')).toBe('#abc')
     expect(storage.loadFoil('a')).toBe(true)
     expect(storage.loadSolved('b')).toBe('unverified')
   })

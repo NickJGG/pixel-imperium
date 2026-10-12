@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   type CampaignSource,
+  type CrestDef,
   buildCampaign,
   campaignProblems,
   loadCampaigns,
@@ -22,7 +23,13 @@ const three = (prefix: string, width: number, height: number, first = block(`${p
   block(`${prefix}3`, width, height),
 ]
 
-function source(overrides: Partial<CampaignSource['campaign']> = {}, provinces?: CampaignSource['provinces']): CampaignSource {
+const crest: CrestDef = { palette: { a: '#111', b: '#222' }, rows: ['aab', 'abb'], regions: ['112', '122'] }
+
+function source(
+  overrides: Partial<CampaignSource['campaign']> = {},
+  provinces?: CampaignSource['provinces'],
+  crestDef: CrestDef | null = crest,
+): CampaignSource {
   return {
     campaign: {
       id: 'c',
@@ -37,6 +44,7 @@ function source(overrides: Partial<CampaignSource['campaign']> = {}, provinces?:
       ...overrides,
     },
     provinces: provinces ?? { p: three('p', 5, 10), q: three('q', 10, 10) },
+    ...(crestDef && { crest: crestDef }),
   }
 }
 
@@ -44,6 +52,13 @@ describe('buildCampaign', () => {
   it('tags each puzzle with its campaign and province', () => {
     const c = buildCampaign(source())
     expect(c.provinces[1]?.puzzles[0]).toMatchObject({ id: 'q1', campaignId: 'c', provinceId: 'q', width: 10 })
+  })
+
+  it("gives each province's puzzles its region's pixels in reading order", () => {
+    const { crest } = buildCampaign(source())
+    expect(crest).toMatchObject({ width: 3, height: 2 })
+    expect([...crest!.at]).toEqual([['p1', 0], ['p2', 1], ['p3', 3], ['q1', 2], ['q2', 4], ['q3', 5]])
+    expect([...crest!.colour.values()]).toEqual(['#111', '#111', '#111', '#222', '#222', '#222'])
   })
 
   it('assigns tiers by slot from the cuts', () => {
@@ -55,6 +70,33 @@ describe('buildCampaign', () => {
 describe('campaignProblems', () => {
   it('passes a well-formed campaign', () => {
     expect(campaignProblems([buildCampaign(source())])).toEqual([])
+  })
+
+  it('needs a crest unless draft', () => {
+    expect(campaignProblems([buildCampaign(source({}, undefined, null))])).toEqual(['c: needs a crest'])
+    expect(campaignProblems([buildCampaign(source({ draft: true }, undefined, null))])).toEqual([])
+  })
+
+  it.each<[string, CrestDef, string[]]>([
+    ['ragged rows', { ...crest, rows: ['aab', 'ab'] }, ['c/crest: rows row 2 is 2 wide, expected 3']],
+    [
+      'a region of the wrong size',
+      { ...crest, regions: ['111', '122'] },
+      ["c/crest: p's region has 4 pixels, expected 3", "c/crest: q's region has 2 pixels, expected 3"],
+    ],
+    [
+      'a pixel short',
+      { ...crest, rows: ['aa', 'ab'], regions: ['11', '22'] },
+      ['c/crest: has 4 pixels, expected 6', "c/crest: p's region has 2 pixels, expected 3", "c/crest: q's region has 2 pixels, expected 3"],
+    ],
+    ['an unknown colour', { ...crest, rows: ['aaz', 'abb'] }, ["c/crest: 'z' not in its palette"]],
+    [
+      'an unknown province',
+      { ...crest, regions: ['113', '122'] },
+      ["c/crest: regions '3' name no province", "c/crest: q's region has 2 pixels, expected 3"],
+    ],
+  ])('flags %s in the crest', (_, def, problems) => {
+    expect(campaignProblems([buildCampaign(source({}, undefined, def))])).toEqual(problems)
   })
 
   it('flags puzzles outside the band or not a multiple of 5', () => {
@@ -69,12 +111,13 @@ describe('campaignProblems', () => {
     const s = source()
     const untiered = { provinces: s.campaign.provinces.map(({ tiers: _, ...p }) => p) }
     const provinces = { p: [], q: three('q', 10, 10) }
-    expect(campaignProblems([buildCampaign(source(untiered, provinces))])).toEqual([
+    expect(campaignProblems([buildCampaign(source(untiered, provinces, null))])).toEqual([
+      'c: needs a crest',
       'c/p: needs tiers',
       'c/p: has 0 puzzles, expected 3',
       'c/q: needs tiers',
     ])
-    expect(campaignProblems([buildCampaign(source({ ...untiered, draft: true }, provinces))])).toEqual([])
+    expect(campaignProblems([buildCampaign(source({ ...untiered, draft: true }, provinces, null))])).toEqual([])
   })
 
   it.each([[[1, 3]], [[3, 3]], [[3, 2]], [[2, 4]], [[2.5, 3]], [[2]]])('rejects tiers %j', tiers => {
@@ -156,6 +199,12 @@ describe('authored campaigns', () => {
   describe.each(loadCampaigns({ includeDrafts: true }).map(c => [c.id, c] as const))('%s', (_, campaign) => {
     it('has every puzzle unique and line-solvable, with difficulty never decreasing', () => {
       expect(solverReport(campaign).problems).toEqual([])
+    })
+
+    it('has a crest pixel and colour for every puzzle', () => {
+      const ids = campaign.provinces.flatMap(p => p.puzzles.map(z => z.id))
+      if (!campaign.crest) return
+      expect(ids.filter(id => !campaign.crest!.at.has(id) || !campaign.crest!.colour.has(id))).toEqual([])
     })
 
     it('has tier cuts matching the suggested ones', () => {

@@ -11,7 +11,7 @@ const decode: Record<string, Cell> = { '.': 'empty', '#': 'filled', x: 'marked' 
 
 export const encodeCells = (cells: readonly Cell[]): string => cells.map(c => encode[c]).join('')
 
-const KINDS = ['progress', 'solved', 'replay', 'palette', 'updated', 'foil', 'hinted', 'solved-at'] as const
+const KINDS = ['progress', 'solved', 'replay', 'palette', 'updated', 'foil', 'hinted', 'solved-at', 'crest'] as const
 type Kind = (typeof KINDS)[number]
 
 /** `local`: solved on this device, not (yet) confirmed by the server for an account. */
@@ -128,6 +128,15 @@ export class ProgressStorage {
 
   savePalette(puzzleId: string, palette: readonly (string | null)[]): void {
     write(this.key('palette', puzzleId), JSON.stringify(palette))
+  }
+
+  /** The puzzle's Crest pixel colour, released with its palette. */
+  loadCrest(puzzleId: string): string | null {
+    return read(this.key('crest', puzzleId))
+  }
+
+  saveCrest(puzzleId: string, hex: string): void {
+    write(this.key('crest', puzzleId), hex)
   }
 
   /** Decided at the first solve and kept through replays. */

@@ -1,12 +1,12 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import type { Tier } from '@pixel-imperium/protocol'
 import { isUnique, logicPassCount, rateDifficulty } from '@pixel-imperium/nonogram'
 import { type Puzzle, type SeedPuzzle, parseSeedPuzzle } from './puzzles.ts'
 
 /**
  * Campaign data lives in `data/campaigns/`: `index.json` lists campaign ids (first = default), and each
- * `<id>/` holds `campaign.json` (`CampaignDef`) and one `<provinceId>.json` (`SeedPuzzle[]`, easiest
- * first) per province.
+ * `<id>/` holds `campaign.json` (`CampaignDef`), one `<provinceId>.json` (`SeedPuzzle[]`, easiest
+ * first) per province, and `crest.json` (`CrestDef`, optional for drafts).
  */
 export const CAMPAIGNS_DIR = new URL('../data/campaigns/', import.meta.url)
 
@@ -36,9 +36,29 @@ export interface CampaignDef {
   provinces: ProvinceDef[]
 }
 
+/**
+ * The Crest: one pixel per puzzle. `regions` gives each pixel's province as its 1-based index; puzzle #k of
+ * a province owns the k-th pixel of its region in reading order.
+ */
+export interface CrestDef {
+  palette: Record<string, string>
+  rows: string[]
+  regions: string[]
+}
+
+export interface Crest extends CrestDef {
+  width: number
+  height: number
+  /** Puzzle id → its row-major pixel index. */
+  at: Map<string, number>
+  /** Puzzle id → its pixel's hex colour; secret until the puzzle is solved. */
+  colour: Map<string, string>
+}
+
 export interface CampaignSource {
   campaign: CampaignDef
   provinces: Record<string, SeedPuzzle[]>
+  crest?: CrestDef
 }
 
 export interface CampaignPuzzle extends Puzzle {
@@ -49,6 +69,7 @@ export interface CampaignPuzzle extends Puzzle {
 
 export interface Campaign extends Omit<CampaignDef, 'provinces'> {
   provinces: (ProvinceDef & { puzzles: CampaignPuzzle[] })[]
+  crest?: Crest
 }
 
 const readJson = <T>(url: URL) => JSON.parse(readFileSync(url, 'utf8')) as T
@@ -61,13 +82,14 @@ export function readCampaignSources(dir: URL = CAMPAIGNS_DIR): CampaignSource[] 
     const provinces = Object.fromEntries(
       campaign.provinces.map(p => [p.id, readJson<SeedPuzzle[]>(new URL(`${p.id}.json`, base))]),
     )
-    return { campaign, provinces }
+    const crestUrl = new URL('crest.json', base)
+    return { campaign, provinces, ...(existsSync(crestUrl) && { crest: readJson<CrestDef>(crestUrl) }) }
   })
 }
 
 /** Assembles a campaign, throwing on malformed data; the campaign rules are `campaignProblems`'s job. */
-export function buildCampaign({ campaign, provinces }: CampaignSource): Campaign {
-  return {
+export function buildCampaign({ campaign, provinces, crest }: CampaignSource): Campaign {
+  const built = {
     ...campaign,
     provinces: campaign.provinces.map(p => ({
       ...p,
@@ -79,6 +101,60 @@ export function buildCampaign({ campaign, provinces }: CampaignSource): Campaign
       })),
     })),
   }
+  return crest ? { ...built, crest: buildCrest(crest, built.provinces) } : built
+}
+
+function buildCrest(def: CrestDef, provinces: readonly { puzzles: readonly { id: string }[] }[]): Crest {
+  const width = def.rows[0]?.length ?? 0
+  const regions = new Map<string, number[]>()
+  def.regions.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const pixels = regions.get(row[x]!) ?? []
+      pixels.push(y * width + x)
+      regions.set(row[x]!, pixels)
+    }
+  })
+  const at = new Map<string, number>()
+  const colour = new Map<string, string>()
+  provinces.forEach((p, k) => {
+    const pixels = regions.get(String(k + 1)) ?? []
+    p.puzzles.forEach((puzzle, i) => {
+      const index = pixels[i]
+      if (index === undefined) return
+      at.set(puzzle.id, index)
+      const hex = def.palette[def.rows[Math.floor(index / width)]?.[index % width] ?? '']
+      if (hex) colour.set(puzzle.id, hex)
+    })
+  })
+  return { ...def, width, height: def.rows.length, at, colour }
+}
+
+function crestProblems(c: Campaign, crest: Crest): string[] {
+  const problems: string[] = []
+  const where = `${c.id}/crest`
+  const { width, height } = crest
+  for (const [name, rows] of [['rows', crest.rows], ['regions', crest.regions]] as const) {
+    if (rows.length !== height) problems.push(`${where}: has ${rows.length} ${name}, expected ${height}`)
+    rows.forEach((row, y) => {
+      if (row.length !== width) problems.push(`${where}: ${name} row ${y + 1} is ${row.length} wide, expected ${width}`)
+    })
+  }
+  const total = c.provinces.reduce((n, p) => n + p.puzzles.length, 0)
+  if (width * height !== total) problems.push(`${where}: has ${width * height} pixels, expected ${total}`)
+
+  const unknown = [...new Set(crest.rows.join(''))].filter(ch => !(ch in crest.palette))
+  if (unknown.length > 0) problems.push(`${where}: '${unknown.join('')}' not in its palette`)
+  const provinceKeys = new Set(c.provinces.map((_, k) => String(k + 1)))
+  const strays = [...new Set(crest.regions.join(''))].filter(ch => !provinceKeys.has(ch))
+  if (strays.length > 0) problems.push(`${where}: regions '${strays.join('')}' name no province`)
+
+  const sizes = new Map<string, number>()
+  for (const ch of crest.regions.join('')) sizes.set(ch, (sizes.get(ch) ?? 0) + 1)
+  c.provinces.forEach((p, k) => {
+    const size = sizes.get(String(k + 1)) ?? 0
+    if (size !== p.puzzles.length) problems.push(`${where}: ${p.id}'s region has ${size} pixels, expected ${p.puzzles.length}`)
+  })
+  return problems
 }
 
 const tierAt = (slot: number, [medium, hard]: [number, number]): Tier =>
@@ -103,6 +179,9 @@ export function campaignProblems(campaigns: readonly Campaign[]): string[] {
     if (!Number.isInteger(c.puzzlesPerProvince) || c.puzzlesPerProvince < 1) {
       problems.push(`${c.id}: puzzlesPerProvince must be a positive integer`)
     }
+
+    if (c.crest) problems.push(...crestProblems(c, c.crest))
+    else if (!c.draft) problems.push(`${c.id}: needs a crest`)
 
     if (c.provinces.filter(p => p.techniques).length > 1) problems.push(`${c.id}: more than one province offers techniques`)
     const provinceIds = new Set<string>()

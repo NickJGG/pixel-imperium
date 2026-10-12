@@ -263,11 +263,12 @@ describe('PlayStore persistence', () => {
 
   const palette = Array.from({ length: 12 }, (_, i) => (solution[i] ? '#f0f' : null))
 
-  it('persists the palette', () => {
+  it('persists the palette and crest colour', () => {
     const s = makeStore()
     solve(s)
-    s.setPalette(palette)
+    s.setPalette(palette, null, '#abc')
     expect(storage.loadPalette('test', 12)).toEqual(palette)
+    expect(storage.loadCrest('test')).toBe('#abc')
   })
 
   it('clearing a solved puzzle starts a replay that keeps the solve', () => {

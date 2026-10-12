@@ -164,7 +164,7 @@ function Play({
     const abort = new AbortController()
     const cells = store.getState().cells.map(c => (c === 'filled' ? 'filled' : 'empty'))
     submitSolve(puzzle.id, { cells }, abort.signal).then(
-      res => (res.solved ? store.setPalette(res.palette, res.foil) : setRevealFailed(true)),
+      res => (res.solved ? store.setPalette(res.palette, res.foil, res.crest) : setRevealFailed(true)),
       () => !abort.signal.aborted && setRevealFailed(true),
     )
     return () => abort.abort()

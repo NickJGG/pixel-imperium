@@ -298,11 +298,12 @@ export class PlayStore {
   }
 
   /**
-   * Stores the server's reveal colors; for an account, the server recorded the solve as verified
-   * and says whether it is foil, which overrides the device's guess.
+   * Stores the server's reveal colors and Crest pixel; for an account, the server recorded the solve
+   * as verified and says whether it is foil, which overrides the device's guess.
    */
-  setPalette(palette: readonly (string | null)[], foil: boolean | null = null): void {
+  setPalette(palette: readonly (string | null)[], foil: boolean | null = null, crest?: string): void {
     this.storage.savePalette(this.puzzle.id, palette)
+    if (crest) this.storage.saveCrest(this.puzzle.id, crest)
     if (this.storage.userId !== null) this.storage.saveSolved(this.puzzle.id, 'verified')
     if (foil !== null) this.storage.saveFoil(this.puzzle.id, foil)
     this.emit({ palette })
