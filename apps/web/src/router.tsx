@@ -12,7 +12,6 @@ import { SettingsPage } from './me/SettingsPage.tsx'
 import { PadProvider } from './pad/PadProvider.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
 import { ProfilePage } from './profile/ProfilePage.tsx'
-import { ProfileSpread } from './profile/ProfileSpread.tsx'
 import { getDone } from './tutorial/done.ts'
 import { isBackPath, loadHandoff, loadLearnBack } from './tutorial/handoff.ts'
 import { LearnPage } from './tutorial/LearnPage.tsx'
@@ -148,14 +147,9 @@ const profileRoute = createRoute({
 const profileSpreadRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/u/$handle/$campaignId/$provinceId',
-  loader: async ({ params }) => {
-    const [profile, campaign] = await Promise.all([fetchProfile(params.handle), fetchCampaign(params.campaignId)])
-    const province = campaign?.provinces.find(p => p.id === params.provinceId)
-    if (!profile || !campaign || !province) throw notFound()
-    return { profile, campaign, province }
+  beforeLoad: ({ params: { handle, campaignId } }) => {
+    throw redirect({ to: '/u/$handle', params: { handle }, search: { c: campaignId }, replace: true })
   },
-  component: ProfileSpread,
-  notFoundComponent: () => <NotFound>That player has no such page.</NotFound>,
 })
 
 const settingsRoute = createRoute({

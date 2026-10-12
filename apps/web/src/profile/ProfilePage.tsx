@@ -1,24 +1,19 @@
 import { useMemo, useState } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ProfileCampaign } from '@pixel-imperium/protocol'
-import { Nameplate } from '../album/Nameplate.tsx'
 import { Sticker, StickerBack, tiltOf } from '../album/Sticker.tsx'
-import { VolumeShelf } from '../album/VolumeShelf.tsx'
 import { useAccount } from '../account.ts'
 import { provinceStates } from '../campaign/progress.ts'
-import { ProvinceIndex } from '../campaign/ProvinceIndex.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
 import { type StickerEntry, profileStickers, showcaseOf } from '../campaign/stickers.ts'
-import cover from '../campaign/Cover.module.css'
-import { relativeDate } from './activity.ts'
+import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { ShowcaseEditor } from './ShowcaseEditor.tsx'
-import { Stamps } from './Stamps.tsx'
+import { Stamps, stampsOf } from './Stamps.tsx'
 import { Summary } from './Summary.tsx'
 import styles from './Profile.module.css'
 
 const route = getRouteApi('/u/$handle')
 
-const LATEST = 12
 /** The showcase's stickers on the cover, biggest first. */
 const SHOWCASE = [
   { tilt: -4, width: '38%' },
@@ -27,7 +22,10 @@ const SHOWCASE = [
 ]
 const NO_SOLVES: ProfileCampaign = { id: '', verifiedPuzzleIds: [], foilPuzzleIds: [], solvedAt: {}, stamps: [] }
 
-/** A player's album seen from outside: their cover with showcase and pages, numbers, latest stickers and Stamps. */
+/**
+ * A player's album seen from outside, as Worlds columns: the cobalt Cover with their handle and showcase, their
+ * Record, and their Stamps. Editing your showcase swaps Record and Stamps for the picker.
+ */
 export function ProfilePage() {
   const { profile, campaign, started } = route.useLoaderData()
   const { account, storage } = useAccount()
@@ -39,8 +37,6 @@ export function ProfilePage() {
     const foil = new Set(entry.foilPuzzleIds)
     return {
       entry,
-      verified,
-      foil,
       progress: provinceStates(campaign, id => verified.has(id)),
       stickers: profileStickers(campaign, entry, storage),
       solves: entry.verifiedPuzzleIds.flatMap(id => {
@@ -55,16 +51,34 @@ export function ProfilePage() {
 
   const stickers = album?.stickers ?? []
   const { stickers: showcase, picked } = showcaseOf(stickers, editing ?? profile.showcase, editing ? 0 : SHOWCASE.length)
+  const first = campaign?.provinces[0]
+  const stamps = campaign ? stampsOf(campaign) : []
+  const earned = album ? stamps.filter(s => album.entry.stamps.some(e => e.id === s.id)).length : 0
 
   return (
-    <main className={cover.page}>
-      <div className={styles.profile}>
-        <section className={`${cover.cover} ${styles.cover}`} aria-labelledby="profile-title">
-          <h1 id="profile-title" className={styles.plate}>
-            <Nameplate handle={profile.handle} />
-          </h1>
-          {showcase.length > 0 ? (
-            <>
+    <main className={styles.page}>
+      <Worlds>
+        <World index={0} className={styles.cover}>
+          <div className={styles.column} data-surface="cobalt">
+            {started.length > 1 && campaign ? (
+              <nav className={styles.tabs} aria-label="Albums">
+                {started.map(c => (
+                  <Link
+                    key={c.id}
+                    to="/u/$handle"
+                    params={{ handle: profile.handle }}
+                    search={{ c: c.id }}
+                    aria-current={c.id === campaign.id ? 'page' : undefined}
+                  >
+                    {c.name}
+                  </Link>
+                ))}
+              </nav>
+            ) : (
+              campaign && <p className={styles.kicker}>Album · {campaign.name}</p>
+            )}
+            <h1 className={styles.hero}>@{profile.handle}</h1>
+            {showcase.length > 0 ? (
               <ul className={styles.showcase} aria-label="Showcase">
                 {showcase.map((s, i) => (
                   <li key={s.puzzle.id} style={{ width: SHOWCASE[i]!.width }}>
@@ -72,105 +86,82 @@ export function ProfilePage() {
                   </li>
                 ))}
               </ul>
-              <p className={styles.caption}>
-                {editing
+            ) : (
+              <ul className={styles.showcase} aria-hidden="true">
+                {SHOWCASE.map(({ width }, i) => (
+                  <li key={i} style={{ width }}>
+                    <span className={styles.empty} />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className={styles.kicker}>
+              {editing
+                ? showcase.length > 0
                   ? 'Your picks'
-                  : `${picked ? 'Showcase · picked by' : 'Latest stickers ·'} @${profile.handle}`}
-              </p>
-            </>
-          ) : (
-            <p className={styles.caption}>{editing ? 'Tap stickers to pick them.' : 'No stickers yet.'}</p>
-          )}
-          {own && (
-            <div className={styles.actions}>
-              {stickers.length > 0 && !editing && (
-                <button
-                  type="button"
-                  onClick={() => setEditing(showcaseOf(stickers, profile.showcase, 0).stickers.map(s => s.puzzle.id))}
-                >
-                  Edit showcase
-                </button>
-              )}
-              <Link to="/settings" data-variant="paper" data-size="compact">
-                Settings
-              </Link>
-            </div>
-          )}
-          {campaign && album && (
-            <ProvinceIndex
-              campaign={campaign}
-              progress={album.progress}
-              name={(province, open) =>
-                open ? (
-                  <Link
-                    to="/u/$handle/$campaignId/$provinceId"
-                    params={{ handle: profile.handle, campaignId: campaign.id, provinceId: province.id }}
+                  : 'Tap stickers to pick them.'
+                : showcase.length > 0
+                  ? `${picked ? 'Showcase · picked by' : 'Latest stickers ·'} @${profile.handle}`
+                  : own
+                    ? 'Your first sticker lands here.'
+                    : 'No stickers yet.'}
+            </p>
+            {own && !editing && (
+              <div className={styles.actions}>
+                {stickers.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setEditing(showcaseOf(stickers, profile.showcase, 0).stickers.map(s => s.puzzle.id))}
                   >
-                    {province.name}
-                  </Link>
+                    Edit showcase
+                  </button>
                 ) : (
-                  <span>{province.name}</span>
-                )
-              }
-              slots={province =>
-                province.puzzles.map(p => (album.foil.has(p.id) ? 'foil' : album.verified.has(p.id) ? 'filled' : 'empty'))
-              }
-            />
-          )}
-        </section>
-
-        <div className={styles.side}>
-          {campaign && album && (
-            <Summary
-              campaign={campaign}
-              progress={album.progress}
-              stickers={album.stickers}
-              solves={album.solves}
-              joinedAt={profile.joinedAt}
-              now={now}
-            />
-          )}
-          {own && editing && (
-            <ShowcaseEditor stickers={stickers} picks={editing} onChange={setEditing} onClose={() => setEditing(null)} />
-          )}
-
-          {started.length > 1 && campaign && (
-            <VolumeShelf campaigns={started} current={campaign.id} handle={profile.handle} />
-          )}
-
-          {campaign && album && (
-            <>
-              <section aria-labelledby="latest-title">
-                <h2 id="latest-title" className={cover.label}>
-                  Latest stickers
-                </h2>
-                {album.stickers.length > 0 ? (
-                  <ul className={styles.latest}>
-                    {album.stickers.slice(0, LATEST).map(s => {
-                      const at = album.entry.solvedAt[s.puzzle.id]
-                      return (
-                        <li key={s.puzzle.id}>
-                          <ProfileSticker sticker={s} />
-                          {at && <time dateTime={at}>{relativeDate(new Date(at), now)}</time>}
-                        </li>
-                      )
-                    })}
-                  </ul>
-                ) : (
-                  <p className={cover.empty}>Nothing in this volume yet.</p>
+                  campaign &&
+                  first && (
+                    <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} data-variant="primary">
+                      Start {first.name.replace(/^The /, 'the ')}
+                    </Link>
+                  )
                 )}
-              </section>
+              </div>
+            )}
+          </div>
+        </World>
 
-              <section aria-labelledby="stamps-title">
-                <h2 id="stamps-title" className={cover.label}>
-                  Stamps
-                </h2>
-                <Stamps campaign={campaign} earned={album.entry.stamps} now={now} />
-              </section>
+        {campaign &&
+          album &&
+          (own && editing ? (
+            <World index={4} style={{ flex: '2 1 0' }} labelledBy="showcase-edit-title">
+              <div className={styles.column}>
+                <ShowcaseEditor stickers={stickers} picks={editing} onChange={setEditing} onClose={() => setEditing(null)} />
+              </div>
+            </World>
+          ) : (
+            <>
+              <World index={1} labelledBy="record-title">
+                <div className={styles.column}>
+                  <Summary
+                    titleId="record-title"
+                    campaign={campaign}
+                    progress={album.progress}
+                    stickers={album.stickers}
+                    solves={album.solves}
+                    joinedAt={profile.joinedAt}
+                    now={now}
+                  />
+                </div>
+              </World>
+              <World index={4} labelledBy="stamps-title">
+                <div className={styles.column}>
+                  <h2 id="stamps-title" className={styles.kicker}>
+                    Stamps · {earned} / {stamps.length}
+                  </h2>
+                  <Stamps campaign={campaign} earned={album.entry.stamps} now={now} />
+                </div>
+              </World>
             </>
-          )}
-        </div>
-      </div>
+          ))}
+      </Worlds>
     </main>
   )
 }

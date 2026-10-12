@@ -7,6 +7,8 @@ import { CALENDAR_WEEKS, calendarOf, relativeDate, shortDate, streakOf } from '.
 import styles from './Profile.module.css'
 
 interface Props {
+  /** The id on the kicker heading, which labels the column. */
+  titleId: string
   campaign: Pick<Campaign, 'provinces'>
   progress: CampaignProgress
   stickers: readonly StickerEntry[]
@@ -18,8 +20,8 @@ interface Props {
 
 const joined = new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' })
 
-/** A volume's numbers at a glance: stickers and foil, each page's progress, records and a calendar of solves. */
-export function Summary({ campaign, progress, stickers, solves, joinedAt, now }: Props) {
+/** A volume's Record column: stickers and foil, each page's progress, records and a calendar of solves. */
+export function Summary({ titleId, campaign, progress, stickers, solves, joinedAt, now }: Props) {
   const total = progress.provinces.reduce((n, p) => n + p.total, 0)
   const foil = stickers.filter(s => s.foil).length
   const complete = progress.provinces.filter(p => p.state === 'conquered').length
@@ -32,17 +34,17 @@ export function Summary({ campaign, progress, stickers, solves, joinedAt, now }:
   const days = calendarOf(solves, now)
 
   return (
-    <section className={styles.summary} aria-label="Album stats">
-      <div className={styles.summaryTop}>
-        <p className={styles.big}>
-          <b>{stickers.length}</b>
-          <span>/ {total} stickers</span>
-        </p>
-        <p className={`${styles.big} ${styles.foilBig}`}>
-          <b>{foil}</b>
-          <span>foil · {stickers.length > 0 ? Math.round((foil / stickers.length) * 100) : 0}%</span>
-        </p>
-      </div>
+    <>
+      <h2 id={titleId} className={styles.kicker}>
+        Record · joined {joined.format(new Date(joinedAt))}
+      </h2>
+      <p className={styles.hero}>
+        {stickers.length}
+        <span className={styles.of}> / {total}</span>
+      </p>
+      <p className={styles.foilLine}>
+        <b>{foil}</b> foil{stickers.length > 0 && ` · ${Math.round((foil / stickers.length) * 100)}%`}
+      </p>
       <div className={styles.segs} aria-hidden="true">
         {progress.provinces.map((p, i) => (
           <i
@@ -73,10 +75,6 @@ export function Summary({ campaign, progress, stickers, solves, joinedAt, now }:
           <dd>{stickers.reduce((n, s) => n + s.puzzle.filledCount, 0).toLocaleString()}</dd>
         </div>
         <div>
-          <dt>Joined</dt>
-          <dd>{joined.format(new Date(joinedAt))}</dd>
-        </div>
-        <div>
           <dt>Last solve</dt>
           <dd>{last ? <time dateTime={last.toISOString()}>{relativeDate(last, now)}</time> : '—'}</dd>
         </div>
@@ -104,6 +102,6 @@ export function Summary({ campaign, progress, stickers, solves, joinedAt, now }:
           </span>
         </p>
       </div>
-    </section>
+    </>
   )
 }

@@ -14,7 +14,7 @@ interface StampDef {
 }
 
 /** Every Stamp a volume offers, in `StampId` order. */
-function stampsOf(campaign: Pick<Campaign, 'provinces'>): StampDef[] {
+export function stampsOf(campaign: Pick<Campaign, 'provinces'>): StampDef[] {
   return [
     { id: 'first-sticker', label: 'First sticker', icon: <StickerIcon />, tone: 'pink' },
     { id: 'first-foil', label: 'First foil', icon: <SparkleIcon />, tone: 'foil' },

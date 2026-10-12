@@ -3,7 +3,6 @@ import { useRouter } from '@tanstack/react-router'
 import { putShowcase } from '../api.ts'
 import { useAccount } from '../account.ts'
 import { SHOWCASE_SIZE, type StickerEntry } from '../campaign/stickers.ts'
-import cover from '../campaign/Cover.module.css'
 import { ProfileSticker } from './ProfilePage.tsx'
 import styles from './Profile.module.css'
 
@@ -37,9 +36,9 @@ export function ShowcaseEditor({ stickers, picks, onChange, onClose }: Props) {
   }
 
   return (
-    <section className={`${cover.card} ${styles.editor}`} aria-labelledby="showcase-edit-title">
-      <h2 id="showcase-edit-title" className={cover.label}>
-        Edit showcase
+    <>
+      <h2 id="showcase-edit-title" className={styles.kicker}>
+        Edit showcase · {stickers.length} {stickers.length === 1 ? 'sticker' : 'stickers'}
       </h2>
       <p className={styles.hint}>
         Tap up to {SHOWCASE_SIZE} stickers. The first is the big one on your cover; with none picked, your latest
@@ -83,6 +82,6 @@ export function ShowcaseEditor({ stickers, picks, onChange, onClose }: Props) {
           Cancel
         </button>
       </div>
-    </section>
+    </>
   )
 }

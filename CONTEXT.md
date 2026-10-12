@@ -75,7 +75,7 @@ An **Account**'s unique, case-insensitive public name, used in its profile URL `
 _Avoid_: Username, display name
 
 **Profile**:
-An **Account**'s public page: its handle, showcase, province index, stats, activity and latest **Stickers**.
+An **Account**'s public page: its handle, showcase, stats, calendar and **Stamps**.
 
 ### Solves
 
