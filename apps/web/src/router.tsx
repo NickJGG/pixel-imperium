@@ -14,14 +14,19 @@ import { ImportPrompt } from './ImportPrompt.tsx'
 import { Hud, ThumbBar } from './Hud.tsx'
 import { HandlePicker } from './me/HandlePicker.tsx'
 import { SettingsPage } from './me/SettingsPage.tsx'
+import { SettingsSkeleton } from './me/SettingsSkeleton.tsx'
 import { PadProvider } from './pad/PadProvider.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
+import { PlaySkeleton } from './play/PlaySkeleton.tsx'
 import { ProfilePage } from './profile/ProfilePage.tsx'
+import { ProfileSkeleton } from './profile/ProfileSkeleton.tsx'
 import { Fallback } from './skeleton/Skeleton.tsx'
 import { getDone } from './tutorial/done.ts'
 import { isBackPath, loadHandoff, loadLearnBack } from './tutorial/handoff.ts'
 import { LearnPage } from './tutorial/LearnPage.tsx'
+import { LearnSkeleton } from './tutorial/LearnSkeleton.tsx'
 import { LessonPage } from './tutorial/LessonPage.tsx'
+import { LessonSkeleton } from './tutorial/LessonSkeleton.tsx'
 import { TRACKS, firstUnfinished, trackOf } from './tutorial/tracks.ts'
 import styles from './App.module.css'
 
@@ -145,6 +150,7 @@ const playRoute = createRoute({
     return { puzzle, campaign: await loadCampaign(puzzle.campaignId) }
   },
   component: PlayPage,
+  pendingComponent: PlaySkeleton,
   notFoundComponent: () => <NotFound>There’s no puzzle by that name.</NotFound>,
 })
 
@@ -167,6 +173,7 @@ const profileRoute = createRoute({
     return { profile, campaign, started }
   },
   component: ProfilePage,
+  pendingComponent: ProfileSkeleton,
   notFoundComponent: () => <NotFound>No player goes by @{profileRoute.useParams().handle}.</NotFound>,
 })
 
@@ -185,6 +192,7 @@ const settingsRoute = createRoute({
     typeof search.error === 'string' ? { error: search.error } : {},
   loader: () => accountReady,
   component: SettingsPage,
+  pendingComponent: SettingsSkeleton,
 })
 
 const backSearch = (search: Record<string, unknown>): { back?: string } =>
@@ -198,6 +206,7 @@ const learnRoute = createRoute({
   loaderDeps: ({ search }) => ({ back: search.back }),
   loader: ({ deps }) => loadLearnBack(deps.back),
   component: () => <LearnPage back={learnRoute.useLoaderData()} />,
+  pendingComponent: LearnSkeleton,
 })
 
 /**
@@ -232,6 +241,7 @@ const lessonRoute = createRoute({
       />
     )
   },
+  pendingComponent: LessonSkeleton,
   notFoundComponent: () => <NotFound>There’s no lesson by that name.</NotFound>,
 })
 
