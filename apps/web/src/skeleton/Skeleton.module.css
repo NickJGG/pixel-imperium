@@ -1,0 +1,63 @@
+.page {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/*
+ * One band across the whole window, leaning with the Worlds cut: fixed, so every bar shows its own slice of it.
+ * In the text's colour, so it reads on the cobalt cover too.
+ */
+.bar {
+  --sk-tint: color-mix(in srgb, currentColor 11%, transparent);
+  --sk-hi: color-mix(in srgb, currentColor 24%, transparent);
+
+  display: block;
+  flex: none;
+  max-width: 100%;
+  border-radius: var(--r-xs);
+  background: linear-gradient(calc(90deg + var(--slant-angle)), var(--sk-tint) 42%, var(--sk-hi) 50%, var(--sk-tint) 58%)
+    0 0 / 300% 100% fixed;
+  animation: sweep 1.6s linear infinite;
+}
+
+.bar[data-pill] {
+  border-radius: var(--r-pill);
+}
+
+/* The empty slot's look, so a grid of them barely changes when the page lands. */
+.ghost {
+  display: block;
+  flex: none;
+  border: 2px dashed color-mix(in srgb, currentColor 38%, transparent);
+  border-radius: var(--r-sm);
+}
+
+.ghost[data-round] {
+  border-radius: 50%;
+}
+
+@keyframes sweep {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    animation: none;
+    background: var(--sk-tint);
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

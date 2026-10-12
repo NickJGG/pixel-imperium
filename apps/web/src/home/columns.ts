@@ -10,6 +10,14 @@ export interface HomeSearch {
   open?: OpenColumn
 }
 
+/** The spine names that don't come from data; Campaign's is the campaign's own. */
+export const COLUMN_NAME: Record<OpenColumn, string> = {
+  learn: 'Learn',
+  profile: 'Profile',
+  settings: 'Settings',
+  signin: 'Sign in',
+}
+
 const SIGNED_IN: readonly Column[] = ['campaign', 'learn', 'profile', 'settings']
 const SIGNED_OUT: readonly Column[] = ['campaign', 'learn', 'signin']
 

@@ -77,6 +77,9 @@ function cachedAccount(): Account | null {
   }
 }
 
+/** Signed in, or likely to be once `accountReady` settles, going by the last account this device saw. */
+export const likelySignedIn = (): boolean => state.account !== null || cachedAccount() !== null
+
 function cacheAccount(account: Account | null): void {
   try {
     if (account) localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account))

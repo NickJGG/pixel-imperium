@@ -40,19 +40,3 @@ export function LoadError({ error }: { error: unknown }) {
     </main>
   )
 }
-
-/** Shown while a page loads: a page of empty slots, shimmering. */
-export function Loading() {
-  return (
-    <main className={styles.page} aria-busy="true">
-      <section className={`${styles.state} ${styles.paper} ${styles.loading}`} style={paperStyle(1)}>
-        <p className={styles.srOnly}>Loading…</p>
-        <div className={styles.slots} aria-hidden="true">
-          {Array.from({ length: 15 }, (_, i) => (
-            <i key={i} />
-          ))}
-        </div>
-      </section>
-    </main>
-  )
-}

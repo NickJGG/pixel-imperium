@@ -11,13 +11,13 @@ import { LearnColumn } from './LearnColumn.tsx'
 import { ProfileColumn } from './ProfileColumn.tsx'
 import { SettingsColumn } from './SettingsColumn.tsx'
 import { SignInColumn } from './SignInColumn.tsx'
-import { type Column, type Paper, columnsFor, learnPapers, openColumn, papers, searchFor, stepColumn } from './columns.ts'
+import { COLUMN_NAME, type Column, type Paper, columnsFor, learnPapers, openColumn, papers, searchFor, stepColumn } from './columns.ts'
 import styles from './Home.module.css'
 
 /** Pairs a column across a morph, wide when it's open and a spine when it isn't. */
 const columnName = (column: Column): CSSProperties => ({ viewTransitionName: `home-${column}` })
 
-const paperOf = (paper: Paper) =>
+export const paperOf = (paper: Paper) =>
   paper === 'cover' ? { index: 0, className: styles.cover } : { index: paper, className: undefined }
 
 /**
@@ -48,13 +48,7 @@ export function HomePage({ campaign, profile }: { campaign: Campaign; profile: P
   }
   useStep(dir => goTo(stepColumn(columns, open, dir), morph()))
 
-  const spineName: Record<Column, string> = {
-    campaign: campaign.name.replace(/^The /, ''),
-    learn: 'Learn',
-    profile: 'Profile',
-    settings: 'Settings',
-    signin: 'Sign in',
-  }
+  const spineName: Record<Column, string> = { campaign: campaign.name.replace(/^The /, ''), ...COLUMN_NAME }
 
   const wide = (column: Column, start: boolean) => {
     const { index, className } = paperOf(paper[column])

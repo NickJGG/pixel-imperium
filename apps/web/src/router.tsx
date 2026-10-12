@@ -1,13 +1,15 @@
 import { Outlet, createRootRoute, createRoute, createRouter, notFound, redirect, useRouterState } from '@tanstack/react-router'
 import { accountReady, getAccount, useAccount } from './account.ts'
 import { fetchCampaign, fetchCampaigns, fetchProfile, fetchPuzzle } from './api.ts'
-import { LoadError, Loading, NotFound } from './EdgeStates.tsx'
+import { LoadError, NotFound } from './EdgeStates.tsx'
 import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
 import { ProvincePage } from './campaign/ProvincePage.tsx'
+import { ProvinceSkeleton } from './campaign/ProvinceSkeleton.tsx'
 import { campaignProgress, continueAt } from './campaign/progress.ts'
 import { homeMorphDefault } from './campaign/worlds/Worlds.tsx'
 import { homeSearch } from './home/columns.ts'
 import { HomePage } from './home/HomePage.tsx'
+import { HomeSkeleton } from './home/HomeSkeleton.tsx'
 import { ImportPrompt } from './ImportPrompt.tsx'
 import { Hud, ThumbBar } from './Hud.tsx'
 import { HandlePicker } from './me/HandlePicker.tsx'
@@ -15,6 +17,7 @@ import { SettingsPage } from './me/SettingsPage.tsx'
 import { PadProvider } from './pad/PadProvider.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
 import { ProfilePage } from './profile/ProfilePage.tsx'
+import { Fallback } from './skeleton/Skeleton.tsx'
 import { getDone } from './tutorial/done.ts'
 import { isBackPath, loadHandoff, loadLearnBack } from './tutorial/handoff.ts'
 import { LearnPage } from './tutorial/LearnPage.tsx'
@@ -100,6 +103,7 @@ const homeRoute = createRoute({
       <main className={styles.message}>No campaigns yet.</main>
     )
   },
+  pendingComponent: HomeSkeleton,
 })
 
 const campaignRoute = createRoute({
@@ -123,6 +127,7 @@ const provinceRoute = createRoute({
   component: () => (
     <ProvincePage {...provinceRoute.useLoaderData()} previewConquest={provinceRoute.useSearch().conquest} />
   ),
+  pendingComponent: ProvinceSkeleton,
   notFoundComponent: () => (
     <NotFound>There’s no province called “{provinceRoute.useParams().provinceId}”. It might have been renamed.</NotFound>
   ),
@@ -256,7 +261,7 @@ export const router = createRouter({
     techniquesRoute,
   ]),
   defaultViewTransition: homeMorphDefault,
-  defaultPendingComponent: Loading,
+  defaultPendingComponent: Fallback,
   defaultPendingMs: 300,
 })
 

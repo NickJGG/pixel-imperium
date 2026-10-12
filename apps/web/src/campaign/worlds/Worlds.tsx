@@ -177,13 +177,13 @@ export function World({
   index: number
   /** Still locked: opened in the fog instead of its paper. */
   fog?: boolean
-  children: ReactNode
+  children?: ReactNode
   className?: string | undefined
   style?: CSSProperties | undefined
   labelledBy?: string | undefined
   /** Where a carousel rests. */
   start?: boolean
-  /** Home's Campaign column or a province's page, the two sides of the Home morph: see-through during it. */
+  /** Home's Campaign column or a province's page, the two sides of the Home morph. */
   pair?: boolean
 }) {
   return (
@@ -192,7 +192,6 @@ export function World({
       style={{ ...paperStyle(index), ...style, ...(pair && { viewTransitionClass: styles.pageColumn }) }}
       data-fog={fog || undefined}
       data-start={start || undefined}
-      data-pair={pair || undefined}
       aria-labelledby={labelledBy}
     >
       {children}
@@ -335,5 +334,48 @@ export function MenuSpine({
         <span className={styles.name}>{name}</span>
       </span>
     </Link>
+  )
+}
+
+/**
+ * A spine standing in for one while its page loads: the same strip, sized and clipped the same, but not a link.
+ * `name` stands sideways, or a `Bar` does when the name is data.
+ */
+export function SkeletonSpine({
+  paper,
+  state,
+  fog = false,
+  thin = false,
+  name,
+  children,
+  className,
+  style,
+}: {
+  /** Its paper, as `paperStyle`'s index. */
+  paper: number
+  /** A province spine's state, for its width and fog. */
+  state?: ProvinceState | undefined
+  fog?: boolean
+  thin?: boolean
+  name: ReactNode
+  /** Under the name, e.g. its count pill. */
+  children?: ReactNode
+  className?: string | undefined
+  style?: CSSProperties | undefined
+}) {
+  return (
+    <div
+      className={[styles.world, styles.spine, className].filter(Boolean).join(' ')}
+      style={{ ...paperStyle(paper), ...style }}
+      data-state={fog ? 'locked' : state}
+      data-thin={thin || undefined}
+      data-conquered={state === 'conquered' || undefined}
+      aria-hidden="true"
+    >
+      <span className={styles.stack}>
+        <span className={styles.name}>{name}</span>
+        {children}
+      </span>
+    </div>
   )
 }

@@ -178,9 +178,9 @@ function Zoomed({
 }
 
 /** Slots stand this many deep on each tier's shelf, sized to share the column's height. */
-const ROWS = 4
+export const ROWS = 4
 
-const TIER_NAME: Record<Tier, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
+export const TIER_NAME: Record<Tier, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
 
 /**
  * An open province: its slots on Easy / Medium / Hard shelves, Next up while it's active, its flavour once it's

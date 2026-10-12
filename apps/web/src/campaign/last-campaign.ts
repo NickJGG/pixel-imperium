@@ -27,6 +27,9 @@ export function rememberCampaign(campaign: Campaign): void {
   for (const listener of listeners) listener()
 }
 
+/** The campaign last shown, if any, without subscribing or fetching: for a skeleton's papers. */
+export const currentCampaign = (): Campaign | null => current
+
 async function fetchPicked(): Promise<void> {
   try {
     const id = pickCampaign(await fetchCampaigns())
