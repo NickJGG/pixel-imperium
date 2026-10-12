@@ -119,6 +119,22 @@
   opacity: 0.7;
 }
 
+/* Another Year's way in, in the cover's cobalt rather than a season's paper. */
+.bookend {
+  --focus: var(--on-cover);
+  color: var(--on-cover);
+  background: var(--cover) var(--cover-dots) 0 0 / 14px 14px;
+}
+
+.bookend::before {
+  background: var(--cover-dk);
+}
+
+.arrow {
+  font: var(--type-title);
+  line-height: 1;
+}
+
 /* The clip would cut a ring round the whole column, so focus rings the name instead. */
 .spine:focus-visible,
 :root[data-pad] .spine:focus {
@@ -404,5 +420,68 @@
 
   100% {
     opacity: 1;
+  }
+}
+
+/*
+ * Into another Year: the whole page slides rigidly, the earlier Year always on the left. Its columns drop their own
+ * names so nothing pairs with the other Year's Months, which would morph them.
+ */
+:root:active-view-transition-type(to-year-back, to-year-forward) main {
+  view-transition-name: year-page;
+}
+
+:root:active-view-transition-type(to-year-back, to-year-forward) main * {
+  view-transition-name: none !important;
+}
+
+:root:active-view-transition-type(to-year-back, to-year-forward)::view-transition-group(year-page) {
+  animation: none;
+}
+
+:root:active-view-transition-type(to-year-back, to-year-forward)::view-transition-old(year-page),
+:root:active-view-transition-type(to-year-back, to-year-forward)::view-transition-new(year-page) {
+  mix-blend-mode: normal;
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+:root:active-view-transition-type(to-year-back)::view-transition-old(year-page) {
+  animation-name: slide-to-right;
+}
+
+:root:active-view-transition-type(to-year-back)::view-transition-new(year-page) {
+  animation-name: slide-from-left;
+}
+
+:root:active-view-transition-type(to-year-forward)::view-transition-old(year-page) {
+  animation-name: slide-to-left;
+}
+
+:root:active-view-transition-type(to-year-forward)::view-transition-new(year-page) {
+  animation-name: slide-from-right;
+}
+
+@keyframes slide-to-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide-from-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slide-to-left {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slide-from-right {
+  from {
+    transform: translateX(100%);
   }
 }

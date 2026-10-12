@@ -1,8 +1,9 @@
 import type { CSSProperties, ReactNode } from 'react'
-import type { Campaign, ProfileStamp, StampId } from '@pixel-imperium/protocol'
+import type { ProfileStamp, StampId } from '@pixel-imperium/protocol'
 import { BoltIcon, CheckIcon, CrownIcon, FlameIcon, PageStarIcon, SparkleIcon, StickerIcon } from '../album/icons.tsx'
-import { paperStyle } from '../album/paper.ts'
+import { paperFor, paperStyle } from '../album/paper.ts'
 import { shortDate } from './activity.ts'
+import { type ProfileAlbum, albumPages } from './album.ts'
 import styles from './Profile.module.css'
 
 interface StampDef {
@@ -13,15 +14,35 @@ interface StampDef {
   style?: CSSProperties
 }
 
-/** Every Stamp a volume offers, in `StampId` order. */
-export function stampsOf(campaign: Pick<Campaign, 'provinces'>): StampDef[] {
+const firsts: StampDef[] = [
+  { id: 'first-sticker', label: 'First sticker', icon: <StickerIcon />, tone: 'pink' },
+  { id: 'first-foil', label: 'First foil', icon: <SparkleIcon />, tone: 'foil' },
+  { id: 'foil-run', label: '5 foil in a row', icon: <FlameIcon />, tone: 'foil' },
+]
+
+const perfectPage: StampDef = { id: 'perfect-page', label: 'Perfect page', icon: <PageStarIcon />, tone: 'foil' }
+
+/** Every Stamp a volume offers, in `StampId` order: a Year has no spree, and a Stamp for each Month it has Dailies in. */
+export function stampsOf(album: ProfileAlbum): StampDef[] {
+  if (album.kind === 'year') {
+    return [
+      ...firsts,
+      perfectPage,
+      ...albumPages(album, () => false).map(page => ({
+        id: `month-complete:${page.id}` as const,
+        label: `${page.name} complete`,
+        icon: <CheckIcon />,
+        tone: 'tab' as const,
+        style: paperFor(page.paper),
+      })),
+      { id: 'year-complete', label: 'Year complete', icon: <CrownIcon />, tone: 'gold' },
+    ]
+  }
   return [
-    { id: 'first-sticker', label: 'First sticker', icon: <StickerIcon />, tone: 'pink' },
-    { id: 'first-foil', label: 'First foil', icon: <SparkleIcon />, tone: 'foil' },
-    { id: 'foil-run', label: '5 foil in a row', icon: <FlameIcon />, tone: 'foil' },
+    ...firsts,
     { id: 'spree', label: '10 in a day', icon: <BoltIcon />, tone: 'pink' },
-    { id: 'perfect-page', label: 'Perfect page', icon: <PageStarIcon />, tone: 'foil' },
-    ...campaign.provinces.slice(0, -1).map((p, i) => ({
+    perfectPage,
+    ...album.campaign.provinces.slice(0, -1).map((p, i) => ({
       id: `conquered:${p.id}` as const,
       label: `${p.name.replace(/^The /, '')} conquered`,
       icon: <CheckIcon />,
@@ -33,17 +54,17 @@ export function stampsOf(campaign: Pick<Campaign, 'provinces'>): StampDef[] {
 }
 
 interface Props {
-  campaign: Pick<Campaign, 'provinces'>
+  album: ProfileAlbum
   earned: readonly ProfileStamp[]
   now: Date
 }
 
 /** The volume's Stamps as round tokens: earned ones filled and dated, the rest dashed and waiting. */
-export function Stamps({ campaign, earned, now }: Props) {
+export function Stamps({ album, earned, now }: Props) {
   const at = new Map(earned.map(s => [s.id, s.earnedAt]))
   return (
     <ul className={styles.stamps}>
-      {stampsOf(campaign).map(({ id, label, icon, tone, style }) => {
+      {stampsOf(album).map(({ id, label, icon, tone, style }) => {
         const when = at.get(id)
         return (
           <li key={id} data-off={!when || undefined}>

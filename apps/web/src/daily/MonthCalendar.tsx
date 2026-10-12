@@ -30,7 +30,7 @@ export function MonthCalendar({
   data: DailyYear
   clock: DailyClock
   storage: ProgressStorage
-  /** Today's slot holds the pad's default. */
+  /** Today's slot, solved or not, holds the pad's default. */
   padDefault?: boolean
 }) {
   return (
@@ -43,7 +43,8 @@ export function MonthCalendar({
             status={status}
             summary={summaryOf(data, date)}
             storage={storage}
-            padDefault={padDefault && status === 'today'}
+            open={playable(status) || date === clock.today}
+            padDefault={padDefault && date === clock.today}
           />
         )
       }}
@@ -105,19 +106,22 @@ function DayCell({
   status,
   summary,
   storage,
+  open,
   padDefault,
 }: {
   date: string
   status: DayStatus
   summary: DailySummary | undefined
   storage: ProgressStorage
+  /** Opens its Daily: while it can be played, and today's once solved, to see it again. */
+  open: boolean
   padDefault: boolean
 }) {
   if (status === 'before') return null
   const day = Number(date.slice(8))
   const face = <DayFace date={date} status={status} summary={summary} storage={storage} />
   const label = `${longDate.format(startOf(date))}: ${labelOf(status, summary)}`
-  return playable(status) ? (
+  return open ? (
     <Link
       to="/daily/$year/$month/$day"
       params={dayParams(date)}

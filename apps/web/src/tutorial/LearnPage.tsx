@@ -8,6 +8,7 @@ import { Dymo } from '../album/Dymo.tsx'
 import { useAccount } from '../account.ts'
 import { campaignProgress, techniquesRecommended } from '../campaign/progress.ts'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
+import { usePadPage } from '../pad/PadProvider.tsx'
 import { clearUnseen, getUnseen, useLessonsDone } from './done.ts'
 import { type LearnBack, backLink } from './handoff.ts'
 import { lessonPuzzle } from './lessons.ts'
@@ -25,6 +26,8 @@ export function LearnPage({ back }: { back: LearnBack }) {
   )
   const [fresh] = useState(getUnseen)
   useEffect(clearUnseen, [])
+  // B goes where the back link does; from Home, that's Learn's own column.
+  usePadPage({ parent: back.to === '/' ? undefined : back.to })
 
   return (
     <main className={styles.page}>

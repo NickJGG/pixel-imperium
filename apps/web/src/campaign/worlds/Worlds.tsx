@@ -341,6 +341,55 @@ export function MonthSpine({
 /** Pairs a Month's column across a morph, like `morphName`. */
 export const monthMorphName = (month: number): CSSProperties => ({ viewTransitionName: `month-${month}` })
 
+/** Another Year: the one before January's, or after December's. */
+interface Bookend {
+  year: number
+  side: 'before' | 'after'
+}
+
+const bookendProps = ({ side }: Bookend) => ({
+  className: `${styles.world} ${styles.spine} ${styles.provinceSpine} ${styles.bookend}`,
+  style: { viewTransitionName: `year-${side}`, viewTransitionClass: styles.provinceSpine },
+  'data-thin': true,
+})
+
+const BookendFace = ({ year, side }: Bookend) => (
+  <span className={styles.stack}>
+    <span className={styles.name}>{year}</span>
+    <span className={styles.arrow} aria-hidden="true">
+      {side === 'before' ? '‹' : '›'}
+    </span>
+  </span>
+)
+
+/**
+ * A bookend in the cover's cobalt beside January or December, linking to the other Year's nearest Month. Paired
+ * across the Home morph like a Month's spine.
+ */
+export function YearSpine({ ref, ...bookend }: Bookend & { ref?: RefObject<HTMLAnchorElement | null> | undefined }) {
+  return (
+    <Link
+      ref={ref}
+      to="/daily/$year/$month"
+      params={{ year: String(bookend.year), month: bookend.side === 'before' ? '12' : '01' }}
+      replace
+      {...bookendProps(bookend)}
+      aria-label={`Daily ${bookend.year}`}
+    >
+      <BookendFace {...bookend} />
+    </Link>
+  )
+}
+
+/** A bookend standing in for one while its page loads. */
+export function SkeletonYearSpine(bookend: Bookend) {
+  return (
+    <div {...bookendProps(bookend)} aria-hidden="true">
+      <BookendFace {...bookend} />
+    </div>
+  )
+}
+
 /** A narrow column on Home standing for one of its entries, its name leaning sideways; opens that entry's column. */
 export function MenuSpine({
   name,

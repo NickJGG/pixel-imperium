@@ -23,6 +23,7 @@ import { SettingsSkeleton } from './me/SettingsSkeleton.tsx'
 import { PadProvider } from './pad/PadProvider.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
 import { PlaySkeleton } from './play/PlaySkeleton.tsx'
+import { campaignAlbum, yearAlbum, yearAlbumId, yearAlbumName, yearOfAlbum } from './profile/album.ts'
 import { ProfilePage } from './profile/ProfilePage.tsx'
 import { ProfileSkeleton } from './profile/ProfileSkeleton.tsx'
 import { Fallback } from './skeleton/Skeleton.tsx'
@@ -219,11 +220,16 @@ const profileRoute = createRoute({
   loader: async ({ params, deps }) => {
     const [profile, campaigns] = await Promise.all([fetchProfile(params.handle), fetchCampaigns()])
     if (!profile) throw notFound()
-    // The switcher offers the campaigns the player has started; a newcomer gets the default campaign.
+    // The switcher offers the campaigns the player has started, then their Years; a newcomer gets the default campaign.
     const started = campaigns.filter(c => profile.campaigns.some(pc => pc.id === c.id))
+    const years = profile.years.flatMap(y => yearOfAlbum(y.id) ?? []).sort((a, b) => a - b)
+    const tabs = [...started, ...years.map(y => ({ id: yearAlbumId(y), name: yearAlbumName(y) }))]
+    const year = deps.c === undefined ? null : yearOfAlbum(deps.c)
+    const dailyYear = year !== null && years.includes(year) ? await loadDailyYear(year) : null
+    if (dailyYear) return { profile, album: yearAlbum(dailyYear), tabs }
     const id = started.find(c => c.id === deps.c)?.id ?? profile.campaigns[0]?.id ?? campaigns[0]?.id
     const campaign = id === undefined ? null : await fetchCampaign(id)
-    return { profile, campaign, started }
+    return { profile, album: campaign && campaignAlbum(campaign), tabs }
   },
   component: ProfilePage,
   pendingComponent: ProfileSkeleton,

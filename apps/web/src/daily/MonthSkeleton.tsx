@@ -2,7 +2,7 @@ import { useParams } from '@tanstack/react-router'
 import { useRef } from 'react'
 import { seasonOf } from '../album/paper.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
-import { Backdrop, SkeletonSpine, World, Worlds, monthMorphName, usePhone, useSpineReach } from '../campaign/worlds/Worlds.tsx'
+import { Backdrop, SkeletonSpine, SkeletonYearSpine, World, Worlds, monthMorphName, usePhone, useSpineReach } from '../campaign/worlds/Worlds.tsx'
 import { dayKey } from '../profile/activity.ts'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { MONTH_NAMES, tallyOf } from './month.ts'
@@ -27,6 +27,8 @@ export function MonthSkeleton() {
   const cached = currentDailyYear()
   const data = cached?.year === year ? cached : null
   const today = dayKey(new Date())
+  const before = cached && year > Number(cached.launch.slice(0, 4))
+  const after = year < Number(today.slice(0, 4))
   const dim = (m: number) => (data ? tallyOf(year, m, data.launch, today, () => false).dim : false)
   const ref = useRef<HTMLElement>(null)
   useSpineReach(ref)
@@ -64,6 +66,7 @@ export function MonthSkeleton() {
       <SrLoading />
       <Backdrop index={seasonOf(month)} />
       <Worlds carousel={phone}>
+        {before && <SkeletonYearSpine year={year - 1} side="before" />}
         {MONTHS.map(m =>
           m === month || phone ? (
             column(m)
@@ -81,6 +84,7 @@ export function MonthSkeleton() {
             </SkeletonSpine>
           ),
         )}
+        {after && <SkeletonYearSpine year={year + 1} side="after" />}
       </Worlds>
     </main>
   )

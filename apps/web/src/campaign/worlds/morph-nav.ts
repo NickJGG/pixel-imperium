@@ -44,8 +44,9 @@ const albumOf = (pathname: string) => pathname.split('/')[2]
 const isAlbumPath = (pathname: string) => isProvincePath(pathname) || isMonthPath(pathname)
 
 /**
- * The transition's types for a move that morphs, or `null`: Home ↔ an album page is typed for its own animation;
- * a step between pages of one album, or between Home's columns, is a plain one.
+ * The transition's types for a move that morphs, or `null`: Home ↔ an album page is typed for its own animation,
+ * as is a step into another Year, which slides; a step between pages of one album, or between Home's columns, is
+ * a plain one.
  */
 function morphTypes(from: ParsedLocation, to: ParsedLocation): string[] | null {
   if (!morph()) return null
@@ -53,6 +54,8 @@ function morphTypes(from: ParsedLocation, to: ParsedLocation): string[] | null {
   if (isAlbumPath(from.pathname) && home(to)) return typed() ? ['to-home'] : null
   if (home(from) && isAlbumPath(to.pathname)) return typed() ? ['to-province'] : null
   const same = (test: (pathname: string) => boolean) => test(from.pathname) && test(to.pathname)
+  if (same(isMonthPath) && albumOf(from.pathname) !== albumOf(to.pathname))
+    return typed() ? [albumOf(from.pathname)! > albumOf(to.pathname)! ? 'to-year-back' : 'to-year-forward'] : null
   if (same(isProvincePath) || same(isMonthPath))
     return from.pathname !== to.pathname && albumOf(from.pathname) === albumOf(to.pathname) ? [] : null
   if (home(from) && home(to)) return (from.search as { open?: string }).open !== (to.search as { open?: string }).open ? [] : null

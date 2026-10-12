@@ -1,6 +1,7 @@
 import { Sticker, StickerBack, tiltOf } from '../album/Sticker.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
 import type { StickerEntry } from '../campaign/stickers.ts'
+import { dailyDateOf } from '../daily/clock.ts'
 import styles from './Showcase.module.css'
 
 /** The showcase's stickers on the cover, biggest first. */
@@ -53,7 +54,7 @@ export function ProfileSticker({ sticker: s, tilt }: { sticker: StickerEntry; ti
       height={puzzle.height}
       palette={s.palette}
       foil={s.foil}
-      gold={s.number === GOLD_SLOT}
+      gold={s.number === GOLD_SLOT && dailyDateOf(puzzle.id) === null}
       tilt={lean}
     />
   )

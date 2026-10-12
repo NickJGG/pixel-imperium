@@ -3,9 +3,10 @@ import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ProfileCampaign } from '@pixel-imperium/protocol'
 import { HandleHero } from '../album/HandleHero.tsx'
 import { useAccount } from '../account.ts'
-import { provinceStates } from '../campaign/progress.ts'
 import { SHOWCASE_SIZE, profileStickers, showcaseOf } from '../campaign/stickers.ts'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
+import { solveTime, solveTimes } from '../daily/clock.ts'
+import { albumPages, albumProvinces } from './album.ts'
 import { Showcase } from './Showcase.tsx'
 import { ShowcaseEditor } from './ShowcaseEditor.tsx'
 import { Stamps, stampsOf } from './Stamps.tsx'
@@ -18,29 +19,32 @@ const NO_SOLVES: ProfileCampaign = { id: '', verifiedPuzzleIds: [], foilPuzzleId
 
 /**
  * A player's album seen from outside, as Worlds columns: the cobalt Cover with their handle and showcase, their
- * Record, and their Stamps. Editing your showcase swaps Record and Stamps for the picker.
+ * Record, and their Stamps. An album is a Campaign or a Year of Dailies. Editing your showcase swaps Record and
+ * Stamps for the picker.
  */
 export function ProfilePage() {
-  const { profile, campaign, started } = route.useLoaderData()
+  const { profile, album, tabs } = route.useLoaderData()
   const { account, storage } = useAccount()
   const [now] = useState(() => new Date())
-  const album = useMemo(() => {
-    if (!campaign) return null
-    const entry = profile.campaigns.find(c => c.id === campaign.id) ?? NO_SOLVES
+  const streakTimes = useMemo(() => solveTimes([...profile.campaigns, ...profile.years]), [profile])
+  const record = useMemo(() => {
+    if (!album) return null
+    const entries = album.kind === 'campaign' ? profile.campaigns : profile.years
+    const entry = entries.find(e => e.id === album.id) ?? NO_SOLVES
     const verified = new Set(entry.verifiedPuzzleIds)
     const foil = new Set(entry.foilPuzzleIds)
     return {
       entry,
-      progress: provinceStates(campaign, id => verified.has(id)),
-      stickers: profileStickers(campaign, entry, storage),
+      pages: albumPages(album, id => verified.has(id)),
+      stickers: profileStickers({ provinces: albumProvinces(album) }, entry, storage),
       solves: entry.verifiedPuzzleIds.flatMap(id => {
         const at = entry.solvedAt[id]
-        return at ? [{ at: new Date(at), foil: foil.has(id) }] : []
+        return at ? [{ at: solveTime(id, at), foil: foil.has(id) }] : []
       }),
     }
-  }, [profile, campaign, storage])
+  }, [profile, album, storage])
   const own = account?.handle.toLowerCase() === profile.handle.toLowerCase()
-  const stickers = album?.stickers ?? []
+  const stickers = record?.stickers ?? []
   const picks = () => showcaseOf(stickers, profile.showcase, 0).stickers.map(s => s.puzzle.id)
   const { edit, c } = route.useSearch()
   const navigate = route.useNavigate()
@@ -52,31 +56,31 @@ export function ProfilePage() {
   }
 
   const { stickers: showcase, picked } = showcaseOf(stickers, editing ?? profile.showcase, editing ? 0 : SHOWCASE_SIZE)
-  const first = campaign?.provinces[0]
-  const stamps = campaign ? stampsOf(campaign) : []
-  const earned = album ? stamps.filter(s => album.entry.stamps.some(e => e.id === s.id)).length : 0
+  const first = album?.kind === 'campaign' ? album.campaign.provinces[0] : undefined
+  const stamps = album ? stampsOf(album) : []
+  const earned = record ? stamps.filter(s => record.entry.stamps.some(e => e.id === s.id)).length : 0
 
   return (
     <main className={styles.page}>
       <Worlds>
         <World index={0} className={styles.cover}>
           <div className={styles.column} data-surface="cobalt">
-            {started.length > 1 && campaign ? (
+            {tabs.length > 1 && album ? (
               <nav className={styles.tabs} aria-label="Albums">
-                {started.map(c => (
+                {tabs.map(c => (
                   <Link
                     key={c.id}
                     to="/u/$handle"
                     params={{ handle: profile.handle }}
                     search={{ c: c.id }}
-                    aria-current={c.id === campaign.id ? 'page' : undefined}
+                    aria-current={c.id === album.id ? 'page' : undefined}
                   >
                     {c.name}
                   </Link>
                 ))}
               </nav>
             ) : (
-              campaign && <p className={styles.kicker}>Album · {campaign.name}</p>
+              album && <p className={styles.kicker}>Album · {album.name}</p>
             )}
             <HandleHero handle={profile.handle} />
             <Showcase stickers={showcase} />
@@ -101,9 +105,9 @@ export function ProfilePage() {
                     Edit showcase
                   </button>
                 ) : (
-                  campaign &&
+                  album &&
                   first && (
-                    <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} data-variant="primary">
+                    <Link to="/c/$campaignId" params={{ campaignId: album.id }} data-variant="primary">
                       Start {first.name.replace(/^The /, 'the ')}
                     </Link>
                   )
@@ -113,8 +117,8 @@ export function ProfilePage() {
           </div>
         </World>
 
-        {campaign &&
-          album &&
+        {album &&
+          record &&
           (own && editing ? (
             <World index={4} style={{ flex: '2 1 0' }} labelledBy="showcase-edit-title">
               <div className={styles.column}>
@@ -127,10 +131,11 @@ export function ProfilePage() {
                 <div className={styles.column}>
                   <Summary
                     titleId="record-title"
-                    campaign={campaign}
-                    progress={album.progress}
-                    stickers={album.stickers}
-                    solves={album.solves}
+                    pages={record.pages}
+                    pageWord={album.kind === 'campaign' ? 'Pages' : 'Months'}
+                    stickers={record.stickers}
+                    solves={record.solves}
+                    streakTimes={streakTimes}
                     joinedAt={profile.joinedAt}
                     now={now}
                   />
@@ -141,7 +146,7 @@ export function ProfilePage() {
                   <h2 id="stamps-title" className={styles.kicker}>
                     Stamps · {earned} / {stamps.length}
                   </h2>
-                  <Stamps campaign={campaign} earned={album.entry.stamps} now={now} />
+                  <Stamps album={album} earned={record.entry.stamps} now={now} />
                 </div>
               </World>
             </>

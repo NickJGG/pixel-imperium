@@ -5,12 +5,14 @@ describe('routeParent', () => {
   it.each([
     ['/c/rome/latium', '/'],
     ['/c/rome', null],
+    ['/daily/2026/10', '/?open=daily'],
+    ['/daily/2026/10/12', null],
     ['/', null],
     ['/learn/techniques/overlap', '/learn'],
     ['/u/ann/rome/latium', '/u/ann'],
-    ['/learn', '/'],
-    ['/settings', '/'],
-    ['/u/ann', '/'],
+    ['/learn', '/?open=learn'],
+    ['/settings', '/?open=settings'],
+    ['/u/ann', '/?open=profile'],
     ['/play/abc', null],
   ])('%s → %s', (path, parent) => {
     expect(routeParent(path)).toBe(parent)

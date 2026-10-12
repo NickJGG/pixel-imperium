@@ -1,10 +1,21 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useRef } from 'react'
+import { type ReactNode, useRef } from 'react'
 import type { DailyYear } from '@pixel-imperium/protocol'
 import { CountPill } from '../album/CountPill.tsx'
 import { seasonOf } from '../album/paper.ts'
 import { useAccount } from '../account.ts'
-import { Backdrop, MonthSpine, World, Worlds, monthMorphName, usePhone, useSpineReach, useStep } from '../campaign/worlds/Worlds.tsx'
+import {
+  Backdrop,
+  MonthSpine,
+  World,
+  Worlds,
+  YearSpine,
+  monthMorphName,
+  usePhone,
+  useSpineReach,
+  useStep,
+} from '../campaign/worlds/Worlds.tsx'
+import { firstFocusable } from '../pad/spatial.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { type DailyClock, startOf } from './clock.ts'
 import { DayFace, MonthCalendar } from './MonthCalendar.tsx'
@@ -38,11 +49,43 @@ function Year({ data, month }: { data: DailyYear; month: number }) {
   const ref = useRef<HTMLElement>(null)
   useSpineReach(ref)
 
-  const goTo = (to: number) => {
-    if (to < 1 || to > 12 || to === month) return
-    void navigate({ to: '/daily/$year/$month', params: { year: String(data.year), month: mm(to) }, replace: true })
+  const before = data.year > Number(data.launch.slice(0, 4)) ? data.year - 1 : null
+  const after = data.year < Number(clock.today.slice(0, 4)) ? data.year + 1 : null
+  const beforeRef = useRef<HTMLAnchorElement>(null)
+  const afterRef = useRef<HTMLAnchorElement>(null)
+
+  const goTo = (year: number, to: number) => {
+    if (year === data.year && (to < 1 || to > 12 || to === month)) return
+    void navigate({ to: '/daily/$year/$month', params: { year: String(year), month: mm(to) }, replace: true })
   }
-  useStep(dir => goTo(month + dir))
+  // Past January or December the step lands on the bookend first, and only the next one leaves the Year. Where the
+  // step stands is kept here rather than read from focus, which the pad may put on a bookend when the page opens.
+  const onBookend = useRef<{ month: number; side: -1 | 1 } | null>(null)
+  useStep(dir => {
+    const on = onBookend.current?.month === month ? onBookend.current.side : null
+    onBookend.current = null
+    if (on !== null) {
+      if (dir === on) return on < 0 ? goTo(before!, 12) : goTo(after!, 1)
+      const page = ref.current?.querySelector<HTMLElement>(':scope [data-start]')
+      return (page && firstFocusable(page))?.focus()
+    }
+    const to = month + dir
+    const bookend = to < 1 && before !== null ? beforeRef : to > 12 && after !== null ? afterRef : null
+    if (!bookend) return goTo(data.year, to)
+    onBookend.current = { month, side: dir }
+    bookend.current?.focus()
+  })
+  const bookends = (pages: ReactNode[]) => [
+    before !== null && <YearSpine key="before" ref={beforeRef} year={before} side="before" />,
+    ...pages,
+    after !== null && <YearSpine key="after" ref={afterRef} year={after} side="after" />,
+  ]
+  const onSnap = (i: number) => {
+    const m = i + (before === null ? 1 : 0)
+    if (m < 1) goTo(before!, 12)
+    else if (m > 12) goTo(after!, 1)
+    else goTo(data.year, m)
+  }
 
   const page = (m: number) => {
     const props = { data, month: m, tally: tallies[m - 1]!, clock, current: m === month }
@@ -52,28 +95,28 @@ function Year({ data, month }: { data: DailyYear; month: number }) {
   return (
     <main ref={ref} className={provinceStyles.page}>
       {phone ? (
-        <Worlds carousel onSnap={i => goTo(i + 1)}>
-          {MONTHS.map(page)}
-        </Worlds>
+        <Worlds carousel onSnap={onSnap}>{bookends(MONTHS.map(page))}</Worlds>
       ) : (
         <>
           <Backdrop index={seasonOf(month)} />
           <Worlds>
-            {MONTHS.map(m => {
-              if (m === month) return page(m)
-              const tally = tallies[m - 1]!
-              return (
-                <MonthSpine
-                  key={m}
-                  year={data.year}
-                  month={m}
-                  name={MONTH_NAMES[m - 1]!}
-                  count={`${tally.solved}/${tally.dates.length}`}
-                  conquered={tally.solved === tally.dates.length}
-                  dim={tally.dim}
-                />
-              )
-            })}
+            {bookends(
+              MONTHS.map(m => {
+                if (m === month) return page(m)
+                const tally = tallies[m - 1]!
+                return (
+                  <MonthSpine
+                    key={m}
+                    year={data.year}
+                    month={m}
+                    name={MONTH_NAMES[m - 1]!}
+                    count={`${tally.solved}/${tally.dates.length}`}
+                    conquered={tally.solved === tally.dates.length}
+                    dim={tally.dim}
+                  />
+                )
+              }),
+            )}
           </Worlds>
         </>
       )}
@@ -124,7 +167,22 @@ function OpenMonth({ data, month, tally, clock, current, storage }: MonthProps &
         </div>
         <footer className={provinceStyles.foot}>
           <p className={provinceStyles.caption}>One new picture every day. Miss one and it’s gone.</p>
-          {thisMonth && <FinishCard clock={clock} data={data} storage={storage} />}
+          {thisMonth ? (
+            <FinishCard clock={clock} data={data} storage={storage} />
+          ) : (
+            // A past Month's cells can't be played, so this is what the pad lands on.
+            <Link
+              to="/daily/$year/$month"
+              params={monthParams(clock.today)}
+              replace
+              className={provinceStyles.paperLink}
+              data-variant="paper"
+              data-pad-default={current || undefined}
+            >
+              Back to {MONTH_NAMES[Number(clock.today.slice(5, 7)) - 1]}
+              {!clock.today.startsWith(`${data.year}-`) && ` ${clock.today.slice(0, 4)}`}
+            </Link>
+          )}
           {todays && (
             <div className={campaignStyles.nextUp}>
               <Link

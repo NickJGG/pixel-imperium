@@ -96,6 +96,7 @@ export function HomePage({
               handle={account.handle}
               profile={own}
               campaign={campaign}
+              dailyYear={daily}
               storage={storage}
               className={className}
             />

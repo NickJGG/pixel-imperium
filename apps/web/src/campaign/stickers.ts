@@ -1,11 +1,12 @@
 import type { Campaign, ProfileCampaign, PuzzleSummary } from '@pixel-imperium/protocol'
+import { dailyDateOf } from '../daily/clock.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 
 export interface StickerEntry {
   puzzle: PuzzleSummary
   /** The province's index in its campaign. */
   province: number
-  /** 1-based slot number on the province's pages. */
+  /** 1-based slot number on the province's pages; a Daily's day of the month. */
   number: number
   palette: (string | null)[] | null
   unverified: boolean
@@ -36,17 +37,18 @@ export function latestStickers(campaign: Pick<Campaign, 'provinces'>, storage: P
 }
 
 /**
- * A player's verified stickers in the campaign, in `verifiedPuzzleIds` order (latest first on a Profile), foil as
- * theirs are. Art comes from the viewer's own `storage`, so stickers the viewer hasn't collected have a `null` palette.
+ * A player's verified stickers in a campaign or a Year (its Months as provinces), in `verifiedPuzzleIds` order
+ * (latest first on a Profile), foil as theirs are. Art comes from the viewer's own `storage`, so stickers the viewer
+ * hasn't collected have a `null` palette.
  */
 export function profileStickers(
-  campaign: Pick<Campaign, 'provinces'>,
+  album: { provinces: readonly { puzzles: readonly PuzzleSummary[] }[] },
   { verifiedPuzzleIds, foilPuzzleIds }: Pick<ProfileCampaign, 'verifiedPuzzleIds' | 'foilPuzzleIds'>,
   storage: ProgressStorage,
 ): StickerEntry[] {
   const foil = new Set(foilPuzzleIds)
   const slots = new Map(
-    campaign.provinces.flatMap((province, index) => province.puzzles.map((puzzle, i) => [puzzle.id, { puzzle, index, i }] as const)),
+    album.provinces.flatMap((province, index) => province.puzzles.map((puzzle, i) => [puzzle.id, { puzzle, index, i }] as const)),
   )
   return verifiedPuzzleIds.flatMap(id => {
     const slot = slots.get(id)
@@ -56,7 +58,7 @@ export function profileStickers(
       {
         puzzle,
         province: index,
-        number: i + 1,
+        number: Number(dailyDateOf(puzzle.id)?.slice(8) ?? i + 1),
         palette: storage.loadPalette(puzzle.id, puzzle.width * puzzle.height),
         unverified: false,
         foil: foil.has(id),

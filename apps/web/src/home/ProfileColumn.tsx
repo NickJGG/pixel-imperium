@@ -1,25 +1,28 @@
 import { Link } from '@tanstack/react-router'
 import { type CSSProperties, useMemo, useState } from 'react'
-import type { Campaign, Profile } from '@pixel-imperium/protocol'
+import type { Campaign, DailyYear, Profile } from '@pixel-imperium/protocol'
 import { HandleHero } from '../album/HandleHero.tsx'
 import { profileStickers, showcaseOf } from '../campaign/stickers.ts'
 import { World } from '../campaign/worlds/Worlds.tsx'
 import { solveTimes } from '../daily/clock.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { streakOf, weekOf } from '../profile/activity.ts'
+import { albumProvinces, yearAlbum, yearAlbumId } from '../profile/album.ts'
 import { Showcase } from '../profile/Showcase.tsx'
 import styles from './Home.module.css'
 
 const weekday = new Intl.DateTimeFormat(undefined, { weekday: 'narrow' })
 
 /**
- * Home's way into your profile, in its cobalt: your handle, this week's solves, and your showcase beside them.
- * It counts Verified solves, as the profile does, so the two agree; until the profile has loaded it shows none.
+ * Home's way into your profile, in its cobalt: your handle, this week's solves, and your showcase beside them, picked
+ * from the campaign and this Year of Dailies. It counts Verified solves, as the profile does, so the two agree; until
+ * the profile has loaded it shows none.
  */
 export function ProfileColumn({
   handle,
   profile,
   campaign,
+  dailyYear,
   storage,
   className,
   start,
@@ -28,6 +31,7 @@ export function ProfileColumn({
   handle: string
   profile: Profile | null
   campaign: Campaign
+  dailyYear: DailyYear | null
   storage: ProgressStorage
   className: string | undefined
   start: boolean
@@ -37,8 +41,13 @@ export function ProfileColumn({
   const times = useMemo(() => (profile ? solveTimes([...profile.campaigns, ...profile.years]) : []), [profile])
   const stickers = useMemo(() => {
     const entry = profile?.campaigns.find(c => c.id === campaign.id)
-    return entry ? profileStickers(campaign, entry, storage) : []
-  }, [profile, campaign, storage])
+    const year = dailyYear && profile?.years.find(y => y.id === yearAlbumId(dailyYear.year))
+    const solvedAt = { ...entry?.solvedAt, ...year?.solvedAt }
+    return [
+      ...(entry ? profileStickers(campaign, entry, storage) : []),
+      ...(dailyYear && year ? profileStickers({ provinces: albumProvinces(yearAlbum(dailyYear)) }, year, storage) : []),
+    ].sort((a, b) => (solvedAt[b.puzzle.id] ?? '').localeCompare(solvedAt[a.puzzle.id] ?? ''))
+  }, [profile, campaign, dailyYear, storage])
   const showcase = showcaseOf(stickers, profile?.showcase ?? []).stickers
   const days = weekOf(times, now)
   const streak = streakOf(times, now).current

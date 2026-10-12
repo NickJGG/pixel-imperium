@@ -1,19 +1,21 @@
 import type { CSSProperties } from 'react'
-import type { Campaign } from '@pixel-imperium/protocol'
-import { paperStyle } from '../album/paper.ts'
-import type { CampaignProgress } from '../campaign/progress.ts'
+import { paperFor } from '../album/paper.ts'
 import type { StickerEntry } from '../campaign/stickers.ts'
 import { CALENDAR_WEEKS, calendarOf, relativeDate, shortDate, streakOf } from './activity.ts'
+import type { AlbumPage } from './album.ts'
 import styles from './Profile.module.css'
 
 interface Props {
   /** The id on the kicker heading, which labels the column. */
   titleId: string
-  campaign: Pick<Campaign, 'provinces'>
-  progress: CampaignProgress
+  pages: readonly AlbumPage[]
+  /** What a page is called: a Campaign's are pages, a Year's Months. */
+  pageWord: string
   stickers: readonly StickerEntry[]
-  /** The player's verified solves in the campaign, foil as theirs are. */
+  /** The player's verified solves in the album, foil as theirs are, a Daily's on its date. */
   solves: readonly { at: Date; foil: boolean }[]
+  /** Every verified solve in every album, for the Streak, which is one across them all. */
+  streakTimes: readonly Date[]
   joinedAt: string
   now: Date
 }
@@ -21,15 +23,15 @@ interface Props {
 const joined = new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' })
 
 /** A volume's Record column: stickers and foil, each page's progress, records and a calendar of solves. */
-export function Summary({ titleId, campaign, progress, stickers, solves, joinedAt, now }: Props) {
-  const total = progress.provinces.reduce((n, p) => n + p.total, 0)
+export function Summary({ titleId, pages, pageWord, stickers, solves, streakTimes, joinedAt, now }: Props) {
+  const total = pages.reduce((n, p) => n + p.total, 0)
   const foil = stickers.filter(s => s.foil).length
-  const complete = progress.provinces.filter(p => p.state === 'conquered').length
+  const complete = pages.filter(p => p.complete).length
   const biggest = stickers.reduce<StickerEntry['puzzle'] | null>(
     (big, { puzzle }) => (!big || puzzle.width * puzzle.height > big.width * big.height ? puzzle : big),
     null,
   )
-  const streak = streakOf(solves.map(s => s.at), now)
+  const streak = streakOf(streakTimes, now)
   const last = solves.reduce<Date | null>((l, s) => (!l || s.at > l ? s.at : l), null)
   const days = calendarOf(solves, now)
 
@@ -46,18 +48,18 @@ export function Summary({ titleId, campaign, progress, stickers, solves, joinedA
         <b>{foil}</b> foil{stickers.length > 0 && ` · ${Math.round((foil / stickers.length) * 100)}%`}
       </p>
       <div className={styles.segs} aria-hidden="true">
-        {progress.provinces.map((p, i) => (
+        {pages.map(p => (
           <i
-            key={campaign.provinces[i]!.id}
-            style={{ ...paperStyle(i), '--p': `${(p.solved / Math.max(1, p.total)) * 100}%` } as CSSProperties}
+            key={p.id}
+            style={{ ...paperFor(p.paper), '--p': `${(p.solved / Math.max(1, p.total)) * 100}%` } as CSSProperties}
           />
         ))}
       </div>
       <dl className={styles.facts}>
         <div>
-          <dt>Pages complete</dt>
+          <dt>{pageWord} complete</dt>
           <dd>
-            {complete} / {campaign.provinces.length}
+            {complete} / {pages.length}
           </dd>
         </div>
         <div>
