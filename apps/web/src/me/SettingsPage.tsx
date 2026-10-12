@@ -22,7 +22,7 @@ interface LinkedAccount {
 }
 
 /** `null` while loading, `'failed'` if the list couldn't be fetched. */
-function useLinkedAccounts() {
+export function useLinkedAccounts() {
   const [linked, setLinked] = useState<LinkedAccount[] | 'failed' | null>(null)
   const reload = async () => {
     const { data } = await listAccounts()
@@ -136,7 +136,7 @@ function HandleCard({ handle }: { handle: string }) {
   )
 }
 
-const THEMES: { value: Theme; label: string }[] = [
+export const THEMES: { value: Theme; label: string }[] = [
   { value: 'dark', label: 'Night' },
   { value: 'light', label: 'Day' },
   { value: 'auto', label: 'Auto' },

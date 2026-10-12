@@ -3,7 +3,7 @@ import { useRouter } from '@tanstack/react-router'
 import { putShowcase } from '../api.ts'
 import { useAccount } from '../account.ts'
 import { SHOWCASE_SIZE, type StickerEntry } from '../campaign/stickers.ts'
-import { ProfileSticker } from './ProfilePage.tsx'
+import { ProfileSticker } from './Showcase.tsx'
 import styles from './Profile.module.css'
 
 interface Props {

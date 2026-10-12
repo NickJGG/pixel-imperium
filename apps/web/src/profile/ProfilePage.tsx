@@ -2,12 +2,11 @@ import { useMemo, useState } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ProfileCampaign } from '@pixel-imperium/protocol'
 import { HandleHero } from '../album/HandleHero.tsx'
-import { Sticker, StickerBack, tiltOf } from '../album/Sticker.tsx'
 import { useAccount } from '../account.ts'
 import { provinceStates } from '../campaign/progress.ts'
-import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
-import { type StickerEntry, profileStickers, showcaseOf } from '../campaign/stickers.ts'
+import { SHOWCASE_SIZE, profileStickers, showcaseOf } from '../campaign/stickers.ts'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
+import { Showcase } from './Showcase.tsx'
 import { ShowcaseEditor } from './ShowcaseEditor.tsx'
 import { Stamps, stampsOf } from './Stamps.tsx'
 import { Summary } from './Summary.tsx'
@@ -15,12 +14,6 @@ import styles from './Profile.module.css'
 
 const route = getRouteApi('/u/$handle')
 
-/** The showcase's stickers on the cover, biggest first. */
-const SHOWCASE = [
-  { tilt: -4, width: '38%' },
-  { tilt: 5, width: '28%' },
-  { tilt: -2, width: '28%' },
-]
 const NO_SOLVES: ProfileCampaign = { id: '', verifiedPuzzleIds: [], foilPuzzleIds: [], solvedAt: {}, stamps: [] }
 
 /**
@@ -47,11 +40,18 @@ export function ProfilePage() {
     }
   }, [profile, campaign, storage])
   const own = account?.handle.toLowerCase() === profile.handle.toLowerCase()
-  /** The picks being edited, previewed on the cover; `null` when not editing. */
-  const [editing, setEditing] = useState<string[] | null>(null)
-
   const stickers = album?.stickers ?? []
-  const { stickers: showcase, picked } = showcaseOf(stickers, editing ?? profile.showcase, editing ? 0 : SHOWCASE.length)
+  const picks = () => showcaseOf(stickers, profile.showcase, 0).stickers.map(s => s.puzzle.id)
+  const { edit, c } = route.useSearch()
+  const navigate = route.useNavigate()
+  /** The picks being edited, previewed on the cover; `null` when not editing. */
+  const [editing, setEditing] = useState<string[] | null>(() => (edit && own && stickers.length > 0 ? picks() : null))
+  const stopEditing = () => {
+    setEditing(null)
+    if (edit) void navigate({ search: c ? { c } : {}, replace: true })
+  }
+
+  const { stickers: showcase, picked } = showcaseOf(stickers, editing ?? profile.showcase, editing ? 0 : SHOWCASE_SIZE)
   const first = campaign?.provinces[0]
   const stamps = campaign ? stampsOf(campaign) : []
   const earned = album ? stamps.filter(s => album.entry.stamps.some(e => e.id === s.id)).length : 0
@@ -79,23 +79,7 @@ export function ProfilePage() {
               campaign && <p className={styles.kicker}>Album · {campaign.name}</p>
             )}
             <HandleHero handle={profile.handle} />
-            {showcase.length > 0 ? (
-              <ul className={styles.showcase} aria-label="Showcase">
-                {showcase.map((s, i) => (
-                  <li key={s.puzzle.id} style={{ width: SHOWCASE[i]!.width }}>
-                    <ProfileSticker sticker={s} tilt={SHOWCASE[i]!.tilt} />
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <ul className={styles.showcase} aria-hidden="true">
-                {SHOWCASE.map(({ width }, i) => (
-                  <li key={i} style={{ width }}>
-                    <span className={styles.empty} />
-                  </li>
-                ))}
-              </ul>
-            )}
+            <Showcase stickers={showcase} />
             <p className={styles.kicker}>
               {editing
                 ? showcase.length > 0
@@ -112,7 +96,7 @@ export function ProfilePage() {
                 {stickers.length > 0 ? (
                   <button
                     type="button"
-                    onClick={() => setEditing(showcaseOf(stickers, profile.showcase, 0).stickers.map(s => s.puzzle.id))}
+                    onClick={() => setEditing(picks())}
                   >
                     Edit showcase
                   </button>
@@ -134,7 +118,7 @@ export function ProfilePage() {
           (own && editing ? (
             <World index={4} style={{ flex: '2 1 0' }} labelledBy="showcase-edit-title">
               <div className={styles.column}>
-                <ShowcaseEditor stickers={stickers} picks={editing} onChange={setEditing} onClose={() => setEditing(null)} />
+                <ShowcaseEditor stickers={stickers} picks={editing} onChange={setEditing} onClose={stopEditing} />
               </div>
             </World>
           ) : (
@@ -164,29 +148,5 @@ export function ProfilePage() {
           ))}
       </Worlds>
     </main>
-  )
-}
-
-/** Their sticker, face down unless the viewer has collected it too. */
-export function ProfileSticker({ sticker: s, tilt }: { sticker: StickerEntry; tilt?: number }) {
-  const { puzzle } = s
-  const lean = tilt ?? tiltOf(puzzle.id)
-  if (!s.palette) {
-    return (
-      <span role="img" aria-label={`#${s.number}, a sticker you haven't collected`} className={styles.fill}>
-        <StickerBack width={puzzle.width} height={puzzle.height} tilt={lean} />
-      </span>
-    )
-  }
-  return (
-    <Sticker
-      title={puzzle.title}
-      width={puzzle.width}
-      height={puzzle.height}
-      palette={s.palette}
-      foil={s.foil}
-      gold={s.number === GOLD_SLOT}
-      tilt={lean}
-    />
   )
 }

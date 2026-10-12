@@ -79,13 +79,25 @@ const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   validateSearch: homeSearch,
+  /** The profile is the signed-in player's, for the Profile and Settings columns; Home stands without it. */
   loader: async () => {
     const id = pickCampaign(await fetchCampaigns())
-    return { campaign: id === null ? null : await loadCampaign(id) }
+    const [campaign, profile] = await Promise.all([
+      id === null ? null : loadCampaign(id),
+      accountReady.then(() => {
+        const handle = getAccount().account?.handle
+        return handle ? fetchProfile(handle).catch(() => null) : null
+      }),
+    ])
+    return { campaign, profile }
   },
   component: () => {
-    const { campaign } = homeRoute.useLoaderData()
-    return campaign ? <HomePage campaign={campaign} /> : <main className={styles.message}>No campaigns yet.</main>
+    const { campaign, profile } = homeRoute.useLoaderData()
+    return campaign ? (
+      <HomePage campaign={campaign} profile={profile} />
+    ) : (
+      <main className={styles.message}>No campaigns yet.</main>
+    )
   },
 })
 
@@ -133,8 +145,11 @@ const playRoute = createRoute({
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/u/$handle',
-  validateSearch: (search: Record<string, unknown>): { c?: string } =>
-    typeof search.c === 'string' ? { c: search.c } : {},
+  /** `c` picks the album; `edit` opens your showcase editor. */
+  validateSearch: (search: Record<string, unknown>): { c?: string; edit?: true } => ({
+    ...(typeof search.c === 'string' ? { c: search.c } : {}),
+    ...(search.edit === true ? { edit: true as const } : {}),
+  }),
   loaderDeps: ({ search }) => ({ c: search.c }),
   loader: async ({ params, deps }) => {
     const [profile, campaigns] = await Promise.all([fetchProfile(params.handle), fetchCampaigns()])

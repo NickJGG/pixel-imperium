@@ -5,10 +5,10 @@ import styles from './HandleHero.module.css'
 const LONG = 10
 
 /** A player's `@handle` as a page's hero, preferring to break after an underscore. */
-export function HandleHero({ handle, id }: { handle: string; id?: string | undefined }) {
+export function HandleHero({ handle, id, as: Heading = 'h1' }: { handle: string; id?: string | undefined; as?: 'h1' | 'h2' }) {
   const parts = handle.split('_')
   return (
-    <h1 id={id} className={styles.hero} data-long={handle.length > LONG || undefined}>
+    <Heading id={id} className={styles.hero} data-long={handle.length > LONG || undefined}>
       @
       {parts.map((part, i) => (
         <Fragment key={i}>
@@ -20,6 +20,6 @@ export function HandleHero({ handle, id }: { handle: string; id?: string | undef
           )}
         </Fragment>
       ))}
-    </h1>
+    </Heading>
   )
 }

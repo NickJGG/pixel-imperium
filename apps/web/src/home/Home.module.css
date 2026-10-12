@@ -219,26 +219,155 @@
   }
 }
 
-/* A column only the menu's spine stands for so far. */
-.plain {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  gap: var(--space-3);
-  height: 100%;
-  padding: calc(var(--space-14) + var(--space-10)) var(--space-3) var(--space-7);
-}
-
-.plain > p:not(.kicker) {
-  max-width: 46ch;
+.line {
+  max-width: 36ch;
   margin: 0;
 }
 
-.providers {
+/* Learn's Lessons, a shelf per track. */
+.shelves {
+  display: grid;
+  gap: var(--space-6);
+  width: min(100%, 520px);
+}
+
+.shelf {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.shelf > ol {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lesson {
+  display: grid;
+  gap: var(--space-2);
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--r-sm);
+}
+
+.lesson > span:last-child {
+  font: var(--type-micro);
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.lesson:hover > span:last-child {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Seven days of solves as white bars on the cobalt, filled by how many. */
+.week {
+  display: grid;
+  gap: var(--space-2);
+  align-self: stretch;
+  margin-top: var(--space-2);
+}
+
+.week > div {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
+  gap: var(--space-2);
+}
+
+.week > div > span {
+  flex: 1;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  font: var(--type-micro);
+  opacity: 0.8;
+}
+
+.week i {
+  width: 100%;
+  height: 36px;
+  border-radius: var(--r-xs);
+  background: linear-gradient(to top, var(--on-cover) var(--h), var(--on-cover-tint-strong) var(--h));
+}
+
+.showcase {
+  width: min(100%, 460px);
+  align-items: center;
+}
+
+/* A membership card in the column's own paper, its tab across the top. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: min(100%, 360px);
+  aspect-ratio: 1.586;
+  padding: var(--space-4) var(--space-5);
+  color: var(--ink);
+  background:
+    radial-gradient(color-mix(in srgb, var(--ink) 10%, transparent) 1.5px, transparent 1.6px) 0 0 / 18px 18px,
+    color-mix(in srgb, var(--tab) 22%, var(--paper));
+  border-top: 8px solid var(--tab);
+  border-radius: var(--r-lg);
+  box-shadow: 0 4px 0 var(--shade);
+  rotate: -3deg;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.cardMark {
+  width: 27px;
+  height: 18px;
+}
+
+.cardName {
+  margin: 0;
+  overflow: hidden;
+  font: var(--type-title);
+  letter-spacing: -0.05em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  font: var(--type-small);
+}
+
+.cardFields dt {
+  font: var(--type-micro);
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.cardFields dd {
+  margin: 0;
+}
+
+.barcode {
+  display: flex;
+  gap: 2px;
+  align-self: flex-start;
+  height: 22px;
+  margin-top: auto;
+  padding: 3px 6px;
+  background: var(--sticker);
+  border-radius: var(--r-xs);
+}
+
+.barcode > i {
+  background: var(--cobalt-ink);
 }
 
 @media (max-width: 720px) {
@@ -257,8 +386,7 @@
     width: min(100%, 300px);
   }
 
-  .plain {
-    height: auto;
-    padding: var(--space-6) var(--space-4);
+  .shelf > ol {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

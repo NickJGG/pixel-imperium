@@ -1,13 +1,16 @@
-import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import type { CSSProperties, ReactNode } from 'react'
-import type { Campaign } from '@pixel-imperium/protocol'
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import type { CSSProperties } from 'react'
+import type { Campaign, Profile } from '@pixel-imperium/protocol'
 import { paperStyle } from '../album/paper.ts'
 import { useAccount } from '../account.ts'
-import { PROVIDERS, signIn } from '../auth.ts'
 import { campaignProgress, continueAt } from '../campaign/progress.ts'
-import { MenuSpine, World, Worlds, morph, usePhone, useStep } from '../campaign/worlds/Worlds.tsx'
+import { MenuSpine, Worlds, morph, usePhone, useStep } from '../campaign/worlds/Worlds.tsx'
 import { useLessonsDone } from '../tutorial/done.ts'
 import { CampaignColumn } from './CampaignColumn.tsx'
+import { LearnColumn } from './LearnColumn.tsx'
+import { ProfileColumn } from './ProfileColumn.tsx'
+import { SettingsColumn } from './SettingsColumn.tsx'
+import { SignInColumn } from './SignInColumn.tsx'
 import { type Column, type Paper, columnsFor, learnPapers, openColumn, papers, searchFor, stepColumn } from './columns.ts'
 import styles from './Home.module.css'
 
@@ -22,12 +25,15 @@ const paperOf = (paper: Paper) =>
  * whole columns. Moving to another column (a spine, a swipe, ←/→, LB/RB) replaces `?open=` in the URL, so Back from
  * where a column led returns to it.
  */
-export function HomePage({ campaign }: { campaign: Campaign }) {
+export function HomePage({ campaign, profile }: { campaign: Campaign; profile: Profile | null }) {
   const { account, storage } = useAccount()
   const search = useSearch({ from: '/' })
   const navigate = useNavigate()
   const phone = usePhone()
   const done = useLessonsDone()
+
+  /** The loader's profile, while it's still the signed-in player's. */
+  const own = account && profile?.handle.toLowerCase() === account.handle.toLowerCase() ? profile : null
 
   const columns = columnsFor(account !== null)
   const open = openColumn(columns, search)
@@ -50,21 +56,36 @@ export function HomePage({ campaign }: { campaign: Campaign }) {
     signin: 'Sign in',
   }
 
-  const wide = (column: Column, start: boolean) =>
-    column === 'campaign' ? (
-      <CampaignColumn
-        key={column}
-        campaign={campaign}
-        progress={progress}
-        next={next}
-        active={active}
-        storage={storage}
-        start={start}
-        style={morphName(column)}
-      />
-    ) : (
-      <PlainColumn key={column} column={column} paper={paper[column]} start={start} handle={account?.handle} />
-    )
+  const wide = (column: Column, start: boolean) => {
+    const { index, className } = paperOf(paper[column])
+    const common = { start, style: morphName(column) }
+    switch (column) {
+      case 'campaign':
+        return (
+          <CampaignColumn key={column} {...common} campaign={campaign} progress={progress} next={next} active={active} storage={storage} />
+        )
+      case 'learn':
+        return <LearnColumn key={column} {...common} done={done} index={index} />
+      case 'profile':
+        return (
+          account && (
+            <ProfileColumn
+              key={column}
+              {...common}
+              handle={account.handle}
+              profile={own}
+              campaign={campaign}
+              storage={storage}
+              className={className}
+            />
+          )
+        )
+      case 'settings':
+        return account && <SettingsColumn key={column} {...common} handle={account.handle} joinedAt={own?.joinedAt} index={index} />
+      case 'signin':
+        return <SignInColumn key={column} {...common} index={index} />
+    }
+  }
 
   return (
     <main className={styles.page}>
@@ -91,83 +112,5 @@ export function HomePage({ campaign }: { campaign: Campaign }) {
         </Worlds>
       )}
     </main>
-  )
-}
-
-/** The columns besides Campaign, for now just a heading and the way through to their pages. */
-function PlainColumn({
-  column,
-  paper,
-  start,
-  handle,
-}: {
-  column: Exclude<Column, 'campaign'>
-  paper: Paper
-  start: boolean
-  handle: string | undefined
-}) {
-  const { index, className } = paperOf(paper)
-  const id = `home-${column}`
-  const body: Record<typeof column, { kicker: string; name: string; content: ReactNode }> = {
-    learn: {
-      kicker: 'Lessons',
-      name: 'Learn',
-      content: (
-        <Link to="/learn" data-variant="primary">
-          Open Learn
-        </Link>
-      ),
-    },
-    profile: {
-      kicker: 'Profile',
-      name: handle ? `@${handle}` : 'Profile',
-      content: handle && (
-        <Link to="/u/$handle" params={{ handle }} data-variant="paper">
-          Open your profile
-        </Link>
-      ),
-    },
-    settings: {
-      kicker: 'Handle · Play · Sign-in',
-      name: 'Settings',
-      content: (
-        <Link to="/settings" data-variant="primary">
-          Open settings
-        </Link>
-      ),
-    },
-    signin: {
-      kicker: 'Account',
-      name: 'Sign in',
-      content: (
-        <>
-          <p>Sign in to earn foil and keep your stickers on any device.</p>
-          <div className={styles.providers}>
-            {PROVIDERS.map(p => (
-              <button
-                key={p.id}
-                type="button"
-                data-variant="paper"
-                onClick={() => void signIn.social({ provider: p.id, callbackURL: window.location.href })}
-              >
-                Sign in with {p.label}
-              </button>
-            ))}
-          </div>
-        </>
-      ),
-    },
-  }
-  const { kicker, name, content } = body[column]
-  return (
-    <World index={index} className={className} labelledBy={id} style={morphName(column)} start={start}>
-      <div className={styles.plain} data-surface={paper === 'cover' ? 'cobalt' : undefined}>
-        <p className={styles.kicker}>{kicker}</p>
-        <h2 id={id} className={styles.hero}>
-          {name}
-        </h2>
-        {content}
-      </div>
-    </World>
   )
 }

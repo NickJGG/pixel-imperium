@@ -69,33 +69,6 @@ section.cover::before {
   background: var(--on-cover);
 }
 
-.showcase {
-  display: flex;
-  align-items: start;
-  justify-content: center;
-  gap: var(--space-3);
-  margin: 0;
-  padding: var(--space-3) 0 var(--space-1);
-  list-style: none;
-}
-
-.showcase > li > *,
-.fill > * {
-  width: 100%;
-}
-
-.fill {
-  display: block;
-}
-
-/* Where a newcomer's showcase will go. */
-.empty {
-  display: block;
-  aspect-ratio: 1;
-  border: 2px dashed var(--on-cover-tint-strong);
-  border-radius: 12%;
-}
-
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -358,11 +331,5 @@ section.cover::before {
     height: auto;
     padding: var(--space-6) var(--space-4);
     overflow: visible;
-  }
-
-  .showcase {
-    width: 100%;
-    max-width: 420px;
-    margin-inline: auto;
   }
 }
