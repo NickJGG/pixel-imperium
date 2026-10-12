@@ -6,7 +6,7 @@ import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
 import { ProvincePage } from './campaign/ProvincePage.tsx'
 import { ProvinceSkeleton } from './campaign/ProvinceSkeleton.tsx'
 import { campaignProgress, continueAt } from './campaign/progress.ts'
-import { homeMorphDefault } from './campaign/worlds/Worlds.tsx'
+import { PENDING_MS, installMorphNavigation, morphPendingMs } from './campaign/worlds/morph-nav.ts'
 import { homeSearch } from './home/columns.ts'
 import { HomePage } from './home/HomePage.tsx'
 import { HomeSkeleton } from './home/HomeSkeleton.tsx'
@@ -109,6 +109,9 @@ const homeRoute = createRoute({
     )
   },
   pendingComponent: HomeSkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
 })
 
 const campaignRoute = createRoute({
@@ -133,6 +136,9 @@ const provinceRoute = createRoute({
     <ProvincePage {...provinceRoute.useLoaderData()} previewConquest={provinceRoute.useSearch().conquest} />
   ),
   pendingComponent: ProvinceSkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
   notFoundComponent: () => (
     <NotFound>There’s no province called “{provinceRoute.useParams().provinceId}”. It might have been renamed.</NotFound>
   ),
@@ -270,10 +276,11 @@ export const router = createRouter({
     lessonRoute,
     techniquesRoute,
   ]),
-  defaultViewTransition: homeMorphDefault,
   defaultPendingComponent: Fallback,
-  defaultPendingMs: 300,
+  defaultPendingMs: PENDING_MS,
 })
+
+installMorphNavigation(router)
 
 declare module '@tanstack/react-router' {
   interface Register {

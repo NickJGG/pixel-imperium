@@ -10,7 +10,7 @@ import { markConquestsSeen, unseenConquests } from './conquests-seen.ts'
 import { NextUp } from './NextUp.tsx'
 import { type CampaignProgress, campaignProgress, isOpen, tierGroups } from './progress.ts'
 import { PuzzleSlot } from './PuzzleSlot.tsx'
-import { Backdrop, Curtain, Spine, World, Worlds, morph, morphName, usePhone, useSpineReach, useStep } from './worlds/Worlds.tsx'
+import { Backdrop, Curtain, Spine, World, Worlds, morphName, usePhone, useSpineReach, useStep } from './worlds/Worlds.tsx'
 import styles from './Province.module.css'
 
 /**
@@ -80,16 +80,11 @@ function Album({
     return () => clearTimeout(t)
   }, [conquestBeat])
 
-  const goTo = (to: Province | undefined, viewTransition: boolean) => {
+  const goTo = (to: Province | undefined) => {
     if (!to || to === province) return
-    void navigate({
-      to: '/c/$campaignId/$provinceId',
-      params: { campaignId: campaign.id, provinceId: to.id },
-      replace: true,
-      viewTransition,
-    })
+    void navigate({ to: '/c/$campaignId/$provinceId', params: { campaignId: campaign.id, provinceId: to.id }, replace: true })
   }
-  useStep(dir => goTo(campaign.provinces[index + dir], morph()))
+  useStep(dir => goTo(campaign.provinces[index + dir]))
 
   const conquered = (p: Province) =>
     progress.provinces[campaign.provinces.indexOf(p)]!.state === 'conquered' || unveil.has(p.id)
@@ -119,7 +114,7 @@ function Album({
   if (phone) {
     return (
       <main className={styles.page}>
-        <Worlds carousel onSnap={i => goTo(campaign.provinces[i], false)}>
+        <Worlds carousel onSnap={i => goTo(campaign.provinces[i])}>
           {campaign.provinces.map(page)}
         </Worlds>
       </main>
@@ -350,7 +345,6 @@ function LockedColumn({
               to="/c/$campaignId/$provinceId"
               params={{ campaignId: campaign.id, provinceId: active.id }}
               replace
-              viewTransition={morph()}
               className={styles.paperLink}
               data-variant="paper"
               data-pad-default={current || undefined}

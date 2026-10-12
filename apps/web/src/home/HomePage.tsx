@@ -4,7 +4,7 @@ import type { Campaign, Profile } from '@pixel-imperium/protocol'
 import { paperStyle } from '../album/paper.ts'
 import { useAccount } from '../account.ts'
 import { campaignProgress, continueAt } from '../campaign/progress.ts'
-import { Backdrop, MenuSpine, Worlds, morph, usePhone, useStep } from '../campaign/worlds/Worlds.tsx'
+import { Backdrop, MenuSpine, Worlds, usePhone, useStep } from '../campaign/worlds/Worlds.tsx'
 import { useLessonsDone } from '../tutorial/done.ts'
 import { CampaignColumn } from './CampaignColumn.tsx'
 import { LearnColumn } from './LearnColumn.tsx'
@@ -15,7 +15,7 @@ import { COLUMN_NAME, type Column, type Paper, columnsFor, learnPapers, openColu
 import styles from './Home.module.css'
 
 /** Pairs a column across a morph, wide when it's open and a spine when it isn't. */
-const columnName = (column: Column): CSSProperties => ({ viewTransitionName: `home-${column}` })
+export const columnName = (column: Column): CSSProperties => ({ viewTransitionName: `home-${column}` })
 
 export const paperOf = (paper: Paper) =>
   paper === 'cover' ? { index: 0, className: styles.cover } : { index: paper, className: undefined }
@@ -42,11 +42,11 @@ export function HomePage({ campaign, profile }: { campaign: Campaign; profile: P
   const active = next ? campaign.provinces.indexOf(next.province) : campaign.provinces.length - 1
   const paper = papers(active, learnPapers(done))
 
-  const goTo = (column: Column | undefined, viewTransition: boolean) => {
+  const goTo = (column: Column | undefined) => {
     if (!column || column === open) return
-    void navigate({ to: '/', search: searchFor(column), replace: true, viewTransition })
+    void navigate({ to: '/', search: searchFor(column), replace: true })
   }
-  useStep(dir => goTo(stepColumn(columns, open, dir), morph()))
+  useStep(dir => goTo(stepColumn(columns, open, dir)))
 
   const spineName: Record<Column, string> = { campaign: campaign.name.replace(/^The /, ''), ...COLUMN_NAME }
 
@@ -86,7 +86,7 @@ export function HomePage({ campaign, profile }: { campaign: Campaign; profile: P
       <h1 className={styles.srOnly}>Home</h1>
       <Backdrop index={active} />
       {phone ? (
-        <Worlds carousel onSnap={i => goTo(columns[i], false)}>
+        <Worlds carousel onSnap={i => goTo(columns[i])}>
           {columns.map(c => wide(c, c === open))}
         </Worlds>
       ) : (

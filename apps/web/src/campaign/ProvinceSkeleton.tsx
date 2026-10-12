@@ -1,12 +1,13 @@
 import { useParams } from '@tanstack/react-router'
-import type { CSSProperties, ReactNode } from 'react'
+import { type CSSProperties, type ReactNode, useRef } from 'react'
 import type { Province, Tier } from '@pixel-imperium/protocol'
 import { getAccount } from '../account.ts'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { currentCampaign } from './last-campaign.ts'
 import { type ProvinceState, campaignProgress, isOpen, tierGroups } from './progress.ts'
 import { ROWS, TIER_NAME } from './ProvincePage.tsx'
-import { SkeletonSpine, World, Worlds, usePhone } from './worlds/Worlds.tsx'
+import { useAnnounceSkeleton } from './worlds/morph-nav.ts'
+import { Backdrop, SkeletonSpine, World, Worlds, morphName, usePhone, useSpineReach } from './worlds/Worlds.tsx'
 import styles from './Province.module.css'
 import campaignStyles from './Campaign.module.css'
 
@@ -20,6 +21,7 @@ const SHELVES: { tier: Tier; count: number }[] = [
 /**
  * A province's page while it loads: its column with the shelves it will have, the other provinces as spines, or on
  * a phone a carousel with its fogged neighbours peeking. Without its campaign in memory, the whole page is in the fog.
+ * Its column and spines pair with the page it's leaving, so a morph can play into it.
  */
 export function ProvinceSkeleton() {
   const { campaignId, provinceId } = useParams({ from: '/c/$campaignId/$provinceId' })
@@ -30,10 +32,12 @@ export function ProvinceSkeleton() {
   const province = campaign?.provinces[index]
   const states = campaign && campaignProgress(campaign, getAccount().storage).provinces.map(p => p.state)
 
-  const column = <Column key="page" index={Math.max(index, 0)} province={province} state={states?.[index]} />
+  const column = (
+    <Column key="page" id={provinceId} index={Math.max(index, 0)} province={province} state={states?.[index]} />
+  )
   if (!campaign || !province) {
     return (
-      <Page>
+      <Page index={0}>
         {phone ? (
           <Worlds carousel>
             <World index={0} fog />
@@ -47,14 +51,22 @@ export function ProvinceSkeleton() {
     )
   }
   return (
-    <Page>
+    <Page index={index}>
       <Worlds carousel={phone}>
         {campaign.provinces.map((p, i) => {
           if (p === province) return column
           if (phone) return <World key={p.id} index={i} fog />
           const state = states![i]!
           return (
-            <SkeletonSpine key={p.id} paper={i} state={state} thin name={<Bar w={18} h={110} />}>
+            <SkeletonSpine
+              key={p.id}
+              paper={i}
+              state={state}
+              thin
+              pairs="province"
+              style={morphName(p)}
+              name={<Bar w={18} h={110} />}
+            >
               {isOpen(state) && <Bar w={44} h={22} pill />}
             </SkeletonSpine>
           )
@@ -64,20 +76,28 @@ export function ProvinceSkeleton() {
   )
 }
 
-function Page({ children }: { children: ReactNode }) {
+/** `index` is the page column's paper, for the backdrop the Home morph plays over. */
+function Page({ index, children }: { index: number; children: ReactNode }) {
+  const ref = useRef<HTMLElement>(null)
+  useSpineReach(ref)
+  useAnnounceSkeleton()
   return (
-    <main className={styles.page} aria-busy="true">
+    <main ref={ref} className={styles.page} aria-busy="true">
       <SrLoading />
+      <Backdrop index={index} />
       {children}
     </main>
   )
 }
 
 function Column({
+  id,
   index,
   province,
   state,
 }: {
+  /** The province's id, from the URL. */
+  id: string
   index: number
   province: Province | undefined
   state: ProvinceState | undefined
@@ -85,7 +105,7 @@ function Column({
   const shelves = province ? tierGroups(province).map(g => ({ tier: g.tier, count: g.slots.length })) : SHELVES
   const columns = shelves.map(s => Math.ceil(s.count / ROWS))
   return (
-    <World index={index} fog={!state || !isOpen(state)} start>
+    <World index={index} fog={!state || !isOpen(state)} style={morphName({ id })} start pair>
       <div className={styles.zoom}>
         <header className={styles.head}>
           <div className={styles.title}>

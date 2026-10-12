@@ -4,7 +4,6 @@ import { useAccount } from './account.ts'
 import { AccountMenu, ThumbMenu } from './AccountMenu.tsx'
 import { AutoIcon, DayIcon, HomeIcon, NightIcon, PlayIcon, ProfileIcon, SoundIcon } from './album/icons.tsx'
 import { useCurrentCampaign } from './campaign/last-campaign.ts'
-import { homeMorph, isProvincePath } from './campaign/worlds/Worlds.tsx'
 import { type ContinueAt, campaignProgress, continueAt } from './campaign/progress.ts'
 import { type Theme, updateSettings, useSettings } from './settings.ts'
 import app from './App.module.css'
@@ -98,7 +97,7 @@ export function Hud({ float }: { float?: boolean }) {
   const pathname = useRouterState({ select: s => s.location.pathname })
   return (
     <header className={styles.hud} data-float={(float ?? floats(pathname)) || undefined}>
-      <Link to="/" viewTransition={isProvincePath(pathname) && homeMorph('home')} className={styles.logo}>
+      <Link to="/" className={styles.logo}>
         <CrownMark className={styles.mark} />
         <span className={styles.wordmark}>
           <span>Pixel</span> Imperium

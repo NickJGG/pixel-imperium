@@ -3,11 +3,12 @@ import type { Campaign } from '@pixel-imperium/protocol'
 import { getAccount, likelySignedIn } from '../account.ts'
 import { currentCampaign } from '../campaign/last-campaign.ts'
 import { campaignProgress, continueAt } from '../campaign/progress.ts'
-import { SkeletonSpine, World, Worlds, usePhone } from '../campaign/worlds/Worlds.tsx'
+import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
+import { Backdrop, SkeletonSpine, World, Worlds, usePhone } from '../campaign/worlds/Worlds.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { useLessonsDone } from '../tutorial/done.ts'
 import { COLUMN_NAME, type Column, columnsFor, learnPapers, openColumn, papers } from './columns.ts'
-import { paperOf } from './HomePage.tsx'
+import { columnName, paperOf } from './HomePage.tsx'
 import styles from './Home.module.css'
 
 /** The province Home's Campaign column wears, as `HomePage` works it out. */
@@ -20,6 +21,7 @@ function activeProvince(campaign: Campaign): number {
 /**
  * Home while it loads: the open column wide and the rest as spines, or a carousel on a phone. The columns guess the
  * account from the last one this device saw; without a campaign in memory, the Campaign column is in the fog.
+ * Its columns pair with Home's own, so a morph can play into it.
  */
 export function HomeSkeleton() {
   const search = useSearch({ from: '/' })
@@ -30,11 +32,20 @@ export function HomeSkeleton() {
   const open = openColumn(columns, search)
   const active = campaign ? activeProvince(campaign) : 0
   const paper = papers(active, learnPapers(done))
+  useAnnounceSkeleton()
 
   const wide = (column: Column, start: boolean) => {
     const { index, className } = paperOf(paper[column])
     return (
-      <World key={column} index={index} fog={column === 'campaign' && !campaign} className={className} start={start}>
+      <World
+        key={column}
+        index={index}
+        fog={column === 'campaign' && !campaign}
+        className={className}
+        style={columnName(column)}
+        start={start}
+        pair={column === 'campaign'}
+      >
         {column === 'campaign' ? <CampaignStack campaign={campaign} /> : <ColumnStack />}
       </World>
     )
@@ -43,6 +54,7 @@ export function HomeSkeleton() {
   return (
     <main className={styles.page} aria-busy="true">
       <SrLoading />
+      <Backdrop index={active} />
       {phone ? (
         <Worlds carousel>{columns.map(c => wide(c, c === open))}</Worlds>
       ) : (
@@ -56,6 +68,8 @@ export function HomeSkeleton() {
                 paper={index}
                 fog={c === 'campaign' && !campaign}
                 className={className}
+                pairs="menu"
+                style={columnName(c)}
                 name={c === 'campaign' ? <Bar w={24} h={140} /> : COLUMN_NAME[c]}
               />
             )

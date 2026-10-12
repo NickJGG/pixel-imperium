@@ -34,30 +34,9 @@ export const usePhone = () => useSyncExternalStore(subscribePhone, () => matchMe
  */
 export const morph = () => !reducedMotion() && !matchMedia(PHONE).matches
 
-/**
- * The morph between Home and a province page, typed so its CSS can tell it from a move between columns: over the
- * province's paper standing still, Home's spines slide off right as its column's content fades, then the
- * province's spines grow in from the edges and its page's content fades in. Backwards on the way home.
- */
-export const homeMorph = (to: 'home' | 'province') => morph() && { types: [`to-${to}`] }
-
 const PROVINCE = /^\/c\/[^/]+\/[^/]+\/?$/
 
 export const isProvincePath = (pathname: string) => PROVINCE.test(pathname)
-
-/**
- * The router's default, so Back and Forward between Home and a province page morph too; every other move that
- * doesn't ask for a transition gets none. Left off where transitions can't be typed, as it would then morph them all.
- */
-export const homeMorphDefault = typeof CSS !== 'undefined' &&
-  CSS.supports('selector(:active-view-transition-type(a))') && {
-    types: ({ fromLocation, toLocation }: { fromLocation?: { pathname: string }; toLocation: { pathname: string } }) => {
-      if (!fromLocation || !morph()) return false
-      if (isProvincePath(fromLocation.pathname) && toLocation.pathname === '/') return ['to-home']
-      if (fromLocation.pathname === '/' && isProvincePath(toLocation.pathname)) return ['to-province']
-      return false
-    },
-  }
 
 /** Pairs a province's column across a morph, wide on one page and a spine on the other. */
 export const morphName = (province: Pick<Province, 'id'>): CSSProperties => ({ viewTransitionName: `province-${province.id}` })
@@ -281,7 +260,6 @@ export function Spine({
       to="/c/$campaignId/$provinceId"
       params={{ campaignId, provinceId: province.id }}
       replace
-      viewTransition={morph()}
       className={`${styles.world} ${styles.spine} ${styles.provinceSpine}`}
       style={{ ...paperStyle(index), ...morphName(province), viewTransitionClass: styles.provinceSpine }}
       data-state={state}
@@ -326,7 +304,6 @@ export function MenuSpine({
       to="/"
       search={search}
       replace
-      viewTransition={morph()}
       className={[styles.world, styles.spine, className].filter(Boolean).join(' ')}
       style={{ ...style, viewTransitionClass: styles.menuSpine }}
     >
@@ -346,11 +323,17 @@ export function SkeletonSpine({
   state,
   fog = false,
   thin = false,
+  pairs,
   name,
   children,
   className,
   style,
 }: {
+  /**
+   * Which spine it stands in for across a morph, with that spine's morph name in `style`: a province's, which
+   * reaches in from the window's edge, or a Home column's.
+   */
+  pairs?: 'province' | 'menu' | undefined
   /** Its paper, as `paperStyle`'s index. */
   paper: number
   /** A province spine's state, for its width and fog. */
@@ -365,8 +348,12 @@ export function SkeletonSpine({
 }) {
   return (
     <div
-      className={[styles.world, styles.spine, className].filter(Boolean).join(' ')}
-      style={{ ...paperStyle(paper), ...style }}
+      className={[styles.world, styles.spine, pairs === 'province' && styles.provinceSpine, className].filter(Boolean).join(' ')}
+      style={{
+        ...paperStyle(paper),
+        ...style,
+        ...(pairs && { viewTransitionClass: pairs === 'province' ? styles.provinceSpine : styles.menuSpine }),
+      }}
       data-state={fog ? 'locked' : state}
       data-thin={thin || undefined}
       data-conquered={state === 'conquered' || undefined}
