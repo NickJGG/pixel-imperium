@@ -304,6 +304,7 @@
 .stamps > li {
   display: grid;
   justify-items: center;
+  align-content: start;
   gap: var(--space-2);
   width: 92px;
   font: 600 var(--fs-12)/1.2 var(--font-ui);
@@ -311,17 +312,56 @@
   color: var(--ink-soft);
 }
 
-.stamps .stamp {
-  width: 76px;
-  height: 76px;
-  padding: var(--space-2);
-  font-size: var(--fs-10);
+.stamps .token {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  font-size: 28px;
+  color: var(--on-fill);
+  background: var(--fill);
+  border-radius: 50%;
+  box-shadow: 0 4px 0 var(--edge);
 }
 
-.stamps > [data-off] .stamp {
-  color: color-mix(in srgb, var(--ink-soft) 70%, var(--sticker));
-  border-style: dashed;
+.token[data-tone='pink'] {
+  --fill: var(--pink);
+  --on-fill: var(--on-pink);
+  --edge: color-mix(in srgb, var(--pink) 55%, black);
+}
+
+/* A gradient can't feed color-mix, so the foils take a fixed darker edge. */
+.token[data-tone='foil'] {
+  --fill: var(--foil);
+  --on-fill: var(--on-tab);
+  --edge: #8a7fb0;
+}
+
+.token[data-tone='tab'] {
+  --fill: var(--tab);
+  --on-fill: var(--on-tab);
+  --edge: color-mix(in srgb, var(--tab) 55%, black);
+}
+
+.token[data-tone='gold'] {
+  --fill: var(--foil-gold);
+  --on-fill: var(--on-gold);
+  --edge: color-mix(in srgb, var(--gold-dk) 70%, black);
+}
+
+.stamps > [data-off] .token {
+  color: var(--ink-soft);
+  background: transparent;
+  border: 2px dashed color-mix(in srgb, var(--ink) 40%, transparent);
   box-shadow: none;
+}
+
+.stampLabel {
+  color: var(--ink);
+}
+
+.stamps > [data-off] .stampLabel {
+  color: var(--ink-soft);
 }
 
 @media (max-width: 900px) {

@@ -91,3 +91,42 @@ export const CheckIcon = () => (
     <path d="M4.5 12.5l5 5L20 7" />
   </Icon>
 )
+
+export const StickerIcon = () => (
+  <Icon>
+    <rect x="4" y="4" width="16" height="16" rx="3" />
+    <path d="M14 20v-3a3 3 0 0 1 3-3h3" />
+  </Icon>
+)
+
+export const SparkleIcon = () => (
+  <Icon>
+    <path d="M12 3c.8 4.5 4.5 8.2 9 9-4.5.8-8.2 4.5-9 9-.8-4.5-4.5-8.2-9-9 4.5-.8 8.2-4.5 9-9z" />
+  </Icon>
+)
+
+export const FlameIcon = () => (
+  <Icon>
+    <path d="M12 21c-4 0-6.5-2.7-6.5-6.2 0-3.3 2.4-5.4 4-7.8.6 1.9 1.6 3 2.8 3.5C12.6 7.6 13.5 5 15.5 3c.7 3.4 3 5.8 3 10.2 0 4.3-2.5 7.8-6.5 7.8z" />
+  </Icon>
+)
+
+export const BoltIcon = () => (
+  <Icon>
+    <path d="M13 3L5 13.5h6L10 21l8-10.5h-6z" />
+  </Icon>
+)
+
+export const PageStarIcon = () => (
+  <Icon>
+    <path d="M6 3h9l4 4v14H6z" />
+    <path d="M12.5 10.5l1.1 2.2 2.4.4-1.7 1.7.4 2.4-2.2-1.1-2.2 1.1.4-2.4-1.7-1.7 2.4-.4z" />
+  </Icon>
+)
+
+export const CrownIcon = () => (
+  <Icon>
+    <path d="M4 18L3 7.5l5 4 4-7 4 7 5-4L20 18z" />
+    <path d="M4 21h16" />
+  </Icon>
+)
