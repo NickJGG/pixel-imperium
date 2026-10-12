@@ -5,6 +5,9 @@ import { LoadError, NotFound } from './EdgeStates.tsx'
 import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
 import { DailyPlayPage } from './daily/DailyPlayPage.tsx'
 import { dailyId } from './daily/clock.ts'
+import { MonthPage } from './daily/MonthPage.tsx'
+import { MonthSkeleton } from './daily/MonthSkeleton.tsx'
+import { loadDailyYear } from './daily/year.ts'
 import { ProvincePage } from './campaign/ProvincePage.tsx'
 import { ProvinceSkeleton } from './campaign/ProvinceSkeleton.tsx'
 import { campaignProgress, continueAt } from './campaign/progress.ts'
@@ -92,22 +95,26 @@ const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   validateSearch: homeSearch,
-  /** The profile is the signed-in player's, for the Profile and Settings columns; Home stands without it. */
+  /**
+   * The profile is the signed-in player's, for the Profile and Settings columns, and this Year's Dailies are for the
+   * Daily column; Home stands without either.
+   */
   loader: async () => {
     const id = pickCampaign(await fetchCampaigns())
-    const [campaign, profile] = await Promise.all([
+    const [campaign, dailyYear, profile] = await Promise.all([
       id === null ? null : loadCampaign(id),
+      loadDailyYear(new Date().getFullYear()).catch(() => null),
       accountReady.then(() => {
         const handle = getAccount().account?.handle
         return handle ? fetchProfile(handle).catch(() => null) : null
       }),
     ])
-    return { campaign, profile }
+    return { campaign, dailyYear, profile }
   },
   component: () => {
-    const { campaign, profile } = homeRoute.useLoaderData()
+    const { campaign, dailyYear, profile } = homeRoute.useLoaderData()
     return campaign ? (
-      <HomePage campaign={campaign} profile={profile} />
+      <HomePage campaign={campaign} dailyYear={dailyYear} profile={profile} />
     ) : (
       <main className={styles.message}>No campaigns yet.</main>
     )
@@ -162,6 +169,26 @@ const playRoute = createRoute({
   component: PlayPage,
   pendingComponent: PlaySkeleton,
   notFoundComponent: () => <NotFound>There’s no puzzle by that name.</NotFound>,
+})
+
+/** A Month of Dailies, `month` being `01`–`12`; the Year's other Months stand beside it. */
+const monthRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/daily/$year/$month',
+  loader: async ({ params }) => {
+    const year = Number(params.year)
+    const month = Number(params.month)
+    if (!/^\d{4}$/.test(params.year) || !/^(0[1-9]|1[0-2])$/.test(params.month)) throw notFound()
+    const [data] = await Promise.all([loadDailyYear(year), accountReady])
+    if (!data) throw notFound()
+    return { data, month }
+  },
+  component: () => <MonthPage {...monthRoute.useLoaderData()} />,
+  pendingComponent: MonthSkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
+  notFoundComponent: () => <NotFound>There’s no month of Dailies at this address.</NotFound>,
 })
 
 /** A Daily, by its date; whether it can still be played is the page's to say. */
@@ -289,6 +316,7 @@ export const router = createRouter({
     campaignRoute,
     provinceRoute,
     playRoute,
+    monthRoute,
     dailyPlayRoute,
     profileRoute,
     profileSpreadRoute,

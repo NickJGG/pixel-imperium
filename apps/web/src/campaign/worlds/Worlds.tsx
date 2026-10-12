@@ -9,7 +9,7 @@ import { Link } from '@tanstack/react-router'
 import type { Province } from '@pixel-imperium/protocol'
 import { CountPill } from '../../album/CountPill.tsx'
 import { Lock } from '../../album/Lock.tsx'
-import { paperStyle } from '../../album/paper.ts'
+import { type PaperName, paperFor, paperStyle, seasonOf } from '../../album/paper.ts'
 import type { HomeSearch } from '../../home/columns.ts'
 import { usePadPage } from '../../pad/PadProvider.tsx'
 import type { ProvinceState } from '../progress.ts'
@@ -37,6 +37,11 @@ export const morph = () => !reducedMotion() && !matchMedia(PHONE).matches
 const PROVINCE = /^\/c\/[^/]+\/[^/]+\/?$/
 
 export const isProvincePath = (pathname: string) => PROVINCE.test(pathname)
+
+const MONTH = /^\/daily\/\d{4}\/\d{2}\/?$/
+
+/** A Month of Dailies' page, `/daily/<year>/<mm>`. */
+export const isMonthPath = (pathname: string) => MONTH.test(pathname)
 
 /** Pairs a province's column across a morph, wide on one page and a spine on the other. */
 export const morphName = (province: Pick<Province, 'id'>): CSSProperties => ({ viewTransitionName: `province-${province.id}` })
@@ -152,8 +157,8 @@ export function World({
   start = false,
   pair = false,
 }: {
-  /** The province's index in its campaign, for its paper. */
-  index: number
+  /** Its paper: a province's index in its campaign, or a Month's season. */
+  index: PaperName
   /** Still locked: opened in the fog instead of its paper. */
   fog?: boolean
   children?: ReactNode
@@ -168,7 +173,7 @@ export function World({
   return (
     <section
       className={[styles.world, className].filter(Boolean).join(' ')}
-      style={{ ...paperStyle(index), ...style, ...(pair && { viewTransitionClass: styles.pageColumn }) }}
+      style={{ ...paperFor(index), ...style, ...(pair && { viewTransitionClass: styles.pageColumn }) }}
       data-fog={fog || undefined}
       data-start={start || undefined}
       aria-labelledby={labelledBy}
@@ -182,8 +187,8 @@ export function World({
  * The page column's paper, dots and stripe across the whole window, shown only during the Home morph so they
  * hold still while the spines and content move over them.
  */
-export function Backdrop({ index }: { index: number }) {
-  return <span className={styles.backdrop} style={paperStyle(index)} aria-hidden="true" />
+export function Backdrop({ index }: { index: PaperName }) {
+  return <span className={styles.backdrop} style={paperFor(index)} aria-hidden="true" />
 }
 
 let reachSheet: HTMLStyleElement | undefined
@@ -286,6 +291,56 @@ export function Spine({
   )
 }
 
+/**
+ * A Month's spine in a Year of Dailies, built like a province's: its name, then its count pill, or in the fog for a
+ * Month still to come or before the Daily began. Links to the Month's page, morphing into it like a province.
+ */
+export function MonthSpine({
+  year,
+  month,
+  name,
+  count,
+  conquered = false,
+  dim = false,
+}: {
+  year: number
+  /** 1–12. */
+  month: number
+  name: string
+  /** E.g. "10/31", shown unless `dim`. */
+  count: string
+  /** Every date solved: the pill in its colour with a check. */
+  conquered?: boolean
+  dim?: boolean
+}) {
+  const mm = String(month).padStart(2, '0')
+  return (
+    <Link
+      to="/daily/$year/$month"
+      params={{ year: String(year), month: mm }}
+      replace
+      className={`${styles.world} ${styles.spine} ${styles.provinceSpine}`}
+      style={{ ...paperFor(seasonOf(month)), ...monthMorphName(month), viewTransitionClass: styles.provinceSpine }}
+      data-state={dim ? 'locked' : 'active'}
+      data-thin
+      data-conquered={conquered || undefined}
+      aria-label={`${name}, ${dim ? 'not open' : `${count} solved`}`}
+    >
+      <span className={styles.stack}>
+        <span className={styles.name}>{name}</span>
+        {!dim && (
+          <CountPill conquered={conquered} className={styles.countPill}>
+            {count}
+          </CountPill>
+        )}
+      </span>
+    </Link>
+  )
+}
+
+/** Pairs a Month's column across a morph, like `morphName`. */
+export const monthMorphName = (month: number): CSSProperties => ({ viewTransitionName: `month-${month}` })
+
 /** A narrow column on Home standing for one of its entries, its name leaning sideways; opens that entry's column. */
 export function MenuSpine({
   name,
@@ -334,8 +389,8 @@ export function SkeletonSpine({
    * reaches in from the window's edge, or a Home column's.
    */
   pairs?: 'province' | 'menu' | undefined
-  /** Its paper, as `paperStyle`'s index. */
-  paper: number
+  /** Its paper, as `paperFor`'s. */
+  paper: PaperName
   /** A province spine's state, for its width and fog. */
   state?: ProvinceState | undefined
   fog?: boolean
@@ -350,7 +405,7 @@ export function SkeletonSpine({
     <div
       className={[styles.world, styles.spine, pairs === 'province' && styles.provinceSpine, className].filter(Boolean).join(' ')}
       style={{
-        ...paperStyle(paper),
+        ...paperFor(paper),
         ...style,
         ...(pairs && { viewTransitionClass: pairs === 'province' ? styles.provinceSpine : styles.menuSpine }),
       }}

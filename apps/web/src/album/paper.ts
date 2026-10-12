@@ -19,3 +19,9 @@ export function seasonOf(month: number): Season {
 
 /** `paperStyle` for a Month of Dailies: its season's paper and tab. */
 export const seasonStyle = (month: number) => named(seasonOf(month))
+
+/** A province's paper by index, or a season's. */
+export type PaperName = number | Season
+
+export const paperFor = (paper: PaperName): CSSProperties =>
+  typeof paper === 'number' ? paperStyle(paper) : named(paper)

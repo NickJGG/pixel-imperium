@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import type { CSSProperties } from 'react'
+import type { PaperName } from '../album/paper.ts'
 import { PROVIDERS } from '../auth.ts'
 import { World } from '../campaign/worlds/Worlds.tsx'
 import { CrownMark } from '../Hud.tsx'
@@ -27,7 +28,7 @@ export function SettingsColumn({
   handle: string
   /** From the profile; `undefined` until it has loaded. */
   joinedAt: string | undefined
-  index: number
+  index: PaperName
   start: boolean
   style: CSSProperties
 }) {

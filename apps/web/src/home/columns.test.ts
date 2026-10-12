@@ -7,14 +7,20 @@ const finished = (...tracks: (typeof TRACKS)[keyof typeof TRACKS][]) =>
 
 describe('columnsFor', () => {
   it('offers Profile and Settings signed in, Sign in signed out', () => {
-    expect(columnsFor(true)).toEqual(['campaign', 'learn', 'profile', 'settings'])
-    expect(columnsFor(false)).toEqual(['campaign', 'learn', 'signin'])
+    expect(columnsFor(true, true)).toEqual(['campaign', 'daily', 'learn', 'profile', 'settings'])
+    expect(columnsFor(false, true)).toEqual(['campaign', 'daily', 'learn', 'signin'])
+  })
+
+  it('leaves Daily out until it has launched', () => {
+    expect(columnsFor(true, false)).toEqual(['campaign', 'learn', 'profile', 'settings'])
+    expect(columnsFor(false, false)).toEqual(['campaign', 'learn', 'signin'])
   })
 })
 
 describe('homeSearch', () => {
   it('keeps a column it knows and drops anything else', () => {
     expect(homeSearch({ open: 'learn' })).toEqual({ open: 'learn' })
+    expect(homeSearch({ open: 'daily' })).toEqual({ open: 'daily' })
     expect(homeSearch({ open: 'campaign' })).toEqual({})
     expect(homeSearch({ open: 'shop' })).toEqual({})
     expect(homeSearch({ open: 3 })).toEqual({})
@@ -23,21 +29,22 @@ describe('homeSearch', () => {
 
 describe('openColumn', () => {
   it('opens the named column, or Campaign when the menu lacks it', () => {
-    expect(openColumn(columnsFor(true), { open: 'settings' })).toBe('settings')
-    expect(openColumn(columnsFor(false), { open: 'settings' })).toBe('campaign')
-    expect(openColumn(columnsFor(true), {})).toBe('campaign')
+    expect(openColumn(columnsFor(true, true), { open: 'settings' })).toBe('settings')
+    expect(openColumn(columnsFor(false, true), { open: 'settings' })).toBe('campaign')
+    expect(openColumn(columnsFor(true, true), {})).toBe('campaign')
   })
 
   it('round-trips through searchFor', () => {
-    for (const c of columnsFor(true)) expect(openColumn(columnsFor(true), searchFor(c))).toBe(c)
+    for (const c of columnsFor(true, true)) expect(openColumn(columnsFor(true, true), searchFor(c))).toBe(c)
   })
 })
 
 describe('stepColumn', () => {
   it('steps to a neighbour and stops at the ends', () => {
-    const columns = columnsFor(true)
+    const columns = columnsFor(true, true)
     expect(stepColumn(columns, 'learn', 1)).toBe('profile')
-    expect(stepColumn(columns, 'learn', -1)).toBe('campaign')
+    expect(stepColumn(columns, 'learn', -1)).toBe('daily')
+    expect(stepColumn(columns, 'campaign', 1)).toBe('daily')
     expect(stepColumn(columns, 'campaign', -1)).toBeUndefined()
     expect(stepColumn(columns, 'settings', 1)).toBeUndefined()
   })
@@ -56,16 +63,23 @@ describe('learnPapers', () => {
 
 describe('papers', () => {
   it('dresses each column for where it leads', () => {
-    expect(papers(2, [1, 0])).toEqual({ campaign: 2, learn: 1, profile: 'cover', settings: 4, signin: 5 })
+    expect(papers(2, [1, 0], 'autumn')).toEqual({
+      campaign: 2,
+      daily: 'autumn',
+      learn: 1,
+      profile: 'cover',
+      settings: 4,
+      signin: 5,
+    })
   })
 
   it('moves Learn to its other track rather than match Campaign', () => {
-    expect(papers(0, [0, 1]).learn).toBe(1)
-    expect(papers(1, [1, 0]).learn).toBe(0)
+    expect(papers(0, [0, 1], 'winter').learn).toBe(1)
+    expect(papers(1, [1, 0], 'winter').learn).toBe(0)
   })
 
   it('moves Settings and Sign in to the Forge rather than match Campaign', () => {
-    expect(papers(4, [0, 1]).settings).toBe(3)
-    expect(papers(5, [0, 1]).signin).toBe(3)
+    expect(papers(4, [0, 1], 'winter').settings).toBe(3)
+    expect(papers(5, [0, 1], 'winter').signin).toBe(3)
   })
 })

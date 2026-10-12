@@ -1,12 +1,14 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import type { CSSProperties } from 'react'
-import type { Campaign, Profile } from '@pixel-imperium/protocol'
-import { paperStyle } from '../album/paper.ts'
+import type { Campaign, DailyYear, Profile } from '@pixel-imperium/protocol'
+import { paperFor, seasonOf } from '../album/paper.ts'
 import { useAccount } from '../account.ts'
 import { campaignProgress, continueAt } from '../campaign/progress.ts'
 import { Backdrop, MenuSpine, Worlds, usePhone, useStep } from '../campaign/worlds/Worlds.tsx'
 import { useLessonsDone } from '../tutorial/done.ts'
+import { dayKey } from '../profile/activity.ts'
 import { CampaignColumn } from './CampaignColumn.tsx'
+import { DailyColumn } from './DailyColumn.tsx'
 import { LearnColumn } from './LearnColumn.tsx'
 import { ProfileColumn } from './ProfileColumn.tsx'
 import { SettingsColumn } from './SettingsColumn.tsx'
@@ -25,7 +27,16 @@ export const paperOf = (paper: Paper) =>
  * whole columns. Moving to another column (a spine, a swipe, ←/→, LB/RB) replaces `?open=` in the URL, so Back from
  * where a column led returns to it.
  */
-export function HomePage({ campaign, profile }: { campaign: Campaign; profile: Profile | null }) {
+export function HomePage({
+  campaign,
+  profile,
+  dailyYear,
+}: {
+  campaign: Campaign
+  profile: Profile | null
+  /** This Year's Dailies, `null` before launch. */
+  dailyYear: DailyYear | null
+}) {
   const { account, storage } = useAccount()
   const search = useSearch({ from: '/' })
   const navigate = useNavigate()
@@ -35,12 +46,15 @@ export function HomePage({ campaign, profile }: { campaign: Campaign; profile: P
   /** The loader's profile, while it's still the signed-in player's. */
   const own = account && profile?.handle.toLowerCase() === account.handle.toLowerCase() ? profile : null
 
-  const columns = columnsFor(account !== null)
+  const today = dayKey(new Date())
+  const daily = dailyYear && today >= dailyYear.launch ? dailyYear : null
+  const columns = columnsFor(account !== null, daily !== null)
   const open = openColumn(columns, search)
   const progress = campaignProgress(campaign, storage)
   const next = continueAt(campaign, progress, id => storage.loadSolved(id) !== null)
   const active = next ? campaign.provinces.indexOf(next.province) : campaign.provinces.length - 1
-  const paper = papers(active, learnPapers(done))
+  const season = seasonOf(Number(today.slice(5, 7)))
+  const paper = papers(active, learnPapers(done), season)
 
   const goTo = (column: Column | undefined) => {
     if (!column || column === open) return
@@ -57,6 +71,19 @@ export function HomePage({ campaign, profile }: { campaign: Campaign; profile: P
       case 'campaign':
         return (
           <CampaignColumn key={column} {...common} campaign={campaign} progress={progress} next={next} active={active} storage={storage} />
+        )
+      case 'daily':
+        return (
+          daily && (
+            <DailyColumn
+              key={column}
+              {...common}
+              data={daily}
+              profile={own}
+              storage={storage}
+              season={season}
+            />
+          )
         )
       case 'learn':
         return <LearnColumn key={column} {...common} done={done} index={index} />
@@ -84,7 +111,7 @@ export function HomePage({ campaign, profile }: { campaign: Campaign; profile: P
   return (
     <main className={styles.page}>
       <h1 className={styles.srOnly}>Home</h1>
-      <Backdrop index={active} />
+      <Backdrop index={open === 'daily' ? season : active} />
       {phone ? (
         <Worlds carousel onSnap={i => goTo(columns[i])}>
           {columns.map(c => wide(c, c === open))}
@@ -100,7 +127,7 @@ export function HomePage({ campaign, profile }: { campaign: Campaign; profile: P
                 name={spineName[c]}
                 search={searchFor(c)}
                 className={className}
-                style={{ ...paperStyle(index), ...columnName(c) }}
+                style={{ ...paperFor(index), ...columnName(c) }}
               />
             )
           })}

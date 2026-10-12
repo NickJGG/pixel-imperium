@@ -7,7 +7,7 @@
  */
 import { useLayoutEffect } from 'react'
 import type { AnyRouter, ParsedLocation } from '@tanstack/react-router'
-import { isProvincePath, morph } from './Worlds.tsx'
+import { isMonthPath, isProvincePath, morph } from './Worlds.tsx'
 
 /** How long the old page may stand frozen before the morph plays anyway; Chrome gives up on a slow update. */
 const CAP_MS = 1500
@@ -37,19 +37,24 @@ export function useAnnounceSkeleton(): void {
   useLayoutEffect(() => flight?.land(), [])
 }
 
-const campaignOf = (pathname: string) => pathname.split('/')[2]
+/** A Campaign's id or a Year, the album a province or Month page belongs to. */
+const albumOf = (pathname: string) => pathname.split('/')[2]
+
+/** A province page or a Month of Dailies' page: the two kinds of album page Home's columns open onto. */
+const isAlbumPath = (pathname: string) => isProvincePath(pathname) || isMonthPath(pathname)
 
 /**
- * The transition's types for a move that morphs, or `null`: Home ↔ a province page is typed for its own animation;
- * a step between provinces of one campaign, or between Home's columns, is a plain one.
+ * The transition's types for a move that morphs, or `null`: Home ↔ an album page is typed for its own animation;
+ * a step between pages of one album, or between Home's columns, is a plain one.
  */
 function morphTypes(from: ParsedLocation, to: ParsedLocation): string[] | null {
   if (!morph()) return null
   const home = (l: ParsedLocation) => l.pathname === '/'
-  if (isProvincePath(from.pathname) && home(to)) return typed() ? ['to-home'] : null
-  if (home(from) && isProvincePath(to.pathname)) return typed() ? ['to-province'] : null
-  if (isProvincePath(from.pathname) && isProvincePath(to.pathname))
-    return from.pathname !== to.pathname && campaignOf(from.pathname) === campaignOf(to.pathname) ? [] : null
+  if (isAlbumPath(from.pathname) && home(to)) return typed() ? ['to-home'] : null
+  if (home(from) && isAlbumPath(to.pathname)) return typed() ? ['to-province'] : null
+  const same = (test: (pathname: string) => boolean) => test(from.pathname) && test(to.pathname)
+  if (same(isProvincePath) || same(isMonthPath))
+    return from.pathname !== to.pathname && albumOf(from.pathname) === albumOf(to.pathname) ? [] : null
   if (home(from) && home(to)) return (from.search as { open?: string }).open !== (to.search as { open?: string }).open ? [] : null
   return null
 }

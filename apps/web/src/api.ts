@@ -2,6 +2,7 @@ import type {
   Assists,
   Campaign,
   CampaignSummary,
+  DailyYear,
   HandleAvailability,
   HandleRejection,
   HintRequest,
@@ -41,6 +42,14 @@ export async function fetchCampaign(id: string): Promise<Campaign | null> {
   if (res.status === 404) return null
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
   return (await res.json()) as Campaign
+}
+
+/** `null` when the Year has no Dailies: before launch, or still to come. */
+export async function fetchDailyYear(year: number): Promise<DailyYear | null> {
+  const res = await fetch(`/api/daily/${year}`)
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  return (await res.json()) as DailyYear
 }
 
 /** `null` when no puzzle has the id. */

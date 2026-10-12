@@ -1,7 +1,8 @@
 /** Home's columns: which the menu offers, which one is open, and the paper each wears. */
+import type { Season } from '../album/paper.ts'
 import { TRACKS, firstUnfinished } from '../tutorial/tracks.ts'
 
-export type Column = 'campaign' | 'learn' | 'profile' | 'settings' | 'signin'
+export type Column = 'campaign' | 'daily' | 'learn' | 'profile' | 'settings' | 'signin'
 
 export type OpenColumn = Exclude<Column, 'campaign'>
 
@@ -12,18 +13,23 @@ export interface HomeSearch {
 
 /** The spine names that don't come from data; Campaign's is the campaign's own. */
 export const COLUMN_NAME: Record<OpenColumn, string> = {
+  daily: 'Daily',
   learn: 'Learn',
   profile: 'Profile',
   settings: 'Settings',
   signin: 'Sign in',
 }
 
-const SIGNED_IN: readonly Column[] = ['campaign', 'learn', 'profile', 'settings']
-const SIGNED_OUT: readonly Column[] = ['campaign', 'learn', 'signin']
+const SIGNED_IN: readonly Column[] = ['campaign', 'daily', 'learn', 'profile', 'settings']
+const SIGNED_OUT: readonly Column[] = ['campaign', 'daily', 'learn', 'signin']
 
-export const columnsFor = (signedIn: boolean): readonly Column[] => (signedIn ? SIGNED_IN : SIGNED_OUT)
+/** `daily` is whether the Daily has launched; until then its column is left out. */
+export const columnsFor = (signedIn: boolean, daily: boolean): readonly Column[] => {
+  const columns = signedIn ? SIGNED_IN : SIGNED_OUT
+  return daily ? columns : columns.filter(c => c !== 'daily')
+}
 
-const OPENABLE: readonly string[] = ['learn', 'profile', 'settings', 'signin'] satisfies OpenColumn[]
+const OPENABLE: readonly string[] = ['daily', 'learn', 'profile', 'settings', 'signin'] satisfies OpenColumn[]
 
 export const homeSearch = (search: Record<string, unknown>): HomeSearch =>
   typeof search.open === 'string' && OPENABLE.includes(search.open) ? { open: search.open as OpenColumn } : {}
@@ -46,22 +52,27 @@ export function learnPapers(done: ReadonlySet<string>): [number, number] {
     : [tutorial.paper, techniques.paper]
 }
 
-/** A province paper, as `paperStyle`'s index, or the album's cobalt cover. */
-export type Paper = number | 'cover'
+/** A province paper, as `paperStyle`'s index, a season's, or the album's cobalt cover. */
+export type Paper = number | Season | 'cover'
 
 const CAPITAL = 4
 const THRONE = 5
 const FORGE = 3
 
 /**
- * Each column wears where it leads: Campaign the active province's paper, Learn its next Lesson's track's, Profile
- * the cobalt cover, Settings the Capital's and Sign in the Throne's. One that would match Campaign's takes another:
+ * Each column wears where it leads: Campaign the active province's paper, Daily this Month's season's, Learn its
+ * next Lesson's track's, Profile the cobalt cover, Settings the Capital's and Sign in the Throne's. One that would match Campaign's takes another:
  * Learn its other track's, Settings and Sign in the Forge's.
  */
-export function papers(active: number, [learn, otherLearn]: readonly [number, number]): Record<Column, Paper> {
+export function papers(
+  active: number,
+  [learn, otherLearn]: readonly [number, number],
+  season: Season,
+): Record<Column, Paper> {
   const campaign = active % 6
   return {
     campaign: active,
+    daily: season,
     learn: learn === campaign ? otherLearn : learn,
     profile: 'cover',
     settings: campaign === CAPITAL ? FORGE : CAPITAL,
