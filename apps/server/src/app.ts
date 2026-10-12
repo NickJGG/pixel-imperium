@@ -5,6 +5,7 @@ import type {
   Assists,
   Campaign as CampaignPayload,
   CampaignSummary,
+  DailyYear,
   HandleAvailability,
   HandleRejection,
   HintResponse,
@@ -30,13 +31,27 @@ import { hint, lessonDone, progress, solve, user, userSettings } from './db/sche
 import { handleProblem } from './handles.ts'
 import { rateLimiter } from './rate-limit.ts'
 import { parseCells, planImport } from './import.ts'
-import type { Campaign } from './campaigns.ts'
+import type { Campaign, CampaignPuzzle } from './campaigns.ts'
+import {
+  type Dailies,
+  type DailyPuzzle,
+  dailyDate,
+  dailyFor,
+  datesInMonth,
+  isPlayableDate,
+  latestPlayableDate,
+  yearAlbum,
+} from './dailies.ts'
 import { stampsFor } from './stamps.ts'
 
 export interface AppDeps {
   db: Db
   auth: Auth
+  /** The clock Dailies are gated by. */
+  now?: () => number
 }
+
+const NO_DAILIES: Dailies = { launch: '9999-12-31', authored: new Map() }
 
 type SessionUser = Auth['$Infer']['Session']['user']
 
@@ -84,8 +99,22 @@ const summarize = ({ id, title, width, height, filledCount, tier }: PuzzleSummar
   ...(tier && { tier }),
 })
 
-export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps) {
+export function createApp(
+  campaigns: readonly Campaign[],
+  { db, auth, now = Date.now }: AppDeps,
+  dailies: Dailies = NO_DAILIES,
+) {
   const byId = new Map(campaigns.flatMap(c => c.provinces.flatMap(p => p.puzzles)).map(p => [p.id, p]))
+  /** A campaign puzzle, or a Daily by its `daily:<date>` id, whatever its date. */
+  const puzzleById = (id: string): CampaignPuzzle | DailyPuzzle | undefined => {
+    const date = dailyDate(id)
+    return date === null ? byId.get(id) : (dailyFor(dailies, date) ?? undefined)
+  }
+  /** Like `puzzleById`, but a Daily only while its date is "today" somewhere. */
+  const playable = (id: string) => {
+    const p = puzzleById(id)
+    return p && (!('date' in p) || isPlayableDate(p.date, now())) ? p : undefined
+  }
   const campaignPayloads = new Map(
     campaigns.map(({ id, name, closingLine, crest, provinces }): [string, CampaignPayload] => [
       id,
@@ -114,7 +143,8 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
     const p = byId.get(puzzleId)
     return p && campaignsById.get(p.campaignId)?.crest?.colour.get(puzzleId)
   }
-  const notFound = (id: string): ApiError => ({ error: `no puzzle '${id}'` })
+  const notFound = (id: string): ApiError =>
+    dailyDate(id) === null ? { error: `no puzzle '${id}'` } : { error: `no Daily '${id}' to play today` }
 
   /**
    * A verified solve upgrades an unverified one; nothing ever downgrades or re-dates a solve.
@@ -155,14 +185,25 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
       if (!campaign) return c.json<ApiError>({ error: `no campaign '${c.req.param('id')}'` }, 404)
       return c.json(campaign)
     })
+    .get('/daily/:year', c => {
+      const year = Number(c.req.param('year'))
+      const last = latestPlayableDate(now())
+      if (!Number.isInteger(year) || year < Number(dailies.launch.slice(0, 4)) || year > Number(last.slice(0, 4))) {
+        return c.json<ApiError>({ error: `no Dailies in '${c.req.param('year')}'` }, 404)
+      }
+      const months = Array.from({ length: 12 }, (_, i) =>
+        datesInMonth(year, i + 1, dailies.launch, last).map(date => ({ ...summarize(dailyFor(dailies, date)!), date })),
+      )
+      return c.json<DailyYear>({ year, launch: dailies.launch, months })
+    })
     .get('/puzzles/:id', c => {
-      const p = byId.get(c.req.param('id'))
+      const p = playable(c.req.param('id'))
       if (!p) return c.json(notFound(c.req.param('id')), 404)
-      const { campaignId, provinceId, clues } = p
-      return c.json<PuzzleClues>({ ...summarize(p), campaignId, provinceId, clues })
+      const context = 'date' in p ? { daily: p.date } : { campaignId: p.campaignId, provinceId: p.provinceId }
+      return c.json<PuzzleClues>({ ...summarize(p), ...context, clues: p.clues })
     })
     .post('/puzzles/:id/solve', async c => {
-      const p = byId.get(c.req.param('id'))
+      const p = playable(c.req.param('id'))
       if (!p) return c.json(notFound(c.req.param('id')), 404)
 
       const body: unknown = await c.req.json().catch(() => null)
@@ -193,7 +234,7 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
       return c.json<SolveResponse>({ solved: true, palette: p.palette, foil, ...(crest && { crest }) })
     })
     .post('/puzzles/:id/hint', async c => {
-      const p = byId.get(c.req.param('id'))
+      const p = playable(c.req.param('id'))
       if (!p) return c.json(notFound(c.req.param('id')), 404)
       const user = c.get('user')
       if (!hintAllowed(user?.id ?? c.req.header('x-forwarded-for') ?? 'anonymous')) {
@@ -225,26 +266,26 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         .from(solve)
         .where(and(eq(solve.userId, owner.id), eq(solve.verified, true)))
         .orderBy(desc(solve.solvedAt))
-      // Insertion order follows the newest solve, so the most recently played campaign comes first.
+      // Insertion order follows the newest solve, so the most recently played album comes first.
       const byCampaign = new Map<string, ProfileCampaign>()
+      const byYear = new Map<string, ProfileCampaign>()
       let verifiedSolves = 0
       for (const { puzzleId, foil, solvedAt } of solves) {
-        const p = byId.get(puzzleId)
+        const p = puzzleById(puzzleId)
         if (!p) continue
         verifiedSolves++
-        const entry = byCampaign.get(p.campaignId) ?? {
-          id: p.campaignId,
-          verifiedPuzzleIds: [],
-          foilPuzzleIds: [],
-          solvedAt: {},
-          stamps: [],
-        }
+        const [albums, id] = 'date' in p ? [byYear, `daily-${p.date.slice(0, 4)}`] : [byCampaign, p.campaignId]
+        const entry = albums.get(id) ?? { id, verifiedPuzzleIds: [], foilPuzzleIds: [], solvedAt: {}, stamps: [] }
         entry.verifiedPuzzleIds.push(puzzleId)
         if (foil) entry.foilPuzzleIds.push(puzzleId)
         entry.solvedAt[puzzleId] = solvedAt.toISOString()
-        byCampaign.set(p.campaignId, entry)
+        albums.set(id, entry)
       }
       for (const entry of byCampaign.values()) entry.stamps = stampsFor(campaignsById.get(entry.id)!, solves)
+      for (const entry of byYear.values()) {
+        const album = yearAlbum(dailies.launch, Number(entry.id.slice('daily-'.length)))
+        entry.stamps = stampsFor(album, solves, { year: true })
+      }
       const verified = new Set(solves.map(s => s.puzzleId))
       return c.json<Profile>({
         handle: owner.handle,
@@ -252,7 +293,8 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         joinedAt: owner.createdAt.toISOString(),
         verifiedSolves,
         campaigns: [...byCampaign.values()],
-        showcase: owner.showcase.filter(id => verified.has(id) && byId.has(id)),
+        years: [...byYear.values()],
+        showcase: owner.showcase.filter(id => verified.has(id) && puzzleById(id)),
       })
     })
     .put('/me/handle', async c => {
@@ -301,7 +343,7 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         r.solved = s.verified ? 'verified' : 'unverified'
         r.foil = s.foil
         if (s.verified) {
-          r.palette = byId.get(s.puzzleId)?.palette ?? null
+          r.palette = puzzleById(s.puzzleId)?.palette ?? null
           r.crest = crestColour(s.puzzleId) ?? null
           r.solvedAt = s.solvedAt.toISOString()
         }
@@ -310,7 +352,7 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
       for (const g of grids) {
         record(g.puzzleId).progress = { cells: g.cells, replaying: g.replaying, updatedAt: g.updatedAt.toISOString() }
       }
-      const showcase = (me?.showcase ?? []).filter(id => records[id]?.solved === 'verified' && byId.has(id))
+      const showcase = (me?.showcase ?? []).filter(id => records[id]?.solved === 'verified' && puzzleById(id))
       return c.json<MyProgress>({
         puzzles: records,
         assists: settings?.assists ?? null,
@@ -346,7 +388,7 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         return c.json<ApiError>({ error: `puzzleIds must be at most ${SHOWCASE_SIZE} distinct puzzle ids` }, 400)
       }
       const userId = c.get('user')!.id
-      const known = puzzleIds.every(id => byId.has(id))
+      const known = puzzleIds.every(id => puzzleById(id))
       const owned =
         known && puzzleIds.length > 0
           ? await db.$count(
@@ -361,7 +403,7 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
       return c.json<Showcase>({ puzzleIds })
     })
     .put('/me/progress/:id', async c => {
-      const p = byId.get(c.req.param('id'))
+      const p = playable(c.req.param('id'))
       if (!p) return c.json(notFound(c.req.param('id')), 404)
 
       const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
@@ -408,7 +450,9 @@ export function createApp(campaigns: readonly Campaign[], { db, auth }: AppDeps)
         for (const raw of items) {
           const item = parseImportItem(raw)
           if (!item) continue
-          const p = byId.get(item.id)
+          // Today-only governs play, not import, but a Daily still to come isn't known yet.
+          const found = puzzleById(item.id)
+          const p = found && !('date' in found && found.date > latestPlayableDate(now())) ? found : undefined
           const plan = p ? planImport(p, item) : { solve: null, progress: null }
           if (plan.solve) await recordSolve(tx, userId, item.id, plan.solve, false)
           if (p && item.hinted) await tx.insert(hint).values({ userId, puzzleId: item.id }).onConflictDoNothing()

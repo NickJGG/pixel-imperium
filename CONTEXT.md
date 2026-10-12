@@ -126,6 +126,21 @@ _Avoid_: Difficulty, rating (the solver's campaign-wide score), level, rank
 A **Campaign**'s own hand-authored pixel-art picture, one pixel per **Puzzle**, each pixel revealed when its puzzle is solved; each **Province** owns a region of it.
 _Avoid_: Tapestry, mural, map, meta-puzzle
 
+**Daily**:
+The one **Puzzle** set for a given date, the same for every **Player**: hand-authored, outside any **Campaign**, or generated when no hand-authored one exists for that date.
+_Avoid_: Puzzle of the day, daily challenge
+
+**Year**:
+One calendar year of **Dailies**, kept as its own album the way a **Campaign** is, with its twelve **Months** in place of **Provinces**.
+_Avoid_: Season, volume, archive
+
+**Month**:
+One calendar month of a **Year**'s **Dailies**, a page of date slots the way a **Province** is a page of **Puzzle** slots.
+
+**Streak**:
+The run of consecutive days, in the **Player**'s own timezone, each with at least one solve of any **Puzzle**, a **Daily** included.
+_Avoid_: Daily streak, chain, combo
+
 ## Relationships
 
 - An **Account** has exactly one **Handle** and one **Profile**
@@ -141,6 +156,10 @@ _Avoid_: Tapestry, mural, map, meta-puzzle
 - A solve brought in by **Import** is never **Foil**, even once it becomes a **Verified solve**
 - A **Campaign** has one **Crest** with exactly as many pixels as it has **Puzzles**; each **Province**'s region holds as many pixels as the **Province** has **Puzzles**
 - A **Crest** pixel's colour is released with its **Puzzle**'s **Palette**, only after a server-verified solve
+- A generated **Daily** has a one-colour **Palette** and earns a **Sticker** like a hand-authored one, with nothing marking it as generated
+- A **Daily** can only be started on its own date; a missed **Daily** is gone for good
+- A **Daily** started on its date can still be finished shortly after midnight, and its solve counts for its own date, **Streak** included
+- A **Year** always has twelve **Months**; a **Month** has one **Daily** per date
 
 ## Example dialogue
 

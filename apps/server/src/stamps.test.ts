@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildCampaign } from './campaigns.ts'
 import type { SeedPuzzle } from './puzzles.ts'
+import { yearAlbum } from './dailies.ts'
 import { type StampSolve, stampsFor } from './stamps.ts'
 
 const puzzle = (id: string): SeedPuzzle => ({ id, title: id, palette: { g: '#0f0' }, rows: ['g'] })
@@ -95,5 +96,37 @@ describe('stampsFor', () => {
       'conquered:b',
       'album-complete',
     ])
+  })
+})
+
+describe('stampsFor a Year', () => {
+  /** Launched on 2026-12-30, so only December has Dailies: the 30th and 31st. */
+  const year = yearAlbum('2026-12-30', 2026)
+  const dec = ['daily:2026-12-30', 'daily:2026-12-31']
+  const yearStamp = (list: StampSolve[], id: string) => stampsFor(year, list, { year: true }).find(s => s.id === id)?.earnedAt
+
+  it('has no spree', () => {
+    const many = yearAlbum('2026-01-01', 2026)
+    const days = many.provinces[0]!.puzzles.slice(0, 10).map(p => p.id)
+    expect(stampsFor(many, solves(days), { year: true }).map(s => s.id)).not.toContain('spree')
+  })
+
+  it('completes a Month once every date from launch is solved, and the Year with it', () => {
+    expect(yearStamp(solves(dec.slice(0, 1)), 'month-complete:12')).toBeUndefined()
+    const list = solves(dec, true, [2, 9])
+    expect(stampsFor(year, list, { year: true }).map(s => s.id)).toEqual([
+      'first-sticker',
+      'first-foil',
+      'perfect-page',
+      'month-complete:12',
+      'year-complete',
+    ])
+    expect(yearStamp(list, 'year-complete')).toBe(iso(9))
+  })
+
+  it('needs every Month for the Year', () => {
+    const full = yearAlbum('2026-11-30', 2026)
+    const list = solves(['daily:2026-11-30', ...dec.slice(0, 1)])
+    expect(stampsFor(full, list, { year: true }).map(s => s.id)).toEqual(['first-sticker', 'month-complete:11'])
   })
 })

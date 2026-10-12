@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import type {
   Campaign,
   CampaignSummary,
+  DailyYear,
   HandleAvailability,
   HintResponse,
   ImportResponse,
@@ -23,6 +24,7 @@ import {
   userSettings,
 } from './db/schema.ts'
 import { type CrestDef, buildCampaign } from './campaigns.ts'
+import { checkDailies } from './dailies.ts'
 import type { SeedPuzzle } from './puzzles.ts'
 import { createTestDeps, signedInUser, truncateAll } from './test-db.ts'
 
@@ -634,6 +636,7 @@ describe('GET /api/users/:handle', () => {
     joinedAt: expect.any(String),
     verifiedSolves: 1,
     campaigns: [{ id: 'alpha', verifiedPuzzleIds: ['diag'], foilPuzzleIds: [], solvedAt: { diag: '2026-01-01T00:00:00.000Z' }, stamps: alphaStamps() }],
+    years: [],
     showcase: [],
   }
 
@@ -778,5 +781,113 @@ describe('account deletion', () => {
       expect(await db.$count(table, eq(column, id))).toBe(0)
       expect(await db.$count(table, eq(column, bystander.id))).toBe(1)
     }
+  })
+})
+
+describe('Dailies', () => {
+  const acorn = ['.###.', '#####', '.###.', '.###.', '..#..']
+  const { dailies } = checkDailies({
+    launch: '2026-10-01',
+    seeds: [{ date: '2026-10-05', title: 'Acorn', palette: { '#': '#7a4a21' }, rows: acorn }],
+  })
+  let clock = 0
+  const dailyApp = createApp([fixture('main', { first: [diagonal] })], { db, auth, now: () => clock }, dailies)
+  const id = 'daily:2026-10-05'
+  const cells = [...acorn.join('')].map(ch => (ch === '#' ? 'filled' : 'empty'))
+  const during = Date.parse('2026-10-05T12:00:00Z')
+  const after = Date.parse('2026-10-06T13:00:00Z')
+
+  const request = (method: string, path: string, body?: unknown, cookie?: string) =>
+    dailyApp.request(path, {
+      method,
+      headers: { 'content-type': 'application/json', ...(cookie && { cookie }) },
+      ...(body !== undefined && { body: JSON.stringify(body) }),
+    })
+
+  beforeEach(() => {
+    clock = during
+  })
+
+  it('serves a Daily on its date with its date as context', async () => {
+    expect(await (await request('GET', `/api/puzzles/${id}`)).json()).toEqual<PuzzleClues>({
+      id,
+      title: 'Acorn',
+      width: 5,
+      height: 5,
+      filledCount: 15,
+      daily: '2026-10-05',
+      clues: expect.any(Object),
+    })
+  })
+
+  it('generates a Daily for a date with none authored', async () => {
+    clock = Date.parse('2026-10-19T12:00:00Z')
+    const body = (await (await request('GET', '/api/puzzles/daily:2026-10-19')).json()) as PuzzleClues
+    expect(body).toMatchObject({ title: 'Quarry', daily: '2026-10-19' })
+  })
+
+  it('records a solve inside the window', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    const res = (await (await request('POST', `/api/puzzles/${id}/solve`, { cells }, cookie)).json()) as SolveResponse
+    expect(res).toMatchObject({ solved: true, foil: true })
+    expect(res).not.toHaveProperty('crest')
+    expect((await getProgress(cookie)).puzzles[id]).toMatchObject({ solved: 'verified', crest: null })
+  })
+
+  it('404s outside the window, before launch and on malformed dates', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    clock = after
+    expect((await request('GET', `/api/puzzles/${id}`)).status).toBe(404)
+    expect((await request('POST', `/api/puzzles/${id}/solve`, { cells }, cookie)).status).toBe(404)
+    expect((await request('POST', `/api/puzzles/${id}/hint`, { cells: '.'.repeat(25) }, cookie)).status).toBe(404)
+    const grid = { cells: '#'.repeat(25), replaying: false, updatedAt: new Date(after).toISOString() }
+    expect((await request('PUT', `/api/me/progress/${id}`, grid, cookie)).status).toBe(404)
+    clock = Date.parse('2026-09-30T12:00:00Z')
+    expect((await request('GET', '/api/puzzles/daily:2026-09-30')).status).toBe(404)
+    expect((await request('GET', '/api/puzzles/daily:2026-10-5')).status).toBe(404)
+    expect(await db.$count(solveTable)).toBe(0)
+  })
+
+  it('imports a Daily solve after its date, but not one still to come', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    clock = after
+    const puzzles = [
+      { id, cells: acorn.join(''), solved: true, replaying: false },
+      { id: 'daily:2026-10-08', solved: true, replaying: false },
+    ]
+    const res = await request('POST', '/api/me/import', { puzzles }, cookie)
+    expect(await res.json()).toEqual<ImportResponse>({ results: { [id]: 'verified', 'daily:2026-10-08': 'ignored' } })
+  })
+
+  it('lists the Year up to the last date open anywhere, without future titles', async () => {
+    clock = Date.parse('2026-10-05T10:00:00Z')
+    const year = (await (await request('GET', '/api/daily/2026')).json()) as DailyYear
+    expect(year.launch).toBe('2026-10-01')
+    expect(year.months.map(m => m.length)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0])
+    expect(year.months[9]![4]).toEqual({ id, title: 'Acorn', width: 5, height: 5, filledCount: 15, date: '2026-10-05' })
+    expect(year.months[9]!.at(-1)!.date).toBe('2026-10-06')
+    expect((await request('GET', '/api/daily/2025')).status).toBe(404)
+    expect((await request('GET', '/api/daily/2027')).status).toBe(404)
+  })
+
+  it('groups Daily solves into Years on the profile, with their Stamps, and allows them in the Showcase', async () => {
+    const { cookie } = await signedInUser(db, auth, 'Owner')
+    await request('POST', `/api/puzzles/${id}/solve`, { cells }, cookie)
+    expect((await request('PUT', '/api/me/showcase', { puzzleIds: [id] }, cookie)).status).toBe(200)
+    const profile = (await (await request('GET', '/api/users/owner')).json()) as Profile
+    expect(profile.campaigns).toEqual([])
+    expect(profile.showcase).toEqual([id])
+    expect(profile.years).toEqual([
+      {
+        id: 'daily-2026',
+        verifiedPuzzleIds: [id],
+        foilPuzzleIds: [id],
+        solvedAt: { [id]: expect.any(String) },
+        stamps: [
+          { id: 'first-sticker', earnedAt: expect.any(String) },
+          { id: 'first-foil', earnedAt: expect.any(String) },
+        ],
+      },
+    ])
   })
 })

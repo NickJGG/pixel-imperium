@@ -152,7 +152,7 @@ const playRoute = createRoute({
     import.meta.env.DEV && 'conquest' in search ? { conquest: true } : {},
   loader: async ({ params }) => {
     const puzzle = await fetchPuzzle(params.id)
-    if (!puzzle) throw notFound()
+    if (!puzzle || !('campaignId' in puzzle)) throw notFound()
     return { puzzle, campaign: await loadCampaign(puzzle.campaignId) }
   },
   component: PlayPage,

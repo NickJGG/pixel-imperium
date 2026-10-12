@@ -1,0 +1,48 @@
+[
+  {
+    "date": "2026-10-05",
+    "title": "Leaf",
+    "palette": { "g": "#d9822b", "s": "#7a4a21" },
+    "rows": [
+      "......gggg",
+      "....gggggg",
+      "...ggggggg",
+      "..gggggg.g",
+      ".gggggg.gg",
+      ".ggggg.ggg",
+      ".gggg.gggg",
+      ".ggg.gggg.",
+      "..s.ggg...",
+      ".s........"
+    ]
+  },
+  {
+    "date": "2026-10-12",
+    "title": "Acorn",
+    "palette": { "c": "#7a4a21", "n": "#c98b3a" },
+    "rows": [
+      ".ccc.",
+      "ccccc",
+      ".nnn.",
+      ".nnn.",
+      "..n.."
+    ]
+  },
+  {
+    "date": "2026-10-13",
+    "title": "Teacup",
+    "palette": { "w": "#f2efe6", "s": "#c9a227", "t": "#b8b8c8" },
+    "rows": [
+      "....t.....",
+      "...t..t...",
+      "....t.t...",
+      ".wwwwwww..",
+      ".wwwwwwwww",
+      ".wwwwwww.w",
+      "..wwwwwww.",
+      "..wwwww...",
+      "ssssssssss",
+      ".ssssssss."
+    ]
+  }
+]

@@ -109,7 +109,7 @@ async function provinceHandoff(campaignId: string, provinceId: string, fallback:
 
 async function campaignOf(puzzleId: string): Promise<Campaign | null> {
   const puzzle = await fetchPuzzle(puzzleId)
-  return puzzle && fetchCampaign(puzzle.campaignId)
+  return puzzle && 'campaignId' in puzzle ? fetchCampaign(puzzle.campaignId) : null
 }
 
 async function homeCampaign(): Promise<Campaign | null> {

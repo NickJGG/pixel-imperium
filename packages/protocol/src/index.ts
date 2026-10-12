@@ -15,11 +15,25 @@ export interface PuzzleSummary {
   crest?: number
 }
 
+/** Where a puzzle belongs: a Campaign's Province, or a Daily's `YYYY-MM-DD` date. */
+export type PuzzleContext = { campaignId: string; provinceId: string } | { daily: string }
+
 /** `GET /api/puzzles/:id`. Never includes the solution or palette. */
-export interface PuzzleClues extends PuzzleSummary {
-  campaignId: string
-  provinceId: string
-  clues: Clues
+export type PuzzleClues = PuzzleSummary & PuzzleContext & { clues: Clues }
+
+/** A Daily in its Year; `date` is `YYYY-MM-DD`. */
+export interface DailySummary extends PuzzleSummary {
+  date: string
+}
+
+/**
+ * `GET /api/daily/:year`. `months[0]` is January; each lists its Dailies by date, only up to the last date that is
+ * "today" somewhere on Earth, so nothing still to come is named. `launch` is the first date with a Daily.
+ */
+export interface DailyYear {
+  year: number
+  launch: string
+  months: DailySummary[][]
 }
 
 /** `GET /api/campaigns` returns `CampaignSummary[]`, in default-first order. */
@@ -192,7 +206,7 @@ export interface HandleRejection extends ApiError {
   reason: HandleProblem
 }
 
-/** A campaign the player has verified solves in. */
+/** A campaign, or a Year of Dailies (id `daily-<year>`), the player has verified solves in. */
 export interface ProfileCampaign {
   id: string
   verifiedPuzzleIds: string[]
@@ -207,6 +221,7 @@ export interface ProfileCampaign {
 /**
  * A campaign's Stamps, derived from its verified solves: the first sticker and first foil, five foils in a row,
  * ten solves within 24 hours, a page all foil, each page but the last conquered, and the last one completing the album.
+ * A Year has no spree; each Month completes on its own (`month-complete:<mm>`, `01`–`12`) and `year-complete` needs them all.
  */
 export type StampId =
   | 'first-sticker'
@@ -216,6 +231,8 @@ export type StampId =
   | 'perfect-page'
   | `conquered:${string}`
   | 'album-complete'
+  | `month-complete:${string}`
+  | 'year-complete'
 
 export interface ProfileStamp {
   id: StampId
@@ -231,6 +248,8 @@ export interface Profile {
   verifiedSolves: number
   /** Most recently solved in first. */
   campaigns: ProfileCampaign[]
+  /** Years of Dailies, shaped like campaigns, most recently solved in first. */
+  years: ProfileCampaign[]
   /** Puzzle ids the player picked, biggest first; empty when they haven't, and the album falls back. */
   showcase: string[]
 }
