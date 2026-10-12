@@ -85,3 +85,9 @@ export const LearnIcon = () => (
     <path d="M6 11v5c3 2.5 9 2.5 12 0v-5M22 9v5" />
   </Icon>
 )
+
+export const CheckIcon = () => (
+  <Icon>
+    <path d="M4.5 12.5l5 5L20 7" />
+  </Icon>
+)

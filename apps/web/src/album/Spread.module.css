@@ -56,12 +56,7 @@
 
 .count {
   margin-left: auto;
-  padding: 3px var(--space-3);
-  font: 700 var(--fs-14) var(--font-mono);
-  white-space: nowrap;
-  background: var(--ink);
-  color: var(--desk);
-  border-radius: var(--r-pill);
+  font-size: var(--fs-14);
 }
 
 .slots {
@@ -91,10 +86,6 @@
   margin: 0;
   max-width: 52ch;
   font: italic 500 var(--fs-16) var(--font-ui);
-}
-
-.stamp {
-  flex: none;
 }
 
 @media (max-width: 720px) {
@@ -136,11 +127,5 @@
 
   .caption {
     font-size: var(--fs-14);
-  }
-
-  .stamp {
-    width: 76px;
-    height: 76px;
-    font-size: var(--fs-10);
   }
 }

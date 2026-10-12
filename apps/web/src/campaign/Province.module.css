@@ -41,13 +41,7 @@
 }
 
 .count {
-  flex: none;
-  padding: var(--space-1) var(--space-3);
-  font: 700 var(--fs-16) var(--font-mono);
-  white-space: nowrap;
-  background: var(--ink);
-  color: var(--desk);
-  border-radius: var(--r-pill);
+  font-size: var(--fs-16);
 }
 
 /* Each tier's share of the width is its number of slot columns. */
@@ -116,27 +110,6 @@
   margin: 0;
   max-width: 52ch;
   font: italic 500 var(--fs-16) var(--font-ui);
-}
-
-.stamp {
-  flex: none;
-  width: 76px;
-  height: 76px;
-  font-size: var(--fs-10);
-}
-
-/* A conquered province's stamp: on its spine on a desktop, beside its count on a phone. */
-.spineStamp,
-.head .headStamp {
-  flex: none;
-  width: 60px;
-  height: 60px;
-  padding: var(--space-1);
-  font-size: var(--fs-10);
-}
-
-.head .headStamp {
-  display: none;
 }
 
 /* A locked province: its slots blurred out under a round seal. */
@@ -230,10 +203,6 @@
   .head {
     flex-wrap: wrap;
     align-items: center;
-  }
-
-  .head .headStamp {
-    display: inline-grid;
   }
 
   .name {

@@ -1,8 +1,8 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { type CSSProperties, Fragment, type ReactNode, useEffect, useRef, useState } from 'react'
 import type { Campaign, Province, Tier } from '@pixel-imperium/protocol'
+import { CountPill, UNVEIL_LANDS_MS } from '../album/CountPill.tsx'
 import { Lock } from '../album/Lock.tsx'
-import { Stamp } from '../album/Stamp.tsx'
 import { useAccount } from '../account.ts'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import type { ProgressStorage } from '../play/progress-storage.ts'
@@ -18,9 +18,9 @@ import styles from './Province.module.css'
  * The album: one province's page at a time, every other province a spine beside it; on a phone, a carousel of
  * whole pages. Moving to another province (a spine, a swipe, ←/→, LB/RB) replaces this page in history, so Back
  * leaves the album in one step.
- * The first time it shows the province a Conquest opened, that Conquest is unveiled: the Conquered stamp slams
- * onto the conquered province and the fog drops off the new one. On a phone that's two beats: the stamp on the
- * conquered page, then a glide over to the new one as its fog drops.
+ * The first time it shows the province a Conquest opened, that Conquest is unveiled: the conquered province's
+ * count pill fills with its colour and its check slams in, then the fog drops off the new one. On a phone that's
+ * two beats: the pill on the conquered page, then a glide over to the new one as its fog drops.
  */
 export function ProvincePage(props: {
   campaign: Campaign
@@ -34,8 +34,8 @@ export function ProvincePage(props: {
 
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 
-/** How long a phone holds on the conquered page for its stamp before gliding on to the province it opened. */
-const STAMP_BEAT = 900
+/** How long a phone holds on the conquered page for its unveil before gliding on to the province it opened. */
+const CONQUEST_BEAT = 900
 
 function Album({
   campaign,
@@ -66,18 +66,20 @@ function Album({
     setShown(province)
     if (shown === opened) setUnveil(new Set())
   }
-  const [stampBeat, setStampBeat] = useState(() => unveiling && phone && !reducedMotion())
+  const [conquestBeat, setConquestBeat] = useState(() => unveiling && phone && !reducedMotion())
 
   useEffect(() => {
     if (!unveiling) return
     if (!preview) markConquestsSeen(campaign.id, [...unveil])
-    if (!reducedMotion()) play('thunk')
+    if (reducedMotion()) return
+    const t = setTimeout(() => play('thunk'), UNVEIL_LANDS_MS)
+    return () => clearTimeout(t)
   }, [unveiling, preview, campaign.id, unveil])
   useEffect(() => {
-    if (!stampBeat) return
-    const t = setTimeout(() => setStampBeat(false), STAMP_BEAT)
+    if (!conquestBeat) return
+    const t = setTimeout(() => setConquestBeat(false), CONQUEST_BEAT)
     return () => clearTimeout(t)
-  }, [stampBeat])
+  }, [conquestBeat])
 
   const goTo = (to: Province | undefined, viewTransition: boolean) => {
     if (!to || to === province) return
@@ -112,7 +114,7 @@ function Album({
   const page = (p: Province) => {
     const i = campaign.provinces.indexOf(p)
     const current = p === province
-    const start = stampBeat ? i === index - 1 : current
+    const start = conquestBeat ? i === index - 1 : current
     return isOpen(progress.provinces[i]!.state) || p === opened ? (
       <OpenProvince
         key={p.id}
@@ -122,7 +124,8 @@ function Album({
         storage={storage}
         current={current}
         start={start}
-        stamp={conquered(p) && <ConqueredStamp thunk={thunk(p)} className={styles.headStamp} />}
+        conquered={conquered(p)}
+        unveil={thunk(p)}
         curtain={unveiling && current ? (phone ? 'late' : true) : false}
       />
     ) : (
@@ -140,41 +143,30 @@ function Album({
     )
   }
   return (
-    <Zoomed campaign={campaign} province={province} progress={progress} conquered={conquered} thunk={thunk}>
+    <Zoomed campaign={campaign} province={province} progress={progress} thunk={thunk}>
       {page(province)}
     </Zoomed>
   )
 }
 
-function ConqueredStamp({ thunk, className }: { thunk: boolean; className: string | undefined }) {
-  return (
-    <Stamp thunk={thunk} className={className}>
-      Conquered
-    </Stamp>
-  )
-}
-
 /**
  * A province's page as Worlds zoomed in on it: its column fills the screen, the others stand as thin spines
- * either side, the conquered ones stamped. `children` is its column.
+ * either side. `children` is its column.
  */
 function Zoomed({
   campaign,
   province,
   progress,
-  conquered,
   thunk,
   children,
 }: {
   campaign: Campaign
   province: Province
   progress: CampaignProgress
-  conquered: (p: Province) => boolean
-  /** Whose stamp slams down as it appears. */
+  /** Whose spine plays its conquest as it appears. */
   thunk: (p: Province) => boolean
   children: ReactNode
 }) {
-  const phone = usePhone()
   return (
     <main className={styles.page}>
       <Worlds>
@@ -190,7 +182,7 @@ function Zoomed({
               state={state}
               count={`${solved}/${total}`}
               thin
-              stamp={!phone && conquered(p) && <ConqueredStamp thunk={thunk(p)} className={styles.spineStamp} />}
+              unveil={thunk(p)}
             />
           )
         })}
@@ -205,8 +197,8 @@ const ROWS = 4
 const TIER_NAME: Record<Tier, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
 
 /**
- * An open province: its slots on Easy / Medium / Hard shelves, Next up while it's active, its flavour and
- * the Page complete stamp once it's conquered.
+ * An open province: its slots on Easy / Medium / Hard shelves, Next up while it's active, its flavour once it's
+ * conquered.
  */
 function OpenProvince({
   campaign,
@@ -215,7 +207,8 @@ function OpenProvince({
   storage,
   current,
   start,
-  stamp,
+  conquered,
+  unveil,
   curtain,
 }: {
   campaign: Campaign
@@ -226,8 +219,9 @@ function OpenProvince({
   current: boolean
   /** Where a carousel rests. */
   start: boolean
-  /** The Conquered stamp, beside the count on a phone; on a desktop the spine carries it. */
-  stamp: ReactNode
+  /** Its count pill in its colour with a check; `unveil` plays that arriving. */
+  conquered: boolean
+  unveil: boolean
   /** The fog dropping off it, `late` to wait for a carousel's glide over. */
   curtain: boolean | 'late'
 }) {
@@ -251,10 +245,9 @@ function OpenProvince({
               {province.name}
             </h1>
           </div>
-          {stamp}
-          <span className={styles.count}>
+          <CountPill conquered={conquered} unveil={unveil} className={styles.count}>
             {solved} / {total}
-          </span>
+          </CountPill>
         </header>
         <div
           className={styles.shelves}
@@ -287,10 +280,11 @@ function OpenProvince({
           })}
         </div>
         {state === 'conquered' ? (
-          <footer className={styles.foot}>
-            {province.flavour && <p className={styles.caption}>{province.flavour}</p>}
-            <Stamp className={styles.stamp}>Page complete</Stamp>
-          </footer>
+          province.flavour && (
+            <footer className={styles.foot}>
+              <p className={styles.caption}>{province.flavour}</p>
+            </footer>
+          )
         ) : (
           next && (
             <footer className={styles.foot}>
@@ -311,13 +305,8 @@ function OpenProvince({
 
 /** Shown in place of a puzzle in a province the player hasn't reached: the province's page in the fog. */
 export function LockedProvince(props: { campaign: Campaign; province: Province; progress: CampaignProgress }) {
-  const { campaign, progress } = props
   return (
-    <Zoomed
-      {...props}
-      conquered={p => progress.provinces[campaign.provinces.indexOf(p)]!.state === 'conquered'}
-      thunk={() => false}
-    >
+    <Zoomed {...props} thunk={() => false}>
       <LockedColumn {...props} current start />
     </Zoomed>
   )

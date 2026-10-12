@@ -7,6 +7,7 @@
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { Province } from '@pixel-imperium/protocol'
+import { CountPill } from '../../album/CountPill.tsx'
 import { Lock } from '../../album/Lock.tsx'
 import { paperStyle } from '../../album/paper.ts'
 import type { ProvinceState } from '../progress.ts'
@@ -162,8 +163,8 @@ const stateLabel: Record<ProvinceState, string> = {
 }
 
 /**
- * A narrow column standing on its edge: the province's name leaning sideways, then a count, or the lock with
- * "Next" on the province that opens after the active one, and its `stamp` if it has one. A locked one is in fog.
+ * A narrow column standing on its edge: the province's name leaning sideways, then its count pill, or the lock
+ * with "Next" on the province that opens after the active one. A locked one is in fog.
  * Links to the province's page, morphing into it in place of this one.
  */
 export function Spine({
@@ -173,7 +174,7 @@ export function Spine({
   state,
   count,
   thin = false,
-  stamp,
+  unveil,
 }: {
   campaignId: string
   province: Province
@@ -183,8 +184,8 @@ export function Spine({
   count?: string | undefined
   /** Beside an opened province: a smaller name. */
   thin?: boolean
-  /** E.g. the Conquered stamp, under the count; the spine widens to fit it. */
-  stamp?: ReactNode
+  /** Plays its conquest on the count pill. */
+  unveil?: boolean | undefined
 }) {
   const open = state === 'active' || state === 'conquered'
   return (
@@ -197,19 +198,24 @@ export function Spine({
       style={{ ...paperStyle(index), ...morphName(province) }}
       data-state={state}
       data-thin={thin || undefined}
-      data-stamped={stamp ? true : undefined}
+      data-conquered={state === 'conquered' || undefined}
       aria-label={`${province.name}, ${stateLabel[state]}`}
     >
-      <span className={styles.name}>{province.name}</span>
-      {open ? (
-        count && <span className={styles.count}>{count}</span>
-      ) : (
-        <>
-          <Lock className={styles.lock} />
-          {state === 'next' && <span className={styles.count}>Next</span>}
-        </>
-      )}
-      {stamp}
+      <span className={styles.stack}>
+        <span className={styles.name}>{province.name}</span>
+        {open ? (
+          count && (
+            <CountPill conquered={state === 'conquered'} unveil={unveil} className={styles.countPill}>
+              {count}
+            </CountPill>
+          )
+        ) : (
+          <span className={styles.locked}>
+            <Lock className={styles.lock} />
+            {state === 'next' && <span className={styles.count}>Next</span>}
+          </span>
+        )}
+      </span>
     </Link>
   )
 }

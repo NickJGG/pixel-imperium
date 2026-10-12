@@ -1227,12 +1227,9 @@
   display: none;
 }
 
-.conquestStamp {
+.conquestPill {
   justify-self: start;
-  width: 88px;
-  height: 88px;
-  font-size: var(--fs-10);
-  letter-spacing: -0.06em;
+  font-size: var(--fs-16);
 }
 
 /* "Into the <next>", in the next province's colour. */
@@ -1292,15 +1289,15 @@
   width: 100%;
 }
 
-.bandStamp {
-  flex: none;
-}
-
 .bandKick {
   display: block;
   font: var(--type-kicker);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.bandKick > svg {
+  vertical-align: -0.125em;
 }
 
 .bandTitle {

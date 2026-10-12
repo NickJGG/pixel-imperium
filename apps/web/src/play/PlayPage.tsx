@@ -2,9 +2,10 @@ import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
 import type { Campaign, Province, PuzzleClues, Tier } from '@pixel-imperium/protocol'
+import { CountPill } from '../album/CountPill.tsx'
 import { Dymo } from '../album/Dymo.tsx'
+import { CheckIcon } from '../album/icons.tsx'
 import { paperStyle } from '../album/paper.ts'
-import { Stamp } from '../album/Stamp.tsx'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { type AccountState, useAccount } from '../account.ts'
 import { requestHint, submitSolve } from '../api.ts'
@@ -432,9 +433,15 @@ function Play({
   const afterBody = (
     <>
       {conquest ? (
-        <Stamp tone={following ? 'pink' : 'gold'} className={styles.conquestStamp}>
-          {following ? 'Conquered' : 'Album complete'}
-        </Stamp>
+        following ? (
+          <CountPill conquered className={styles.conquestPill}>
+            {province.puzzles.length}/{province.puzzles.length}
+          </CountPill>
+        ) : (
+          <CountPill tone="gold" className={styles.conquestPill}>
+            Album complete
+          </CountPill>
+        )
       ) : (
         tag
       )}
@@ -611,16 +618,15 @@ function Play({
                 {sticker(tiltOf(puzzle.id))}
               </span>
             )}
-            {conquest && (
-              <Stamp tone="gold" className={styles.bandStamp}>
-                Conquered
-              </Stamp>
-            )}
             <span>
               <span className={styles.bandKick}>
-                {conquest
-                  ? `${province.puzzles.length} / ${province.puzzles.length} · Province ${provinceIndex + 1}`
-                  : ['Stage clear', foil && 'Foil', gold && 'Gold'].filter(Boolean).join(' · ')}
+                {conquest ? (
+                  <>
+                    <CheckIcon /> {province.puzzles.length} / {province.puzzles.length} · Province {provinceIndex + 1}
+                  </>
+                ) : (
+                  ['Stage clear', foil && 'Foil', gold && 'Gold'].filter(Boolean).join(' · ')
+                )}
               </span>
               <span className={styles.bandTitle}>{conquest ? `${province.name} is yours` : `#${number} ${puzzle.title}`}</span>
             </span>

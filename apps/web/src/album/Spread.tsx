@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { Province, PuzzleSummary } from '@pixel-imperium/protocol'
+import { CountPill } from './CountPill.tsx'
 import { paperStyle } from './paper.ts'
-import { Stamp } from './Stamp.tsx'
 import styles from './Spread.module.css'
 
 export const SLOTS_PER_PAGE = 15
@@ -11,9 +11,9 @@ interface Props {
   /** The province's place in its campaign, for its paper colour. */
   index: number
   solved: number
-  /** Stamps the spread "Page complete". */
+  /** Puts the count in the province's colour with a check. */
   complete: boolean
-  /** Printed under the stamp, e.g. the flavour line. */
+  /** Printed in the foot, e.g. the flavour line. */
   caption?: ReactNode
   /** A "what's next" row in the foot, while the province is still being filled. */
   next?: ReactNode
@@ -40,16 +40,15 @@ export function Spread({ province, index, solved, complete, caption, next, slot 
       </div>
       <div className={styles.page}>
         <header className={styles.head}>
-          <span className={styles.count}>
+          <CountPill conquered={complete} className={styles.count}>
             {solved} / {total}
-          </span>
+          </CountPill>
         </header>
         <Slots puzzles={pages[1]!} first={SLOTS_PER_PAGE + 1} slot={slot} />
       </div>
-      {complete || caption ? (
+      {caption ? (
         <footer className={styles.foot}>
-          {caption && <p className={styles.caption}>{caption}</p>}
-          {complete && <Stamp className={styles.stamp}>Page complete</Stamp>}
+          <p className={styles.caption}>{caption}</p>
         </footer>
       ) : (
         next && <footer className={styles.foot}>{next}</footer>
