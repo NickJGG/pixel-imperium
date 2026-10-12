@@ -5,6 +5,8 @@ import { LoadError, Loading, NotFound } from './EdgeStates.tsx'
 import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
 import { ProvincePage } from './campaign/ProvincePage.tsx'
 import { campaignProgress, continueAt } from './campaign/progress.ts'
+import { homeSearch } from './home/columns.ts'
+import { HomePage } from './home/HomePage.tsx'
 import { ImportPrompt } from './ImportPrompt.tsx'
 import { Hud, ThumbBar } from './Hud.tsx'
 import { HandlePicker } from './me/HandlePicker.tsx'
@@ -76,12 +78,15 @@ async function openAlbum(campaignId: string, search: { conquest?: string | true 
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  validateSearch: unveilSearch,
-  beforeLoad: async ({ search }) => {
+  validateSearch: homeSearch,
+  loader: async () => {
     const id = pickCampaign(await fetchCampaigns())
-    if (id !== null) await openAlbum(id, search)
+    return { campaign: id === null ? null : await loadCampaign(id) }
   },
-  component: () => <main className={styles.message}>No campaigns yet.</main>,
+  component: () => {
+    const { campaign } = homeRoute.useLoaderData()
+    return campaign ? <HomePage campaign={campaign} /> : <main className={styles.message}>No campaigns yet.</main>
+  },
 })
 
 const campaignRoute = createRoute({

@@ -1,0 +1,69 @@
+import { useEffect, useState } from 'react'
+import { landing } from './crest.ts'
+import styles from './Home.module.css'
+
+/** Cells on a pitch with gaps between them, in SVG units, and headroom above for the sticker hovering on top. */
+const PITCH = 12
+const CELL = 10
+const MARGIN = 4
+const HEADROOM = 14
+
+/** Where each campaign's sticker hovered when Home last showed it, so it can drop in once its puzzle is solved. */
+const hovered = new Map<string, number | null>()
+
+/**
+ * The Crest: one pixel per puzzle, a blank nonogram cell until its puzzle is solved. A blank sticker hovers over the
+ * pixel Continue's puzzle will reveal; back from solving it, that sticker drops into place before the next appears.
+ */
+export function Crest({
+  campaignId,
+  width,
+  height,
+  pixels,
+  marker,
+}: {
+  campaignId: string
+  width: number
+  height: number
+  /** From `crestPixels`. */
+  pixels: readonly (string | null)[]
+  /** The pixel the sticker hovers over, `null` once the campaign is conquered. */
+  marker: number | null
+}) {
+  const [landed] = useState(() => landing(hovered.get(campaignId) ?? null, marker, pixels))
+  useEffect(() => {
+    hovered.set(campaignId, marker)
+  }, [campaignId, marker])
+
+  const w = width * PITCH + 2 * MARGIN
+  const h = height * PITCH + 2 * MARGIN
+  const cell = (i: number) => ({
+    x: MARGIN + (i % width) * PITCH + 1,
+    y: MARGIN + Math.floor(i / width) * PITCH + 1,
+    width: CELL,
+    height: CELL,
+  })
+  const revealed = pixels.filter(p => p !== null).length
+
+  return (
+    <svg
+      className={styles.crest}
+      viewBox={`0 ${-HEADROOM} ${w} ${h + HEADROOM}`}
+      role="img"
+      aria-label={`The Crest, ${revealed} of ${pixels.length} pixels revealed`}
+    >
+      <rect className={styles.crestBack} width={w} height={h} rx={6} />
+      {pixels.map((colour, i) =>
+        colour === null ? (
+          <rect key={i} {...cell(i)} rx={1} className={styles.blank} />
+        ) : (
+          <rect key={i} {...cell(i)} rx={1} fill={colour} />
+        ),
+      )}
+      {landed !== null && <rect {...cell(landed)} rx={1.5} className={styles.sticker} data-landing />}
+      {marker !== null && (
+        <rect {...cell(marker)} rx={1.5} className={styles.sticker} data-hover data-late={landed !== null || undefined} />
+      )}
+    </svg>
+  )
+}

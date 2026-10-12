@@ -10,6 +10,8 @@ import type { Province } from '@pixel-imperium/protocol'
 import { CountPill } from '../../album/CountPill.tsx'
 import { Lock } from '../../album/Lock.tsx'
 import { paperStyle } from '../../album/paper.ts'
+import type { HomeSearch } from '../../home/columns.ts'
+import { usePadPage } from '../../pad/PadProvider.tsx'
 import type { ProvinceState } from '../progress.ts'
 import styles from './Worlds.module.css'
 
@@ -34,6 +36,29 @@ export const morph = () => !reducedMotion() && !matchMedia(PHONE).matches
 
 /** Pairs a province's column across a morph, wide on one page and a spine on the other. */
 export const morphName = (province: Pick<Province, 'id'>): CSSProperties => ({ viewTransitionName: `province-${province.id}` })
+
+/**
+ * Steps to the column before or after with ←/→ and the pad's shoulders; the arrows are left alone while focus is in
+ * a field or a dialog is open.
+ */
+export function useStep(step: (dir: -1 | 1) => void): void {
+  usePadPage({ step })
+  const stepRef = useRef(step)
+  stepRef.current = step
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+      const target = e.target as HTMLElement
+      if (target.closest('input, textarea, select, [contenteditable], dialog')) return
+      if (document.querySelector('dialog[open]')) return
+      e.preventDefault()
+      stepRef.current(e.key === 'ArrowLeft' ? -1 : 1)
+    }
+    addEventListener('keydown', onKey)
+    return () => removeEventListener('keydown', onKey)
+  }, [])
+}
 
 export function Worlds({
   children,
@@ -215,6 +240,35 @@ export function Spine({
             {state === 'next' && <span className={styles.count}>Next</span>}
           </span>
         )}
+      </span>
+    </Link>
+  )
+}
+
+/** A narrow column on Home standing for one of its entries, its name leaning sideways; opens that entry's column. */
+export function MenuSpine({
+  name,
+  search,
+  className,
+  style,
+}: {
+  name: string
+  search: HomeSearch
+  className?: string | undefined
+  /** Its paper and the morph name it shares with the entry's opened column. */
+  style: CSSProperties
+}) {
+  return (
+    <Link
+      to="/"
+      search={search}
+      replace
+      viewTransition={morph()}
+      className={[styles.world, styles.spine, className].filter(Boolean).join(' ')}
+      style={style}
+    >
+      <span className={styles.stack}>
+        <span className={styles.name}>{name}</span>
       </span>
     </Link>
   )

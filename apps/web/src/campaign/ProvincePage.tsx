@@ -1,17 +1,16 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { type CSSProperties, Fragment, type ReactNode, useEffect, useRef, useState } from 'react'
+import { type CSSProperties, Fragment, type ReactNode, useEffect, useState } from 'react'
 import type { Campaign, Province, Tier } from '@pixel-imperium/protocol'
 import { CountPill, UNVEIL_LANDS_MS } from '../album/CountPill.tsx'
 import { Lock } from '../album/Lock.tsx'
 import { useAccount } from '../account.ts'
-import { usePadPage } from '../pad/PadProvider.tsx'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { play } from '../sound.ts'
 import { markConquestsSeen, unseenConquests } from './conquests-seen.ts'
 import { NextUp } from './NextUp.tsx'
 import { type CampaignProgress, campaignProgress, isOpen, tierGroups } from './progress.ts'
 import { PuzzleSlot } from './PuzzleSlot.tsx'
-import { Curtain, Spine, World, Worlds, morph, morphName, usePhone } from './worlds/Worlds.tsx'
+import { Curtain, Spine, World, Worlds, morph, morphName, usePhone, useStep } from './worlds/Worlds.tsx'
 import styles from './Province.module.css'
 
 /**
@@ -90,23 +89,7 @@ function Album({
       viewTransition,
     })
   }
-  const step = (dir: -1 | 1) => goTo(campaign.provinces[index + dir], morph())
-  usePadPage({ step })
-  const stepRef = useRef(step)
-  stepRef.current = step
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
-      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
-      const target = e.target as HTMLElement
-      if (target.closest('input, textarea, select, [contenteditable], dialog')) return
-      if (document.querySelector('dialog[open]')) return
-      e.preventDefault()
-      stepRef.current(e.key === 'ArrowLeft' ? -1 : 1)
-    }
-    addEventListener('keydown', onKey)
-    return () => removeEventListener('keydown', onKey)
-  }, [])
+  useStep(dir => goTo(campaign.provinces[index + dir], morph()))
 
   const conquered = (p: Province) =>
     progress.provinces[campaign.provinces.indexOf(p)]!.state === 'conquered' || unveil.has(p.id)

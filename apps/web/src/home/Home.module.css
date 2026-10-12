@@ -1,0 +1,264 @@
+.page {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The album's cobalt board in place of a province paper; the element outranks the World's own paper. */
+:is(section, a).cover {
+  --focus: var(--on-cover);
+  color: var(--on-cover);
+  background: var(--cover) var(--cover-dots) 0 0 / 14px 14px;
+}
+
+:is(section, a).cover::before {
+  background: var(--cover-dk);
+}
+
+/* The stack on the left, its picture centred in the space to its right; clear of the floating HUD at the top. */
+.column {
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-10);
+  height: 100%;
+  padding: calc(var(--space-14) + var(--space-10)) var(--space-3) var(--space-7);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.kicker {
+  margin: 0;
+  font: var(--type-kicker);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.hero {
+  margin: 0;
+  font: var(--type-hero);
+  font-size: clamp(var(--fs-40), 4vw, 3.75rem);
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  overflow-wrap: anywhere;
+}
+
+.sub {
+  margin: 0;
+  font: var(--type-small);
+  opacity: 0.85;
+}
+
+.count {
+  font-size: var(--fs-16);
+}
+
+/* One segment per province in its tab colour, filled by its share solved. */
+.bar {
+  display: flex;
+  gap: var(--space-1);
+  align-self: stretch;
+  margin-top: var(--space-2);
+}
+
+.bar > i {
+  flex: 1;
+  height: 8px;
+  border-radius: var(--r-xs);
+  background:
+    linear-gradient(var(--tab), var(--tab)) 0 0 / var(--f) 100% no-repeat,
+    color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
+.next {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  align-self: stretch;
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  border-radius: var(--r-lg);
+  box-shadow: 0 3px 0 var(--shade);
+}
+
+.nextSlot {
+  flex: none;
+  width: 64px;
+  color: inherit;
+}
+
+.nextText {
+  min-width: 0;
+}
+
+.nextName {
+  margin: var(--space-1) 0;
+  overflow: hidden;
+  font: var(--type-heading);
+  letter-spacing: -0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: grid;
+  gap: var(--space-3);
+  align-self: stretch;
+  margin-top: var(--space-2);
+}
+
+.actions > * {
+  min-height: 52px;
+  font-size: var(--fs-18);
+}
+
+.picture {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+}
+
+.crest {
+  display: block;
+  width: min(100%, 520px);
+  max-height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 3px 0 var(--shade));
+}
+
+.crestBack {
+  fill: var(--sticker);
+}
+
+.blank {
+  fill: color-mix(in srgb, var(--cobalt-ink) 12%, var(--sticker));
+}
+
+/* A blank sticker over the pixel Continue's puzzle will reveal: bigger, tilted and bobbing, waiting to be stuck down. */
+.sticker {
+  transform-box: fill-box;
+  transform-origin: center;
+  fill: var(--sticker);
+  stroke: var(--pink);
+  stroke-width: 1.2;
+  rotate: -10deg;
+  scale: 1.7;
+  filter: drop-shadow(0 1.5px 0 var(--shade));
+}
+
+.sticker[data-hover] {
+  animation: bob 1.4s ease-in-out infinite alternate;
+}
+
+/* Turns up once the one before it has landed. */
+.sticker[data-hover][data-late] {
+  animation:
+    appear 0.3s ease-out 1.3s both,
+    bob 1.4s ease-in-out 1.6s infinite alternate;
+}
+
+/* Last visit's sticker, its puzzle since solved: it drops flat onto its pixel and peels off to show the colour. */
+.sticker[data-landing] {
+  animation:
+    land 0.5s cubic-bezier(0.5, 0, 0.8, 0.4) 0.4s both,
+    peel 0.3s ease-out 1s both;
+}
+
+@keyframes bob {
+  to {
+    translate: 0 -2px;
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes land {
+  to {
+    rotate: 0deg;
+    scale: 1;
+  }
+}
+
+@keyframes peel {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticker[data-hover],
+  .sticker[data-hover][data-late] {
+    animation: none;
+  }
+
+  .sticker[data-landing] {
+    display: none;
+  }
+}
+
+/* A column only the menu's spine stands for so far. */
+.plain {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: var(--space-3);
+  height: 100%;
+  padding: calc(var(--space-14) + var(--space-10)) var(--space-3) var(--space-7);
+}
+
+.plain > p:not(.kicker) {
+  max-width: 46ch;
+  margin: 0;
+}
+
+.providers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+@media (max-width: 720px) {
+  .column {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+    height: auto;
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .hero {
+    font-size: var(--fs-28);
+  }
+
+  .crest {
+    width: min(100%, 300px);
+  }
+
+  .plain {
+    height: auto;
+    padding: var(--space-6) var(--space-4);
+  }
+}
