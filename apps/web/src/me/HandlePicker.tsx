@@ -7,8 +7,8 @@ export function HandlePicker() {
   const { account } = useAccount()
   if (!account) return null
   return (
-    <main className={styles.page}>
-      <section className={`${styles.card} ${styles.picker}`}>
+    <main className={styles.pickerPage}>
+      <section className={styles.picker}>
         <h1 className={styles.srOnly}>Pick your handle</h1>
         <HandleForm current={account.handle} submitLabel="Write it on the cover" allowUnchanged nameplate />
         <p className={styles.hint}>It’s your public name here. You can change it later in Settings.</p>

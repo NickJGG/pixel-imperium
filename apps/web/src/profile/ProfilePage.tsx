@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import type { ProfileCampaign } from '@pixel-imperium/protocol'
+import { HandleHero } from '../album/HandleHero.tsx'
 import { Sticker, StickerBack, tiltOf } from '../album/Sticker.tsx'
 import { useAccount } from '../account.ts'
 import { provinceStates } from '../campaign/progress.ts'
@@ -77,7 +78,7 @@ export function ProfilePage() {
             ) : (
               campaign && <p className={styles.kicker}>Album · {campaign.name}</p>
             )}
-            <h1 className={styles.hero}>@{profile.handle}</h1>
+            <HandleHero handle={profile.handle} />
             {showcase.length > 0 ? (
               <ul className={styles.showcase} aria-label="Showcase">
                 {showcase.map((s, i) => (

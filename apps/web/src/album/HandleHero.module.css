@@ -1,0 +1,14 @@
+.hero {
+  margin: 0;
+  font: var(--type-hero);
+  font-size: clamp(var(--fs-28), 3.4vw, 3.25rem);
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  overflow-wrap: anywhere;
+}
+
+.hero[data-long] {
+  font-size: var(--fs-28);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}

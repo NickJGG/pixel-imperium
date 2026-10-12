@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, getRouteApi, useRouter } from '@tanstack/react-router'
 import { deleteAccount, signOutAccount, useAccount } from '../account.ts'
 import { PROVIDERS, type Provider, linkSocial, listAccounts, signIn, unlinkAccount } from '../auth.ts'
-import { Nameplate } from '../album/Nameplate.tsx'
+import { HandleHero } from '../album/HandleHero.tsx'
+import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { type Theme, updateSettings, useSettings } from '../settings.ts'
 import { HandleForm } from './HandleForm.tsx'
 import styles from './Me.module.css'
@@ -53,25 +54,31 @@ export function SettingsPage() {
 
   return (
     <main className={styles.page}>
-      <div className={styles.backCover}>
-        <header className={styles.coverHead}>
-          <Nameplate handle={account.handle} />
-          <h1 className={styles.heading}>Settings</h1>
-        </header>
-
-        <div className={styles.cards}>
-          <section className={styles.card} aria-labelledby="handle-title">
-            <h2 id="handle-title">Handle</h2>
+      <Worlds>
+        <World index={0} className={styles.cover} labelledBy="handle-title">
+          <div className={styles.column} data-surface="cobalt">
+            <p className={styles.kicker}>Settings · Handle</p>
+            <HandleHero id="handle-title" handle={account.handle} />
             <HandleCard handle={account.handle} />
-          </section>
+          </div>
+        </World>
 
-          <section className={styles.card} aria-labelledby="play-title">
-            <h2 id="play-title">Play</h2>
+        <World index={1} labelledBy="play-title">
+          <div className={styles.column}>
+            <p className={styles.kicker}>This device</p>
+            <h2 id="play-title" className={styles.name}>
+              Play
+            </h2>
             <PlaySettings />
-          </section>
+          </div>
+        </World>
 
-          <section className={styles.card} aria-labelledby="methods-title">
-            <h2 id="methods-title">Sign-in methods</h2>
+        <World index={4} labelledBy="methods-title">
+          <div className={styles.column}>
+            <p className={styles.kicker}>Account</p>
+            <h2 id="methods-title" className={styles.name}>
+              Sign-in methods
+            </h2>
             {error && (
               <p role="alert" className={styles.bad}>
                 {LINK_ERRORS[error] ?? 'Couldn’t connect that account. Try again.'}
@@ -84,14 +91,19 @@ export function SettingsPage() {
                 Sign out
               </button>
             </div>
-          </section>
+          </div>
+        </World>
 
-          <section className={`${styles.card} ${styles.danger}`} aria-labelledby="delete-title">
-            <h2 id="delete-title">Delete album</h2>
+        <World index={5} labelledBy="delete-title">
+          <div className={styles.column}>
+            <p className={styles.kicker}>Account</p>
+            <h2 id="delete-title" className={styles.name}>
+              Delete account
+            </h2>
             <DeleteAccount handle={account.handle} linked={linked} onDeleted={leave} />
-          </section>
-        </div>
-      </div>
+          </div>
+        </World>
+      </Worlds>
     </main>
   )
 }
@@ -103,21 +115,24 @@ function HandleCard({ handle }: { handle: string }) {
       <>
         <p className={styles.soft}>Changing your handle breaks links to the old one.</p>
         <HandleForm current={handle} submitLabel="Save" onSaved={() => setEditing(false)} />
-        <button type="button" data-variant="ghost" className={styles.cancel} onClick={() => setEditing(false)}>
+        <button type="button" data-variant="ghost" className={styles.start} onClick={() => setEditing(false)}>
           Cancel
         </button>
       </>
     )
   }
   return (
-    <div className={styles.line}>
-      <Link to="/u/$handle" params={{ handle }} className={styles.handle}>
-        @{handle}
-      </Link>
-      <button type="button" data-size="compact" onClick={() => setEditing(true)}>
-        Change
+    <>
+      <p className={styles.soft}>
+        Your album lives at{' '}
+        <Link to="/u/$handle" params={{ handle }}>
+          /u/{handle}
+        </Link>
+      </p>
+      <button type="button" className={styles.start} onClick={() => setEditing(true)}>
+        Change handle
       </button>
-    </div>
+    </>
   )
 }
 
@@ -274,7 +289,7 @@ function DeleteAccount({ handle, linked, onDeleted }: DeleteProps) {
       <>
         <p className={styles.soft}>Removes your account and every sticker. This can’t be undone.</p>
         <button type="button" data-variant="danger" className={styles.start} onClick={() => setOpen(true)}>
-          Delete album
+          Delete account
         </button>
       </>
     )
@@ -293,11 +308,11 @@ function DeleteAccount({ handle, linked, onDeleted }: DeleteProps) {
       </label>
       {state === 'failed' && (
         <p role="alert" className={styles.bad}>
-          Couldn’t delete your album. Try again.
+          Couldn’t delete your account. Try again.
         </p>
       )}
       {state === 'reauthenticate' ? (
-        <Reauthenticate action="deleting your album" linked={linked} />
+        <Reauthenticate action="deleting your account" linked={linked} />
       ) : (
         <div className={styles.row}>
           <button

@@ -1,83 +1,61 @@
 .page {
   flex: 1;
-  overflow-y: auto;
-  padding: var(--space-6) var(--space-4) var(--space-14);
-}
-
-/* The album's inside back cover: cobalt board, its spine down the right edge. */
-.backCover {
-  display: grid;
-  gap: var(--space-5);
-  width: min(960px, 100%);
-  margin: 0 auto;
-  padding: var(--space-6) calc(var(--space-6) + var(--space-3)) var(--space-6) var(--space-6);
-  --focus: var(--on-cover);
-  color: var(--on-cover);
-  background-color: var(--cover);
-  background-image: var(--cover-dots);
-  background-size: 14px 14px;
-  border-radius: var(--r-xl) var(--r-sm) var(--r-sm) var(--r-xl);
-  box-shadow:
-    inset -10px 0 0 var(--cover-dk),
-    inset -13px 0 0 var(--on-cover-tint-strong),
-    6px 8px 0 var(--shade);
-}
-
-.coverHead {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
+  min-height: 0;
 }
 
-.heading {
-  margin: 0;
-  font-size: var(--fs-28);
-}
-
-.cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  gap: var(--space-4);
-  align-items: start;
-}
-
-.card {
-  display: grid;
+/* Clear of the floating HUD at the top. */
+.column {
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
   gap: var(--space-3);
-  padding: var(--space-4);
-  color: var(--ink);
-  background: var(--card);
-  border-radius: var(--r-lg);
-  box-shadow: 0 4px 0 var(--shade);
+  height: 100%;
+  padding: calc(var(--space-14) + var(--space-10)) var(--space-3) var(--space-7);
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
-.card h2 {
-  margin: 0;
-  font-size: var(--fs-16);
-  letter-spacing: -0.03em;
-}
-
-.card p {
+.column p {
   margin: 0;
   line-height: 1.45;
 }
 
-.card input {
+/* The album's cobalt board in place of a province paper; `section` outranks the World's own paper. */
+section.cover {
+  --focus: var(--on-cover);
+  color: var(--on-cover);
+  background: var(--cover) var(--cover-dots) 0 0 / 14px 14px;
+}
+
+section.cover::before {
+  background: var(--cover-dk);
+}
+
+.kicker {
+  margin: 0;
+  font: var(--type-kicker);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.name {
+  margin: 0 0 var(--space-2);
+  font: var(--type-title);
+  letter-spacing: -0.03em;
+}
+
+:is(.column, .picker) input {
   min-width: 0;
   min-height: 44px;
   padding: 0 var(--space-3);
   font: 700 var(--fs-16) var(--font-mono);
   color: var(--ink);
-  background: var(--card-2);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
   border: 0;
   border-radius: var(--r-md);
-  box-shadow: inset 0 3px 0 var(--line-soft);
-}
-
-.danger {
-  box-shadow: 0 4px 0 var(--red-dk);
+  box-shadow: inset 0 3px 0 color-mix(in srgb, var(--ink) 14%, transparent);
 }
 
 .line {
@@ -94,26 +72,30 @@
   color: var(--ink-soft);
 }
 
-.handle {
-  overflow-wrap: anywhere;
-  font: var(--type-heading);
-  letter-spacing: -0.03em;
-  color: var(--ink);
-  text-decoration: none;
+section.cover .soft,
+section.cover :is(.hint, .bad, .good) {
+  color: var(--on-cover);
 }
 
-.handle:hover {
-  text-decoration: underline;
+section.cover .soft {
+  opacity: 0.8;
 }
 
-.cancel,
+.soft a {
+  color: inherit;
+}
+
+section.cover [data-variant='ghost'] {
+  --btn-ink: var(--on-cover);
+}
+
 .start {
-  justify-self: start;
+  align-self: flex-start;
 }
 
 /* A switch: the knob slides right and the track turns blue when on. Its own component, not a house button state. */
-.card .toggle {
-  --btn-bg: var(--line-soft); /* token-exempt: switch track */
+.column .toggle {
+  --btn-bg: color-mix(in srgb, var(--ink) 16%, transparent);
   --btn-edge: transparent; /* token-exempt: switch track */
   position: relative;
   flex: none;
@@ -136,7 +118,7 @@
   transition: left 120ms;
 }
 
-.card .toggle[aria-pressed='true'] {
+.column .toggle[aria-pressed='true'] {
   --btn-bg: var(--blue); /* token-exempt: switch track */
 }
 
@@ -148,9 +130,9 @@
   display: inline-flex;
   gap: var(--space-1);
   padding: var(--space-1);
-  background: var(--card-2);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
   border-radius: var(--r-pill);
-  box-shadow: 0 3px 0 var(--line-soft);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--ink) 12%, transparent);
 }
 
 .toggle:hover:not(:disabled),
@@ -200,8 +182,9 @@
   color: var(--red);
 }
 
-.card .hint,
-.card .bad {
+.hint,
+.bad,
+.good {
   min-height: 1.45em;
   margin: 0;
 }
@@ -229,9 +212,9 @@
   align-items: center;
   min-height: 48px;
   padding: 0 var(--space-3);
-  background: var(--card-2);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
   border-radius: var(--r-md);
-  box-shadow: inset 0 3px 0 var(--line-soft);
+  box-shadow: inset 0 3px 0 color-mix(in srgb, var(--ink) 14%, transparent);
 }
 
 .handleInput > span {
@@ -239,16 +222,28 @@
   color: var(--ink-soft);
 }
 
-.card .handleInput input {
+.handleInput input {
   flex: 1;
   min-height: 0;
   padding: var(--space-3) 2px;
   font: var(--type-heading);
   letter-spacing: -0.03em;
+  color: inherit;
   background: transparent;
   border: 0;
   outline: 0;
   box-shadow: none;
+}
+
+/* A white field on the cover, in cobalt ink whatever the theme. */
+section.cover .handleInput {
+  color: var(--cobalt-ink);
+  background: var(--sticker);
+  box-shadow: inset 0 3px 0 color-mix(in srgb, var(--cover) 25%, transparent);
+}
+
+section.cover .handleInput > span {
+  color: var(--cobalt-ink-soft);
 }
 
 .handleInput:has(input:focus-visible) {
@@ -261,11 +256,6 @@
   color: var(--ok);
 }
 
-.card .good {
-  min-height: 1.45em;
-  margin: 0;
-}
-
 .srOnly {
   position: absolute;
   width: 1px;
@@ -275,10 +265,20 @@
   white-space: nowrap;
 }
 
+.pickerPage {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-4) var(--space-14);
+}
+
 .picker {
+  display: grid;
+  gap: var(--space-3);
   width: min(460px, 100%);
   margin: 0 auto;
   padding: var(--space-7) var(--space-6) var(--space-5);
+  color: var(--ink);
+  background: var(--card);
   border-radius: var(--r-xl);
   box-shadow: 0 6px 0 var(--shade);
 }
@@ -287,17 +287,11 @@
   margin: var(--space-4) 0 0;
 }
 
-@media (max-width: 760px) {
-  .page {
-    padding: var(--space-4) var(--space-4) var(--space-10);
-  }
-
-  .backCover {
-    padding: var(--space-5) var(--space-7) var(--space-5) var(--space-4);
-  }
-
-  .heading {
-    font-size: var(--fs-18);
+@media (max-width: 720px) {
+  .column {
+    height: auto;
+    padding: var(--space-6) var(--space-4);
+    overflow: visible;
   }
 }
 
