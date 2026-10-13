@@ -26,6 +26,14 @@
   inset: 0 0 auto;
 }
 
+/*
+ * Leaving Play, the root's HUD mounts with the new address while Play's pills still stand; two `hud`s would abort
+ * the morph.
+ */
+:root:has(.pillsOnly) .hud:not(.pillsOnly) {
+  view-transition-name: none;
+}
+
 .hud > * {
   pointer-events: auto;
 }
