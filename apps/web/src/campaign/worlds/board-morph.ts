@@ -197,21 +197,27 @@ const boxOf = (el: HTMLElement | undefined): Box | undefined => {
   return { x: left, y: top, w: width, h: height }
 }
 
-/** Plays one board's keyframes on its pseudo-elements, which `drivenSheet` has handed to script. */
-function drive(name: string, frames: BoardKeyframes, duration: number, direction: PlaybackDirection = 'normal'): void {
-  for (const [part, keyframes] of [
-    ['group', frames.group],
-    ['image-pair', frames.pair],
-    ['old', frames.old],
-    ['new', frames.new],
-  ] as const)
+/**
+ * Plays one board's keyframes on its pseudo-elements, which `drivenSheet` has handed to script. The caller cancels
+ * them once the transition ends: they fill, and would otherwise pin the next transition's groups of the same name.
+ */
+function drive(name: string, frames: BoardKeyframes, duration: number, direction: PlaybackDirection = 'normal'): Animation[] {
+  return (
+    [
+      ['group', frames.group],
+      ['image-pair', frames.pair],
+      ['old', frames.old],
+      ['new', frames.new],
+    ] as const
+  ).map(([part, keyframes]) =>
     document.documentElement.animate(keyframes, {
       duration,
       direction,
       easing: 'linear',
       fill: 'both',
       pseudoElement: `::view-transition-${part}(${name})`,
-    })
+    }),
+  )
 }
 
 /**
@@ -225,6 +231,7 @@ export function startNextBoard(transition: ViewTransition, from: string, to: str
     { name: slotName(to), z: 5, keyframes: liftKeyframes },
   ].map(part => ({ ...part, before: boxOf(named(part.name)) }))
   const sheet = document.createElement('style')
+  let animations: Animation[] = []
   transition.ready.then(
     () => {
       const driven = parts.flatMap(({ name, z, keyframes, before }) => {
@@ -233,11 +240,14 @@ export function startNextBoard(transition: ViewTransition, from: string, to: str
       })
       sheet.textContent = driven.map(({ name, z }) => drivenSheet(name, z)).join('\n\n')
       document.head.appendChild(sheet)
-      for (const { name, frames } of driven) drive(name, frames, NEXT_MS)
+      animations = driven.flatMap(({ name, frames }) => drive(name, frames, NEXT_MS))
     },
     () => {},
   )
-  return () => sheet.remove()
+  return () => {
+    for (const a of animations) a.cancel()
+    sheet.remove()
+  }
 }
 
 /** How long a door's morph plays (`door-board`, as `to-board`), and a phone's grow. */
@@ -282,6 +292,7 @@ export function startDoor(
 ): () => void {
   const before = boxOf(from)
   const sheet = document.createElement('style')
+  let animations: Animation[] = []
   transition.ready.then(
     () => {
       const after = boxOf(to())
@@ -289,9 +300,12 @@ export function startDoor(
       sheet.textContent = drivenSheet(name, 5)
       document.head.appendChild(sheet)
       const frames = back ? doorBackKeyframes(after, before, phone) : doorKeyframes(before, after, phone)
-      drive(name, frames, phone ? GROW_MS : DOOR_MS, back ? 'reverse' : 'normal')
+      animations = drive(name, frames, phone ? GROW_MS : DOOR_MS, back ? 'reverse' : 'normal')
     },
     () => {},
   )
-  return () => sheet.remove()
+  return () => {
+    for (const a of animations) a.cancel()
+    sheet.remove()
+  }
 }
