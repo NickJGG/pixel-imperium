@@ -13,7 +13,7 @@ import { progressPercent } from '@pixel-imperium/nonogram'
 import type { Campaign, Province, PuzzleClues, Tier } from '@pixel-imperium/protocol'
 import { CountPill } from '../album/CountPill.tsx'
 import { Dymo } from '../album/Dymo.tsx'
-import { CheckIcon } from '../album/icons.tsx'
+import { ArrowIcon, CheckIcon } from '../album/icons.tsx'
 import { paperStyle } from '../album/paper.ts'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { type AccountState, useAccount } from '../account.ts'
@@ -787,13 +787,5 @@ function Stakes({ swatch, title, children }: { swatch?: 'foil' | 'plain'; title:
         {children}
       </p>
     </div>
-  )
-}
-
-function ArrowIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
   )
 }

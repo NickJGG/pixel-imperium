@@ -86,6 +86,12 @@ export const HomeIcon = () => (
   </Icon>
 )
 
+export const ArrowIcon = () => (
+  <Icon>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </Icon>
+)
+
 export const CheckIcon = () => (
   <Icon>
     <path d="M4.5 12.5l5 5L20 7" />

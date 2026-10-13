@@ -5,25 +5,28 @@
  * steps on fixed assists; a `free` one is played on the player's own assists, with a local Hint. Nothing
  * here is saved but the place to resume from and which Lessons are done.
  */
-import { type CSSProperties, type Ref, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { type CSSProperties, type ReactNode, type Ref, type RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { type Cell, hintFor } from '@pixel-imperium/nonogram'
 import type { Assists } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
+import { ArrowIcon } from '../album/icons.tsx'
 import { paperStyle } from '../album/paper.ts'
 import { PixelArt } from '../campaign/PixelArt.tsx'
 import { boardMorph, columnPaper, dymoMorph, slotName } from '../campaign/worlds/names.ts'
 import { lessonId } from '../campaign/worlds/transitions.ts'
 import { getPadMode } from '../pad/mode.ts'
-import { PanelTag } from '../pad/PadGlyph.tsx'
+import { PadGlyph, PanelTag } from '../pad/PadGlyph.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
 import { firstFocusable, focusDefault } from '../pad/spatial.ts'
-import { Hud, HudPills } from '../Hud.tsx'
+import { FloatingPills, Hud } from '../Hud.tsx'
 import { REVEAL_GUARD_MS } from '../pad/tuning.ts'
 import { useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
 import { AssistChips } from '../play/AssistChips.tsx'
+import { AssistsDisclosure } from '../play/AssistsDisclosure.tsx'
+import { AssistSwitches } from '../play/AssistSwitches.tsx'
 import { Board, type BoardFlag, REVEAL_MS } from '../play/Board.tsx'
 import { ColClues, RowClues } from '../play/Clues.tsx'
 import { ControlsCard } from '../play/ControlsCard.tsx'
@@ -32,8 +35,10 @@ import { HintButton, cellHintText } from '../play/HintButton.tsx'
 import { RAIL_WIDTH, SIDE_PAGE_GAP, boardTracks, clueDepth, clueSlot, fitCellSize, useLessonStacked } from '../play/layout.ts'
 import { createLineHints } from '../play/line-hints.ts'
 import { ProgressStorage } from '../play/progress-storage.ts'
+import { RailTools } from '../play/RailTools.tsx'
 import { type PlayState, PlayStore, crosshairOf } from '../play/store.ts'
 import { ToolToggle } from '../play/ToolToggle.tsx'
+import { useRailFold } from '../play/useRailFold.ts'
 import { useUndoKeys } from '../play/useUndoKeys.ts'
 import { BoardView } from '../play/viewport.ts'
 import { type BeatView, BeatLayer, Dock, type Tag } from './BeatLayer.tsx'
@@ -299,6 +304,9 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
   }, [])
   const cellSize = stage.width > 0 ? fitCellSize(stage, store.puzzle) : 0
   const stacked = useLessonStacked()
+  const railRef = useRef<HTMLDivElement>(null)
+  const logRef = useRef<HTMLOListElement>(null)
+  const folded = useRailFold(railRef, coachRef, !stacked && free && !solved, logRef) > 0
 
   const slot = clueSlot(cellSize)
   const board: BoardBox = {
@@ -327,24 +335,26 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
   }
   const anchor = solved ? undefined : shownBeat.anchor
 
-  const tools = (
+  const beckon = (on: boolean) => (on ? beatStyles.beckon : undefined)
+  const hintButton = free && !solved && (
+    <span className={beckon(anchor === 'hint')}>
+      <HintButton
+        store={store}
+        confirmFirst
+        {...(stacked ? { note: FREE_HINT_NOTE } : { stakes: null, confirmNote: FREE_HINT_NOTE })}
+        request={async cells => hintFor(puzzle.palette, cells)}
+        onError={() => {}}
+      />
+    </span>
+  )
+  const stackedTools = (
     <>
-      <div className={stacked ? playStyles.dock : styles.railTools}>
+      <div className={playStyles.dock}>
         <ToolToggle store={store} />
-        {free && !solved && (
-          <span className={anchor === 'hint' ? beatStyles.beckon : undefined}>
-            <HintButton
-              store={store}
-              confirmFirst
-              note={FREE_HINT_NOTE}
-              request={async cells => hintFor(puzzle.palette, cells)}
-              onError={() => {}}
-            />
-          </span>
-        )}
+        {hintButton}
       </div>
       {free && (
-        <div className={anchor === 'assists' ? beatStyles.beckon : undefined}>
+        <div className={beckon(anchor === 'assists')}>
           <AssistChips />
         </div>
       )}
@@ -367,6 +377,7 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
         {...paperMorph}
         style={{ ...paperStyle(track.paper), ...paperMorph.style }}
       >
+        {!stacked && <FloatingPills />}
         <div className={stacked ? `${playStyles.desk} ${styles.desk}` : playStyles.shellBody} style={stacked ? { gap: SIDE_PAGE_GAP } : undefined}>
           {!stacked && <LessonFilm track={track} index={index} back={foot.learn ? foot.back : null} />}
           <div
@@ -407,19 +418,20 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
             {!solved && <Dock view={at === 'dock' ? view : null} tag={stacked ? tag : null} />}
             {stacked && (
               <div className={playStyles.tools} inert={solved}>
-                {tools}
+                {stackedTools}
               </div>
             )}
           </div>
           <div
-            className={stacked ? styles.side : `${playStyles.rail} ${styles.rail}`}
+            ref={railRef}
+            className={stacked ? styles.side : `${playStyles.rail} ${playStyles.underPills} ${styles.rail}`}
             {...(!stacked && railMorph)}
             style={stacked ? { gap: SIDE_PAGE_GAP } : { ...railMorph.style, width: RAIL_WIDTH }}
             data-pad-panel={!stacked || undefined}
           >
-            {!stacked && <HudPills className={playStyles.railPills} />}
             <Coach
               ref={coachRef}
+              logRef={logRef}
               track={track}
               lesson={lesson}
               index={index}
@@ -432,13 +444,34 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
               meta={meta}
               onNext={onNext}
               onFinish={onFinish}
+              pinned={
+                !stacked && (
+                  <>
+                    {!solved && (
+                      <div className={styles.railMain}>
+                        <RailTools store={store} lines={free} />
+                        {hintButton}
+                        {free &&
+                          (folded ? (
+                            <div className={beckon(anchor === 'assists')}>
+                              <AssistsDisclosure store={store} />
+                            </div>
+                          ) : (
+                            <section
+                              className={`${playStyles.railSection} ${beckon(anchor === 'assists') ?? ''}`}
+                              aria-labelledby="lesson-assists"
+                            >
+                              <h2 id="lesson-assists">Assists</h2>
+                              <AssistSwitches />
+                            </section>
+                          ))}
+                      </div>
+                    )}
+                    <ControlsCard solved={solved} lines={free} zoom={false} back="All lessons" />
+                  </>
+                )
+              }
             />
-            {!stacked && (
-              <div className={styles.railBody} inert={solved}>
-                {tools}
-              </div>
-            )}
-            {!stacked && <ControlsCard solved={solved} lines={free} zoom={false} back="All lessons" />}
           </div>
         </div>
       </main>
@@ -454,6 +487,7 @@ interface LogEntry {
 
 interface CoachProps {
   ref: Ref<HTMLElement>
+  logRef: RefObject<HTMLOListElement | null>
   track: Track
   lesson: LessonData
   index: number
@@ -469,15 +503,16 @@ interface CoachProps {
   meta: string
   onNext: () => void
   onFinish: () => void
+  /** Pinned to the foot, over its links: the rail's tools and the pad's controls, under a log that takes the rest. */
+  pinned?: ReactNode
 }
 
-function Coach({ ref, track, lesson, index, step, log, now, solved, foot, rail, meta, onNext, onFinish }: CoachProps) {
+function Coach({ ref, logRef, track, lesson, index, step, log, now, solved, foot, rail, meta, onNext, onFinish, pinned }: CoachProps) {
   const { steps } = lesson
   const { lessons } = track
   const last = index === lessons.length - 1
   const done = useLessonsDone()
   const dotState = (i: number) => (i === index ? 'now' : done.has(lessonKey(track, lessons[i]!)) ? 'done' : undefined)
-  const logRef = useRef<HTMLOListElement>(null)
   useEffect(() => {
     const list = logRef.current
     if (list) list.scrollTop = list.scrollHeight
@@ -538,18 +573,21 @@ function Coach({ ref, track, lesson, index, step, log, now, solved, foot, rail, 
         </ol>
       )}
       <div className={styles.foot}>
+        {pinned && <div className={styles.pinned}>{pinned}</div>}
         {foot.handoff ? (
-          <Link {...backLink(foot.handoff.to)} className={styles.skip}>
+          <Link {...backLink(foot.handoff.to)} data-variant="paper">
             {track.skipText}
           </Link>
         ) : (
-          <Link to="/learn/$track" params={{ track: track.id }} search={{ back: foot.back }} className={styles.skip}>
+          <Link to="/learn/$track" params={{ track: track.id }} search={{ back: foot.back }} data-variant="paper">
             All lessons
           </Link>
         )}
         {solved && (
           <button type="button" data-variant="primary" data-pad-default onClick={last ? onFinish : onNext}>
-            {last ? 'Finish' : 'Next lesson'} →
+            {last ? 'Finish' : 'Next lesson'}
+            <ArrowIcon />
+            <PadGlyph button="A" />
           </button>
         )}
       </div>

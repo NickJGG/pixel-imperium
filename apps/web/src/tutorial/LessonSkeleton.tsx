@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react'
 import { useParams, useSearch } from '@tanstack/react-router'
 import { Dymo } from '../album/Dymo.tsx'
 import { paperStyle } from '../album/paper.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { boardMorph, columnPaper, dymoMorph, slotName } from '../campaign/worlds/names.ts'
 import { lessonId } from '../campaign/worlds/transitions.ts'
-import { Hud } from '../Hud.tsx'
+import { FloatingPills, Hud } from '../Hud.tsx'
 import { SIDE_PAGE_GAP, useLessonStacked } from '../play/layout.ts'
 import { BoardGhost, Film, Rail, Surface } from '../play/PlaySkeleton.tsx'
 import { Bar, Fallback, SrLoading } from '../skeleton/Skeleton.tsx'
@@ -34,7 +35,21 @@ export function LessonSkeleton() {
   const paperMorph = columnPaper(`track-${track.id}`)
   const board = <BoardGhost width={width} height={height} name={slotName(lessonId(track.id, lesson.id))} />
   const coach = (
-    <Coach track={track} index={index} rail={!stacked} meta={meta} skip={learn ? 'All lessons' : track.skipText} />
+    <Coach
+      track={track}
+      index={index}
+      rail={!stacked}
+      meta={meta}
+      skip={learn ? 'All lessons' : track.skipText}
+      pinned={
+        !stacked && (
+          <div className={styles.railMain}>
+            <Bar w={lesson.free ? '100%' : 96} h={44} pill />
+            {lesson.free && <Bar w="100%" h={52} pill />}
+          </div>
+        )
+      }
+    />
   )
 
   if (stacked) {
@@ -74,6 +89,7 @@ export function LessonSkeleton() {
       aria-busy="true"
     >
       <SrLoading />
+      <FloatingPills />
       <div className={playStyles.shellBody}>
         <Film
           count={track.lessons.length}
@@ -87,12 +103,7 @@ export function LessonSkeleton() {
           }
         />
         <Surface>{board}</Surface>
-        <Rail>
-          {coach}
-          <div className={styles.railBody}>
-            <Bar w={180} h={44} pill />
-          </div>
-        </Rail>
+        <Rail>{coach}</Rail>
       </div>
     </main>
   )
@@ -104,6 +115,7 @@ function Coach({
   rail,
   meta,
   skip,
+  pinned,
 }: {
   track: Track
   index: number
@@ -111,6 +123,8 @@ function Coach({
   meta: string
   /** The foot's link: back to Learn, or the track's skip on a deep link. */
   skip: string
+  /** The rail's tools, over the foot's link. */
+  pinned?: ReactNode
 }) {
   const lesson = track.lessons[index]!
   return (
@@ -143,7 +157,10 @@ function Coach({
         <Bar w="60%" h={14} />
       </div>
       <div className={styles.foot}>
-        <span className={styles.skip}>{skip}</span>
+        {pinned && <div className={styles.pinned}>{pinned}</div>}
+        <a data-variant="paper">
+          {skip}
+        </a>
       </div>
     </aside>
   )

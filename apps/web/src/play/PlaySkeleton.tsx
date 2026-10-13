@@ -5,7 +5,7 @@ import { currentCampaign } from '../campaign/last-campaign.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { dailyId } from '../daily/clock.ts'
 import { boardMorph, columnPaper, slotMorph, slotName } from '../campaign/worlds/names.ts'
-import { CrownMark, FloatingPills, HudPills, SoundButton, ThemeButton } from '../Hud.tsx'
+import { CrownMark, FloatingPills, SoundButton, ThemeButton } from '../Hud.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { useCentredFilm } from './Filmstrip.tsx'
 import { RAIL_WIDTH, useRail } from './layout.ts'
@@ -79,7 +79,7 @@ export function PlaySkeleton() {
         )}
         <Surface>{board}</Surface>
         {wide && (
-          <Rail underPills>
+          <Rail>
             <div className={styles.railHead}>
               <Bar w={110} h={30} pill style={{ marginBottom: 'var(--space-4)' }} />
               <Bar w={90} h={12} style={{ marginBottom: 'var(--space-1)' }} />
@@ -191,15 +191,10 @@ export function Film({
 
 const railMorph = boardMorph('rail', 'rail')
 
-/** The right rail, topped by the HUD's pills, or with `underPills` clearing the ones floating over the page. */
-export function Rail({ underPills = false, children }: { underPills?: boolean; children: ReactNode }) {
+/** The right rail, clearing the HUD's pills floating over the page. */
+export function Rail({ children }: { children: ReactNode }) {
   return (
-    <aside
-      className={underPills ? `${styles.rail} ${styles.underPills}` : styles.rail}
-      {...railMorph}
-      style={{ ...railMorph.style, width: RAIL_WIDTH }}
-    >
-      {!underPills && <HudPills className={styles.railPills} />}
+    <aside className={`${styles.rail} ${styles.underPills}`} {...railMorph} style={{ ...railMorph.style, width: RAIL_WIDTH }}>
       {children}
     </aside>
   )

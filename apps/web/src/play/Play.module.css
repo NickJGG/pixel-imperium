@@ -270,13 +270,7 @@
   box-shadow: inset 4px 0 0 var(--gutter-shade);
 }
 
-/* A Lesson's rail still carries the pills itself. */
-.railPills {
-  flex-wrap: wrap;
-  margin-left: 0;
-}
-
-/* Play's clears the floating pills: the HUD's top padding, a 44px pill and a gap. */
+/* Clears the floating pills: the HUD's top padding, a 44px pill and a gap. */
 .rail.underPills {
   padding-top: calc(2 * var(--space-4) + 44px); /* token-exempt: the HUD pill's height */
 }

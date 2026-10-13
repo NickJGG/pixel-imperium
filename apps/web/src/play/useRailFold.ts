@@ -5,10 +5,16 @@ export type Fold = 0 | 1 | 2
 
 /**
  * How far the rail folds so it never scrolls, from its real content: `rail` is the column and `body` the
- * part that folds, ending in the group pinned by an auto top margin, which is the slack. Each fold's
+ * part that folds, ending in the group pinned by an auto top margin, which is the slack. `give` is a part that
+ * shrinks to its min-height before anything folds, so the room it could give counts as slack too. Each fold's
  * saving is learnt as it happens, so a rail that grows back unfolds only into room it has.
  */
-export function useRailFold(rail: RefObject<HTMLElement | null>, body: RefObject<HTMLElement | null>, active: boolean): Fold {
+export function useRailFold(
+  rail: RefObject<HTMLElement | null>,
+  body: RefObject<HTMLElement | null>,
+  active: boolean,
+  give?: RefObject<HTMLElement | null>,
+): Fold {
   const [fold, setFold] = useState<Fold>(0)
   const saving = useRef<Partial<Record<Fold, number>>>({})
   const last = useRef<{ fold: Fold; natural: number } | null>(null)
@@ -19,7 +25,10 @@ export function useRailFold(rail: RefObject<HTMLElement | null>, body: RefObject
     if (!active || !column || !folding) return
     const measure = () => {
       const foot = folding.lastElementChild
-      const slack = foot ? parseFloat(getComputedStyle(foot).marginTop) || 0 : 0
+      const flex = give?.current
+      const slack =
+        (foot ? parseFloat(getComputedStyle(foot).marginTop) || 0 : 0) +
+        (flex ? flex.clientHeight - (parseFloat(getComputedStyle(flex).minHeight) || 0) : 0)
       const natural = column.scrollHeight - slack
       const prev = last.current
       if (prev?.fold === fold - 1) saving.current[fold] = prev.natural - natural
@@ -32,10 +41,9 @@ export function useRailFold(rail: RefObject<HTMLElement | null>, body: RefObject
     }
     measure()
     const observer = new ResizeObserver(measure)
-    observer.observe(column)
-    for (const child of folding.children) observer.observe(child)
+    for (const el of [column, ...column.children, ...folding.children]) observer.observe(el)
     return () => observer.disconnect()
-  }, [rail, body, active, fold])
+  }, [rail, body, active, fold, give])
 
   return fold
 }

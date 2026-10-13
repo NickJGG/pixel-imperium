@@ -11,6 +11,8 @@ interface Props {
   confirmFirst: boolean
   /** Shown under the confirm, or with `stakes`, between the button and the card. */
   note?: ReactNode
+  /** With `stakes`, said under the confirm's question. */
+  confirmNote?: string
   /** The confirm opens above the button instead of taking its place, so a toolbar doesn't reflow; the toolbar may hide the label. */
   popover?: boolean
   /**
@@ -23,7 +25,7 @@ interface Props {
 }
 
 /** Asks `request` for a hint on the grid as it stands; the store shows it until the next edit. */
-export function HintButton({ store, confirmFirst, note, popover = false, stakes, request, onError }: Props) {
+export function HintButton({ store, confirmFirst, note, confirmNote, popover = false, stakes, request, onError }: Props) {
   const card = stakes !== undefined
   const [confirming, setConfirming] = useState(false)
   const [pending, setPending] = useState(false)
@@ -91,6 +93,7 @@ export function HintButton({ store, confirmFirst, note, popover = false, stakes,
               <b>Use a hint?</b>
               This sticker won't be foil.
             </p>
+            {confirmNote && <p>{confirmNote}</p>}
             <span>
               <button ref={confirmRef} type="button" data-variant="primary" data-size="compact" onClick={() => void hint()}>
                 Use a hint

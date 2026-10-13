@@ -77,7 +77,7 @@ export function ThemeButton({ className, variant, size }: PillProps) {
   )
 }
 
-/** Sound, theme and the account, every pill one style: the HUD's top-right, and the top of a Lesson's rail. */
+/** Sound, theme and the account, every pill one style: the HUD's top-right. */
 export function HudPills({ className }: { className?: string | undefined }) {
   return (
     <span className={className ? `${styles.tools} ${className}` : styles.tools}>
@@ -92,7 +92,7 @@ export function HudPills({ className }: { className?: string | undefined }) {
 
 /**
  * The pills alone, laid over the page where the floating HUD puts them and named as it is, so they hold still
- * when a page with the whole HUD morphs into Play.
+ * when a page with the whole HUD morphs into Play or a Lesson.
  */
 export function FloatingPills() {
   return (

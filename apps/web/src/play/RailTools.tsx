@@ -7,9 +7,10 @@ import styles from './Play.module.css'
 
 /**
  * The rail's tools: Fill | Cross on its own row for touch, then Straight lines, Undo and Redo, each wearing
- * its shortcut in the corner: a keycap with a mouse, the controller's button in pad mode.
+ * its shortcut in the corner: a keycap with a mouse, the controller's button in pad mode. `lines` off drops
+ * Straight lines, for a board that fixes it.
  */
-export function RailTools({ store }: { store: PlayStore }) {
+export function RailTools({ store, lines = true }: { store: PlayStore; lines?: boolean }) {
   const canUndo = useSyncExternalStore(store.subscribe, () => store.getState().canUndo)
   const canRedo = useSyncExternalStore(store.subscribe, () => store.getState().canRedo)
   const { lockLine } = useSettings()
@@ -17,20 +18,22 @@ export function RailTools({ store }: { store: PlayStore }) {
     <div className={styles.railTools} role="toolbar" aria-label="Tools">
       <ToolToggle store={store} joined />
       <div className={styles.railToolRow}>
-        <button
-          type="button"
-          className={styles.railLines}
-          aria-pressed={lockLine}
-          title="Drags stay in one row or column"
-          onClick={() => updateSettings({ lockLine: !lockLine })}
-        >
-          <svg viewBox="0 0 10 10" aria-hidden="true">
-            <path d="M1 5h8" />
-          </svg>
-          Straight lines
-          <Keycap>Shift</Keycap>
-          <PadGlyph button="Y" corner />
-        </button>
+        {lines && (
+          <button
+            type="button"
+            className={styles.railLines}
+            aria-pressed={lockLine}
+            title="Drags stay in one row or column"
+            onClick={() => updateSettings({ lockLine: !lockLine })}
+          >
+            <svg viewBox="0 0 10 10" aria-hidden="true">
+              <path d="M1 5h8" />
+            </svg>
+            Straight lines
+            <Keycap>Shift</Keycap>
+            <PadGlyph button="Y" corner />
+          </button>
+        )}
         <button type="button" aria-label="Undo" title="Undo" disabled={!canUndo} onClick={() => store.undo()}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 14 4 9l5-5" />
