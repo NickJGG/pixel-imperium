@@ -233,6 +233,9 @@ const profileRoute = createRoute({
   },
   component: ProfilePage,
   pendingComponent: ProfileSkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
   notFoundComponent: () => <NotFound>No player goes by @{profileRoute.useParams().handle}.</NotFound>,
 })
 
@@ -252,6 +255,9 @@ const settingsRoute = createRoute({
   loader: () => accountReady,
   component: SettingsPage,
   pendingComponent: SettingsSkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
 })
 
 const backSearch = (search: Record<string, unknown>): { back?: string } =>
@@ -266,6 +272,9 @@ const learnRoute = createRoute({
   loader: ({ deps }) => loadLearnBack(deps.back),
   component: () => <LearnPage back={learnRoute.useLoaderData()} />,
   pendingComponent: LearnSkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
 })
 
 /**

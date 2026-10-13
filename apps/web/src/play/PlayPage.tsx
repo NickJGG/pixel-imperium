@@ -29,6 +29,7 @@ import { rumble } from '../pad/rumble.ts'
 import { firstFocusable, focusDefault } from '../pad/spatial.ts'
 import { Hud, HudPills, SoundButton, ThemeButton } from '../Hud.tsx'
 import { getSettings, useSettings } from '../settings.ts'
+import { reducedMotion } from '../motion.ts'
 import { play } from '../sound.ts'
 import { useShouldOffer, useShouldOfferTechniques } from '../tutorial/asked.ts'
 import { ChoiceCard, TUTORIAL_OFFER, techniquesOffer } from '../tutorial/ChoiceCard.tsx'
@@ -132,8 +133,6 @@ function useStoreValue<T>(store: PlayStore, select: (s: PlayState) => T): T {
  * `kept`. The `?conquest` preview plays the banner with no sticker.
  */
 type Moment = 'waiting' | 'banner' | 'landed' | 'popping' | 'kept'
-
-const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 
 const slantAngle = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--slant-angle'))
 

@@ -11,13 +11,12 @@ import { CountPill } from '../../album/CountPill.tsx'
 import { Lock } from '../../album/Lock.tsx'
 import { type PaperName, paperFor, paperStyle, seasonOf } from '../../album/paper.ts'
 import type { HomeSearch } from '../../home/columns.ts'
+import { reducedMotion } from '../../motion.ts'
 import { usePadPage } from '../../pad/PadProvider.tsx'
 import type { ProvinceState } from '../progress.ts'
 import styles from './Worlds.module.css'
 
-const PHONE = '(max-width: 720px)'
-
-const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
+export const PHONE = '(max-width: 720px)'
 
 const subscribePhone = (onChange: () => void) => {
   const query = matchMedia(PHONE)
@@ -27,21 +26,6 @@ const subscribePhone = (onChange: () => void) => {
 
 /** Whether the window is phone-width, where Worlds drop the slant. */
 export const usePhone = () => useSyncExternalStore(subscribePhone, () => matchMedia(PHONE).matches)
-
-/**
- * Whether a move between provinces morphs, the clicked column widening into the page: not under reduced motion,
- * nor on a phone, where there are no spines to widen.
- */
-export const morph = () => !reducedMotion() && !matchMedia(PHONE).matches
-
-const PROVINCE = /^\/c\/[^/]+\/[^/]+\/?$/
-
-export const isProvincePath = (pathname: string) => PROVINCE.test(pathname)
-
-const MONTH = /^\/daily\/\d{4}\/\d{2}\/?$/
-
-/** A Month of Dailies' page, `/daily/<year>/<mm>`. */
-export const isMonthPath = (pathname: string) => MONTH.test(pathname)
 
 /** Pairs a province's column across a morph, wide on one page and a spine on the other. */
 export const morphName = (province: Pick<Province, 'id'>): CSSProperties => ({ viewTransitionName: `province-${province.id}` })

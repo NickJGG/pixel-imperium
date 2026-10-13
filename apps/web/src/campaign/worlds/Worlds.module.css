@@ -269,7 +269,7 @@
 /*
  * Moving between provinces: each column only changes width. Its snapshots keep their natural size, centred and
  * clipped at the sides, so a page folding into its spine narrows rather than shrinking to the top.
- * Nothing else in the app uses view transitions, hence `*`.
+ * The typed transitions set their own timing over this, hence `*`.
  */
 ::view-transition-group(*) {
   animation-duration: 0.5s;

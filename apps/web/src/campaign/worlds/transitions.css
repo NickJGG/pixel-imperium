@@ -1,0 +1,91 @@
+/*
+ * The slant wipe, between any two pages without a morph of their own: the new page sweeps in from the right behind
+ * an edge leaning at the columns' slant, while the old one drifts left and dims beneath it. Back plays it in reverse,
+ * the page retreating right off the one it covered. Each page moves as one picture, so nothing in it pairs; the HUD
+ * and the thumb bar, outside it, hold still above.
+ */
+:root:active-view-transition-type(wipe) main,
+:root:active-view-transition-type(wipe) main * {
+  view-transition-name: none !important;
+}
+
+:root:active-view-transition-type(wipe)::view-transition {
+  background: var(--desk);
+}
+
+:root:active-view-transition-type(wipe)::view-transition-group(*),
+:root:active-view-transition-type(wipe)::view-transition-old(*),
+:root:active-view-transition-type(wipe)::view-transition-new(*) {
+  animation-duration: 0.75s;
+  animation-timing-function: cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+:root:active-view-transition-type(wipe)::view-transition-old(root),
+:root:active-view-transition-type(wipe)::view-transition-new(root) {
+  mix-blend-mode: normal;
+}
+
+:root:active-view-transition-type(wipe)::view-transition-old(root) {
+  animation-name: wipe-under;
+}
+
+:root:active-view-transition-type(wipe)::view-transition-new(root) {
+  animation-name: wipe-over;
+}
+
+/*
+ * Back: the page leaving is the one on top. Its own keyframes rather than `animation-direction: reverse`, which
+ * would also reverse the easing and start slow.
+ */
+:root:active-view-transition-type(back)::view-transition-old(root) {
+  z-index: 1;
+  animation-name: wipe-off;
+}
+
+:root:active-view-transition-type(back)::view-transition-new(root) {
+  animation-name: wipe-up;
+}
+
+@keyframes wipe-over {
+  from {
+    clip-path: polygon(
+      calc(100% + var(--slant)) 0,
+      calc(100% + var(--slant)) 0,
+      calc(100% + var(--slant)) 100%,
+      100% 100%
+    );
+  }
+
+  to {
+    clip-path: polygon(0 0, calc(100% + var(--slant)) 0, calc(100% + var(--slant)) 100%, calc(0px - var(--slant)) 100%);
+  }
+}
+
+@keyframes wipe-off {
+  from {
+    clip-path: polygon(0 0, calc(100% + var(--slant)) 0, calc(100% + var(--slant)) 100%, calc(0px - var(--slant)) 100%);
+  }
+
+  to {
+    clip-path: polygon(
+      calc(100% + var(--slant)) 0,
+      calc(100% + var(--slant)) 0,
+      calc(100% + var(--slant)) 100%,
+      100% 100%
+    );
+  }
+}
+
+@keyframes wipe-under {
+  to {
+    transform: translateX(-12%);
+    filter: brightness(0.7);
+  }
+}
+
+@keyframes wipe-up {
+  from {
+    transform: translateX(-12%);
+    filter: brightness(0.7);
+  }
+}

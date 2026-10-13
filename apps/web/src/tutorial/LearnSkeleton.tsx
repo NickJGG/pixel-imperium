@@ -1,3 +1,4 @@
+import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { TRACKS, type Track } from './tracks.ts'
@@ -5,6 +6,7 @@ import styles from './Learn.module.css'
 
 /** Learn while the page it goes back to loads: both tracks with their own copy, the Lessons' slots empty. */
 export function LearnSkeleton() {
+  useAnnounceSkeleton()
   return (
     <main className={styles.page} aria-busy="true">
       <SrLoading />

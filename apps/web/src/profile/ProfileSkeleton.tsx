@@ -1,5 +1,6 @@
 import { useParams } from '@tanstack/react-router'
 import { HandleHero } from '../album/HandleHero.tsx'
+import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { CALENDAR_WEEKS } from './activity.ts'
@@ -21,6 +22,7 @@ const STAMPS = 11
 /** A profile while it loads: the cover with the handle from the address, the Record and the Stamps. */
 export function ProfileSkeleton() {
   const { handle } = useParams({ from: '/u/$handle' })
+  useAnnounceSkeleton()
   return (
     <main className={styles.page} aria-busy="true">
       <SrLoading />

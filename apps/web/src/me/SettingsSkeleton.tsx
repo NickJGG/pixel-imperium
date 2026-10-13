@@ -1,4 +1,5 @@
 import { PROVIDERS } from '../auth.ts'
+import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { Bar, SrLoading } from '../skeleton/Skeleton.tsx'
 import { THEMES } from './SettingsPage.tsx'
@@ -9,6 +10,7 @@ import styles from './Me.module.css'
  * handle, the switch and each provider's state as bars.
  */
 export function SettingsSkeleton() {
+  useAnnounceSkeleton()
   return (
     <main className={styles.page} aria-busy="true">
       <SrLoading />

@@ -114,6 +114,12 @@
   padding: var(--space-2) var(--space-5) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
   background: var(--card);
   box-shadow: 0 -3px 0 var(--shade);
+  view-transition-name: thumb-bar;
+}
+
+/* Like the HUD's: above the page's snapshot, so it holds still through the wipe. */
+::view-transition-group(thumb-bar) {
+  z-index: 1;
 }
 
 .thumbItem {

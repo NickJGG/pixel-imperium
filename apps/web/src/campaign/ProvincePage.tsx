@@ -4,6 +4,7 @@ import type { Campaign, Province, Tier } from '@pixel-imperium/protocol'
 import { CountPill, UNVEIL_LANDS_MS } from '../album/CountPill.tsx'
 import { Lock } from '../album/Lock.tsx'
 import { useAccount } from '../account.ts'
+import { reducedMotion } from '../motion.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { play } from '../sound.ts'
 import { markConquestsSeen, unseenConquests } from './conquests-seen.ts'
@@ -30,8 +31,6 @@ export function ProvincePage(props: {
   const { generation } = useAccount()
   return <Album key={`${generation}:${props.campaign.id}`} {...props} />
 }
-
-const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 
 /** How long a phone holds on the conquered page for its unveil before gliding on to the province it opened. */
 const CONQUEST_BEAT = 900

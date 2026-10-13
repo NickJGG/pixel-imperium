@@ -1,13 +1,16 @@
 /**
- * The morphs, between Home and a province page and between the columns of either, as one view transition the app
- * starts the moment a navigation begins. The router only wraps its final commit in a transition, so a slow load
- * would cut to the skeleton first and morph out of it after; here the transition's new state is whichever lands
- * first, the page or its skeleton (`useAnnounceSkeleton`). A page landing after its skeleton waits for the morph
- * to end before it swaps in.
+ * The transitions `transitions.ts` picks, each as one view transition the app starts the moment a navigation begins.
+ * The router only wraps its final commit in a transition, so a slow load would cut to the skeleton first and morph
+ * out of it after; here the transition's new state is whichever lands first, the page or its skeleton
+ * (`useAnnounceSkeleton`). A page landing after its skeleton waits for the morph to end before it swaps in.
  */
 import { useLayoutEffect } from 'react'
 import type { AnyRouter, ParsedLocation } from '@tanstack/react-router'
-import { isMonthPath, isProvincePath, morph } from './Worlds.tsx'
+import { reducedMotion } from '../../motion.ts'
+import { RAIL_QUERY } from '../../play/layout.ts'
+import { type Direction, transitionFor } from './transitions.ts'
+import { PHONE } from './Worlds.tsx'
+import './transitions.css'
 
 /** How long the old page may stand frozen before the morph plays anyway; Chrome gives up on a slow update. */
 const CAP_MS = 1500
@@ -37,40 +40,36 @@ export function useAnnounceSkeleton(): void {
   useLayoutEffect(() => flight?.land(), [])
 }
 
-/** A Campaign's id or a Year, the album a province or Month page belongs to. */
-const albumOf = (pathname: string) => pathname.split('/')[2]
-
-/** A province page or a Month of Dailies' page: the two kinds of album page Home's columns open onto. */
-const isAlbumPath = (pathname: string) => isProvincePath(pathname) || isMonthPath(pathname)
-
-/**
- * The transition's types for a move that morphs, or `null`: Home ↔ an album page is typed for its own animation,
- * as is a step into another Year, which slides; a step between pages of one album, or between Home's columns, is
- * a plain one.
- */
-function morphTypes(from: ParsedLocation, to: ParsedLocation): string[] | null {
-  if (!morph()) return null
-  const home = (l: ParsedLocation) => l.pathname === '/'
-  if (isAlbumPath(from.pathname) && home(to)) return typed() ? ['to-home'] : null
-  if (home(from) && isAlbumPath(to.pathname)) return typed() ? ['to-province'] : null
-  const same = (test: (pathname: string) => boolean) => test(from.pathname) && test(to.pathname)
-  if (same(isMonthPath) && albumOf(from.pathname) !== albumOf(to.pathname))
-    return typed() ? [albumOf(from.pathname)! > albumOf(to.pathname)! ? 'to-year-back' : 'to-year-forward'] : null
-  if (same(isProvincePath) || same(isMonthPath))
-    return from.pathname !== to.pathname && albumOf(from.pathname) === albumOf(to.pathname) ? [] : null
-  if (home(from) && home(to)) return (from.search as { open?: string }).open !== (to.search as { open?: string }).open ? [] : null
-  return null
+const direction = (from: ParsedLocation, to: ParsedLocation): Direction => {
+  const delta = to.state.__TSR_index - from.state.__TSR_index
+  return delta < 0 ? 'back' : delta === 0 ? 'replace' : 'push'
 }
+
+/** Set by the Navigation API when the browser animates the move itself, read as the router begins it. */
+let uaAnimated = false
 
 export function installMorphNavigation(router: AnyRouter): void {
   if (typeof document === 'undefined' || typeof document.startViewTransition !== 'function') return
+
+  if ('navigation' in window) navigation.addEventListener('navigate', e => (uaAnimated = e.hasUAVisualTransition))
 
   router.subscribe('onBeforeNavigate', ({ fromLocation, toLocation }) => {
     if (fromLocation?.href === toLocation.href) return
     flight?.land()
     flight = null
-    const types = fromLocation && morphTypes(fromLocation, toLocation)
-    if (!types) return
+    const transition =
+      fromLocation &&
+      transitionFor(fromLocation, toLocation, {
+        reducedMotion: reducedMotion(),
+        phone: matchMedia(PHONE).matches,
+        rail: matchMedia(RAIL_QUERY).matches,
+        direction: direction(fromLocation, toLocation),
+        uaAnimated,
+        typed: typed(),
+      })
+    uaAnimated = false
+    if (!transition) return
+    const { types } = transition
 
     let captured!: () => void
     let landed!: () => void
