@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { getRouteApi } from '@tanstack/react-router'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import type { PuzzleClues } from '@pixel-imperium/protocol'
-import { seasonStyle } from '../album/paper.ts'
+import { seasonOf, seasonStyle } from '../album/paper.ts'
 import { type AccountState, useAccount } from '../account.ts'
-import { NotFound } from '../EdgeStates.tsx'
+import { EdgeState } from '../EdgeStates.tsx'
 import { Hud } from '../Hud.tsx'
 import { Play } from '../play/PlayPage.tsx'
 import { GRACE_MS, dailyClock, dailyState, finishLeft, formatLeft, startOf } from './clock.ts'
+import { monthParams } from './month.ts'
 import { useNow } from './useNow.ts'
 import styles from '../play/Play.module.css'
 
@@ -31,11 +32,28 @@ function DailyPlay({ puzzle, date, account }: { puzzle: PuzzleClues; date: strin
     return (
       <>
         <Hud float />
-        <NotFound>
-          {state === 'gone'
-            ? `${weekday.format(day)}’s Daily has gone. Each one can only be played on its own day.`
-            : `${weekday.format(day)}’s Daily isn’t out yet.`}
-        </NotFound>
+        <EdgeState
+          paper={seasonOf(month)}
+          kicker={`Daily · ${weekday.format(day)} ${day.getDate()} ${monthName.format(day)}`}
+          title={state === 'gone' ? 'Gone' : 'Not out yet'}
+          mark={day.getDate()}
+          actions={
+            <>
+              <Link to="/daily/$year/$month" params={monthParams(date)} data-variant="primary" data-pad-default>
+                Back to {monthName.format(day)}
+              </Link>
+              <Link to="/" data-variant="paper">
+                Home
+              </Link>
+            </>
+          }
+        >
+          <p>
+            {state === 'gone'
+              ? `${weekday.format(day)}’s Daily has gone. Each one can only be played on its own day.`
+              : `${weekday.format(day)}’s Daily isn’t out yet.`}
+          </p>
+        </EdgeState>
       </>
     )
   }

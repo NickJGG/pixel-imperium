@@ -42,10 +42,14 @@ function Root() {
   const playing = useRouterState({
     select: s => /^\/(?:play\/|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+)/.test(s.location.pathname),
   })
+  // An edge state in their place wants the HUD back, floating like any Worlds page's.
+  const edge = useRouterState({
+    select: s => s.matches.some(m => m.status === 'error' || m.status === 'notFound' || m._notFound),
+  })
   return (
     <PadProvider>
       <div className={styles.app}>
-        {!playing && <Hud />}
+        {(!playing || edge) && <Hud float={edge || undefined} />}
         {needsHandle ? <HandlePicker /> : <Outlet />}
         <ThumbBar />
         <ImportPrompt />
@@ -352,6 +356,7 @@ export const router = createRouter({
     trackRoute,
     lessonRoute,
   ]),
+  defaultErrorComponent: LoadError,
   defaultPendingComponent: Fallback,
   defaultPendingMs: PENDING_MS,
 })

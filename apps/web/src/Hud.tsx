@@ -94,7 +94,7 @@ export function HudPills({ className }: { className?: string | undefined }) {
  * The logo sticker top-left and the pills top-right. `float` lays it over the page instead of in its own
  * row; by default that follows the route. On a phone only sound and theme stay: the thumb bar has the rest.
  */
-export function Hud({ float }: { float?: boolean }) {
+export function Hud({ float }: { float?: boolean | undefined }) {
   const pathname = useRouterState({ select: s => s.location.pathname })
   return (
     <header className={styles.hud} data-float={(float ?? floats(pathname)) || undefined}>

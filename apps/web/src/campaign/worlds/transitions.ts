@@ -8,6 +8,7 @@
  * other move between two pages plays the slant wipe, on a phone too, boards and all, reversed on Back and on any move
  * to Home or from a puzzle to its page. A Lesson moves as a puzzle does, its track's page standing for a province's,
  * with Home's Learn column and the offer of a track over a puzzle for doors.
+ * Leaving a 404, a load error or a closed Daily always wipes: they stand at a page's address with nothing of it to morph.
  */
 import { dailyId } from '../../daily/clock.ts'
 
@@ -32,6 +33,8 @@ export interface Env {
   uaAnimated: boolean
   /** Whether `:active-view-transition-type()` works, which everything typed relies on. */
   typed: boolean
+  /** The page being left is an edge state, standing where its page would with no board or column to morph. */
+  edge: boolean
   /** The province page a campaign puzzle sits on, `/c/<campaign>/<province>`, if its campaign is in memory. */
   provinceOf: (puzzleId: string) => string | null
 }
@@ -141,6 +144,8 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
   // The same page with another search: Home's column steps; anything else, like Profile's `?c=`, cuts.
   if (from.pathname === to.pathname) return isHome(from) && openOf(from) !== openOf(to) ? step() : null
 
+  if (env.edge) return env.direction === 'replace' ? null : wipe(from, to, env)
+
   const same = (test: (pathname: string) => boolean) => test(from.pathname) && test(to.pathname)
   if ((same(isProvincePath) || same(isMonthPath)) && albumOf(from.pathname) === albumOf(to.pathname)) return step()
   if (same(isTrackPath)) return step()
@@ -165,7 +170,12 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
   if (env.direction === 'replace') return null
   const board = (pathname: string) => !env.phone && BOARD.test(pathname) && !isBoardAndPage(from, to)
   if ([from, to].some(({ pathname }) => board(pathname) || REDIRECT.test(pathname))) return null
+  return wipe(from, to, env)
+}
+
+function wipe(from: Place, to: Place, env: Env): Transition | null {
+  if (!env.typed) return null
   // Every page lies over Home, and a puzzle over its page, so going up always wipes out, whichever way history went.
   const back = isHome(to) || onItsPage(from, to, env) || (!isHome(from) && env.direction === 'back')
-  return back ? typed('wipe', 'back') : typed('wipe')
+  return { types: back ? ['wipe', 'back'] : ['wipe'] }
 }

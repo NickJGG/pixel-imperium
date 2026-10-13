@@ -1,42 +1,84 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useId } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
-import { paperStyle } from './album/paper.ts'
+import type { PaperName } from './album/paper.ts'
+import { World, Worlds } from './campaign/worlds/Worlds.tsx'
 import styles from './EdgeStates.module.css'
 
-/** A missing campaign, province, puzzle, player or page: a torn page with the way back. */
+/** A page that can't be shown: one column in `paper`, its words on the left and a big empty slot holding `mark`. */
+export function EdgeState({
+  paper,
+  kicker,
+  title,
+  mark,
+  children,
+  actions,
+}: {
+  paper: PaperName
+  kicker: string
+  title: string
+  mark: ReactNode
+  children: ReactNode
+  actions: ReactNode
+}) {
+  const id = useId()
+  return (
+    <main className={styles.page} data-edge>
+      <Worlds>
+        <World index={paper} labelledBy={id}>
+          <div className={styles.split}>
+            <div className={styles.column}>
+              <p className={styles.kicker}>{kicker}</p>
+              <h1 id={id} className={styles.title}>
+                {title}
+              </h1>
+              {children}
+              <div className={styles.actions}>{actions}</div>
+            </div>
+            <div className={styles.mark} aria-hidden="true">
+              <b>{mark}</b>
+            </div>
+          </div>
+        </World>
+      </Worlds>
+    </main>
+  )
+}
+
+/** A missing campaign, province, puzzle, player or page, with the way back. */
 export function NotFound({ children }: { children: ReactNode }) {
   return (
-    <main className={styles.page}>
-      <section className={`${styles.state} ${styles.paper}`} style={paperStyle(3)} aria-labelledby="missing-title">
-        <div className={styles.torn} aria-hidden="true" />
-        <p className={styles.label}>404</p>
-        <h1 id="missing-title" className={styles.title}>
-          This page fell out of the album
-        </h1>
-        <p>{children}</p>
-        <Link to="/" className={styles.back} data-variant="paper">
+    <EdgeState
+      paper={3}
+      kicker="404"
+      title="Nothing here"
+      mark="?"
+      actions={
+        <Link to="/" data-variant="primary" data-pad-default>
           Back home
         </Link>
-      </section>
-    </main>
+      }
+    >
+      <p>{children}</p>
+    </EdgeState>
   )
 }
 
 export function LoadError({ error }: { error: unknown }) {
   const router = useRouter()
   return (
-    <main className={styles.page}>
-      <section className={styles.state} aria-labelledby="error-title">
-        <p className={styles.label}>Error</p>
-        <h1 id="error-title" className={styles.title}>
-          The album’s stuck shut
-        </h1>
-        <p>We couldn’t load this page. Your stickers are safe on this device.</p>
-        <p className={styles.detail}>{error instanceof Error ? error.message : String(error)}</p>
-        <button type="button" data-variant="primary" onClick={() => void router.invalidate()}>
+    <EdgeState
+      paper={5}
+      kicker="Error"
+      title="Couldn’t load this"
+      mark="!"
+      actions={
+        <button type="button" data-variant="primary" data-pad-default onClick={() => void router.invalidate()}>
           Try again
         </button>
-      </section>
-    </main>
+      }
+    >
+      <p>We couldn’t load this page. Your stickers are safe on this device.</p>
+      <p className={styles.detail}>{error instanceof Error ? error.message : String(error)}</p>
+    </EdgeState>
   )
 }

@@ -28,6 +28,10 @@
   clip-path: polygon(var(--slant) 0, 100% 0, 100% 100%, 0 100%);
 }
 
+.world:only-child {
+  clip-path: none;
+}
+
 .world::before {
   content: '';
   position: absolute;

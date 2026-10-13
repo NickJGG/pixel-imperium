@@ -1,71 +1,98 @@
 .page {
   flex: 1;
-  overflow-y: auto;
-  padding: var(--space-6) var(--space-4) var(--space-14);
+  display: flex;
+  min-height: 0;
 }
 
-.state {
-  position: relative;
+/* Clear of the floating HUD at the top. */
+.split {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  align-content: safe center;
+  gap: var(--space-10);
+  height: 100%;
+  padding: calc(var(--space-14) + var(--space-10)) var(--space-3) var(--space-7);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-3);
-  justify-items: start;
-  align-content: start;
-  width: min(560px, 100%);
-  min-height: 220px;
-  margin: 0 auto;
-  padding: var(--space-6);
-  overflow: hidden;
-  color: var(--ink);
-  background: var(--card);
-  border-radius: var(--r-lg);
-  box-shadow: 0 4px 0 var(--shade);
+  max-width: 640px;
 }
 
-.state p {
+.column p {
+  max-width: 44ch;
   margin: 0;
+  line-height: 1.45;
 }
 
-.paper {
-  background: var(--paper);
-}
-
-.label {
+.kicker {
   font: var(--type-kicker);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-soft);
+  opacity: 0.75;
 }
 
 .title {
-  max-width: 18ch;
+  max-width: 16ch;
   margin: 0;
-  font-size: var(--fs-28);
-  line-height: 1.1;
+  font: var(--type-hero);
+  font-size: clamp(var(--fs-40), 4vw, 3.75rem);
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  overflow-wrap: anywhere;
 }
 
-.detail {
+.column .detail {
   font: var(--type-kicker);
   color: var(--ink-soft);
 }
 
-/* The rest of the page, ripped off along its left edge. */
-.torn {
-  position: absolute;
-  top: 18px;
-  right: -10px;
-  width: 120px;
-  height: 150px;
-  background: color-mix(in srgb, var(--paper) 80%, var(--ink));
-  transform: rotate(14deg);
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 12% 100%, 0 88%, 8% 76%, 0 64%, 9% 52%, 0 40%, 8% 28%, 0 16%);
-  opacity: 0.8;
-}
-
-.state > :not(.torn) {
-  position: relative;
-}
-
-.back,
-.state > button {
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
   margin-top: var(--space-2);
+}
+
+/* An unsolved puzzle's empty slot, as `.slot` in album/Slot.module.css, at hero size. */
+.mark {
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  width: min(100%, 300px);
+  aspect-ratio: 1;
+  font: 400 6rem var(--font-display);
+  border: 3px dashed color-mix(in srgb, var(--ink) 38%, transparent);
+  border-radius: var(--r-lg);
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--ink) 8%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--ink) 8%, transparent) 1px, transparent 1px);
+  background-size: 10% 10%;
+}
+
+.mark > b {
+  font-weight: 400;
+  opacity: 0.55;
+}
+
+@media (max-width: 720px) {
+  .split {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+    height: auto;
+    padding: var(--space-6) var(--space-4);
+    overflow: visible;
+  }
+
+  .mark {
+    width: 140px;
+    margin-bottom: var(--space-6);
+    font-size: 3rem;
+  }
 }

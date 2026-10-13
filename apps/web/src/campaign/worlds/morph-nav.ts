@@ -121,6 +121,7 @@ export function installMorphNavigation(router: AnyRouter): void {
         direction: direction(fromLocation, toLocation),
         uaAnimated,
         typed: typed(),
+        edge: document.querySelector('main[data-edge]') !== null,
         provinceOf: id => {
           const found = provinceHolding(id)
           return found && `/c/${found.campaign.id}/${found.province.id}`

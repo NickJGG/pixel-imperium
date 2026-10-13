@@ -13,6 +13,7 @@ const desktop: Env = {
   direction: 'push',
   uaAnimated: false,
   typed: true,
+  edge: false,
   provinceOf: id => provinces[id] ?? null,
 }
 const phone: Env = { ...desktop, phone: true, rail: false, lessonRail: false }
@@ -169,6 +170,14 @@ describe('transitionFor: the wipe', () => {
     expect(types('/', '/c/main')).toBeNull()
     expect(types('/', '/learn')).toBeNull()
     expect(types('/', '/u/ada/main/meadow')).toBeNull()
+  })
+
+  it('out of an edge state, which has no board or column to morph', () => {
+    expect(types('/daily/2026/10/11', '/', { edge: true })).toEqual(['wipe', 'back'])
+    expect(types('/play/p1', '/c/main/meadow', { edge: true })).toEqual(['wipe', 'back'])
+    expect(types('/c/main/atlantis', '/', { edge: true })).toEqual(['wipe', 'back'])
+    expect(types('/play/nope', '/settings', { edge: true })).toEqual(['wipe'])
+    expect(types('/play/nope', '/settings', { ...phone, edge: true })).toEqual(['wipe'])
   })
 })
 

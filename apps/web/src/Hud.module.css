@@ -9,9 +9,9 @@
   view-transition-name: hud;
 }
 
-/* Otherwise the HUD sits in the root snapshot, under the province morph's groups. */
+/* Above every morph's groups too, as the board morphs' spines, rail and slots, which pass under the pills. */
 ::view-transition-group(hud) {
-  z-index: 1;
+  z-index: 10;
 }
 
 @media (min-width: 721px) {
