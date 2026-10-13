@@ -34,10 +34,11 @@ describe('transitionFor: the morphs', () => {
   })
 
   it('steps between pages of one album, and between Home’s columns', () => {
-    expect(types('/c/main/meadow', '/c/main/marsh')).toEqual([])
-    expect(types('/daily/2026/09', '/daily/2026/10', { direction: 'replace' })).toEqual([])
-    expect(types(at('/', { open: 'campaign' }), at('/', { open: 'daily' }), { direction: 'replace' })).toEqual([])
-    expect(types('/learn/tutorial', '/learn/techniques', { direction: 'replace' })).toEqual([])
+    expect(types('/c/main/meadow', '/c/main/marsh')).toEqual(['step'])
+    expect(types('/daily/2026/09', '/daily/2026/10', { direction: 'replace' })).toEqual(['step'])
+    expect(types(at('/', { open: 'campaign' }), at('/', { open: 'daily' }), { direction: 'replace' })).toEqual(['step'])
+    expect(types('/learn/tutorial', '/learn/techniques', { direction: 'replace' })).toEqual(['step'])
+    expect(types('/c/main/meadow', '/c/main/marsh', { typed: false })).toEqual([])
   })
 
   it('slides into another Year', () => {

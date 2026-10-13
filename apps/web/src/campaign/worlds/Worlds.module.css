@@ -17,18 +17,22 @@
   clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
 }
 
+/* `--column-edge` names the edge in the column's view-transition class, so a step cuts its snapshots the same way. */
 .world:first-child {
+  --column-edge: first-column;
   margin-left: 0;
   padding-left: var(--space-7);
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
 }
 
 .world:last-child {
+  --column-edge: last-column;
   padding-right: var(--space-7);
   clip-path: polygon(var(--slant) 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .world:only-child {
+  --column-edge: only-column;
   clip-path: none;
 }
 

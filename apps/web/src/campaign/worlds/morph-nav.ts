@@ -15,6 +15,7 @@ import { doorOf, named, slotName } from './names.ts'
 import { type Direction, boardIdOf, lessonId, lessonOf, playIdOf, transitionFor } from './transitions.ts'
 import { PHONE } from './Worlds.tsx'
 import './transitions.css'
+import './column-morph.css'
 import './board-morph.css'
 
 /** How long the old page may stand frozen before the morph plays anyway; Chrome gives up on a slow update. */

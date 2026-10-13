@@ -139,7 +139,7 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
   if (env.reducedMotion || env.uaAnimated) return null
   const typed = (...types: string[]) => (env.typed ? { types } : null)
   // A phone's carousel has already slid to the column it steps to.
-  const step = () => (env.phone ? null : { types: [] })
+  const step = () => (env.phone ? null : (typed('step') ?? { types: [] }))
 
   // The same page with another search: Home's column steps; anything else, like Profile's `?c=`, cuts.
   if (from.pathname === to.pathname) return isHome(from) && openOf(from) !== openOf(to) ? step() : null

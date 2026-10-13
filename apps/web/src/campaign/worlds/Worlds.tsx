@@ -131,6 +131,13 @@ export function Worlds({
   )
 }
 
+/**
+ * A column's view-transition classes, which `column-morph.css` shapes a step by: `page` or `spine`, then the window
+ * edge it stands at, if any, as `.world` sets `--column-edge`, then `more`.
+ */
+const columnClass = (kind: 'page' | 'spine', more?: string | false | undefined) =>
+  ['column', kind, 'var(--column-edge,)', more].filter(Boolean).join(' ')
+
 /** An opened column in a province's paper, with its colour stripe across the top. */
 export function World({
   index,
@@ -161,7 +168,7 @@ export function World({
   return (
     <section
       className={[styles.world, className].filter(Boolean).join(' ')}
-      style={{ ...paperFor(index), ...style, ...(pair && { viewTransitionClass: styles.pageColumn }) }}
+      style={{ ...paperFor(index), ...style, viewTransitionClass: columnClass('page', pair && styles.pageColumn) }}
       data-pair={pair || undefined}
       data-fog={fog || undefined}
       data-start={start || undefined}
@@ -185,15 +192,26 @@ const reaches = new Map<string, string>()
 
 /**
  * How far each spine in `root` stands from the window edge a province's grows out of in the Home morph, as `--reach`
- * on its transition group, and how far it moves to clear that edge in the board morphs, as `--push`. A sheet, since a
- * transition's pseudo-elements inherit from the root, not the spine; kept in the head, and added to rather than
- * replaced, since the way home plays after the page has gone and Home has measured its own.
+ * on its transition group, and how far it moves to clear that edge in the board morphs, as `--push`; and every
+ * column's paper, dots and tab, which a step lays under its snapshots (`column-morph.css`). A sheet, since a transition's pseudo-elements inherit
+ * from the root, not the spine; kept in the head, and added to rather than replaced, since the way home plays after
+ * the page has gone and Home has measured its own.
  */
 export function useSpineReach(root: RefObject<HTMLElement | null>): void {
   useLayoutEffect(() => {
     const sheet = (reachSheet ??= document.head.appendChild(document.createElement('style')))
     const measure = () => {
       const width = document.documentElement.clientWidth
+      for (const column of root.current!.querySelectorAll<HTMLElement>(`.${styles.world}`)) {
+        const name = column.style.viewTransitionName
+        if (!name) continue
+        const paper = getComputedStyle(column)
+        const tab = getComputedStyle(column, '::before').backgroundColor
+        reaches.set(
+          `${name} paper`,
+          `::view-transition-group(${name}) { --column-paper: ${paper.backgroundColor}; --column-dots: ${paper.backgroundImage}; --column-dots-size: ${paper.backgroundSize}; --column-tab: ${tab}; }`,
+        )
+      }
       for (const spine of root.current!.querySelectorAll<HTMLElement>(`.${styles.spine}`)) {
         const name = spine.style.viewTransitionName
         if (!name) continue
@@ -260,7 +278,7 @@ export function Spine({
       params={{ campaignId, provinceId: province.id }}
       replace
       className={`${styles.world} ${styles.spine} ${styles.provinceSpine}`}
-      style={{ ...paperStyle(index), ...morphName(province), viewTransitionClass: styles.provinceSpine }}
+      style={{ ...paperStyle(index), ...morphName(province), viewTransitionClass: columnClass('spine', styles.provinceSpine) }}
       data-state={state}
       data-thin={thin || undefined}
       data-conquered={state === 'conquered' || undefined}
@@ -314,7 +332,7 @@ export function MonthSpine({
       params={{ year: String(year), month: mm }}
       replace
       className={`${styles.world} ${styles.spine} ${styles.provinceSpine}`}
-      style={{ ...paperFor(seasonOf(month)), ...monthMorphName(month), viewTransitionClass: styles.provinceSpine }}
+      style={{ ...paperFor(seasonOf(month)), ...monthMorphName(month), viewTransitionClass: columnClass('spine', styles.provinceSpine) }}
       data-state={dim ? 'locked' : 'active'}
       data-thin
       data-conquered={conquered || undefined}
@@ -366,7 +384,7 @@ export function TrackSpine({
       search={back === undefined ? {} : { back }}
       replace
       className={`${styles.world} ${styles.spine} ${styles.provinceSpine}`}
-      style={{ ...paperStyle(paper), ...trackMorphName(track), viewTransitionClass: styles.provinceSpine }}
+      style={{ ...paperStyle(paper), ...trackMorphName(track), viewTransitionClass: columnClass('spine', styles.provinceSpine) }}
       data-state="active"
       data-thin
       data-conquered={complete || undefined}
@@ -390,7 +408,7 @@ interface Bookend {
 
 const bookendProps = ({ side }: Bookend) => ({
   className: `${styles.world} ${styles.spine} ${styles.provinceSpine} ${styles.bookend}`,
-  style: { viewTransitionName: `year-${side}`, viewTransitionClass: styles.provinceSpine },
+  style: { viewTransitionName: `year-${side}`, viewTransitionClass: columnClass('spine', styles.provinceSpine) },
   'data-thin': true,
 })
 
@@ -456,7 +474,7 @@ export function MenuSpine({
       search={search}
       replace
       className={[styles.world, styles.spine, className].filter(Boolean).join(' ')}
-      style={{ ...style, viewTransitionClass: menuSpineClass(before) }}
+      style={{ ...style, viewTransitionClass: columnClass('spine', menuSpineClass(before)) }}
     >
       <span className={styles.stack}>
         <span className={styles.name}>{name}</span>
@@ -506,7 +524,7 @@ export function SkeletonSpine({
       style={{
         ...paperFor(paper),
         ...style,
-        ...(pairs && { viewTransitionClass: pairs === 'province' ? styles.provinceSpine : menuSpineClass(before) }),
+        ...(pairs && { viewTransitionClass: columnClass('spine', pairs === 'province' ? styles.provinceSpine : menuSpineClass(before)) }),
       }}
       data-state={fog ? 'locked' : state}
       data-thin={thin || undefined}

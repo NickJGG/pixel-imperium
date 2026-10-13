@@ -1,0 +1,32 @@
+/*
+ * A step between Home's columns, an album's pages or Learn's tracks (`step`): each column only changes width, its
+ * snapshots at their natural size (Worlds.module.css). Each group is cut to the column's slant rather than its box,
+ * which reaches a slant into each neighbour's, so columns meet along the slant as they do at rest. Under its
+ * snapshots lies the column's own paper (`useSpineReach`), so as a page cross-fades with its spine, early, before
+ * much of the move, nothing behind shows through and a folding page's content doesn't linger in the narrowing strip.
+ * The classes are `columnClass`'s.
+ */
+:root:active-view-transition-type(step)::view-transition-group(.column) {
+  clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+  background-color: var(--column-paper);
+  background-image: linear-gradient(var(--column-tab), var(--column-tab)), var(--column-dots);
+  background-size: 100% var(--space-2), var(--column-dots-size);
+  background-repeat: no-repeat, repeat;
+}
+
+:root:active-view-transition-type(step)::view-transition-group(.first-column) {
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+}
+
+:root:active-view-transition-type(step)::view-transition-group(.last-column) {
+  clip-path: polygon(var(--slant) 0, 100% 0, 100% 100%, 0 100%);
+}
+
+:root:active-view-transition-type(step)::view-transition-group(.only-column) {
+  clip-path: none;
+}
+
+:root:active-view-transition-type(step)::view-transition-old(.column),
+:root:active-view-transition-type(step)::view-transition-new(.column) {
+  animation-duration: 0.25s;
+}
