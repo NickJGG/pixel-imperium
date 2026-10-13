@@ -1,4 +1,4 @@
-import type { ProfileStamp, StampId } from '@pixel-imperium/protocol'
+import type { ProfileStamp, StampId, StampProgress } from '@pixel-imperium/protocol'
 
 export interface StampSolve {
   puzzleId: string
@@ -62,4 +62,51 @@ export function stampsFor(album: StampAlbum, solves: readonly StampSolve[], { ye
   }
 
   return [...earned].map(([id, at]) => ({ id, earnedAt: at.toISOString() }))
+}
+
+/**
+ * How near the player is to the Stamps of `album` they haven't earned, nearest first: the foil run they're on,
+ * their solves in the 24 hours up to the latest, and the page holding `puzzleId`, to complete and to be all foil.
+ * A page with a regular sticker on it can't be perfect, so it isn't listed. `solves` as in `stampsFor`.
+ */
+export function stampProgress(
+  album: StampAlbum,
+  solves: readonly StampSolve[],
+  puzzleId: string,
+  { year = false } = {},
+): StampProgress[] {
+  const earned = new Set(stampsFor(album, solves, { year }).map(s => s.id))
+  const inAlbum = new Set(album.provinces.flatMap(p => p.puzzles.map(q => q.id)))
+  const ordered = solves
+    .filter(s => inAlbum.has(s.puzzleId))
+    .toSorted((a, b) => a.solvedAt.getTime() - b.solvedAt.getTime())
+  const progress: StampProgress[] = []
+  const near = (id: StampId, have: number, need: number) => {
+    if (!earned.has(id)) progress.push({ id, have, need })
+  }
+
+  const run = ordered.length - 1 - ordered.findLastIndex(s => !s.foil)
+  near('foil-run', run, FOIL_RUN)
+
+  const last = ordered.at(-1)
+  if (!year && last) {
+    near('spree', ordered.filter(s => last.solvedAt.getTime() - s.solvedAt.getTime() <= DAY_MS).length, SPREE)
+  }
+
+  const index = album.provinces.findIndex(p => p.puzzles.some(q => q.id === puzzleId))
+  const page = album.provinces[index]
+  if (page) {
+    const solved = new Map(ordered.map(s => [s.puzzleId, s.foil]))
+    const onPage = page.puzzles.filter(q => solved.has(q.id))
+    const need = page.puzzles.length
+    const pageId: StampId = year
+      ? `month-complete:${page.id}`
+      : index === album.provinces.length - 1
+        ? 'album-complete'
+        : `conquered:${page.id}`
+    near(pageId, onPage.length, need)
+    if (onPage.every(q => solved.get(q.id))) near('perfect-page', onPage.length, need)
+  }
+
+  return progress.toSorted((a, b) => a.need - a.have - (b.need - b.have))
 }

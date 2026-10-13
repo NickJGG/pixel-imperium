@@ -77,11 +77,26 @@ export interface SolveRequest {
 /**
  * On success, `palette` is row-major hex colors, `null` for empty cells. `foil` is the account's
  * sticker as recorded, `null` when signed out (the device decides). `crest` is the puzzle's Crest
- * pixel colour, absent when its campaign has no Crest.
+ * pixel colour, absent when its campaign has no Crest. `stamps` is absent when signed out.
  */
 export type SolveResponse =
-  | { solved: true; palette: (string | null)[]; foil: boolean | null; crest?: string }
+  | { solved: true; palette: (string | null)[]; foil: boolean | null; crest?: string; stamps?: SolveStamps }
   | { solved: false }
+
+/** The Stamps a solve brings in reach, in the puzzle's Campaign or Year. */
+export interface SolveStamps {
+  /** Earned by this solve, in `StampId` order; none for a puzzle already verified. */
+  earned: StampId[]
+  /** Ones not yet earned, nearest first. */
+  near: StampProgress[]
+}
+
+/** `have` of the `need` solves a Stamp takes: in a foil run, within 24 hours, or on a page. */
+export interface StampProgress {
+  id: StampId
+  have: number
+  need: number
+}
 
 /** `POST /api/puzzles/:id/hint`; `cells` as in `SavedProgress`. */
 export interface HintRequest {

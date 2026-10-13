@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildCampaign } from './campaigns.ts'
 import type { SeedPuzzle } from './puzzles.ts'
 import { yearAlbum } from './dailies.ts'
-import { type StampSolve, stampsFor } from './stamps.ts'
+import { type StampSolve, stampProgress, stampsFor } from './stamps.ts'
 
 const puzzle = (id: string): SeedPuzzle => ({ id, title: id, palette: { g: '#0f0' }, rows: ['g'] })
 const ids = (prefix: string, n: number) => Array.from({ length: n }, (_, i) => `${prefix}${i}`)
@@ -128,5 +128,54 @@ describe('stampsFor a Year', () => {
     const full = yearAlbum('2026-11-30', 2026)
     const list = solves(['daily:2026-11-30', ...dec.slice(0, 1)])
     expect(stampsFor(full, list, { year: true }).map(s => s.id)).toEqual(['first-sticker', 'month-complete:11'])
+  })
+})
+
+describe('stampProgress', () => {
+  const near = (list: StampSolve[], puzzleId: string, id: string) =>
+    stampProgress(campaign, list, puzzleId).find(s => s.id === id)
+
+  it('counts the foil run from the last regular sticker', () => {
+    const list = [...solves(['a0', 'a1'], true), ...solves(['a2'], false, [2]), ...solves(['a3', 'a4'], true, [3, 4])]
+    expect(near(list, 'a4', 'foil-run')).toEqual({ id: 'foil-run', have: 2, need: 5 })
+    expect(near([...list, ...solves(['a5'], false, [5])], 'a5', 'foil-run')).toMatchObject({ have: 0 })
+  })
+
+  it('counts solves in the 24 hours up to the latest toward the spree', () => {
+    const list = solves(ids('a', 4), false, [0, 30, 40, 54])
+    expect(near(list, 'a3', 'spree')).toEqual({ id: 'spree', have: 3, need: 10 })
+  })
+
+  it('counts the solved page toward conquering it, and its foils toward a perfect page', () => {
+    const list = solves(['a0', 'a1', 'a2'], true)
+    expect(near(list, 'a2', 'conquered:a')).toEqual({ id: 'conquered:a', have: 3, need: 12 })
+    expect(near(list, 'a2', 'perfect-page')).toEqual({ id: 'perfect-page', have: 3, need: 12 })
+    expect(near(solves(['b0']), 'b0', 'conquered:a')).toBeUndefined()
+  })
+
+  it('drops the perfect page once the page has a regular sticker', () => {
+    const list = [...solves(['a0'], true), ...solves(['a1'], false, [1])]
+    expect(near(list, 'a1', 'perfect-page')).toBeUndefined()
+  })
+
+  it('names the last page for completing the album', () => {
+    expect(near([], 'c0', 'album-complete')).toEqual({ id: 'album-complete', have: 0, need: 1 })
+  })
+
+  it('leaves out stamps already earned, and lists the rest nearest first', () => {
+    const list = solves(ids('a', 5), true)
+    expect(stampProgress(campaign, list, 'b0')).toEqual([
+      { id: 'conquered:b', have: 0, need: 2 },
+      { id: 'perfect-page', have: 0, need: 2 },
+      { id: 'spree', have: 5, need: 10 },
+    ])
+  })
+
+  it('counts a Month toward completing it, with no spree', () => {
+    const year = yearAlbum('2026-12-30', 2026)
+    expect(stampProgress(year, solves(['daily:2026-12-30']), 'daily:2026-12-30', { year: true })).toEqual([
+      { id: 'month-complete:12', have: 1, need: 2 },
+      { id: 'foil-run', have: 0, need: 5 },
+    ])
   })
 })

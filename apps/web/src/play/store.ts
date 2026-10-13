@@ -14,7 +14,7 @@
  * key derived per-line work.
  */
 import { type Cell, type Clues, satisfiesClues } from '@pixel-imperium/nonogram'
-import type { HintResponse } from '@pixel-imperium/protocol'
+import type { HintResponse, SolveStamps } from '@pixel-imperium/protocol'
 import { type ProgressStorage, signedOutStorage } from './progress-storage.ts'
 
 export type Tool = 'fill' | 'mark'
@@ -50,6 +50,8 @@ export interface PlayState {
   hint: HintResponse | null
   /** A hint has been used on this puzzle, ever. */
   hinted: boolean
+  /** What this visit's solve did for an account's Stamps; `null` signed out, or until the server answers. */
+  stamps: SolveStamps | null
 }
 
 interface Change {
@@ -136,6 +138,7 @@ export class PlayStore {
       palette: solved ? storage.loadPalette(id, width * height) : null,
       hint: null,
       hinted: storage.loadHinted(id),
+      stamps: null,
     }
   }
 
@@ -270,7 +273,7 @@ export class PlayStore {
     this.redoStack = []
     if (!this.state.solved) return this.commit()
     this.storage.saveReplay(this.puzzle.id)
-    this.commit({ replaying: true, palette: null })
+    this.commit({ replaying: true, palette: null, stamps: null })
   }
 
   /** `wrap` carries a step off one edge round to the other; a stroke jumps there rather than paint the way across. */
@@ -299,14 +302,19 @@ export class PlayStore {
 
   /**
    * Stores the server's reveal colors and Crest pixel; for an account, the server recorded the solve
-   * as verified and says whether it is foil, which overrides the device's guess.
+   * as verified, says whether it is foil, which overrides the device's guess, and what it did for the Stamps.
    */
-  setPalette(palette: readonly (string | null)[], foil: boolean | null = null, crest?: string): void {
+  setPalette(
+    palette: readonly (string | null)[],
+    foil: boolean | null = null,
+    crest?: string,
+    stamps: SolveStamps | null = null,
+  ): void {
     this.storage.savePalette(this.puzzle.id, palette)
     if (crest) this.storage.saveCrest(this.puzzle.id, crest)
     if (this.storage.userId !== null) this.storage.saveSolved(this.puzzle.id, 'verified')
     if (foil !== null) this.storage.saveFoil(this.puzzle.id, foil)
-    this.emit({ palette })
+    this.emit({ palette, stamps })
   }
 
   showHint(hint: HintResponse): void {

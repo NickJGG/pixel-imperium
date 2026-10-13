@@ -193,6 +193,27 @@ describe('solve records', () => {
     expect(await rows()).toMatchObject([{ userId: id, puzzleId: 'diag', verified: true }])
   })
 
+  it('returns the stamps a signed-in solve earned and brought near', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    const res = (await (await solve(solution, 'diag', cookie)).json()) as SolveResponse
+    expect(res).toMatchObject({
+      stamps: {
+        earned: ['first-sticker', 'first-foil', 'perfect-page', 'conquered:first'],
+        near: [
+          { id: 'foil-run', have: 1, need: 5 },
+          { id: 'spree', have: 1, need: 10 },
+        ],
+      },
+    })
+  })
+
+  it('earns no stamps on a repeat solve', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    await solve(solution, 'diag', cookie)
+    const res = (await (await solve(solution, 'diag', cookie)).json()) as SolveResponse
+    expect(res).toMatchObject({ stamps: { earned: [] } })
+  })
+
   it('keeps the first solve time on a repeat solve', async () => {
     const { cookie } = await signedInUser(db, auth)
     await solve(solution, 'diag', cookie)

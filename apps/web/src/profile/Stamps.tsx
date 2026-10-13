@@ -1,56 +1,29 @@
-import type { CSSProperties, ReactNode } from 'react'
 import type { ProfileStamp, StampId } from '@pixel-imperium/protocol'
-import { BoltIcon, CheckIcon, CrownIcon, FlameIcon, PageStarIcon, SparkleIcon, StickerIcon } from '../album/icons.tsx'
-import { paperFor, paperStyle } from '../album/paper.ts'
+import { type StampDef, StampToken, stampDef } from '../album/Stamp.tsx'
 import { shortDate } from './activity.ts'
 import { type ProfileAlbum, albumPages } from './album.ts'
 import styles from './Profile.module.css'
 
-interface StampDef {
-  id: StampId
-  label: string
-  icon: ReactNode
-  tone: 'pink' | 'foil' | 'tab' | 'gold'
-  style?: CSSProperties
-}
-
-const firsts: StampDef[] = [
-  { id: 'first-sticker', label: 'First sticker', icon: <StickerIcon />, tone: 'pink' },
-  { id: 'first-foil', label: 'First foil', icon: <SparkleIcon />, tone: 'foil' },
-  { id: 'foil-run', label: '5 foil in a row', icon: <FlameIcon />, tone: 'foil' },
-]
-
-const perfectPage: StampDef = { id: 'perfect-page', label: 'Perfect page', icon: <PageStarIcon />, tone: 'foil' }
+const FIRSTS: StampId[] = ['first-sticker', 'first-foil', 'foil-run']
 
 /** Every Stamp a volume offers, in `StampId` order: a Year has no spree, and a Stamp for each Month it has Dailies in. */
 export function stampsOf(album: ProfileAlbum): StampDef[] {
-  if (album.kind === 'year') {
-    return [
-      ...firsts,
-      perfectPage,
-      ...albumPages(album, () => false).map(page => ({
-        id: `month-complete:${page.id}` as const,
-        label: `${page.name} complete`,
-        icon: <CheckIcon />,
-        tone: 'tab' as const,
-        style: paperFor(page.paper),
-      })),
-      { id: 'year-complete', label: 'Year complete', icon: <CrownIcon />, tone: 'gold' },
-    ]
-  }
-  return [
-    ...firsts,
-    { id: 'spree', label: '10 in a day', icon: <BoltIcon />, tone: 'pink' },
-    perfectPage,
-    ...album.campaign.provinces.slice(0, -1).map((p, i) => ({
-      id: `conquered:${p.id}` as const,
-      label: `${p.name.replace(/^The /, '')} conquered`,
-      icon: <CheckIcon />,
-      tone: 'tab' as const,
-      style: paperStyle(i),
-    })),
-    { id: 'album-complete', label: 'Album complete', icon: <CrownIcon />, tone: 'gold' },
-  ]
+  const ids: StampId[] =
+    album.kind === 'year'
+      ? [
+          ...FIRSTS,
+          'perfect-page',
+          ...albumPages(album, () => false).map(page => `month-complete:${page.id}` as const),
+          'year-complete',
+        ]
+      : [
+          ...FIRSTS,
+          'spree',
+          'perfect-page',
+          ...album.campaign.provinces.slice(0, -1).map(p => `conquered:${p.id}` as const),
+          'album-complete',
+        ]
+  return ids.map(id => stampDef(id, album.kind === 'campaign' ? album.campaign : undefined))
 }
 
 interface Props {
@@ -64,14 +37,12 @@ export function Stamps({ album, earned, now }: Props) {
   const at = new Map(earned.map(s => [s.id, s.earnedAt]))
   return (
     <ul className={styles.stamps}>
-      {stampsOf(album).map(({ id, label, icon, tone, style }) => {
-        const when = at.get(id)
+      {stampsOf(album).map(stamp => {
+        const when = at.get(stamp.id)
         return (
-          <li key={id} data-off={!when || undefined}>
-            <span className={styles.token} data-tone={tone} style={style}>
-              {icon}
-            </span>
-            <span className={styles.stampLabel}>{label}</span>
+          <li key={stamp.id} data-off={!when || undefined}>
+            <StampToken stamp={stamp} off={!when} />
+            <span className={styles.stampLabel}>{stamp.label}</span>
             {when ? <time dateTime={when}>{shortDate(new Date(when), now)}</time> : 'Not yet'}
           </li>
         )

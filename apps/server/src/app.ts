@@ -22,6 +22,7 @@ import type {
   PuzzleSummary,
   Showcase,
   SolveResponse,
+  SolveStamps,
   SolveStatus,
 } from '@pixel-imperium/protocol'
 import { and, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm'
@@ -42,7 +43,7 @@ import {
   latestPlayableDate,
   yearAlbum,
 } from './dailies.ts'
-import { stampsFor } from './stamps.ts'
+import { type StampSolve, stampProgress, stampsFor } from './stamps.ts'
 
 export interface AppDeps {
   db: Db
@@ -163,6 +164,28 @@ export function createApp(
 
   const hintAllowed = rateLimiter(60, 60_000)
 
+  const verifiedSolvesOf = (userId: string) =>
+    db
+      .select({ puzzleId: solve.puzzleId, foil: solve.foil, solvedAt: solve.solvedAt })
+      .from(solve)
+      .where(and(eq(solve.userId, userId), eq(solve.verified, true)))
+      .orderBy(desc(solve.solvedAt))
+
+  /** What a newly verified solve of `p` earned, and what it brings near; earns nothing when it was verified already. */
+  const solveStamps = async (userId: string, p: CampaignPuzzle | DailyPuzzle, fresh: boolean): Promise<SolveStamps> => {
+    const solves = await verifiedSolvesOf(userId)
+    const [album, options] =
+      'date' in p
+        ? [yearAlbum(dailies.launch, Number(p.date.slice(0, 4))), { year: true }]
+        : [campaignsById.get(p.campaignId)!, {}]
+    const ids = (list: readonly StampSolve[]) => stampsFor(album, list, options).map(s => s.id)
+    const before = new Set(fresh ? ids(solves.filter(s => s.puzzleId !== p.id)) : [])
+    return {
+      earned: fresh ? ids(solves).filter(id => !before.has(id)) : [],
+      near: stampProgress(album, solves, p.id, options),
+    }
+  }
+
   return new Hono<{ Variables: { user: SessionUser | null } }>()
     .basePath('/api')
     .on(['GET', 'POST'], '/auth/*', c => auth.handler(c.req.raw))
@@ -221,17 +244,20 @@ export function createApp(
       }
       const user = c.get('user')
       let foil: boolean | null = null
+      let stamps: SolveStamps | undefined
       if (user) {
         const hinted = await db.$count(hint, and(eq(hint.userId, user.id), eq(hint.puzzleId, p.id)))
-        await recordSolve(db, user.id, p.id, 'verified', hinted === 0)
+        // No row back when the puzzle was verified already.
+        const recorded = await recordSolve(db, user.id, p.id, 'verified', hinted === 0).returning({ id: solve.puzzleId })
         const [row] = await db
           .select({ foil: solve.foil })
           .from(solve)
           .where(and(eq(solve.userId, user.id), eq(solve.puzzleId, p.id)))
         foil = row!.foil
+        stamps = await solveStamps(user.id, p, recorded.length > 0)
       }
       const crest = crestColour(p.id)
-      return c.json<SolveResponse>({ solved: true, palette: p.palette, foil, ...(crest && { crest }) })
+      return c.json<SolveResponse>({ solved: true, palette: p.palette, foil, ...(crest && { crest }), ...(stamps && { stamps }) })
     })
     .post('/puzzles/:id/hint', async c => {
       const p = playable(c.req.param('id'))
@@ -261,11 +287,7 @@ export function createApp(
       const [owner] = await db.select().from(user).where(handleIs(c.req.param('handle')))
       if (!owner) return c.json<ApiError>({ error: `no player '${c.req.param('handle')}'` }, 404)
 
-      const solves = await db
-        .select({ puzzleId: solve.puzzleId, foil: solve.foil, solvedAt: solve.solvedAt })
-        .from(solve)
-        .where(and(eq(solve.userId, owner.id), eq(solve.verified, true)))
-        .orderBy(desc(solve.solvedAt))
+      const solves = await verifiedSolvesOf(owner.id)
       // Insertion order follows the newest solve, so the most recently played album comes first.
       const byCampaign = new Map<string, ProfileCampaign>()
       const byYear = new Map<string, ProfileCampaign>()

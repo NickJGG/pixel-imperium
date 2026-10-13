@@ -55,6 +55,7 @@ import { encodeCells } from './progress-storage.ts'
 import { Filmstrip, PageHead, SlotRow } from './Filmstrip.tsx'
 import { type Pose, celebrate, popOnly } from './sticker-moment.ts'
 import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
+import { RailStamps } from './RailStamps.tsx'
 import { RailTools } from './RailTools.tsx'
 import { useRailFold } from './useRailFold.ts'
 import { useUndoKeys } from './useUndoKeys.ts'
@@ -180,6 +181,7 @@ export function Play({
   const hinted = useStoreValue(store, s => s.hinted)
   const [hintFailed, setHintFailed] = useState(false)
   const palette = useStoreValue(store, s => s.palette)
+  const stamps = useStoreValue(store, s => s.stamps)
   const cells = useStoreValue(store, s => s.cells)
   const percent = useMemo(() => progressPercent(cells, puzzle.filledCount, false), [cells, puzzle.filledCount])
   const settings = useSettings()
@@ -217,7 +219,7 @@ export function Play({
     const abort = new AbortController()
     const cells = store.getState().cells.map(c => (c === 'filled' ? 'filled' : 'empty'))
     submitSolve(puzzle.id, { cells }, abort.signal).then(
-      res => (res.solved ? store.setPalette(res.palette, res.foil, res.crest) : setRevealFailed(true)),
+      res => (res.solved ? store.setPalette(res.palette, res.foil, res.crest, res.stamps) : setRevealFailed(true)),
       () => !abort.signal.aborted && setRevealFailed(true),
     )
     return () => abort.abort()
@@ -662,6 +664,7 @@ export function Play({
             </div>
             {done ? (
               <div className={styles.railBody}>
+                {stamps && <RailStamps stamps={stamps} campaign={album?.campaign} regular={!foil} />}
                 <div className={styles.railFoot}>
                   {album && !conquest && next && (
                     <NextUp puzzle={next} number={album.province.puzzles.indexOf(next) + 1} storage={storage} />
