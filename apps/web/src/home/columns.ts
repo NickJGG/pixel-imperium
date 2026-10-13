@@ -1,6 +1,6 @@
 /** Home's columns: which the menu offers, which one is open, and the paper each wears. */
 import type { Season } from '../album/paper.ts'
-import { TRACKS, firstUnfinished } from '../tutorial/tracks.ts'
+import { TRACKS, nextTrack } from '../tutorial/tracks.ts'
 
 export type Column = 'campaign' | 'daily' | 'learn' | 'profile' | 'settings' | 'signin'
 
@@ -46,10 +46,8 @@ export const stepColumn = (columns: readonly Column[], from: Column, dir: -1 | 1
 
 /** The tracks' papers, the one Learn's next Lesson is in first; Basics again once both are finished. */
 export function learnPapers(done: ReadonlySet<string>): [number, number] {
-  const { tutorial, techniques } = TRACKS
-  return !firstUnfinished(tutorial, done) && firstUnfinished(techniques, done)
-    ? [techniques.paper, tutorial.paper]
-    : [tutorial.paper, techniques.paper]
+  const next = nextTrack(done)
+  return [next.paper, (next === TRACKS.tutorial ? TRACKS.techniques : TRACKS.tutorial).paper]
 }
 
 /** A province paper, as `paperStyle`'s index, a season's, or the album's cobalt cover. */

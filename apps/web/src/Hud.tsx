@@ -14,7 +14,8 @@ const themeLabel: Record<Theme, string> = { dark: 'Night', light: 'Day', auto: '
 const themeIcon: Record<Theme, ReactNode> = { dark: <NightIcon />, light: <DayIcon />, auto: <AutoIcon /> }
 
 /** Pages whose Worlds columns run under the HUD, edge to edge; everywhere else it takes its own row. */
-const floats = (pathname: string) => /^\/(?:c\/[^/]+(?:\/[^/]+)?\/?|learn\/?|settings\/?|u\/[^/]+\/?)?$/.test(pathname)
+const floats = (pathname: string) =>
+  /^\/(?:c\/[^/]+(?:\/[^/]+)?\/?|daily\/[^/]+\/[^/]+\/?|learn(?:\/[^/]+)?\/?|settings\/?|u\/[^/]+\/?)?$/.test(pathname)
 
 /** The next puzzle in the campaign last shown, recomputed on every navigation since solves land between them. */
 function useContinue(): ContinueAt | null {

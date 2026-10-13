@@ -90,7 +90,9 @@ export function LessonPage({ track, index, handoff, back, learn }: PageProps) {
           search: { back, ...(learn ? { learn: true as const } : {}) },
         })
       }
-      onFinish={() => (learn ? void navigate({ to: '/learn', search: { back } }) : setFinished(true))}
+      onFinish={() =>
+        learn ? void navigate({ to: '/learn/$track', params: { track: track.id }, search: { back } }) : setFinished(true)
+      }
     />
   )
 }
@@ -543,7 +545,7 @@ function Coach({ ref, track, lesson, index, step, log, now, solved, foot, rail, 
             {track.skipText}
           </Link>
         ) : (
-          <Link to="/learn" search={{ back: foot.back }} className={styles.skip}>
+          <Link to="/learn/$track" params={{ track: track.id }} search={{ back: foot.back }} className={styles.skip}>
             All lessons
           </Link>
         )}

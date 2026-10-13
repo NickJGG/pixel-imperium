@@ -112,7 +112,7 @@ export function HomePage({
   return (
     <main className={styles.page}>
       <h1 className={styles.srOnly}>Home</h1>
-      <Backdrop index={open === 'daily' ? season : active} />
+      <Backdrop index={open === 'daily' ? season : open === 'learn' ? paperOf(paper.learn).index : active} />
       {phone ? (
         <Worlds carousel onSnap={i => goTo(columns[i])}>
           {columns.map(c => wide(c, c === open))}
@@ -127,6 +127,7 @@ export function HomePage({
                 key={c}
                 name={spineName[c]}
                 search={searchFor(c)}
+                before={columns.indexOf(c) < columns.indexOf(open)}
                 className={className}
                 style={{ ...paperFor(index), ...columnName(c) }}
               />

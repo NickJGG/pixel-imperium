@@ -1,7 +1,7 @@
 /**
  * Which view transition a navigation plays, if any, as a pure function of the two places and the moment's
- * conditions; `morph-nav.ts` starts whatever this names. Home ↔ an album page, a step between an album's pages or
- * Home's columns, and a step into another Year each have a morph of their own, on desktop only. Every other move
+ * conditions; `morph-nav.ts` starts whatever this names. Home ↔ an album page or a Learn track, a step between an
+ * album's pages, Learn's tracks or Home's columns, and a step into another Year each have a morph of their own, on desktop only. Every other move
  * between two pages plays the slant wipe, on a phone too, reversed on Back and on any move to Home.
  */
 
@@ -39,17 +39,22 @@ const MONTH = /^\/daily\/\d{4}\/\d{2}\/?$/
 /** A Month of Dailies' page, `/daily/<year>/<mm>`. */
 export const isMonthPath = (pathname: string) => MONTH.test(pathname)
 
+const TRACK = /^\/learn\/[^/]+\/?$/
+
+/** One of Learn's tracks, `/learn/<track>`. */
+export const isTrackPath = (pathname: string) => TRACK.test(pathname)
+
 /** Pages with a board: a puzzle, a Daily and a Lesson. */
 const BOARD = /^\/(?:play\/[^/]+|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+)\/?$/
 
-/** Addresses that only redirect: a Campaign, an old profile spread, the old Techniques page. */
-const REDIRECT = /^\/(?:c\/[^/]+|u\/[^/]+\/[^/]+\/[^/]+|learn\/techniques)\/?$/
+/** Addresses that only redirect: a Campaign, an old profile spread, Learn without its track. */
+const REDIRECT = /^\/(?:c\/[^/]+|u\/[^/]+\/[^/]+\/[^/]+|learn)\/?$/
 
 /** A Campaign's id or a Year, the album a province or Month page belongs to. */
 const albumOf = (pathname: string) => pathname.split('/')[2]!
 
-/** A province page or a Month of Dailies' page: the two kinds of album page Home's columns open onto. */
-const isAlbumPath = (pathname: string) => isProvincePath(pathname) || isMonthPath(pathname)
+/** A province page, a Month of Dailies' page or a Learn track: the pages Home's columns open onto. */
+const isAlbumPath = (pathname: string) => isProvincePath(pathname) || isMonthPath(pathname) || isTrackPath(pathname)
 
 const isHome = (place: Place) => place.pathname === '/'
 
@@ -66,6 +71,7 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
 
   const same = (test: (pathname: string) => boolean) => test(from.pathname) && test(to.pathname)
   if ((same(isProvincePath) || same(isMonthPath)) && albumOf(from.pathname) === albumOf(to.pathname)) return step()
+  if (same(isTrackPath)) return step()
   if (!env.phone) {
     if (isAlbumPath(from.pathname) && isHome(to)) return typed('to-home')
     if (isHome(from) && isAlbumPath(to.pathname)) return typed('to-province')

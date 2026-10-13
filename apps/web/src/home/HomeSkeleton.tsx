@@ -53,7 +53,7 @@ export function HomeSkeleton() {
         className={className}
         style={columnName(column)}
         start={start}
-        pair={column === 'campaign' || column === 'daily'}
+        pair={column === 'campaign' || column === 'daily' || column === 'learn'}
       >
         {column === 'campaign' ? (
           <CampaignStack campaign={campaign} />
@@ -69,7 +69,7 @@ export function HomeSkeleton() {
   return (
     <main className={styles.page} aria-busy="true">
       <SrLoading />
-      <Backdrop index={open === 'daily' ? season : active} />
+      <Backdrop index={open === 'daily' ? season : open === 'learn' ? paperOf(paper.learn).index : active} />
       {phone ? (
         <Worlds carousel>{columns.map(c => wide(c, c === open))}</Worlds>
       ) : (
@@ -84,6 +84,7 @@ export function HomeSkeleton() {
                 fog={c === 'campaign' && !campaign}
                 className={className}
                 pairs="menu"
+                before={columns.indexOf(c) < columns.indexOf(open)}
                 style={columnName(c)}
                 name={c === 'campaign' ? <Bar w={24} h={140} /> : COLUMN_NAME[c]}
               />

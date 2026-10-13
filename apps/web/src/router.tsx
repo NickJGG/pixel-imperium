@@ -33,7 +33,7 @@ import { LearnPage } from './tutorial/LearnPage.tsx'
 import { LearnSkeleton } from './tutorial/LearnSkeleton.tsx'
 import { LessonPage } from './tutorial/LessonPage.tsx'
 import { LessonSkeleton } from './tutorial/LessonSkeleton.tsx'
-import { TRACKS, firstUnfinished, trackOf } from './tutorial/tracks.ts'
+import { nextTrack, trackOf } from './tutorial/tracks.ts'
 import styles from './App.module.css'
 
 function Root() {
@@ -263,18 +263,33 @@ const settingsRoute = createRoute({
 const backSearch = (search: Record<string, unknown>): { back?: string } =>
   isBackPath(search.back) ? { back: search.back } : {}
 
-/** Every Lesson of both tracks; `back` is the page it was opened from. */
+/** Learn opens on the track whose Lessons come next. */
 const learnRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/learn',
   validateSearch: backSearch,
+  beforeLoad: ({ search }) => {
+    throw redirect({ to: '/learn/$track', params: { track: nextTrack(getDone()).id }, search, replace: true })
+  },
+})
+
+/** One track's Lessons open wide, the other track a spine beside it; `back` is the page Learn was opened from. */
+const trackRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/learn/$track',
+  validateSearch: backSearch,
   loaderDeps: ({ search }) => ({ back: search.back }),
-  loader: ({ deps }) => loadLearnBack(deps.back),
-  component: () => <LearnPage back={learnRoute.useLoaderData()} />,
+  loader: async ({ params, deps }) => {
+    const track = trackOf(params.track)
+    if (!track) throw notFound()
+    return { track, back: await loadLearnBack(deps.back) }
+  },
+  component: () => <LearnPage {...trackRoute.useLoaderData()} />,
   pendingComponent: LearnSkeleton,
   get pendingMs() {
     return morphPendingMs()
   },
+  notFoundComponent: () => <NotFound>There’s no track of Lessons by that name.</NotFound>,
 })
 
 /**
@@ -313,18 +328,6 @@ const lessonRoute = createRoute({
   notFoundComponent: () => <NotFound>There’s no lesson by that name.</NotFound>,
 })
 
-/** The old Techniques address, from before each Lesson had its own. */
-const techniquesRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/learn/techniques',
-  validateSearch: backSearch,
-  beforeLoad: ({ search }) => {
-    const track = TRACKS.techniques
-    const lesson = firstUnfinished(track, getDone()) ?? track.lessons[0]!
-    throw redirect({ to: '/learn/$track/$lesson', params: { track: track.id, lesson: lesson.id }, search, replace: true })
-  },
-})
-
 export const router = createRouter({
   routeTree: rootRoute.addChildren([
     homeRoute,
@@ -337,8 +340,8 @@ export const router = createRouter({
     profileSpreadRoute,
     settingsRoute,
     learnRoute,
+    trackRoute,
     lessonRoute,
-    techniquesRoute,
   ]),
   defaultPendingComponent: Fallback,
   defaultPendingMs: PENDING_MS,

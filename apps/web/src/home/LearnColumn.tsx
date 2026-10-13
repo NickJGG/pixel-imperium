@@ -5,10 +5,8 @@ import { type PaperName, paperStyle } from '../album/paper.ts'
 import { World } from '../campaign/worlds/Worlds.tsx'
 import { lessonPuzzle } from '../tutorial/lessons.ts'
 import { LessonSlot } from '../tutorial/LessonSlot.tsx'
-import { TRACKS, type Track, firstUnfinished, lessonKey } from '../tutorial/tracks.ts'
+import { TRACKS, TRACK_ORDER as ORDER, type Track, firstUnfinished, lessonKey } from '../tutorial/tracks.ts'
 import styles from './Home.module.css'
-
-const ORDER = [TRACKS.tutorial, TRACKS.techniques]
 
 const lessonLink = (track: Track, lesson: string) =>
   ({ to: '/learn/$track/$lesson', params: { track: track.id, lesson } }) as const
@@ -41,7 +39,7 @@ export function LearnColumn({
   const here = counts[ORDER.indexOf(track)]!
 
   return (
-    <World index={index} labelledBy="home-learn" style={style} start={start}>
+    <World index={index} labelledBy="home-learn" style={style} start={start} pair>
       <div className={styles.column}>
         <div className={styles.stack}>
           <p className={styles.kicker}>Lessons</p>
@@ -75,7 +73,12 @@ export function LearnColumn({
             <Link {...lessonLink(track, lesson.id)} data-variant="primary" data-pad-default>
               Next lesson
             </Link>
-            <Link to="/learn" search={{ back: '/?open=learn' }} data-variant="paper">
+            <Link
+              to="/learn/$track"
+              params={{ track: track.id }}
+              search={{ back: '/?open=learn' }}
+              data-variant="paper"
+            >
               Open Learn
             </Link>
           </div>

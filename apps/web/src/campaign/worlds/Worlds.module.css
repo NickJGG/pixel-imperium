@@ -290,7 +290,7 @@
 
 /*
  * Home ↔ a province page, over the page column's paper, dots and stripe standing still full width: Home's spines
- * slide off right and fade as its content fades out, then the province's spines grow out of the window's edges,
+ * slide off whichever side of its open column they stand on and fade as its content fades out, then the province's spines grow out of the window's edges,
  * clipped rather than squeezed, and its content fades in. The way home plays it in reverse. The columns don't pair,
  * so nothing is stretched. They keep their own paper, the same as the backdrop's, so fading them shows only their
  * content fading, and nothing about them changes as the live page takes over, where Firefox can drop a frame of a
@@ -370,6 +370,10 @@
   animation-name: fade-out-early;
 }
 
+:root:active-view-transition-type(to-home, to-province)::view-transition-group(.menuSpineBefore) {
+  animation-name: off-left;
+}
+
 :root:active-view-transition-type(to-home, to-province)::view-transition-old(.menuSpine),
 :root:active-view-transition-type(to-home, to-province)::view-transition-new(.menuSpine) {
   animation-name: none;
@@ -378,6 +382,13 @@
 @keyframes off-right {
   to {
     translate: 160% 0;
+    opacity: 0;
+  }
+}
+
+@keyframes off-left {
+  to {
+    translate: -160% 0;
     opacity: 0;
   }
 }

@@ -8,7 +8,7 @@ export function routeParent(pathname: string): string | null {
   const [first, second] = parts
   if (first === 'c') return parts.length === 3 ? '/' : null
   if (first === 'daily') return parts.length === 3 ? '/?open=daily' : null
-  if (first === 'learn') return parts.length === 3 ? '/learn' : parts.length === 1 ? '/?open=learn' : null
+  if (first === 'learn') return parts.length === 3 ? `/learn/${second}` : parts.length <= 2 ? '/?open=learn' : null
   if (first === 'u') return parts.length === 4 ? `/u/${second}` : parts.length === 2 ? '/?open=profile' : null
   if (first === 'settings') return '/?open=settings'
   return null

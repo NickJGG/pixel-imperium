@@ -42,6 +42,9 @@ export const TRACKS: Record<Track['id'], Track> = {
   },
 }
 
+/** Basics on the left, Techniques on the right. */
+export const TRACK_ORDER: readonly Track[] = [TRACKS.tutorial, TRACKS.techniques]
+
 /** The key a finished Lesson is recorded under, here and on the server. */
 export const lessonKey = (track: Track, lesson: Lesson): string => `${track.id}:${lesson.id}`
 
@@ -54,3 +57,7 @@ export const startedTrack = (track: Track, done: ReadonlySet<string>): boolean =
 /** The first Lesson not in `done`, or `undefined` once the whole track is. */
 export const firstUnfinished = (track: Track, done: ReadonlySet<string>): Lesson | undefined =>
   track.lessons.find(l => !done.has(lessonKey(track, l)))
+
+/** The track whose Lessons come next: Basics until it's done, then Techniques, then Basics again once both are. */
+export const nextTrack = (done: ReadonlySet<string>): Track =>
+  !firstUnfinished(TRACKS.tutorial, done) && firstUnfinished(TRACKS.techniques, done) ? TRACKS.techniques : TRACKS.tutorial

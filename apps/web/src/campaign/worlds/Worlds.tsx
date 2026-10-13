@@ -12,6 +12,7 @@ import { Lock } from '../../album/Lock.tsx'
 import { type PaperName, paperFor, paperStyle, seasonOf } from '../../album/paper.ts'
 import type { HomeSearch } from '../../home/columns.ts'
 import { reducedMotion } from '../../motion.ts'
+import type { PadPage } from '../../pad/dispatch.ts'
 import { usePadPage } from '../../pad/PadProvider.tsx'
 import type { ProvinceState } from '../progress.ts'
 import styles from './Worlds.module.css'
@@ -34,8 +35,8 @@ export const morphName = (province: Pick<Province, 'id'>): CSSProperties => ({ v
  * Steps to the column before or after with ←/→ and the pad's shoulders; the arrows are left alone while focus is in
  * a field or a dialog is open.
  */
-export function useStep(step: (dir: -1 | 1) => void): void {
-  usePadPage({ step })
+export function useStep(step: (dir: -1 | 1) => void, page?: Omit<PadPage, 'step'>): void {
+  usePadPage({ ...page, step })
   const stepRef = useRef(step)
   stepRef.current = step
   useEffect(() => {
@@ -151,7 +152,7 @@ export function World({
   labelledBy?: string | undefined
   /** Where a carousel rests. */
   start?: boolean
-  /** Home's Campaign column or a province's page, the two sides of the Home morph. */
+  /** An album page's column, or the Home column that opens onto it: the two sides of the Home morph. */
   pair?: boolean
 }) {
   return (
@@ -325,6 +326,53 @@ export function MonthSpine({
 /** Pairs a Month's column across a morph, like `morphName`. */
 export const monthMorphName = (month: number): CSSProperties => ({ viewTransitionName: `month-${month}` })
 
+/** Pairs a Learn track's column across a morph, like `morphName`. */
+export const trackMorphName = (track: string): CSSProperties => ({ viewTransitionName: `track-${track}` })
+
+/**
+ * A Learn track's spine, built like a province's: its name, then its count pill. Links to the track's page, keeping
+ * Learn's `back`, morphing into it like a province.
+ */
+export function TrackSpine({
+  track,
+  name,
+  paper,
+  done,
+  total,
+  back,
+}: {
+  track: string
+  name: string
+  /** As `paperStyle`'s index. */
+  paper: number
+  done: number
+  total: number
+  back: string | undefined
+}) {
+  const complete = done === total
+  return (
+    <Link
+      to="/learn/$track"
+      params={{ track }}
+      search={back === undefined ? {} : { back }}
+      replace
+      className={`${styles.world} ${styles.spine} ${styles.provinceSpine}`}
+      style={{ ...paperStyle(paper), ...trackMorphName(track), viewTransitionClass: styles.provinceSpine }}
+      data-state="active"
+      data-thin
+      data-conquered={complete || undefined}
+      aria-label={`${name}, ${done} of ${total} done`}
+    >
+      <span className={styles.stack}>
+        <span className={styles.name}>{name}</span>
+        <CountPill conquered={complete} className={styles.countPill}>
+          {done}/{total}
+        </CountPill>
+      </span>
+    </Link>
+  )
+}
+
 /** Another Year: the one before January's, or after December's. */
 interface Bookend {
   year: number
@@ -374,15 +422,21 @@ export function SkeletonYearSpine(bookend: Bookend) {
   )
 }
 
+/** A Home spine's class across the Home morph, which slides it off the side of the open column it stands on. */
+const menuSpineClass = (before: boolean) => (before ? `${styles.menuSpine} ${styles.menuSpineBefore}` : styles.menuSpine)
+
 /** A narrow column on Home standing for one of its entries, its name leaning sideways; opens that entry's column. */
 export function MenuSpine({
   name,
   search,
+  before,
   className,
   style,
 }: {
   name: string
   search: HomeSearch
+  /** Left of the open column. */
+  before: boolean
   className?: string | undefined
   /** Its paper and the morph name it shares with the entry's opened column. */
   style: CSSProperties
@@ -393,7 +447,7 @@ export function MenuSpine({
       search={search}
       replace
       className={[styles.world, styles.spine, className].filter(Boolean).join(' ')}
-      style={{ ...style, viewTransitionClass: styles.menuSpine }}
+      style={{ ...style, viewTransitionClass: menuSpineClass(before) }}
     >
       <span className={styles.stack}>
         <span className={styles.name}>{name}</span>
@@ -412,6 +466,7 @@ export function SkeletonSpine({
   fog = false,
   thin = false,
   pairs,
+  before = false,
   name,
   children,
   className,
@@ -422,6 +477,8 @@ export function SkeletonSpine({
    * reaches in from the window's edge, or a Home column's.
    */
   pairs?: 'province' | 'menu' | undefined
+  /** A Home column's spine left of the open column. */
+  before?: boolean
   /** Its paper, as `paperFor`'s. */
   paper: PaperName
   /** A province spine's state, for its width and fog. */
@@ -440,7 +497,7 @@ export function SkeletonSpine({
       style={{
         ...paperFor(paper),
         ...style,
-        ...(pairs && { viewTransitionClass: pairs === 'province' ? styles.provinceSpine : styles.menuSpine }),
+        ...(pairs && { viewTransitionClass: pairs === 'province' ? styles.provinceSpine : menuSpineClass(before) }),
       }}
       data-state={fog ? 'locked' : state}
       data-thin={thin || undefined}

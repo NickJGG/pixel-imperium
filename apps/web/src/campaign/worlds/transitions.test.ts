@@ -17,12 +17,15 @@ describe('transitionFor: the morphs', () => {
     expect(types('/c/main/meadow', '/', { direction: 'back' })).toEqual(['to-home'])
     expect(types('/', '/daily/2026/10')).toEqual(['to-province'])
     expect(types('/daily/2026/10', '/')).toEqual(['to-home'])
+    expect(types(at('/', { open: 'learn' }), '/learn/tutorial')).toEqual(['to-province'])
+    expect(types('/learn/techniques', at('/', { open: 'learn' }))).toEqual(['to-home'])
   })
 
   it('steps between pages of one album, and between Home’s columns', () => {
     expect(types('/c/main/meadow', '/c/main/marsh')).toEqual([])
     expect(types('/daily/2026/09', '/daily/2026/10', { direction: 'replace' })).toEqual([])
     expect(types(at('/', { open: 'campaign' }), at('/', { open: 'daily' }), { direction: 'replace' })).toEqual([])
+    expect(types('/learn/tutorial', '/learn/techniques', { direction: 'replace' })).toEqual([])
   })
 
   it('slides into another Year', () => {
@@ -32,6 +35,8 @@ describe('transitionFor: the morphs', () => {
 
   it('plays none of them on a phone', () => {
     expect(types('/c/main/meadow', '/c/main/marsh', phone)).toBeNull()
+    expect(types('/learn/tutorial', '/learn/techniques', { ...phone, direction: 'replace' })).toBeNull()
+    expect(types('/', '/learn/tutorial', phone)).toEqual(['wipe'])
     expect(types(at('/', { open: 'campaign' }), at('/', { open: 'daily' }), phone)).toBeNull()
     expect(types('/', '/c/main/meadow', phone)).toEqual(['wipe'])
     expect(types('/daily/2026/01', '/daily/2025/12', phone)).toEqual(['wipe'])
@@ -43,7 +48,6 @@ describe('transitionFor: the wipe', () => {
     expect(types('/', '/settings')).toEqual(['wipe'])
     expect(types('/settings', '/u/ada')).toEqual(['wipe'])
     expect(types('/u/ada', '/settings', { direction: 'back' })).toEqual(['wipe', 'back'])
-    expect(types('/', '/learn')).toEqual(['wipe'])
   })
 
   it('wipes out to Home and in from it, whichever way history went', () => {
@@ -59,6 +63,7 @@ describe('transitionFor: the wipe', () => {
 
   it('wipes between albums that don’t morph', () => {
     expect(types('/c/main/meadow', '/c/other/meadow')).toEqual(['wipe'])
+    expect(types('/c/main/meadow', '/learn/techniques')).toEqual(['wipe'])
   })
 
   it('cuts on a replace', () => {
@@ -77,7 +82,7 @@ describe('transitionFor: the wipe', () => {
       ] as const)
         expect(types(from, to)).toBeNull()
     expect(types('/', '/c/main')).toBeNull()
-    expect(types('/', '/learn/techniques')).toBeNull()
+    expect(types('/', '/learn')).toBeNull()
     expect(types('/', '/u/ada/main/meadow')).toBeNull()
   })
 })
