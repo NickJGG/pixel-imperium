@@ -2,8 +2,9 @@
  * Which view transition a navigation plays, if any, as a pure function of the two places and the moment's
  * conditions; `morph-nav.ts` starts whatever this names. Home ↔ an album page or a Learn track, a step between an
  * album's pages, Learn's tracks or Home's columns, and a step into another Year each have a morph of their own, on desktop only. So does
- * a province page ↔ one of its puzzles, where Play stands its Filmstrip. Every other move between two pages plays the
- * slant wipe, on a phone too, reversed on Back and on any move to Home or from a puzzle to its page.
+ * a province page ↔ one of its puzzles, where Play stands its Filmstrip, and a step between two puzzles of one province
+ * there. Every other move between two pages plays the slant wipe, on a phone too, reversed on Back and on any move to
+ * Home or from a puzzle to its page.
  */
 
 export interface Place {
@@ -74,6 +75,14 @@ const onItsPage = (board: Place, page: Place, env: Env) => {
   return id !== undefined && env.provinceOf(id) === page.pathname.replace(/\/$/, '')
 }
 
+/** Two puzzles of one province, as its Filmstrip holds them. */
+const sameProvince = (from: Place, to: Place, env: Env) => {
+  const [a, b] = [from, to].map(({ pathname }) => playIdOf(pathname))
+  if (a === undefined || b === undefined) return false
+  const province = env.provinceOf(a)
+  return province !== null && province === env.provinceOf(b)
+}
+
 /** A campaign puzzle and a province page, either way round: the one kind of board move the wipe plays for now. */
 const isPuzzleAndProvince = (from: Place, to: Place) =>
   (PLAY.test(from.pathname) && isProvincePath(to.pathname)) || (isProvincePath(from.pathname) && PLAY.test(to.pathname))
@@ -93,6 +102,7 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
   if (!env.phone) {
     if (env.rail && onItsPage(to, from, env)) return typed('to-board')
     if (env.rail && onItsPage(from, to, env)) return typed('from-board')
+    if (env.rail && sameProvince(from, to, env)) return typed('next-board')
     if (isAlbumPath(from.pathname) && isHome(to)) return typed('to-home')
     if (isHome(from) && isAlbumPath(to.pathname)) return typed('to-province')
     if (same(isMonthPath))

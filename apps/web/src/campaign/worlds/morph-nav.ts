@@ -9,7 +9,7 @@ import type { AnyRouter, ParsedLocation } from '@tanstack/react-router'
 import { reducedMotion } from '../../motion.ts'
 import { RAIL_QUERY } from '../../play/layout.ts'
 import { currentCampaign } from '../last-campaign.ts'
-import { startBoardMorph } from './board-morph.ts'
+import { startBoardMorph, startNextBoard } from './board-morph.ts'
 import { type Direction, playIdOf, transitionFor } from './transitions.ts'
 import { PHONE } from './Worlds.tsx'
 import './transitions.css'
@@ -106,7 +106,9 @@ export function installMorphNavigation(router: AnyRouter): void {
       landed: false,
     }
     flight = f
-    const unsheet = province && startBoardMorph(f.transition, province.puzzles.map(p => p.id), puzzle!, back)
+    const unsheet = types.includes('next-board')
+      ? startNextBoard(f.transition, playIdOf(fromLocation.pathname)!, playIdOf(toLocation.pathname)!)
+      : province && startBoardMorph(f.transition, province.puzzles.map(p => p.id), puzzle!, back)
     void f.transition.finished.finally(() => {
       unsheet?.()
       if (flight === f) flight = null

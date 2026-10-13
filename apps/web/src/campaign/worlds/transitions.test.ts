@@ -58,6 +58,18 @@ describe('transitionFor: the morphs', () => {
     expect(types('/play/unknown', '/c/main/meadow')).toEqual(['wipe'])
   })
 
+  it('files one puzzle and lifts the next out of its province’s Filmstrip, either way through history', () => {
+    expect(types('/play/p1', '/play/p2')).toEqual(['next-board'])
+    expect(types('/play/p2/', '/play/p1', { direction: 'back' })).toEqual(['next-board'])
+  })
+
+  it('cuts between puzzles without the rail or of different provinces', () => {
+    expect(types('/play/p1', '/play/p2', { rail: false })).toBeNull()
+    expect(types('/play/p1', '/play/p2', phone)).toBeNull()
+    expect(types('/play/p1', '/play/p9')).toBeNull()
+    expect(types('/play/p1', '/play/unknown')).toBeNull()
+  })
+
   it('plays none of them on a phone', () => {
     expect(types('/c/main/meadow', '/c/main/marsh', phone)).toBeNull()
     expect(types('/learn/tutorial', '/learn/techniques', { ...phone, direction: 'replace' })).toBeNull()
@@ -107,7 +119,6 @@ describe('transitionFor: the wipe', () => {
       ] as const)
         expect(types(from, to)).toBeNull()
     expect(types('/play/p1', '/')).toBeNull()
-    expect(types('/play/p1', '/play/p2')).toBeNull()
     expect(types('/', '/c/main')).toBeNull()
     expect(types('/', '/learn')).toBeNull()
     expect(types('/', '/u/ada/main/meadow')).toBeNull()
@@ -119,6 +130,7 @@ describe('transitionFor: when nothing plays', () => {
     expect(types('/', '/c/main/meadow', { reducedMotion: true })).toBeNull()
     expect(types('/c/main/meadow', '/c/main/marsh', { reducedMotion: true })).toBeNull()
     expect(types('/c/main/meadow', '/play/p1', { reducedMotion: true })).toBeNull()
+    expect(types('/play/p1', '/play/p2', { reducedMotion: true })).toBeNull()
     expect(types('/', '/settings', { reducedMotion: true })).toBeNull()
   })
 

@@ -30,3 +30,18 @@ export function markUnseen(list: HTMLElement): void {
   for (const item of list.children as HTMLCollectionOf<HTMLElement>)
     item.toggleAttribute('data-unseen', item.offsetTop < top || item.offsetTop + item.offsetHeight > bottom)
 }
+
+/**
+ * Props naming a puzzle's Dymo label on the rail, for a step to the next puzzle alone (`next-board`): each puzzle's
+ * is its own, so the old one peels off as the new one sticks on.
+ */
+export const dymoMorph = (puzzleId: string) => ({
+  'data-dymo': '',
+  style: { '--dymo': `dymo-${puzzleId}`, viewTransitionClass: 'dymo' } as CSSProperties,
+})
+
+/** The element wearing `name` in a board morph, if it's on the page and named. */
+export const named = (name: string) =>
+  [...document.querySelectorAll<HTMLElement>('[data-morph]:not([data-unseen])')].find(
+    el => el.style.getPropertyValue('--morph') === name,
+  )

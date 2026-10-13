@@ -1,7 +1,7 @@
-import type { CSSProperties, ReactNode } from 'react'
+import type { CSSProperties, HTMLAttributes, ReactNode } from 'react'
 import styles from './Dymo.module.css'
 
-interface Props {
+interface Props extends Omit<HTMLAttributes<HTMLSpanElement>, 'className'> {
   children: ReactNode
   /** Dark tape for a status ("Replaying"), pink for a toast ("+1 foil"). */
   tone?: 'dark' | 'pink'
@@ -10,10 +10,10 @@ interface Props {
 }
 
 /** A strip of embossed label tape. */
-export function Dymo({ children, tone = 'dark', tilt = -1.5, className }: Props) {
+export function Dymo({ children, tone = 'dark', tilt = -1.5, className, style, ...rest }: Props) {
   const classes = [styles.dymo, tone === 'pink' && styles.pink, className]
   return (
-    <span className={classes.filter(Boolean).join(' ')} style={{ '--tilt': `${tilt}deg` } as CSSProperties}>
+    <span {...rest} className={classes.filter(Boolean).join(' ')} style={{ '--tilt': `${tilt}deg`, ...style } as CSSProperties}>
       {children}
     </span>
   )

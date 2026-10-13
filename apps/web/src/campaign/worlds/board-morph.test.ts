@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { RIPPLE_CAP_MS, RIPPLE_MS, boardSheet, rippleDelays } from './board-morph.ts'
+import {
+  type Box,
+  LIFT_AT,
+  RIPPLE_CAP_MS,
+  RIPPLE_MS,
+  boardSheet,
+  centredOn,
+  drivenSheet,
+  fileKeyframes,
+  liftKeyframes,
+  rippleDelays,
+} from './board-morph.ts'
 
 const ids = (n: number) => Array.from({ length: n }, (_, i) => `p${i + 1}`)
 
@@ -45,5 +56,75 @@ describe('boardSheet', () => {
 
   it('never delays a pseudo-element', () => {
     expect(boardSheet('p1', false) + boardSheet('p1', true)).not.toContain('animation-delay')
+  })
+})
+
+const board: Box = { x: 300, y: 100, w: 600, h: 400 }
+const slot: Box = { x: 40, y: 220, w: 64, h: 64 }
+
+const boxAt = (frames: Keyframe[], offset: number) => {
+  const frame = frames.find(f => f.offset === offset)!
+  const [x, y] = /translate\((.+)px, (.+)px\)/.exec(String(frame.transform))!.slice(1).map(Number)
+  return { x, y, w: parseFloat(String(frame.width)), h: parseFloat(String(frame.height)) }
+}
+
+const ascending = (frames: Keyframe[]) =>
+  frames.every((f, i) => i === 0 || (f.offset as number) > (frames[i - 1]!.offset as number))
+
+describe('centredOn', () => {
+  it('puts a box of one size where another’s middle is', () => {
+    expect(centredOn(board, slot)).toEqual({ x: 568, y: 268, w: 64, h: 64 })
+  })
+})
+
+describe('fileKeyframes', () => {
+  const frames = fileKeyframes(board, slot)
+
+  it('shrinks the board in place to its slot’s size before flying it home', () => {
+    expect(boxAt(frames.group, 0)).toEqual(board)
+    expect(boxAt(frames.group, 0.25)).toEqual(centredOn(board, slot))
+    expect(boxAt(frames.group, 0.55)).toEqual(slot)
+    expect(boxAt(frames.group, 1)).toEqual(slot)
+  })
+
+  it('is a sticker before it flies, peels in flight and squashes as it lands', () => {
+    expect(frames.new.find(f => f.offset === 0.25)!.opacity).toBe(1)
+    expect(frames.pair.find(f => f.offset === 0.4)!.transform).toContain('rotate(-7deg)')
+    expect(frames.pair.some(f => String(f.transform).startsWith('scale(0.86)'))).toBe(true)
+  })
+
+  it('keeps every track’s offsets in order', () => {
+    for (const track of Object.values(frames)) expect(ascending(track)).toBe(true)
+  })
+})
+
+describe('liftKeyframes', () => {
+  const frames = liftKeyframes(slot, board)
+
+  it('waits in the strip, flies to the middle at its own size, then opens into the board', () => {
+    expect(boxAt(frames.group, LIFT_AT)).toEqual(slot)
+    expect(boxAt(frames.group, frames.group[2]!.offset as number)).toEqual(centredOn(board, slot))
+    expect(boxAt(frames.group, 1)).toEqual(board)
+  })
+
+  it('lifts while the last board is still flying, and shows the clues only once it has grown', () => {
+    expect(LIFT_AT).toBeLessThan(0.55)
+    const shown = frames.new.find(f => f.opacity === 1)!.offset as number
+    expect(shown).toBeGreaterThan(frames.group[3]!.offset as number)
+  })
+
+  it('keeps every track’s offsets in order and within the transition', () => {
+    for (const track of Object.values(frames)) {
+      expect(ascending(track)).toBe(true)
+      expect(track.at(-1)!.offset).toBe(1)
+    }
+  })
+})
+
+describe('drivenSheet', () => {
+  it('leaves the named board’s pseudo-elements to script', () => {
+    const sheet = drivenSheet('slot-p1', 4)
+    for (const part of ['group', 'image-pair', 'old', 'new'])
+      expect(sheet).toMatch(new RegExp(`::view-transition-${part}\\(slot-p1\\)[^}]*animation: none !important`))
   })
 })

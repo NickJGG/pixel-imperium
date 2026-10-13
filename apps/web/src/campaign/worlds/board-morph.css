@@ -6,7 +6,7 @@
  * rather than `animation-direction: reverse`, which would also reverse the easing and start slow.
  * Only these morphs wear the names `names.ts` hands out; a strip's hidden slots stay unnamed.
  */
-:root:active-view-transition-type(to-board, from-board) [data-morph]:not([data-unseen]) {
+:root:active-view-transition-type(to-board, from-board, next-board) [data-morph]:not([data-unseen]) {
   view-transition-name: var(--morph);
 }
 
@@ -138,6 +138,58 @@
 @keyframes board-out {
   65%,
   100% {
+    opacity: 0;
+  }
+}
+
+/*
+ * A step between two puzzles of a province (`next-board`): the board files into its slot as the next slot lifts out
+ * and opens into the board, both by `board-morph.ts`. Everything else stands still and crossfades, the strip
+ * scrolling to its new middle, but the rail's Dymo label, which peels off as the next puzzle's sticks on.
+ */
+:root:active-view-transition-type(next-board) [data-dymo] {
+  view-transition-name: var(--dymo);
+}
+
+:root:active-view-transition-type(next-board)::view-transition-group(*),
+:root:active-view-transition-type(next-board)::view-transition-image-pair(*),
+:root:active-view-transition-type(next-board)::view-transition-old(*),
+:root:active-view-transition-type(next-board)::view-transition-new(*) {
+  animation-duration: 1.5s;
+  animation-fill-mode: both;
+}
+
+:root:active-view-transition-type(next-board)::view-transition-group(.dymo) {
+  z-index: 6;
+}
+
+:root:active-view-transition-type(next-board)::view-transition-image-pair(.dymo) {
+  overflow: visible;
+}
+
+:root:active-view-transition-type(next-board)::view-transition-old(.dymo) {
+  animation-name: dymo-peel-off;
+  animation-timing-function: ease-in;
+}
+
+:root:active-view-transition-type(next-board)::view-transition-new(.dymo) {
+  animation-name: dymo-stick-on;
+  animation-timing-function: ease-out;
+}
+
+@keyframes dymo-peel-off {
+  30%,
+  100% {
+    transform: rotate(-14deg) translateY(-14px);
+    opacity: 0;
+  }
+}
+
+/* Once the next board has reached the middle (`LIFT_AT` + .25). */
+@keyframes dymo-stick-on {
+  0%,
+  65% {
+    transform: rotate(10deg) translateY(-14px);
     opacity: 0;
   }
 }

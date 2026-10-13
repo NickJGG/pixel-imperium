@@ -21,7 +21,7 @@ import { requestHint, submitSolve } from '../api.ts'
 import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
-import { boardMorph, columnPaper, slotName } from '../campaign/worlds/names.ts'
+import { boardMorph, columnPaper, dymoMorph, slotName } from '../campaign/worlds/names.ts'
 import { getPadMode, usePadMode } from '../pad/mode.ts'
 import { PadControls } from '../pad/PadControls.tsx'
 import { PadGlyph, PanelTag } from '../pad/PadGlyph.tsx'
@@ -594,7 +594,7 @@ export function Play({
             <div className={styles.railTitle}>
               {backLink(styles.railBack)}
               <h1 className={styles.railName}>
-                <Dymo>{title}</Dymo>
+                <Dymo {...dymoMorph(puzzle.id)}>{title}</Dymo>
               </h1>
               <p className={styles.railMeta}>{meta}</p>
               {chip}
