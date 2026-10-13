@@ -28,6 +28,7 @@
 
 .board {
   width: min(70%, 70% * var(--ar, 1));
+  height: auto;
   aspect-ratio: var(--ar, 1);
   image-rendering: pixelated;
   border-radius: var(--r-xs);

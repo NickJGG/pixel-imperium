@@ -146,6 +146,7 @@
 
 .slot > .print img {
   display: block;
+  height: auto;
   image-rendering: pixelated;
 }
 
