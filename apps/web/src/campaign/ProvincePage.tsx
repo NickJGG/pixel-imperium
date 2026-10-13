@@ -11,6 +11,7 @@ import { markConquestsSeen, unseenConquests } from './conquests-seen.ts'
 import { NextUp } from './NextUp.tsx'
 import { type CampaignProgress, campaignProgress, isOpen, tierGroups } from './progress.ts'
 import { PuzzleSlot } from './PuzzleSlot.tsx'
+import { slotMorph } from './worlds/names.ts'
 import { Backdrop, Curtain, Spine, World, Worlds, morphName, usePhone, useSpineReach, useStep } from './worlds/Worlds.tsx'
 import styles from './Province.module.css'
 
@@ -244,7 +245,7 @@ function OpenProvince({
                 </h2>
                 <ol className={styles.slots} style={{ '--cols': columns[g], '--rows': ROWS } as CSSProperties}>
                   {slots.map(({ puzzle, number }) => (
-                    <li key={puzzle.id}>
+                    <li key={puzzle.id} {...slotMorph(puzzle.id)}>
                       <PuzzleSlot
                         puzzle={puzzle}
                         number={number}

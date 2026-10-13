@@ -379,6 +379,56 @@
   animation-name: none;
 }
 
+/*
+ * A province page ↔ one of its puzzles (board-morph.css has the board's side): the column widens into Play's paper,
+ * shouldering the spines off the window's edges as its title fades, over the backdrop. The way back plays it in
+ * reverse, by keyframes of its own so it keeps the easing.
+ */
+:root:active-view-transition-type(to-board, from-board) .backdrop {
+  display: block;
+}
+
+:root:active-view-transition-type(to-board, from-board)::view-transition-group(.provinceSpine) {
+  z-index: 1;
+  animation-name: push-off;
+}
+
+:root:active-view-transition-type(from-board)::view-transition-group(.provinceSpine) {
+  animation-name: push-in;
+}
+
+:root:active-view-transition-type(to-board, from-board)::view-transition-old(.provinceSpine),
+:root:active-view-transition-type(to-board, from-board)::view-transition-new(.provinceSpine),
+:root:active-view-transition-type(to-board, from-board)::view-transition-old(.pageColumn),
+:root:active-view-transition-type(to-board, from-board)::view-transition-new(.pageColumn) {
+  animation-name: none;
+  mix-blend-mode: normal;
+}
+
+/* The column's own side lies over the paper, so its title can fade off it. */
+:root:active-view-transition-type(to-board)::view-transition-old(.pageColumn) {
+  z-index: 1;
+  animation-name: fade-out-early;
+}
+
+:root:active-view-transition-type(from-board)::view-transition-new(.pageColumn) {
+  z-index: 1;
+  animation-name: fade-in-late;
+}
+
+/* Clear of the window's edge on its own side (`--push`, from `useSpineReach`). */
+@keyframes push-off {
+  to {
+    translate: var(--push) 0;
+  }
+}
+
+@keyframes push-in {
+  from {
+    translate: var(--push) 0;
+  }
+}
+
 @keyframes off-right {
   to {
     translate: 160% 0;

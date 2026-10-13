@@ -1,10 +1,13 @@
-import { type CSSProperties, type ReactNode, useLayoutEffect, useRef } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { useParams } from '@tanstack/react-router'
 import { paperStyle, seasonStyle } from '../album/paper.ts'
 import { currentCampaign } from '../campaign/last-campaign.ts'
+import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
+import { boardMorph, columnPaper, slotMorph, slotName } from '../campaign/worlds/names.ts'
 import { CrownMark, HudPills, SoundButton, ThemeButton } from '../Hud.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { SlidersIcon } from './AssistsDisclosure.tsx'
+import { useCentredFilm } from './Filmstrip.tsx'
 import { RAIL_WIDTH, useRail } from './layout.ts'
 import styles from './Play.module.css'
 import skeleton from './PlaySkeleton.module.css'
@@ -17,7 +20,7 @@ function findPuzzle(id: string) {
   const provinces = currentCampaign()?.provinces ?? []
   for (const [index, province] of provinces.entries()) {
     const number = province.puzzles.findIndex(p => p.id === id) + 1
-    if (number > 0) return { index, number, count: province.puzzles.length, puzzle: province.puzzles[number - 1]! }
+    if (number > 0) return { index, number, province, puzzle: province.puzzles[number - 1]! }
   }
   return null
 }
@@ -25,20 +28,30 @@ function findPuzzle(id: string) {
 /**
  * A puzzle while it loads, on its province's paper (the fog without its campaign in memory): the filmstrip, the
  * board and the rail, or the top line, the board and the dock where there's no room for a rail. A Daily is on its
- * Month's season paper, with no filmstrip.
+ * Month's season paper, with no filmstrip. With its campaign in memory, it pairs with the province page as Play
+ * does, so the board morph can play into it.
  */
 export function PlaySkeleton() {
   const { id, month } = useParams({ strict: false })
   const wide = useRail()
+  useAnnounceSkeleton()
   const found = id === undefined ? null : findPuzzle(id)
   const paper = found ? paperStyle(found.index) : month !== undefined ? seasonStyle(Number(month)) : FOG
-  const board = <BoardGhost width={found?.puzzle.width ?? 15} height={found?.puzzle.height ?? 15} />
+  const paperMorph = found && columnPaper(found.province.id)
+  const board = (
+    <BoardGhost
+      width={found?.puzzle.width ?? 15}
+      height={found?.puzzle.height ?? 15}
+      name={found ? slotName(found.puzzle.id) : undefined}
+    />
+  )
 
   return (
     <main
       className={styles.shell}
       data-rail={wide || undefined}
-      style={paper}
+      {...paperMorph}
+      style={{ ...paper, ...paperMorph?.style }}
       aria-busy="true"
     >
       <SrLoading />
@@ -55,8 +68,9 @@ export function PlaySkeleton() {
       <div className={styles.shellBody}>
         {wide && month === undefined && (
           <Film
-            count={found?.count ?? 12}
+            count={found?.province.puzzles.length ?? 12}
             current={(found?.number ?? 1) - 1}
+            ids={found?.province.puzzles.map(p => p.id)}
             head={
               <>
                 <Bar w={64} h={10} />
@@ -108,15 +122,16 @@ export function PlaySkeleton() {
 /** The board's surface, holding a `BoardGhost`. */
 export function Surface({ children }: { children: ReactNode }) {
   return (
-    <div className={styles.surface}>
+    <div className={styles.surface} {...boardMorph('surface', 'surface')}>
       <div className={`${styles.stage} ${skeleton.stage}`}>{children}</div>
     </div>
   )
 }
 
-/** A board of `width`×`height` cells: bars for its clues and a dashed grid. */
-export function BoardGhost({ width, height }: { width: number; height: number }) {
+/** A board of `width`×`height` cells: bars for its clues and a dashed grid. `name` pairs it as the board. */
+export function BoardGhost({ width, height, name }: { width: number; height: number; name?: string | undefined }) {
   const depth = Math.ceil(Math.max(width, height) * 0.3)
+  const morph = name === undefined ? undefined : boardMorph(name)
   const lines = (n: number, long: boolean) =>
     Array.from({ length: n }, (_, i) => (
       <span key={i}>
@@ -124,7 +139,11 @@ export function BoardGhost({ width, height }: { width: number; height: number })
       </span>
     ))
   return (
-    <div className={skeleton.board} style={{ '--w': width, '--h': height, '--d': depth } as CSSProperties}>
+    <div
+      className={skeleton.board}
+      {...morph}
+      style={{ '--w': width, '--h': height, '--d': depth, ...morph?.style } as CSSProperties}
+    >
       <span />
       <div className={skeleton.cols}>{lines(width, false)}</div>
       <div className={skeleton.rows}>{lines(height, true)}</div>
@@ -133,18 +152,25 @@ export function BoardGhost({ width, height }: { width: number; height: number })
   )
 }
 
-/** The filmstrip: the crown, `head` where the name and count go, and `count` slots with the `current` one ringed. */
-export function Film({ count, current, head }: { count: number; current: number; head: ReactNode }) {
-  const listRef = useRef<HTMLOListElement>(null)
-  const currentRef = useRef<HTMLLIElement>(null)
-  useLayoutEffect(() => {
-    const list = listRef.current!
-    const item = currentRef.current!
-    list.scrollTop = item.offsetTop - (list.clientHeight - item.offsetHeight) / 2
-  }, [])
+/**
+ * The filmstrip: the crown, `head` where the name and count go, and `count` slots with the `current` one ringed.
+ * With the puzzles' `ids`, the others pair with their slots as the Filmstrip's do.
+ */
+export function Film({
+  count,
+  current,
+  head,
+  ids,
+}: {
+  count: number
+  current: number
+  head: ReactNode
+  ids?: readonly string[] | undefined
+}) {
+  const { listRef, currentRef } = useCentredFilm()
   const slot = <Ghost style={{ width: 64, aspectRatio: 1 }} />
   return (
-    <div className={styles.film} aria-hidden="true">
+    <div className={styles.film} aria-hidden="true" {...boardMorph('film', 'film')}>
       <span className={styles.filmMark}>
         <CrownMark />
       </span>
@@ -157,7 +183,9 @@ export function Film({ count, current, head }: { count: number; current: number;
               <Bar w={48} h={10} />
             </li>
           ) : (
-            <li key={i}>{slot}</li>
+            <li key={i} {...(ids?.[i] !== undefined && slotMorph(ids[i]))}>
+              {slot}
+            </li>
           ),
         )}
       </ol>
@@ -165,10 +193,12 @@ export function Film({ count, current, head }: { count: number; current: number;
   )
 }
 
+const railMorph = boardMorph('rail', 'rail')
+
 /** The right rail, under the HUD's pills. */
 export function Rail({ children }: { children: ReactNode }) {
   return (
-    <aside className={styles.rail} style={{ width: RAIL_WIDTH }}>
+    <aside className={styles.rail} {...railMorph} style={{ ...railMorph.style, width: RAIL_WIDTH }}>
       <HudPills className={styles.railPills} />
       {children}
     </aside>

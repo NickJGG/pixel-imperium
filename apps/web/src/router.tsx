@@ -169,6 +169,9 @@ const playRoute = createRoute({
   },
   component: PlayPage,
   pendingComponent: PlaySkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
   notFoundComponent: () => <NotFound>There’s no puzzle by that name.</NotFound>,
 })
 

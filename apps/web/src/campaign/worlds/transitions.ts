@@ -1,8 +1,9 @@
 /**
  * Which view transition a navigation plays, if any, as a pure function of the two places and the moment's
  * conditions; `morph-nav.ts` starts whatever this names. Home ↔ an album page or a Learn track, a step between an
- * album's pages, Learn's tracks or Home's columns, and a step into another Year each have a morph of their own, on desktop only. Every other move
- * between two pages plays the slant wipe, on a phone too, reversed on Back and on any move to Home.
+ * album's pages, Learn's tracks or Home's columns, and a step into another Year each have a morph of their own, on desktop only. So does
+ * a province page ↔ one of its puzzles, where Play stands its Filmstrip. Every other move between two pages plays the
+ * slant wipe, on a phone too, reversed on Back and on any move to Home or from a puzzle to its page.
  */
 
 export interface Place {
@@ -24,6 +25,8 @@ export interface Env {
   uaAnimated: boolean
   /** Whether `:active-view-transition-type()` works, which everything typed relies on. */
   typed: boolean
+  /** The province page a campaign puzzle sits on, `/c/<campaign>/<province>`, if its campaign is in memory. */
+  provinceOf: (puzzleId: string) => string | null
 }
 
 export interface Transition {
@@ -44,6 +47,11 @@ const TRACK = /^\/learn\/[^/]+\/?$/
 /** One of Learn's tracks, `/learn/<track>`. */
 export const isTrackPath = (pathname: string) => TRACK.test(pathname)
 
+const PLAY = /^\/play\/([^/]+)\/?$/
+
+/** A campaign puzzle's id from its page's path. */
+export const playIdOf = (pathname: string) => PLAY.exec(pathname)?.[1]
+
 /** Pages with a board: a puzzle, a Daily and a Lesson. */
 const BOARD = /^\/(?:play\/[^/]+|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+)\/?$/
 
@@ -60,6 +68,16 @@ const isHome = (place: Place) => place.pathname === '/'
 
 const openOf = (place: Place) => (place.search as { open?: unknown }).open
 
+/** `board` is a campaign puzzle and `page` the province page it sits on. */
+const onItsPage = (board: Place, page: Place, env: Env) => {
+  const id = playIdOf(board.pathname)
+  return id !== undefined && env.provinceOf(id) === page.pathname.replace(/\/$/, '')
+}
+
+/** A campaign puzzle and a province page, either way round: the one kind of board move the wipe plays for now. */
+const isPuzzleAndProvince = (from: Place, to: Place) =>
+  (PLAY.test(from.pathname) && isProvincePath(to.pathname)) || (isProvincePath(from.pathname) && PLAY.test(to.pathname))
+
 export function transitionFor(from: Place, to: Place, env: Env): Transition | null {
   if (env.reducedMotion || env.uaAnimated) return null
   const typed = (...types: string[]) => (env.typed ? { types } : null)
@@ -73,6 +91,8 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
   if ((same(isProvincePath) || same(isMonthPath)) && albumOf(from.pathname) === albumOf(to.pathname)) return step()
   if (same(isTrackPath)) return step()
   if (!env.phone) {
+    if (env.rail && onItsPage(to, from, env)) return typed('to-board')
+    if (env.rail && onItsPage(from, to, env)) return typed('from-board')
     if (isAlbumPath(from.pathname) && isHome(to)) return typed('to-home')
     if (isHome(from) && isAlbumPath(to.pathname)) return typed('to-province')
     if (same(isMonthPath))
@@ -80,8 +100,9 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
   }
 
   if (env.direction === 'replace') return null
-  if ([from, to].some(({ pathname }) => BOARD.test(pathname) || REDIRECT.test(pathname))) return null
-  // Every page lies over Home, so leaving Home always wipes in and returning always wipes out, whichever way history went.
-  const back = isHome(to) || (!isHome(from) && env.direction === 'back')
+  const board = (pathname: string) => BOARD.test(pathname) && !isPuzzleAndProvince(from, to)
+  if ([from, to].some(({ pathname }) => board(pathname) || REDIRECT.test(pathname))) return null
+  // Every page lies over Home, and a puzzle over its page, so going up always wipes out, whichever way history went.
+  const back = isHome(to) || onItsPage(from, to, env) || (!isHome(from) && env.direction === 'back')
   return back ? typed('wipe', 'back') : typed('wipe')
 }

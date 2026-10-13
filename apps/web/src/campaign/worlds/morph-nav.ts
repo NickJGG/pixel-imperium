@@ -8,9 +8,12 @@ import { useLayoutEffect } from 'react'
 import type { AnyRouter, ParsedLocation } from '@tanstack/react-router'
 import { reducedMotion } from '../../motion.ts'
 import { RAIL_QUERY } from '../../play/layout.ts'
-import { type Direction, transitionFor } from './transitions.ts'
+import { currentCampaign } from '../last-campaign.ts'
+import { startBoardMorph } from './board-morph.ts'
+import { type Direction, playIdOf, transitionFor } from './transitions.ts'
 import { PHONE } from './Worlds.tsx'
 import './transitions.css'
+import './board-morph.css'
 
 /** How long the old page may stand frozen before the morph plays anyway; Chrome gives up on a slow update. */
 const CAP_MS = 1500
@@ -45,6 +48,13 @@ const direction = (from: ParsedLocation, to: ParsedLocation): Direction => {
   return delta < 0 ? 'back' : delta === 0 ? 'replace' : 'push'
 }
 
+/** The province holding a puzzle of the campaign in memory. */
+const provinceHolding = (puzzleId: string) => {
+  const campaign = currentCampaign()
+  const province = campaign?.provinces.find(p => p.puzzles.some(q => q.id === puzzleId))
+  return campaign && province ? { campaign, province } : null
+}
+
 /** Set by the Navigation API when the browser animates the move itself, read as the router begins it. */
 let uaAnimated = false
 
@@ -66,10 +76,17 @@ export function installMorphNavigation(router: AnyRouter): void {
         direction: direction(fromLocation, toLocation),
         uaAnimated,
         typed: typed(),
+        provinceOf: id => {
+          const found = provinceHolding(id)
+          return found && `/c/${found.campaign.id}/${found.province.id}`
+        },
       })
     uaAnimated = false
     if (!transition) return
     const { types } = transition
+    const back = types.includes('from-board')
+    const puzzle = back || types.includes('to-board') ? playIdOf((back ? fromLocation : toLocation).pathname) : undefined
+    const province = puzzle === undefined ? undefined : provinceHolding(puzzle)?.province
 
     let captured!: () => void
     let landed!: () => void
@@ -89,7 +106,9 @@ export function installMorphNavigation(router: AnyRouter): void {
       landed: false,
     }
     flight = f
+    const unsheet = province && startBoardMorph(f.transition, province.puzzles.map(p => p.id), puzzle!, back)
     void f.transition.finished.finally(() => {
+      unsheet?.()
       if (flight === f) flight = null
     })
   })

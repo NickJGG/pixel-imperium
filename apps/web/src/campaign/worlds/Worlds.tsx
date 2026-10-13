@@ -180,8 +180,9 @@ let reachSheet: HTMLStyleElement | undefined
 
 /**
  * How far each province spine in `root` stands from the window edge it grows out of in the Home morph, as `--reach`
- * on its transition group. A sheet, since a transition's pseudo-elements inherit from the root, not the spine; kept
- * in the head, since the way home plays after the province page has gone.
+ * on its transition group, and how far it moves to clear that edge in the board morph, as `--push`. A sheet, since a
+ * transition's pseudo-elements inherit from the root, not the spine; kept in the head, since the way home plays after
+ * the province page has gone.
  */
 export function useSpineReach(root: RefObject<HTMLElement | null>): void {
   useLayoutEffect(() => {
@@ -192,8 +193,10 @@ export function useSpineReach(root: RefObject<HTMLElement | null>): void {
         .map(spine => {
           const { left, width: w } = spine.getBoundingClientRect()
           const centre = left + w / 2
-          const reach = centre < width / 2 ? -centre : width - centre
-          return `::view-transition-group(${spine.style.viewTransitionName}) { --reach: ${reach}px; }`
+          const before = centre < width / 2
+          const reach = before ? -centre : width - centre
+          const push = before ? -(left + w) : width - left
+          return `::view-transition-group(${spine.style.viewTransitionName}) { --reach: ${reach}px; --push: ${push}px; }`
         })
         .join('\n')
     }

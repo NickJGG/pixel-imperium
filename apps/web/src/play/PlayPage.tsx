@@ -21,6 +21,7 @@ import { requestHint, submitSolve } from '../api.ts'
 import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
+import { boardMorph, columnPaper, slotName } from '../campaign/worlds/names.ts'
 import { getPadMode, usePadMode } from '../pad/mode.ts'
 import { PadControls } from '../pad/PadControls.tsx'
 import { PadGlyph, PanelTag } from '../pad/PadGlyph.tsx'
@@ -194,9 +195,12 @@ export function Play({
 
   const stageRef = useRef<HTMLDivElement>(null)
   const [cellSize, setCellSize] = useState(0)
+  // Fitted at once as well, so the board is there for a morph to capture before the observer first reports.
   useLayoutEffect(() => {
+    const stage = stageRef.current!
+    setCellSize(fitCellSize(stage.getBoundingClientRect(), puzzle))
     const observer = new ResizeObserver(([entry]) => setCellSize(fitCellSize(entry!.contentRect, puzzle)))
-    observer.observe(stageRef.current!)
+    observer.observe(stage)
     return () => observer.disconnect()
   }, [puzzle])
   const wide = useRail()
@@ -519,10 +523,21 @@ export function Play({
     album && <ChoiceCard track={TRACKS.techniques} copy={techniquesOffer(album.province)} back={context.here} />
   )
 
+  const paperMorph = album && columnPaper(album.province.id)
+  const surfaceMorph = boardMorph('surface', 'surface')
+  const railMorph = boardMorph('rail', 'rail')
+  const boardName = boardMorph(slotName(puzzle.id))
+
   // One tree for both layouts: the strip, rail and top line sit in fixed child positions around the
   // surface, so switching between them never remounts the surface or the board.
   return (
-    <main ref={shellRef} className={styles.shell} data-rail={wide || undefined} style={paper}>
+    <main
+      ref={shellRef}
+      className={styles.shell}
+      data-rail={wide || undefined}
+      {...paperMorph}
+      style={{ ...paper, ...paperMorph?.style }}
+    >
       {!wide && (
         <header className={styles.topLine}>
           {backLink(styles.topBack)}
@@ -546,14 +561,15 @@ export function Play({
             glow={solved && moment === 'landed'}
           />
         )}
-        <div className={styles.surface}>
+        <div className={styles.surface} {...surfaceMorph}>
           <div ref={stageRef} className={styles.stage}>
             {cellSize > 0 && (
               <div
                 ref={boardRef}
                 className={styles.board}
                 data-revealed={palette !== null || undefined}
-                style={boardTracks(puzzle, cellSize) as CSSProperties}
+                {...boardName}
+                style={{ ...boardTracks(puzzle, cellSize), ...boardName.style }}
               >
                 <Minimap store={store} view={boardView} cellSize={cellSize} />
                 <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={assists} />
@@ -569,7 +585,8 @@ export function Play({
           <aside
             ref={panelRef}
             className={styles.rail}
-            style={{ width: RAIL_WIDTH }}
+            {...railMorph}
+            style={{ ...railMorph.style, width: RAIL_WIDTH }}
             data-pad-panel
             aria-label={title}
           >

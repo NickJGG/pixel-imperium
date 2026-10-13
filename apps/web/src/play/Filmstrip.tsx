@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import type { Province } from '@pixel-imperium/protocol'
 import { Slot } from '../album/Slot.tsx'
 import { GOLD_SLOT, PuzzleSlot, SlotFace } from '../campaign/PuzzleSlot.tsx'
+import { boardMorph, markUnseen, slotMorph } from '../campaign/worlds/names.ts'
 import { CrownMark } from '../Hud.tsx'
 import type { ProgressStorage } from './progress-storage.ts'
 import styles from './Play.module.css'
@@ -74,16 +75,10 @@ export function Filmstrip(props: FilmProps) {
   const { province, number, storage, slotRef, percent, glow } = props
   const current = province.puzzles[number - 1]!
   const has = stuck(props)
-  const listRef = useRef<HTMLOListElement>(null)
-  const currentRef = useRef<HTMLLIElement>(null)
-  useLayoutEffect(() => {
-    const list = listRef.current!
-    const item = currentRef.current!
-    list.scrollTop = item.offsetTop - (list.clientHeight - item.offsetHeight) / 2
-  }, [])
+  const { listRef, currentRef } = useCentredFilm()
 
   return (
-    <nav className={styles.film} aria-label={`${province.name} puzzles`}>
+    <nav className={styles.film} aria-label={`${province.name} puzzles`} {...boardMorph('film', 'film')}>
       <Link to="/" className={styles.filmMark} aria-label="Pixel Imperium">
         <CrownMark />
       </Link>
@@ -93,7 +88,7 @@ export function Filmstrip(props: FilmProps) {
           {province.puzzles.filter(p => has(p.id)).length} / {province.puzzles.length}
         </span>
       </p>
-      <ol ref={listRef} className={styles.filmSlots}>
+      <ol ref={listRef} className={styles.filmSlots} onScroll={e => markUnseen(e.currentTarget)}>
         {province.puzzles.map((p, i) =>
           p === current ? (
             <li key={p.id} ref={currentRef} className={styles.filmCurrent} aria-current="page" data-glow={glow || undefined}>
@@ -110,7 +105,7 @@ export function Filmstrip(props: FilmProps) {
               </span>
             </li>
           ) : (
-            <li key={p.id}>
+            <li key={p.id} {...slotMorph(p.id)}>
               <PuzzleSlot puzzle={p} number={i + 1} storage={storage} />
             </li>
           ),
@@ -118,4 +113,19 @@ export function Filmstrip(props: FilmProps) {
       </ol>
     </nav>
   )
+}
+
+/**
+ * Opens a strip with its current slot centred, its slots out of view unnamed for the board morphs (`markUnseen`).
+ */
+export function useCentredFilm() {
+  const listRef = useRef<HTMLOListElement>(null)
+  const currentRef = useRef<HTMLLIElement>(null)
+  useLayoutEffect(() => {
+    const list = listRef.current!
+    const item = currentRef.current!
+    list.scrollTop = item.offsetTop - (list.clientHeight - item.offsetHeight) / 2
+    markUnseen(list)
+  }, [])
+  return { listRef, currentRef }
 }

@@ -1,0 +1,143 @@
+/*
+ * A province page ↔ one of its puzzles (`to-board`, `from-board`): every slot on the page flies to its place in Play's
+ * Filmstrip, peeling up and tilting like a sticker restuck, and the clicked one grows into the board
+ * (`board-morph.ts`); the Filmstrip and the board's surface fade in late, and the rail slides in from the right. The
+ * column and the spines are Worlds.module.css's. `from-board` plays it all backwards, with keyframes of its own
+ * rather than `animation-direction: reverse`, which would also reverse the easing and start slow.
+ * Only these morphs wear the names `names.ts` hands out; a strip's hidden slots stay unnamed.
+ */
+:root:active-view-transition-type(to-board, from-board) [data-morph]:not([data-unseen]) {
+  view-transition-name: var(--morph);
+}
+
+:root:active-view-transition-type(to-board, from-board)::view-transition-group(*),
+:root:active-view-transition-type(to-board, from-board)::view-transition-image-pair(*),
+:root:active-view-transition-type(to-board, from-board)::view-transition-old(*),
+:root:active-view-transition-type(to-board, from-board)::view-transition-new(*) {
+  animation-duration: 1s;
+  animation-timing-function: cubic-bezier(0.3, 0.7, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+/* Play's root behind its paper; the province page's, with its backdrop, holds until the paper covers it. */
+:root:active-view-transition-type(to-board, from-board)::view-transition-old(root),
+:root:active-view-transition-type(to-board, from-board)::view-transition-new(root) {
+  animation-name: none;
+  mix-blend-mode: normal;
+}
+
+:root:active-view-transition-type(to-board)::view-transition-new(root) {
+  animation-name: board-fade-in-late;
+}
+
+:root:active-view-transition-type(from-board)::view-transition-old(root) {
+  animation-name: board-fade-out-early;
+}
+
+:root:active-view-transition-type(to-board, from-board)::view-transition-group(.slot) {
+  z-index: 3;
+}
+
+:root:active-view-transition-type(to-board, from-board)::view-transition-image-pair(.slot) {
+  overflow: visible;
+  animation-name: board-peel;
+}
+
+/* A slot whose partner is scrolled out of the strip has nowhere to fly: it comes and goes with the column's content. */
+:root:active-view-transition-type(to-board, from-board)::view-transition-old(.slot):only-child {
+  animation-name: board-fade-out-early;
+}
+
+:root:active-view-transition-type(to-board, from-board)::view-transition-new(.slot):only-child {
+  animation-name: board-fade-in-late;
+}
+
+:root:active-view-transition-type(to-board, from-board)::view-transition-group(.rail) {
+  z-index: 2;
+  animation-name: board-rail-in;
+}
+
+:root:active-view-transition-type(from-board)::view-transition-group(.rail) {
+  animation-name: board-rail-out;
+}
+
+:root:active-view-transition-type(to-board, from-board)::view-transition-old(.rail),
+:root:active-view-transition-type(to-board, from-board)::view-transition-new(.rail) {
+  animation-name: none;
+}
+
+:root:active-view-transition-type(to-board)::view-transition-new(.film),
+:root:active-view-transition-type(to-board)::view-transition-new(.surface) {
+  animation-name: board-fade-in-late;
+}
+
+:root:active-view-transition-type(from-board)::view-transition-old(.film),
+:root:active-view-transition-type(from-board)::view-transition-old(.surface) {
+  animation-name: board-fade-out-early;
+}
+
+@keyframes board-peel {
+  45% {
+    transform: scale(1.3) rotate(-7deg);
+    filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.45));
+  }
+}
+
+@keyframes board-rail-in {
+  0%,
+  30% {
+    translate: 100% 0;
+    opacity: 0;
+  }
+}
+
+@keyframes board-rail-out {
+  70%,
+  100% {
+    translate: 100% 0;
+    opacity: 0;
+  }
+}
+
+@keyframes board-fade-in-late {
+  0%,
+  60% {
+    opacity: 0;
+  }
+}
+
+@keyframes board-fade-out-early {
+  40%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* The clicked slot's two sides, which `board-morph.ts` gives them. */
+@keyframes board-slot-out {
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes board-in {
+  0%,
+  35% {
+    opacity: 0;
+  }
+}
+
+@keyframes board-slot-in {
+  0%,
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes board-out {
+  65%,
+  100% {
+    opacity: 0;
+  }
+}

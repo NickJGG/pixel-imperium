@@ -3,7 +3,17 @@ import { type Env, type Place, transitionFor } from './transitions.ts'
 
 const at = (pathname: string, search: object = {}): Place => ({ pathname, search })
 
-const desktop: Env = { reducedMotion: false, phone: false, rail: true, direction: 'push', uaAnimated: false, typed: true }
+const provinces: Record<string, string> = { p1: '/c/main/meadow', p2: '/c/main/meadow', p9: '/c/main/marsh' }
+
+const desktop: Env = {
+  reducedMotion: false,
+  phone: false,
+  rail: true,
+  direction: 'push',
+  uaAnimated: false,
+  typed: true,
+  provinceOf: id => provinces[id] ?? null,
+}
 const phone: Env = { ...desktop, phone: true, rail: false }
 
 const types = (from: string | Place, to: string | Place, env: Partial<Env> = {}) => {
@@ -31,6 +41,21 @@ describe('transitionFor: the morphs', () => {
   it('slides into another Year', () => {
     expect(types('/daily/2026/01', '/daily/2025/12')).toEqual(['to-year-back'])
     expect(types('/daily/2025/12', '/daily/2026/01')).toEqual(['to-year-forward'])
+  })
+
+  it('opens a puzzle from its province page, and goes back', () => {
+    expect(types('/c/main/meadow', '/play/p1')).toEqual(['to-board'])
+    expect(types('/c/main/meadow/', '/play/p2/', { direction: 'back' })).toEqual(['to-board'])
+    expect(types('/play/p1', '/c/main/meadow')).toEqual(['from-board'])
+    expect(types('/play/p1', '/c/main/meadow', { direction: 'back' })).toEqual(['from-board'])
+  })
+
+  it('wipes between a puzzle and a province page instead, without the rail or out of its province', () => {
+    expect(types('/c/main/meadow', '/play/p1', { rail: false })).toEqual(['wipe'])
+    expect(types('/play/p1', '/c/main/meadow', { rail: false })).toEqual(['wipe', 'back'])
+    expect(types('/play/p1', '/c/main/meadow', phone)).toEqual(['wipe', 'back'])
+    expect(types('/play/p1', '/c/main/marsh')).toEqual(['wipe'])
+    expect(types('/play/unknown', '/c/main/meadow')).toEqual(['wipe'])
   })
 
   it('plays none of them on a phone', () => {
@@ -75,12 +100,14 @@ describe('transitionFor: the wipe', () => {
   })
 
   it('leaves boards and redirects to cut', () => {
-    for (const board of ['/play/p1', '/daily/2026/10/13', '/learn/tutorial/first'])
+    for (const board of ['/daily/2026/10/13', '/learn/tutorial/first'])
       for (const [from, to] of [
         ['/c/main/meadow', board],
         [board, '/c/main/meadow'],
       ] as const)
         expect(types(from, to)).toBeNull()
+    expect(types('/play/p1', '/')).toBeNull()
+    expect(types('/play/p1', '/play/p2')).toBeNull()
     expect(types('/', '/c/main')).toBeNull()
     expect(types('/', '/learn')).toBeNull()
     expect(types('/', '/u/ada/main/meadow')).toBeNull()
@@ -91,6 +118,7 @@ describe('transitionFor: when nothing plays', () => {
   it('under reduced motion', () => {
     expect(types('/', '/c/main/meadow', { reducedMotion: true })).toBeNull()
     expect(types('/c/main/meadow', '/c/main/marsh', { reducedMotion: true })).toBeNull()
+    expect(types('/c/main/meadow', '/play/p1', { reducedMotion: true })).toBeNull()
     expect(types('/', '/settings', { reducedMotion: true })).toBeNull()
   })
 
