@@ -82,3 +82,14 @@ const subscribeRail = (onChange: () => void) => {
 
 /** Whether the window's shape gets the rail. */
 export const useRail = () => useSyncExternalStore(subscribeRail, () => matchMedia(RAIL_QUERY).matches)
+
+/** Windows where a Lesson drops its coach under the board instead of standing Play's strip and rail. */
+export const LESSON_STACKED = '(max-width: 860px)'
+
+const subscribeStacked = (onChange: () => void) => {
+  const query = matchMedia(LESSON_STACKED)
+  query.addEventListener('change', onChange)
+  return () => query.removeEventListener('change', onChange)
+}
+
+export const useLessonStacked = () => useSyncExternalStore(subscribeStacked, () => matchMedia(LESSON_STACKED).matches)

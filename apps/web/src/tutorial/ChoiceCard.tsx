@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { Province } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
+import { doorSlot } from '../campaign/worlds/names.ts'
+import { lessonId } from '../campaign/worlds/transitions.ts'
 import { usePadContain } from '../pad/PadProvider.tsx'
 import { asked } from './asked.ts'
 import type { Track } from './tracks.ts'
@@ -40,7 +42,7 @@ export const techniquesOffer = (province: Province): OfferCopy => ({
 
 /**
  * Offers `track` over a puzzle, holding focus until answered. Learn, the decline button, ✕ and Escape
- * all count as asked, which is what takes the card away.
+ * all count as asked, which is what takes the card away. The card is the door the track's first Lesson grows out of.
  */
 /** `back` is the puzzle's page, where the track hands back to. */
 export function ChoiceCard({ track, copy, back }: { track: Track; copy: OfferCopy; back: string }) {
@@ -66,7 +68,14 @@ export function ChoiceCard({ track, copy, back }: { track: Track; copy: OfferCop
 
   return (
     <div className={styles.overlay}>
-      <div ref={cardRef} className={styles.choice} role="dialog" aria-modal="true" aria-labelledby="choice-title">
+      <div
+        ref={cardRef}
+        className={styles.choice}
+        {...doorSlot(lessonId(track.id, track.lessons[0]!.id))}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="choice-title"
+      >
         <button type="button" data-variant="ghost" className={styles.close} aria-label="Close" onClick={mark}>
           ✕
         </button>

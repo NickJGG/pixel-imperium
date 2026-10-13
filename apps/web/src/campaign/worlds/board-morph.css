@@ -105,6 +105,35 @@
   animation-name: none;
 }
 
+/* A door over a board already, the offer of a track over a puzzle (`over-board`): its strip and rail stand where the
+   Lesson's go, so they hold still and crossfade. */
+:root:active-view-transition-type(over-board)::view-transition-group(.film),
+:root:active-view-transition-type(over-board)::view-transition-group(.rail) {
+  animation-name: none;
+}
+
+:root:active-view-transition-type(over-board)::view-transition-old(.film),
+:root:active-view-transition-type(over-board)::view-transition-old(.rail) {
+  animation-name: board-fade-out;
+}
+
+:root:active-view-transition-type(over-board)::view-transition-new(.film),
+:root:active-view-transition-type(over-board)::view-transition-new(.rail) {
+  animation-name: board-fade-in;
+}
+
+@keyframes board-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes board-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
 @keyframes board-peel {
   45% {
     transform: scale(1.3) rotate(-7deg);

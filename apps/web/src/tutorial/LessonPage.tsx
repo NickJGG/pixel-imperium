@@ -12,6 +12,8 @@ import type { Assists } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
 import { paperStyle } from '../album/paper.ts'
 import { PixelArt } from '../campaign/PixelArt.tsx'
+import { boardMorph, columnPaper, dymoMorph, slotName } from '../campaign/worlds/names.ts'
+import { lessonId } from '../campaign/worlds/transitions.ts'
 import { getPadMode } from '../pad/mode.ts'
 import { PanelTag } from '../pad/PadGlyph.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
@@ -27,7 +29,7 @@ import { ColClues, RowClues } from '../play/Clues.tsx'
 import { ControlsCard } from '../play/ControlsCard.tsx'
 import { useBoardGestures } from '../play/gestures.ts'
 import { HintButton, cellHintText } from '../play/HintButton.tsx'
-import { RAIL_WIDTH, SIDE_PAGE_GAP, boardTracks, clueDepth, clueSlot, fitCellSize } from '../play/layout.ts'
+import { RAIL_WIDTH, SIDE_PAGE_GAP, boardTracks, clueDepth, clueSlot, fitCellSize, useLessonStacked } from '../play/layout.ts'
 import { createLineHints } from '../play/line-hints.ts'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { type PlayState, PlayStore, crosshairOf } from '../play/store.ts'
@@ -296,7 +298,7 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
     return () => observer.disconnect()
   }, [])
   const cellSize = stage.width > 0 ? fitCellSize(stage, store.puzzle) : 0
-  const stacked = useMedia(STACKED)
+  const stacked = useLessonStacked()
 
   const slot = clueSlot(cellSize)
   const board: BoardBox = {
@@ -349,6 +351,10 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
     </>
   )
   const meta = `${lesson.picture} · ${width}×${height}`
+  const paperMorph = columnPaper(`track-${track.id}`)
+  const surfaceMorph = boardMorph('surface', 'surface')
+  const railMorph = boardMorph('rail', 'rail')
+  const boardName = boardMorph(slotName(lessonId(track.id, lesson.id)))
 
   // One tree for both layouts, like Play's: the strip, header and rail sit in fixed child positions around the
   // stage, so switching between them never remounts the board.
@@ -358,11 +364,15 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
       <main
         className={stacked ? `${playStyles.play} ${styles.page}` : `${playStyles.shell} ${styles.shell}`}
         data-rail={!stacked || undefined}
-        style={paperStyle(track.paper)}
+        {...paperMorph}
+        style={{ ...paperStyle(track.paper), ...paperMorph.style }}
       >
         <div className={stacked ? `${playStyles.desk} ${styles.desk}` : playStyles.shellBody} style={stacked ? { gap: SIDE_PAGE_GAP } : undefined}>
           {!stacked && <LessonFilm track={track} index={index} back={foot.learn ? foot.back : null} />}
-          <div className={stacked ? `${playStyles.card} ${styles.card}` : `${playStyles.surface} ${styles.surface}`}>
+          <div
+            className={stacked ? `${playStyles.card} ${styles.card}` : `${playStyles.surface} ${styles.surface}`}
+            {...surfaceMorph}
+          >
             {stacked && (
               <header className={playStyles.cardHead}>
                 <Dymo tone="pink">{track.label}</Dymo>
@@ -375,7 +385,8 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
                   ref={boardRef}
                   className={`${playStyles.board} ${styles.board}`}
                   data-revealed={palette !== null || undefined}
-                  style={boardTracks(puzzle, cellSize) as CSSProperties}
+                  {...boardName}
+                  style={{ ...boardTracks(puzzle, cellSize), ...boardName.style } as CSSProperties}
                 >
                   <div />
                   <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={clueAssists} highlight={about.cols} />
@@ -402,7 +413,8 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
           </div>
           <div
             className={stacked ? styles.side : `${playStyles.rail} ${styles.rail}`}
-            style={stacked ? { gap: SIDE_PAGE_GAP } : { width: RAIL_WIDTH }}
+            {...(!stacked && railMorph)}
+            style={stacked ? { gap: SIDE_PAGE_GAP } : { ...railMorph.style, width: RAIL_WIDTH }}
             data-pad-panel={!stacked || undefined}
           >
             {!stacked && <HudPills className={playStyles.railPills} />}
@@ -431,20 +443,6 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
         </div>
       </main>
     </>
-  )
-}
-
-/** The layout where the coach drops under the board, as in Lesson.module.css. */
-const STACKED = '(max-width: 860px)'
-
-function useMedia(query: string): boolean {
-  return useSyncExternalStore(
-    notify => {
-      const list = matchMedia(query)
-      list.addEventListener('change', notify)
-      return () => list.removeEventListener('change', notify)
-    },
-    () => matchMedia(query).matches,
   )
 }
 
@@ -487,7 +485,7 @@ function Coach({ ref, track, lesson, index, step, log, now, solved, foot, rail, 
   return (
     <aside ref={ref} className={styles.coach} aria-labelledby="lesson-title" data-pad-panel={!rail || undefined}>
       {rail ? (
-        <Dymo tone="pink" className={styles.coachTrack}>
+        <Dymo tone="pink" className={styles.coachTrack} {...dymoMorph(lessonId(track.id, lesson.id))}>
           {track.label}
         </Dymo>
       ) : foot.learn ? (

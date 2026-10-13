@@ -10,6 +10,7 @@ import { Dymo } from '../album/Dymo.tsx'
 import { useAccount } from '../account.ts'
 import { campaignProgress, techniquesRecommended } from '../campaign/progress.ts'
 import { Backdrop, TrackSpine, World, Worlds, trackMorphName, usePhone, useSpineReach, useStep } from '../campaign/worlds/Worlds.tsx'
+import { lessonId } from '../campaign/worlds/transitions.ts'
 import { clearUnseen, getUnseen, useLessonsDone } from './done.ts'
 import { type LearnBack, backLink } from './handoff.ts'
 import { lessonPuzzle } from './lessons.ts'
@@ -139,6 +140,7 @@ function TrackWorld({ track, current, done, fresh, back, tag, lead }: TrackProps
                     done={done.has(key)}
                     next={lesson === next}
                     fresh={fresh.has(key)}
+                    morph={lessonId(track.id, lesson.id)}
                   />
                   <span className={styles.caption}>
                     <b>{lesson.title}</b>

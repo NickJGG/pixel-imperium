@@ -38,7 +38,7 @@ export function PlaySkeleton() {
   useAnnounceSkeleton()
   const found = id === undefined ? null : findPuzzle(id)
   const paper = found ? paperStyle(found.index) : month !== undefined ? seasonStyle(Number(month)) : FOG
-  const paperMorph = columnPaper(found?.province.id)
+  const paperMorph = columnPaper(found ? `province-${found.province.id}` : undefined)
   const daily = year !== undefined && month !== undefined && day !== undefined ? dailyId(`${year}-${month}-${day}`) : undefined
   const board = (
     <BoardGhost

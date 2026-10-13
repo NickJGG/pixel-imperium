@@ -9,12 +9,13 @@ const desktop: Env = {
   reducedMotion: false,
   phone: false,
   rail: true,
+  lessonRail: true,
   direction: 'push',
   uaAnimated: false,
   typed: true,
   provinceOf: id => provinces[id] ?? null,
 }
-const phone: Env = { ...desktop, phone: true, rail: false }
+const phone: Env = { ...desktop, phone: true, rail: false, lessonRail: false }
 
 const types = (from: string | Place, to: string | Place, env: Partial<Env> = {}) => {
   const place = (p: string | Place) => (typeof p === 'string' ? at(p) : p)
@@ -88,6 +89,32 @@ describe('transitionFor: the morphs', () => {
     expect(types('/play/p1', '/c/main/marsh', phone)).toEqual(['wipe'])
     expect(types('/c/main/meadow', '/learn/tutorial/first', phone)).toEqual(['wipe'])
     expect(types('/play/p1', '/', { ...phone, direction: 'back', uaAnimated: true })).toBeNull()
+  })
+
+  it('opens a Lesson from its track as a puzzle from its province, and steps between Lessons', () => {
+    expect(types('/learn/tutorial', '/learn/tutorial/overlap')).toEqual(['to-board'])
+    expect(types('/learn/tutorial/overlap', '/learn/tutorial')).toEqual(['from-board'])
+    expect(types('/learn/tutorial/overlap/', '/learn/tutorial/putting-it-together')).toEqual(['next-board'])
+    expect(types('/learn/tutorial/overlap', '/learn/techniques/edges')).toBeNull()
+    expect(types('/learn/techniques', '/learn/tutorial/overlap')).toEqual(['wipe'])
+  })
+
+  it('goes by a Lesson’s own rail, not Play’s', () => {
+    expect(types('/learn/tutorial', '/learn/tutorial/overlap', { rail: false })).toEqual(['to-board'])
+    expect(types('/learn/tutorial', '/learn/tutorial/overlap', { lessonRail: false })).toEqual(['wipe'])
+    expect(types('/learn/tutorial/overlap', '/learn/tutorial', { lessonRail: false })).toEqual(['wipe', 'back'])
+    expect(types('/learn/tutorial/overlap', '/learn/tutorial/putting-it-together', { lessonRail: false })).toBeNull()
+  })
+
+  it('grows a Lesson from Home’s Learn column, or from a track’s offer over a puzzle, and shrinks it home', () => {
+    expect(types(at('/', { open: 'learn' }), '/learn/tutorial/overlap')).toEqual(['door-board'])
+    expect(types('/learn/tutorial/overlap', at('/', { open: 'learn' }))).toEqual(['door-back'])
+    expect(types('/play/p1', '/learn/tutorial/reading-clues')).toEqual(['door-board', 'over-board'])
+    expect(types('/learn/tutorial/reading-clues', '/play/p1')).toEqual(['door-back', 'over-board'])
+    expect(types('/play/p1', '/learn/tutorial/reading-clues', phone)).toEqual(['grow-board'])
+    expect(types('/learn/tutorial', '/learn/tutorial/overlap', phone)).toEqual(['grow-board'])
+    expect(types('/learn/tutorial/overlap', '/learn/tutorial', phone)).toEqual(['grow-back'])
+    expect(types('/learn/tutorial/overlap', '/learn/tutorial/putting-it-together', phone)).toEqual(['wipe'])
   })
 
   it('plays none of them on a phone', () => {

@@ -5,7 +5,7 @@
 import type { CSSProperties } from 'react'
 import styles from './Worlds.module.css'
 
-/** A puzzle's slot wherever it stands, and its board while it's played. */
+/** A puzzle's or a Lesson's (`lessonId`) slot wherever it stands, and its board while it's played. */
 export const slotName = (puzzleId: string) => `slot-${puzzleId}`
 
 /** Props naming an element for the board morphs; `cls` is its view-transition class. */
@@ -15,21 +15,21 @@ export const boardMorph = (name: string, cls?: string) => ({
 })
 
 /**
- * Play's paper, pairing with the province's column on its page, which widens into it, or with whichever column a
- * door into the board stood in (`data-pair`, as `World`'s), province or not.
+ * Play's or a Lesson's paper, pairing with the `column` on its page that widens into it, a province's or a track's,
+ * or with whichever column a door into the board stood in (`data-pair`, as `World`'s).
  */
-export const columnPaper = (provinceId: string | undefined) =>
-  provinceId === undefined
+export const columnPaper = (column: string | undefined) =>
+  column === undefined
     ? { 'data-pair': '', style: { viewTransitionClass: styles.pageColumn } as CSSProperties }
-    : { ...boardMorph(`province-${provinceId}`, styles.pageColumn), 'data-pair': '' }
+    : { ...boardMorph(column, styles.pageColumn), 'data-pair': '' }
 
 /** A slot on an album page or in a Filmstrip, flying between them. */
 export const slotMorph = (puzzleId: string) => ({ ...boardMorph(slotName(puzzleId), 'slot'), 'data-slot': '' })
 
 /**
- * A door into a puzzle's board with no Filmstrip to fly into, as Home's Next up or a Month's day cell. Named only by
- * `morph-nav.ts`, since a page can have two doors into one board, and only the one taken grows. A `cell` gives way
- * to its twin beside it on the way back.
+ * A door into a board with no Filmstrip to fly into, as Home's Next up, a Month's day cell or a track's offer. Named
+ * only by `morph-nav.ts`, since a page can have two doors into one board, and only the one taken grows. A `cell` gives
+ * way to its twin beside it on the way back.
  */
 export const doorSlot = (puzzleId: string, cell = false) => ({
   'data-door': slotName(puzzleId),

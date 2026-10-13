@@ -331,6 +331,9 @@ const lessonRoute = createRoute({
     )
   },
   pendingComponent: LessonSkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
   notFoundComponent: () => <NotFound>There’s no lesson by that name.</NotFound>,
 })
 

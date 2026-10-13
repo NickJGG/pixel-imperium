@@ -1,5 +1,6 @@
 import { Slot } from '../album/Slot.tsx'
 import { PixelArt } from '../campaign/PixelArt.tsx'
+import { slotMorph } from '../campaign/worlds/names.ts'
 import type { LessonPuzzle } from './lessons.ts'
 import styles from './Learn.module.css'
 
@@ -14,6 +15,7 @@ export function LessonSlot({
   done,
   next = false,
   fresh = false,
+  morph,
 }: {
   number: number
   puzzle: LessonPuzzle
@@ -22,9 +24,11 @@ export function LessonSlot({
   next?: boolean
   /** Done since Learn was last shown: the ✓ pops. */
   fresh?: boolean
+  /** The Lesson's id (`lessonId`), naming the slot to fly into its strip and board (`slotMorph`). */
+  morph?: string
 }) {
   return (
-    <span className={styles.slot}>
+    <span className={styles.slot} {...(morph !== undefined && slotMorph(morph))}>
       {done ? (
         <Slot number={number} width={width} height={height} className={styles.print}>
           <PixelArt title={picture} width={width} height={height} palette={palette} />

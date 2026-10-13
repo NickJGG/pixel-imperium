@@ -1,6 +1,9 @@
 import { useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
+import { boardMorph, markUnseen, slotMorph } from '../campaign/worlds/names.ts'
+import { lessonId } from '../campaign/worlds/transitions.ts'
 import { CrownMark } from '../Hud.tsx'
+import { useCentredFilm } from '../play/Filmstrip.tsx'
 import { useLessonsDone } from './done.ts'
 import { lessonPuzzle } from './lessons.ts'
 import { LessonSlot } from './LessonSlot.tsx'
@@ -16,9 +19,10 @@ export function LessonFilm({ track, index, back }: { track: Track; index: number
   const done = useLessonsDone()
   const puzzles = useMemo(() => lessons.map(lessonPuzzle), [lessons])
   const count = lessons.filter(l => done.has(lessonKey(track, l))).length
+  const { listRef, currentRef } = useCentredFilm()
 
   return (
-    <nav className={playStyles.film} aria-label={`${track.name} lessons`}>
+    <nav className={playStyles.film} aria-label={`${track.name} lessons`} {...boardMorph('film', 'film')}>
       <Link to="/" className={playStyles.filmMark} aria-label="Pixel Imperium">
         <CrownMark />
       </Link>
@@ -28,7 +32,7 @@ export function LessonFilm({ track, index, back }: { track: Track; index: number
           {count} / {lessons.length}
         </span>
       </p>
-      <ol className={playStyles.filmSlots}>
+      <ol ref={listRef} className={playStyles.filmSlots} onScroll={e => markUnseen(e.currentTarget)}>
         {lessons.map((lesson, i) => {
           const slot = (
             <LessonSlot
@@ -42,7 +46,7 @@ export function LessonFilm({ track, index, back }: { track: Track; index: number
           if (i === index) {
             const { width, height } = puzzles[i]!
             return (
-              <li key={lesson.id} className={playStyles.filmCurrent} aria-current="page">
+              <li key={lesson.id} ref={currentRef} className={playStyles.filmCurrent} aria-current="page">
                 <span className={playStyles.filmSlot}>{slot}</span>
                 <span className={playStyles.filmCaption}>
                   #{i + 1} · {width}×{height}
@@ -51,7 +55,7 @@ export function LessonFilm({ track, index, back }: { track: Track; index: number
             )
           }
           return (
-            <li key={lesson.id}>
+            <li key={lesson.id} {...slotMorph(lessonId(track.id, lesson.id))}>
               {back === null ? (
                 slot
               ) : (

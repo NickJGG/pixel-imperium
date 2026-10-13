@@ -1,9 +1,11 @@
-import { useSyncExternalStore } from 'react'
 import { useParams, useSearch } from '@tanstack/react-router'
 import { Dymo } from '../album/Dymo.tsx'
 import { paperStyle } from '../album/paper.ts'
+import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
+import { boardMorph, columnPaper, dymoMorph, slotName } from '../campaign/worlds/names.ts'
+import { lessonId } from '../campaign/worlds/transitions.ts'
 import { Hud } from '../Hud.tsx'
-import { SIDE_PAGE_GAP } from '../play/layout.ts'
+import { SIDE_PAGE_GAP, useLessonStacked } from '../play/layout.ts'
 import { BoardGhost, Film, Rail, Surface } from '../play/PlaySkeleton.tsx'
 import { Bar, Fallback, SrLoading } from '../skeleton/Skeleton.tsx'
 import { lessonPuzzle } from './lessons.ts'
@@ -12,23 +14,16 @@ import playStyles from '../play/Play.module.css'
 import skeleton from '../play/PlaySkeleton.module.css'
 import styles from './Lesson.module.css'
 
-/** `LessonPage`'s stacked layout, where the coach drops under the board. */
-const STACKED = '(max-width: 860px)'
-
-const subscribeStacked = (onChange: () => void) => {
-  const query = matchMedia(STACKED)
-  query.addEventListener('change', onChange)
-  return () => query.removeEventListener('change', onChange)
-}
-
 /**
  * A Lesson while it loads, on its track's paper: Play's frame with the coach in the rail, or where it stacks, the
  * board card on cobalt with the coach under it. The track and Lesson come from the address, so their copy is real.
+ * It pairs with Learn and the other Lessons as the Lesson does, so the board morphs can play into it.
  */
 export function LessonSkeleton() {
   const params = useParams({ from: '/learn/$track/$lesson' })
   const { learn } = useSearch({ from: '/learn/$track/$lesson' })
-  const stacked = useSyncExternalStore(subscribeStacked, () => matchMedia(STACKED).matches)
+  const stacked = useLessonStacked()
+  useAnnounceSkeleton()
   const track = trackOf(params.track)
   const index = track?.lessons.findIndex(l => l.id === params.lesson) ?? -1
   if (!track || index === -1) return <Fallback />
@@ -36,7 +31,8 @@ export function LessonSkeleton() {
   const lesson = track.lessons[index]!
   const { width, height } = lessonPuzzle(lesson)
   const meta = `${lesson.picture} · ${width}×${height}`
-  const board = <BoardGhost width={width} height={height} />
+  const paperMorph = columnPaper(`track-${track.id}`)
+  const board = <BoardGhost width={width} height={height} name={slotName(lessonId(track.id, lesson.id))} />
   const coach = (
     <Coach track={track} index={index} rail={!stacked} meta={meta} skip={learn ? 'All lessons' : track.skipText} />
   )
@@ -45,10 +41,15 @@ export function LessonSkeleton() {
     return (
       <>
         <Hud />
-        <main className={`${playStyles.play} ${styles.page}`} style={paperStyle(track.paper)} aria-busy="true">
+        <main
+          className={`${playStyles.play} ${styles.page}`}
+          {...paperMorph}
+          style={{ ...paperStyle(track.paper), ...paperMorph.style }}
+          aria-busy="true"
+        >
           <SrLoading />
           <div className={`${playStyles.desk} ${styles.desk}`} style={{ gap: SIDE_PAGE_GAP }}>
-            <div className={`${playStyles.card} ${styles.card}`}>
+            <div className={`${playStyles.card} ${styles.card}`} {...boardMorph('surface', 'surface')}>
               <header className={playStyles.cardHead}>
                 <Dymo tone="pink">{track.label}</Dymo>
                 <span className={playStyles.size}>{meta}</span>
@@ -65,12 +66,19 @@ export function LessonSkeleton() {
     )
   }
   return (
-    <main className={playStyles.shell} data-rail style={paperStyle(track.paper)} aria-busy="true">
+    <main
+      className={playStyles.shell}
+      data-rail
+      {...paperMorph}
+      style={{ ...paperStyle(track.paper), ...paperMorph.style }}
+      aria-busy="true"
+    >
       <SrLoading />
       <div className={playStyles.shellBody}>
         <Film
           count={track.lessons.length}
           current={index}
+          ids={track.lessons.map(l => lessonId(track.id, l.id))}
           head={
             <>
               {track.name}
@@ -108,7 +116,7 @@ function Coach({
   return (
     <aside className={styles.coach} aria-hidden="true">
       {rail ? (
-        <Dymo tone="pink" className={styles.coachTrack}>
+        <Dymo tone="pink" className={styles.coachTrack} {...dymoMorph(lessonId(track.id, lesson.id))}>
           {track.label}
         </Dymo>
       ) : (

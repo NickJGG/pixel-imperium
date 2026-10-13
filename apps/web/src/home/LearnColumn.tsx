@@ -3,6 +3,8 @@ import { type CSSProperties, useMemo } from 'react'
 import { CountPill } from '../album/CountPill.tsx'
 import { type PaperName, paperStyle } from '../album/paper.ts'
 import { World } from '../campaign/worlds/Worlds.tsx'
+import { doorSlot } from '../campaign/worlds/names.ts'
+import { lessonId } from '../campaign/worlds/transitions.ts'
 import { lessonPuzzle } from '../tutorial/lessons.ts'
 import { LessonSlot } from '../tutorial/LessonSlot.tsx'
 import { TRACKS, TRACK_ORDER as ORDER, type Track, firstUnfinished, lessonKey } from '../tutorial/tracks.ts'
@@ -58,7 +60,13 @@ export function LearnColumn({
             {track.name} · {here}/{track.lessons.length}
           </p>
           <div className={styles.next}>
-            <Link {...lessonLink(track, lesson.id)} className={styles.nextSlot} tabIndex={-1} aria-hidden="true">
+            <Link
+              {...lessonLink(track, lesson.id)}
+              className={styles.nextSlot}
+              {...doorSlot(lessonId(track.id, lesson.id))}
+              tabIndex={-1}
+              aria-hidden="true"
+            >
               <LessonSlot number={number} puzzle={puzzles.get(lesson)!} picture={lesson.picture} done={false} />
             </Link>
             <div className={styles.nextText}>
@@ -96,6 +104,7 @@ export function LearnColumn({
                         <Link
                           {...lessonLink(t, l.id)}
                           className={styles.lesson}
+                          {...doorSlot(lessonId(t.id, l.id), true)}
                           aria-label={`${t.name} lesson ${i + 1}: ${l.title}`}
                         >
                           <LessonSlot

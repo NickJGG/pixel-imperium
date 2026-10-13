@@ -7,11 +7,12 @@
 import { useLayoutEffect } from 'react'
 import type { AnyRouter, ParsedLocation } from '@tanstack/react-router'
 import { reducedMotion } from '../../motion.ts'
-import { RAIL_QUERY } from '../../play/layout.ts'
+import { LESSON_STACKED, RAIL_QUERY } from '../../play/layout.ts'
+import { trackOf } from '../../tutorial/tracks.ts'
 import { currentCampaign } from '../last-campaign.ts'
 import { startBoardMorph, startDoor, startNextBoard } from './board-morph.ts'
 import { doorOf, named, slotName } from './names.ts'
-import { type Direction, boardIdOf, playIdOf, transitionFor } from './transitions.ts'
+import { type Direction, boardIdOf, lessonId, lessonOf, playIdOf, transitionFor } from './transitions.ts'
 import { PHONE } from './Worlds.tsx'
 import './transitions.css'
 import './board-morph.css'
@@ -85,6 +86,15 @@ const provinceHolding = (puzzleId: string) => {
   return campaign && province ? { campaign, province } : null
 }
 
+/** The ids of the slots in the strip a board's page stands, its province's or its track's, if it's known. */
+function stripOf(pathname: string): readonly string[] | undefined {
+  const lesson = lessonOf(pathname)
+  const track = lesson && trackOf(lesson.track)
+  if (track) return track.lessons.map(l => lessonId(track.id, l.id))
+  const puzzle = playIdOf(pathname)
+  return puzzle === undefined ? undefined : provinceHolding(puzzle)?.province.puzzles.map(p => p.id)
+}
+
 /** Set by the Navigation API when the browser animates the move itself, read as the router begins it. */
 let uaAnimated = false
 
@@ -107,6 +117,7 @@ export function installMorphNavigation(router: AnyRouter): void {
         reducedMotion: reducedMotion(),
         phone: matchMedia(PHONE).matches,
         rail: matchMedia(RAIL_QUERY).matches,
+        lessonRail: !matchMedia(LESSON_STACKED).matches,
         direction: direction(fromLocation, toLocation),
         uaAnimated,
         typed: typed(),
@@ -119,8 +130,8 @@ export function installMorphNavigation(router: AnyRouter): void {
     if (!transition) return
     const { types } = transition
     const back = types.includes('from-board')
-    const puzzle = back || types.includes('to-board') ? playIdOf((back ? fromLocation : toLocation).pathname) : undefined
-    const province = puzzle === undefined ? undefined : provinceHolding(puzzle)?.province
+    const board = back || types.includes('to-board') ? (back ? fromLocation : toLocation).pathname : undefined
+    const strip = board === undefined ? undefined : stripOf(board)
 
     let captured!: () => void
     let landed!: () => void
@@ -143,10 +154,10 @@ export function installMorphNavigation(router: AnyRouter): void {
     const door = types.find(t => DOORS.includes(t))
     const clicked = performance.now() - click.at < 1000 ? click.target : null
     const unsheet = types.includes('next-board')
-      ? startNextBoard(f.transition, playIdOf(fromLocation.pathname)!, playIdOf(toLocation.pathname)!)
+      ? startNextBoard(f.transition, boardIdOf(fromLocation.pathname)!, boardIdOf(toLocation.pathname)!)
       : door
         ? startDoorMorph(f, door, fromLocation, toLocation, clicked)
-        : province && startBoardMorph(f.transition, province.puzzles.map(p => p.id), puzzle!, back)
+        : strip && startBoardMorph(f.transition, strip, boardIdOf(board!)!, back)
     void f.transition.finished.finally(() => {
       unsheet?.()
       if (flight === f) flight = null
