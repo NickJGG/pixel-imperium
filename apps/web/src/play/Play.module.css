@@ -254,7 +254,10 @@
   font: var(--type-micro);
 }
 
-/* Play's right rail on the province's darker paper: the HUD pills, the title, progress, then the tools. */
+/*
+ * Play's right rail on the province's darker paper, under the floating HUD pills: the way back and the hero,
+ * the tools, Hint and its stakes, Controls and Assists, and How to play | Clear pinned to the foot.
+ */
 .rail {
   position: relative;
   flex: none;
@@ -267,62 +270,275 @@
   box-shadow: inset 4px 0 0 var(--gutter-shade);
 }
 
+/* A Lesson's rail still carries the pills itself. */
 .railPills {
   flex-wrap: wrap;
   margin-left: 0;
 }
 
-.railTitle {
+/* Play's clears the floating pills: the HUD's top padding, a 44px pill and a gap. */
+.rail.underPills {
+  padding-top: calc(2 * var(--space-4) + 44px); /* token-exempt: the HUD pill's height */
+}
+
+.railHead {
   display: grid;
   justify-items: start;
-  gap: var(--space-2);
 }
 
 .railBack {
-  display: inline-flex;
-  gap: var(--space-1);
-  font: var(--type-kicker);
-  text-transform: uppercase;
-  color: inherit;
-  text-decoration: none;
-  opacity: 0.8;
+  --press: 3px;
+  min-height: 30px;
+  margin-bottom: var(--space-4);
+  padding: 0 var(--space-3);
+  font: var(--type-small);
 }
 
-.railBack:hover > span {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.railKicker {
+  margin: 0 0 var(--space-1);
+  font: var(--type-kicker);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
 }
 
 .railName {
   margin: 0;
-  font-size: var(--fs-16);
+  font: var(--type-hero);
+  font-size: 2.1rem;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
-.railMeta {
+.railBadges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.railBadges:empty {
+  display: none;
+}
+
+.railPercent {
+  font-size: var(--fs-14);
+}
+
+/* Fills the rail, so the foot's auto margin is the room left; useRailFold reads it. */
+.railBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.railFoot {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+.railFolds {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.railTools {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.railToolRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.railToolRow > button {
+  position: relative;
+  width: 44px;
+  padding: 0;
+}
+
+.railToolRow > .railLines {
+  flex: 1;
+  width: auto;
+  padding: 0 var(--space-3);
+  font-size: var(--fs-14);
+}
+
+.railLines > svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* One pill holding Fill | Cross: the pill has the face, and the chosen half turns ink. */
+.joined {
+  display: none;
+  padding: var(--space-1);
+  background: var(--line-soft);
+  border-radius: var(--r-pill);
+  box-shadow: 0 var(--press) 0 var(--shade);
+}
+
+.joined > button {
+  flex: 1;
+  min-height: 36px;
+  font-size: var(--fs-14);
+}
+
+.joined svg {
+  width: 13px;
+  height: 13px;
+}
+
+@media (any-pointer: coarse) {
+  .joined {
+    display: flex;
+  }
+}
+
+/* A shortcut's keycap on a tool's corner, in the controller glyphs' look; only with a mouse, and never in pad mode. */
+.keycap {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  z-index: 1;
+  display: none;
+  align-items: center;
+  height: 20px;
+  padding: 0 var(--space-2);
+  font: 700 var(--fs-10)/1 var(--font-mono);
+  color: var(--card);
+  background: var(--ink);
+  border-radius: var(--r-pill);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink) 60%, black);
+  pointer-events: none;
+}
+
+@media (pointer: fine) {
+  :root:not([data-pad]) .keycap {
+    display: inline-flex;
+  }
+}
+
+/* Hint, a failed hint's note, then what's at stake, which the first hint's confirm takes over. */
+.hintCard {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.hintCard > button {
+  min-height: 52px;
+  font-size: var(--fs-18);
+}
+
+.stakes {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: var(--r-md);
+}
+
+.stakes > i {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  background: var(--foil);
+  border-radius: var(--r-xs);
+}
+
+.stakes[data-swatch='plain'] > i {
+  background: var(--line-soft);
+}
+
+.stakes p {
   margin: 0;
-  font: var(--type-kicker);
-  text-transform: uppercase;
-  opacity: 0.8;
+  font: 500 var(--fs-14)/1.35 var(--font-ui);
+  color: var(--ink-soft);
 }
 
-.progress {
+.stakes b {
+  display: block;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.stakes[data-confirm] {
+  flex-direction: column;
+  align-items: stretch;
+  background: var(--card);
+  box-shadow: 0 0 0 2px var(--line-soft);
+}
+
+.stakes[data-confirm] > span {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2);
+}
+
+/* A plain ruled section, headed as a Province page's tiers are. */
+.railSection {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.railSection > h2 {
+  margin: 0;
+  padding-bottom: var(--space-2);
+  font: var(--type-name);
+  border-bottom: 4px solid color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.legend {
   display: grid;
   gap: var(--space-1);
+  margin: 0;
+  font: var(--type-small);
 }
 
-.progress > span {
+.legend > div {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  font: var(--type-kicker);
-  text-transform: uppercase;
+  gap: var(--space-3);
+  min-height: 24px;
 }
 
-.progress > i {
-  height: 8px;
-  background:
-    linear-gradient(var(--tab), var(--tab)) 0 0 / var(--percent) 100% no-repeat,
-    color-mix(in srgb, var(--ink) 14%, transparent);
-  border-radius: var(--r-pill);
+.legend dt {
+  display: flex;
+  gap: var(--space-1);
+  color: var(--ink-soft);
+}
+
+.legend dd {
+  margin: 0;
+}
+
+/* The legend for the primary pointer: the mouse's, or touch's. */
+.mouseOnly,
+.fingerOnly {
+  display: none;
+}
+
+@media (pointer: fine) {
+  .mouseOnly {
+    display: grid;
+  }
+}
+
+@media (pointer: coarse) {
+  .fingerOnly {
+    display: grid;
+  }
 }
 
 /* The tools along the bottom where there's no rail. */
@@ -722,13 +938,6 @@
   box-shadow: none;
 }
 
-/* In the rail, under Hint and the actions. */
-.pillDocked {
-  flex-wrap: wrap;
-  justify-content: center;
-  white-space: normal;
-}
-
 /* The dock's tools carry their names in aria-label and title. */
 .pillCompact .toolLabel {
   display: none;
@@ -970,40 +1179,22 @@
   stroke-width: 2.2;
 }
 
-/* The rail's last row: the assists, set and forget, behind a disclosure. */
+/* A folded rail section: a full-width button opening it in a popover. */
 .disclosure {
   position: relative;
 }
 
 .disclosure > button {
+  position: relative;
   width: 100%;
-  min-height: 36px;
   padding: 0 var(--space-3);
-  justify-content: flex-start;
   font-size: var(--fs-14);
-  border-radius: var(--r-md);
-  --btn-edge: transparent;
-}
-
-/* A tinted row while closed; open, it takes the house chosen state. */
-.disclosure > button:not([aria-expanded='true']) {
-  --btn-bg: color-mix(in srgb, var(--ink) 8%, transparent);
-}
-
-.disclosure > button:hover:not(:disabled),
-.disclosure > button:active:not(:disabled) {
-  transform: none;
 }
 
 .disclosure > button svg {
+  flex: none;
   width: 16px;
   height: 16px;
-}
-
-.disclosure small {
-  margin-left: auto;
-  font: var(--type-kicker);
-  color: var(--ink-soft);
 }
 
 [aria-expanded='true'] > .chevron {
@@ -1057,52 +1248,10 @@
   border-radius: var(--r-pill);
 }
 
-.panelBody {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.rail .foilNote {
-  justify-self: start;
-  font: var(--type-small);
-  background: color-mix(in srgb, var(--ink) 10%, transparent);
-}
-
-.rail .foilNote[data-lost] {
-  padding: 0;
-  color: var(--ink-soft);
-  background: none;
-}
-
 .panelNote {
   margin: 0;
   font: 600 var(--fs-14)/1.35 var(--font-ui);
   color: var(--ink-soft);
-}
-
-/* Hint and everything it says: the confirm takes the button's place and grows down, not across. */
-.panelHint {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.panelHint p {
-  margin: 0;
-}
-
-.panelHint > button {
-  min-height: 48px;
-}
-
-.panelHint .confirm {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  padding: var(--space-3);
-  border-radius: var(--r-lg);
-}
-
-.panelHint .confirm > span {
-  grid-column: 1 / -1;
 }
 
 .switches {

@@ -22,7 +22,7 @@ export function padControls(owner: PadOwner | 'solved', { lines, zoom, back }: B
   return [
     move,
     [['A'], 'Fill'],
-    [['X'], 'Mark'],
+    [['X'], 'Cross'],
     ...(lines ? [[['Y'], 'Straight lines'] as const] : []),
     [['LB', 'RB'], 'Undo / redo'],
     ...(zoom ? [[['LT', 'RT'], 'Zoom'] as const] : []),

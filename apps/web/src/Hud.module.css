@@ -21,6 +21,11 @@
   }
 }
 
+.hud.pillsOnly {
+  position: absolute;
+  inset: 0 0 auto;
+}
+
 .hud > * {
   pointer-events: auto;
 }

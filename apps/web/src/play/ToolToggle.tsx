@@ -4,12 +4,21 @@ import styles from './Play.module.css'
 
 /**
  * Fill or Cross for touch and pen; the mouse picks with its buttons, so it's hidden without touch.
- * `compact` lets the pill drop the labels, so the buttons carry their names themselves.
+ * `compact` lets the pill drop the labels, so the buttons carry their names themselves. `joined` makes one
+ * full-width pill whose chosen half turns ink, for the rail.
  */
-export function ToolToggle({ store, compact = false }: { store: PlayStore; compact?: boolean }) {
+export function ToolToggle({
+  store,
+  compact = false,
+  joined = false,
+}: {
+  store: PlayStore
+  compact?: boolean
+  joined?: boolean
+}) {
   const mode = useSyncExternalStore(store.subscribe, () => store.getState().mode)
   return (
-    <div className={`${styles.seg} ${styles.touchOnly}`} role="group" aria-label="Touch tool">
+    <div className={`${joined ? styles.joined : styles.seg} ${styles.touchOnly}`} role="group" aria-label="Touch tool">
       {(['fill', 'mark'] as const).map(m => {
         const label = m === 'fill' ? 'Fill' : 'Cross'
         return (

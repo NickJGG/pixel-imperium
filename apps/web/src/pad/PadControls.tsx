@@ -33,7 +33,7 @@ export function PadStrip() {
     owner === 'board'
       ? [
           [['A'], 'Fill'],
-          [['X'], 'Mark'],
+          [['X'], 'Cross'],
         ]
       : [
           [['A'], 'Select'],

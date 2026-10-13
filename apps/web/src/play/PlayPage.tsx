@@ -21,14 +21,14 @@ import { requestHint, submitSolve } from '../api.ts'
 import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
-import { boardMorph, columnPaper, dymoMorph, slotName } from '../campaign/worlds/names.ts'
-import { getPadMode, usePadMode } from '../pad/mode.ts'
+import { boardMorph, columnPaper, slotName } from '../campaign/worlds/names.ts'
+import { getPadMode } from '../pad/mode.ts'
 import { PadControls } from '../pad/PadControls.tsx'
 import { PadGlyph, PanelTag } from '../pad/PadGlyph.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
 import { firstFocusable, focusDefault } from '../pad/spatial.ts'
-import { Hud, HudPills, SoundButton, ThemeButton } from '../Hud.tsx'
+import { FloatingPills, Hud, SoundButton, ThemeButton } from '../Hud.tsx'
 import { getSettings, useSettings } from '../settings.ts'
 import { reducedMotion } from '../motion.ts'
 import { play } from '../sound.ts'
@@ -37,11 +37,12 @@ import { ChoiceCard, TUTORIAL_OFFER, techniquesOffer } from '../tutorial/ChoiceC
 import { useLessonsDone } from '../tutorial/done.ts'
 import { HowToPlay } from '../tutorial/HowToPlay.tsx'
 import { TRACKS } from '../tutorial/tracks.ts'
-import { AssistsDisclosure } from './AssistsDisclosure.tsx'
+import { AssistsDisclosure, ControlsDisclosure } from './AssistsDisclosure.tsx'
 import { AssistSwitches } from './AssistSwitches.tsx'
 import { Board, REVEAL_MS } from './Board.tsx'
 import { ClearButton, LoopIcon } from './ClearButton.tsx'
 import { ColClues, RowClues } from './Clues.tsx'
+import { ControlsLegend } from './ControlsLegend.tsx'
 import { Dock } from './Dock.tsx'
 import { useBoardGestures } from './gestures.ts'
 import { HintButton } from './HintButton.tsx'
@@ -53,7 +54,8 @@ import { encodeCells } from './progress-storage.ts'
 import { Filmstrip, PageHead, SlotRow } from './Filmstrip.tsx'
 import { type Pose, celebrate, popOnly } from './sticker-moment.ts'
 import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
-import { ToolPill } from './ToolPill.tsx'
+import { RailTools } from './RailTools.tsx'
+import { useRailFold } from './useRailFold.ts'
 import { useUndoKeys } from './useUndoKeys.ts'
 import { BoardView, fitView } from './viewport.ts'
 import styles from './Play.module.css'
@@ -86,7 +88,7 @@ export function PlayPage() {
         paper: paperStyle(index),
         back: `/c/${campaign.id}/${province.id}`,
         here: `/play/${puzzle.id}`,
-        meta: [`${puzzle.width}×${puzzle.height}`, puzzle.tier && TIER_NAME[puzzle.tier]].filter(Boolean).join(' · '),
+        meta: [puzzle.tier && TIER_NAME[puzzle.tier], `${puzzle.width}×${puzzle.height}`].filter(Boolean).join(' · '),
         campaign,
         album: { campaign, province, index, number, previewConquest },
       }}
@@ -180,7 +182,6 @@ export function Play({
   const cells = useStoreValue(store, s => s.cells)
   const percent = useMemo(() => progressPercent(cells, puzzle.filledCount, false), [cells, puzzle.filledCount])
   const settings = useSettings()
-  const pad = usePadMode()
   const offerTutorial = useShouldOffer(storage)
   const offerTechniques = useShouldOfferTechniques(album?.province, useLessonsDone()) && !offerTutorial
   const fresh = useMemo(() => freshCells(puzzle, settings.autoMarkEmptyLines), [puzzle, settings.autoMarkEmptyLines])
@@ -338,18 +339,20 @@ export function Play({
 
   const dockRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLElement>(null)
+  const railBodyRef = useRef<HTMLDivElement>(null)
 
   const hideSticker = moment === 'waiting' || moment === 'banner'
   const done = previewConquest || (solved && !hideSticker)
   // Up before the flight, once the fit glide is over, so the sticker has a slot to fly to.
   const afterOpen = !wide && (done || (hideSticker && !fitting))
+  const fold = useRailFold(panelRef, railBodyRef, wide && !done)
 
   usePadPage({
     parent: solved ? context.back : undefined,
     panel: () => {
       if (!wide) return dockRef.current?.querySelector<HTMLElement>('[data-pad-menu]') ?? null
       const panel = panelRef.current
-      return panel && (panel.querySelector<HTMLElement>(`.${styles.panelHint} button`) ?? firstFocusable(panel))
+      return panel && (panel.querySelector<HTMLElement>(`.${styles.hintCard} > button`) ?? firstFocusable(panel))
     },
     hold: hideSticker || moment === 'popping',
   })
@@ -391,11 +394,31 @@ export function Play({
     unverified && <Dymo className={styles.tag}>Imported: replay to verify</Dymo>
   )
 
+  const stakes = replaying ? (
+    <Stakes title="Already in the album">Replays never change the sticker.</Stakes>
+  ) : !firstSolve ? null : hinted ? (
+    <Stakes swatch="plain" title="Regular sticker">
+      A hint was used on this one.
+    </Stakes>
+  ) : (
+    <Stakes swatch="foil" title="Foil still possible">
+      A hint makes it a regular sticker.
+    </Stakes>
+  )
   const hintButton = (popover: boolean) => (
     <HintButton
       store={store}
       confirmFirst={firstSolve && !hinted}
       popover={popover}
+      stakes={popover ? undefined : stakes}
+      note={
+        !popover &&
+        hintFailed && (
+          <p className={styles.panelNote} role="status">
+            {HINT_FAILED}
+          </p>
+        )
+      }
       request={cells => requestHint(puzzle.id, { cells: encodeCells(cells) })}
       onError={setHintFailed}
     />
@@ -552,15 +575,9 @@ export function Play({
           </span>
         </header>
       )}
+      {wide && <FloatingPills />}
       <div className={styles.shellBody}>
-        {wide && slotRow && (
-          <Filmstrip
-            {...slotRow}
-            slotRef={setSlot}
-            percent={solved ? null : percent}
-            glow={solved && moment === 'landed'}
-          />
-        )}
+        {wide && slotRow && <Filmstrip {...slotRow} slotRef={setSlot} glow={solved && moment === 'landed'} />}
         <div className={styles.surface} {...surfaceMorph}>
           <div ref={stageRef} className={styles.stage}>
             {cellSize > 0 && (
@@ -584,55 +601,56 @@ export function Play({
         {wide && (
           <aside
             ref={panelRef}
-            className={styles.rail}
+            className={`${styles.rail} ${styles.underPills}`}
             {...railMorph}
             style={{ ...railMorph.style, width: RAIL_WIDTH }}
             data-pad-panel
-            aria-label={title}
+            aria-label={puzzle.title}
           >
-            <HudPills className={styles.railPills} />
-            <div className={styles.railTitle}>
-              {backLink(styles.railBack)}
-              <h1 className={styles.railName}>
-                <Dymo {...dymoMorph(puzzle.id)}>{title}</Dymo>
-              </h1>
-              <p className={styles.railMeta}>{meta}</p>
-              {chip}
-              {!done && tag}
+            <div className={styles.railHead}>
+              <Link to={context.back} className={styles.railBack} data-variant="paper" aria-label={`Back to ${context.place}`}>
+                ← {context.place}
+              </Link>
+              <p className={styles.railKicker}>{meta}</p>
+              <h1 className={styles.railName}>{puzzle.title}</h1>
+              {!done && (
+                <div className={styles.railBadges}>
+                  {!solved && <CountPill className={styles.railPercent}>{percent}%</CountPill>}
+                  {chip}
+                  {tag}
+                </div>
+              )}
             </div>
-            {!solved && (
-              <div className={styles.progress}>
-                <span>
-                  Progress <b>{percent}%</b>
-                </span>
-                <i style={{ '--percent': `${percent}%` } as CSSProperties} />
-              </div>
-            )}
             {done ? (
               <div className={styles.panelAfter}>
                 {afterBody}
                 <PadControls solved {...controls} />
               </div>
             ) : (
-              <div className={styles.panelBody} inert={solved}>
-                {foilChip}
-                <div className={styles.panelHint}>
-                  {hintButton(false)}
-                  {hintFailed && (
-                    <p className={styles.panelNote} role="status">
-                      {HINT_FAILED}
-                    </p>
+              <div ref={railBodyRef} className={styles.railBody} inert={solved}>
+                <RailTools store={store} />
+                {hintButton(false)}
+                {fold < 2 && (
+                  <section className={styles.railSection} aria-labelledby="rail-controls">
+                    <h2 id="rail-controls">Controls</h2>
+                    <ControlsLegend />
+                  </section>
+                )}
+                {fold < 1 && (
+                  <section className={styles.railSection} aria-labelledby="rail-assists">
+                    <h2 id="rail-assists">Assists</h2>
+                    <AssistSwitches />
+                  </section>
+                )}
+                <div className={styles.railFoot}>
+                  {fold > 0 && (
+                    <div className={styles.railFolds}>
+                      {fold > 1 && <ControlsDisclosure store={store} />}
+                      <AssistsDisclosure store={store} />
+                    </div>
                   )}
-                  {firstSolve && hinted && (
-                    <span className={styles.foilNote} data-lost>
-                      <i aria-hidden="true" />
-                      Hint used: regular sticker
-                    </span>
-                  )}
+                  {actions}
                 </div>
-                {actions}
-                {pad ? <PadControls solved={false} {...controls} /> : <ToolPill store={store} docked />}
-                <AssistsDisclosure store={store} />
               </div>
             )}
             {!done && <PanelTag />}
@@ -709,9 +727,22 @@ export function Play({
   )
 }
 
-const TIER_NAME: Record<Tier, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
+export const TIER_NAME: Record<Tier, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
 
 const HINT_FAILED = "Couldn't reach the album for a hint. Try again in a moment."
+
+/** What a hint would cost, under Hint in the rail. */
+function Stakes({ swatch, title, children }: { swatch?: 'foil' | 'plain'; title: string; children: string }) {
+  return (
+    <div className={styles.stakes} data-swatch={swatch}>
+      {swatch && <i aria-hidden="true" />}
+      <p>
+        <b>{title}</b>
+        {children}
+      </p>
+    </div>
+  )
+}
 
 function ArrowIcon() {
   return (

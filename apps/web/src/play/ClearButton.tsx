@@ -11,7 +11,7 @@ interface Props {
   disabled?: boolean
 }
 
-/** Clear (or Replay) behind an inline confirm, which Escape or a new board stroke cancels. */
+/** Clear (or Replay) behind an inline confirm, which Escape or a new board stroke cancels; red only in the confirm. */
 export function ClearButton({ store, solved, disabled = false }: Props) {
   const [confirming, setConfirming] = useState(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
@@ -38,7 +38,7 @@ export function ClearButton({ store, solved, disabled = false }: Props) {
       <button
         ref={buttonRef}
         type="button"
-        data-variant={solved ? 'paper' : 'danger'}
+        data-variant="paper"
         disabled={disabled}
         onClick={() => setConfirming(true)}
       >
@@ -62,7 +62,7 @@ export function ClearButton({ store, solved, disabled = false }: Props) {
       >
         {label}
       </button>
-      <button type="button" data-variant="ghost" onClick={() => setConfirming(false)}>
+      <button type="button" data-variant="paper" onClick={() => setConfirming(false)}>
         Cancel
       </button>
     </div>

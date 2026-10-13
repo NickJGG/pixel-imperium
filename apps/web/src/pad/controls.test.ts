@@ -9,7 +9,7 @@ describe('padControls', () => {
     expect(actions('board', play)).toEqual([
       'Move',
       'Fill',
-      'Mark',
+      'Cross',
       'Straight lines',
       'Undo / redo',
       'Zoom',

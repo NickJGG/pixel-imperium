@@ -1,21 +1,55 @@
-import { type RefObject, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { type ReactNode, type RefObject, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { PadGlyph } from '../pad/PadGlyph.tsx'
 import { usePadContain } from '../pad/PadProvider.tsx'
 import { useSettings } from '../settings.ts'
 import { assists } from './AssistChips.tsx'
 import { AssistSwitches } from './AssistSwitches.tsx'
+import { ControlsLegend } from './ControlsLegend.tsx'
 import type { PlayStore } from './store.ts'
 import styles from './Play.module.css'
 
-/** The rail's Assists row, opening the switches below it, or above when the window runs out. Escape, a click away or a board stroke closes it. */
+/** The rail's Assists, folded into a button for a rail too short to list them. */
 export function AssistsDisclosure({ store }: { store: PlayStore }) {
+  const settings = useSettings()
+  const on = assists.filter(({ key }) => settings[key]).length
+  return (
+    <RailDisclosure store={store} label={`Assists · ${on}`} icon={<SlidersIcon />} menu>
+      <AssistSwitches />
+    </RailDisclosure>
+  )
+}
+
+/** The rail's Controls legend, folded into a button for a rail too short to list it. */
+export function ControlsDisclosure({ store }: { store: PlayStore }) {
+  return (
+    <RailDisclosure store={store} label="Controls" icon={<KeysIcon />}>
+      <ControlsLegend />
+    </RailDisclosure>
+  )
+}
+
+/**
+ * A folded rail section: a button opening `children` below it, or above when the window runs out. Escape, a
+ * click away or a board stroke closes it. `menu` makes it the controller's Menu target.
+ */
+function RailDisclosure({
+  store,
+  label,
+  icon,
+  menu = false,
+  children,
+}: {
+  store: PlayStore
+  label: string
+  icon: ReactNode
+  menu?: boolean
+  children: ReactNode
+}) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const popRef = useRef<HTMLDivElement>(null)
   const id = useId()
-  const settings = useSettings()
-  const on = assists.filter(({ key }) => settings[key]).length
   usePadContain(popRef, open, () => setOpen(false), buttonRef)
   useDismiss(open, setOpen, store, rootRef, buttonRef)
 
@@ -31,22 +65,21 @@ export function AssistsDisclosure({ store }: { store: PlayStore }) {
       <button
         ref={buttonRef}
         type="button"
-        data-pad-menu
+        data-pad-menu={menu || undefined}
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen(o => !o)}
       >
-        <SlidersIcon />
-        Assists
-        <small>{on} on</small>
+        {icon}
+        {label}
         <svg className={styles.chevron} viewBox="0 0 24 24" aria-hidden="true">
           <path d="M6 9l6 6 6-6" />
         </svg>
-        <PadGlyph button="Menu" corner />
+        {menu && <PadGlyph button="Menu" corner />}
       </button>
       {open && (
         <div ref={popRef} id={id} className={styles.assistsPop} data-up={up || undefined}>
-          <AssistSwitches />
+          {children}
         </div>
       )}
     </div>
@@ -87,6 +120,15 @@ export function SlidersIcon() {
       <circle cx="16" cy="6" r="2" />
       <circle cx="10" cy="12" r="2" />
       <circle cx="18" cy="18" r="2" />
+    </svg>
+  )
+}
+
+function KeysIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+      <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8" />
     </svg>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import type { Cell } from '@pixel-imperium/nonogram'
 import type { HintResponse } from '@pixel-imperium/protocol'
 import { usePadContain } from '../pad/PadProvider.tsx'
@@ -9,16 +9,22 @@ interface Props {
   store: PlayStore
   /** Foil is still on the table, so the first hint asks before giving it up. */
   confirmFirst: boolean
-  /** Shown under the confirm. */
-  note?: string
+  /** Shown under the confirm, or with `stakes`, between the button and the card. */
+  note?: ReactNode
   /** The confirm opens above the button instead of taking its place, so a toolbar doesn't reflow; the toolbar may hide the label. */
   popover?: boolean
+  /**
+   * The rail's layout: the button stays put with `note` and then this card under it, which the confirm
+   * takes over. What's at stake in the card; null for nothing.
+   */
+  stakes?: ReactNode
   request: (cells: readonly Cell[]) => Promise<HintResponse | null>
   onError: (failed: boolean) => void
 }
 
 /** Asks `request` for a hint on the grid as it stands; the store shows it until the next edit. */
-export function HintButton({ store, confirmFirst, note, popover = false, request, onError }: Props) {
+export function HintButton({ store, confirmFirst, note, popover = false, stakes, request, onError }: Props) {
+  const card = stakes !== undefined
   const [confirming, setConfirming] = useState(false)
   const [pending, setPending] = useState(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
@@ -64,7 +70,7 @@ export function HintButton({ store, confirmFirst, note, popover = false, request
       type="button"
       data-variant="blue"
       disabled={pending}
-      aria-expanded={popover ? confirming : undefined}
+      aria-expanded={popover || card ? confirming : undefined}
       aria-label={popover ? 'Hint' : undefined}
       title={popover ? 'Hint' : undefined}
       onClick={() => (confirming ? setConfirming(false) : confirmFirst ? setConfirming(true) : void hint())}
@@ -73,6 +79,33 @@ export function HintButton({ store, confirmFirst, note, popover = false, request
       <span className={styles.toolLabel}>Hint</span>
     </button>
   )
+
+  if (card) {
+    return (
+      <div className={styles.hintCard}>
+        {button}
+        {note}
+        {confirming ? (
+          <div ref={boxRef} className={styles.stakes} data-confirm role="group" aria-label="Hint">
+            <p>
+              <b>Use a hint?</b>
+              This sticker won't be foil.
+            </p>
+            <span>
+              <button ref={confirmRef} type="button" data-variant="primary" data-size="compact" onClick={() => void hint()}>
+                Use a hint
+              </button>
+              <button type="button" data-variant="paper" data-size="compact" onClick={() => setConfirming(false)}>
+                Cancel
+              </button>
+            </span>
+          </div>
+        ) : (
+          stakes
+        )}
+      </div>
+    )
+  }
 
   const confirm = confirming && (
     <div ref={boxRef} className={popover ? `${styles.confirm} ${styles.hintPop}` : styles.confirm} role="group" aria-label="Hint">

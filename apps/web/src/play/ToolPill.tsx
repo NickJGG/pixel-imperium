@@ -7,17 +7,15 @@ import styles from './Play.module.css'
 
 /**
  * The tools. `compact` packs them into the dock where there's no rail: icons only, and `children`
- * (Hint) at the end. `docked` sets them in the rail.
+ * (Hint) at the end.
  */
 export function ToolPill({
   store,
   compact = false,
-  docked = false,
   children,
 }: {
   store: PlayStore
   compact?: boolean
-  docked?: boolean
   children?: ReactNode
 }) {
   const canUndo = useSyncExternalStore(store.subscribe, () => store.getState().canUndo)
@@ -25,7 +23,7 @@ export function ToolPill({
   const { lockLine } = useSettings()
   return (
     <div
-      className={[styles.pill, compact && styles.pillCompact, docked && styles.pillDocked].filter(Boolean).join(' ')}
+      className={compact ? `${styles.pill} ${styles.pillCompact}` : styles.pill}
       role="toolbar"
       aria-label="Tools"
     >

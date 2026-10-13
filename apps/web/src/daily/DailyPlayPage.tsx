@@ -5,7 +5,7 @@ import { seasonOf, seasonStyle } from '../album/paper.ts'
 import { type AccountState, useAccount } from '../account.ts'
 import { EdgeState } from '../EdgeStates.tsx'
 import { Hud } from '../Hud.tsx'
-import { Play } from '../play/PlayPage.tsx'
+import { Play, TIER_NAME } from '../play/PlayPage.tsx'
 import { GRACE_MS, dailyClock, dailyState, finishLeft, formatLeft, startOf } from './clock.ts'
 import { monthParams } from './month.ts'
 import { useNow } from './useNow.ts'
@@ -66,7 +66,7 @@ function DailyPlay({ puzzle, date, account }: { puzzle: PuzzleClues; date: strin
         paper: seasonStyle(month),
         back: `/daily/${date.slice(0, 4)}/${date.slice(5, 7)}`,
         here: `/daily/${date.replaceAll('-', '/')}`,
-        meta: [`${puzzle.width}×${puzzle.height}`, weekday.format(day), puzzle.tier]
+        meta: [`${weekday.format(day)} ${day.getDate()}`, puzzle.tier && TIER_NAME[puzzle.tier], `${puzzle.width}×${puzzle.height}`]
           .filter(Boolean)
           .join(' · '),
         chip: <FinishChip date={date} />,

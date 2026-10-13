@@ -5,9 +5,8 @@ import { currentCampaign } from '../campaign/last-campaign.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { dailyId } from '../daily/clock.ts'
 import { boardMorph, columnPaper, slotMorph, slotName } from '../campaign/worlds/names.ts'
-import { CrownMark, HudPills, SoundButton, ThemeButton } from '../Hud.tsx'
+import { CrownMark, FloatingPills, HudPills, SoundButton, ThemeButton } from '../Hud.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
-import { SlidersIcon } from './AssistsDisclosure.tsx'
 import { useCentredFilm } from './Filmstrip.tsx'
 import { RAIL_WIDTH, useRail } from './layout.ts'
 import styles from './Play.module.css'
@@ -57,6 +56,7 @@ export function PlaySkeleton() {
       aria-busy="true"
     >
       <SrLoading />
+      {wide && <FloatingPills />}
       {!wide && (
         <header className={styles.topLine}>
           <Bar w={28} h={18} />
@@ -73,40 +73,32 @@ export function PlaySkeleton() {
             count={found?.province.puzzles.length ?? 12}
             current={(found?.number ?? 1) - 1}
             ids={found?.province.puzzles.map(p => p.id)}
-            head={
-              <>
-                <Bar w={64} h={10} />
-                <Bar w={32} h={10} style={{ marginTop: 'var(--space-1)' }} />
-              </>
-            }
+            head={<Bar w={32} h={10} />}
+            caption={false}
           />
         )}
         <Surface>{board}</Surface>
         {wide && (
-          <Rail>
-            <div className={styles.railTitle}>
-              <Bar w={120} h={12} />
-              <Bar w={200} h={30} />
-              <Bar w={90} h={12} />
-            </div>
-            <div className={styles.progress}>
-              <span>
-                Progress <Bar w={32} h={12} />
-              </span>
-              <Bar w="100%" h={8} pill />
-            </div>
-            <div className={styles.panelBody}>
-              <Bar w="100%" h={48} pill />
-              <div className={styles.btnRow}>
-                <Bar w="100%" h={44} pill />
-                <Bar w="100%" h={44} pill />
+          <Rail underPills>
+            <div className={styles.railHead}>
+              <Bar w={110} h={30} pill style={{ marginBottom: 'var(--space-4)' }} />
+              <Bar w={90} h={12} style={{ marginBottom: 'var(--space-1)' }} />
+              <Bar w={200} h={34} />
+              <div className={styles.railBadges}>
+                <Bar w={52} h={22} pill />
               </div>
+            </div>
+            <div className={styles.railBody}>
               <Bar w="100%" h={44} pill />
-              <div className={styles.disclosure} inert>
-                <button type="button">
-                  <SlidersIcon />
-                  Assists
-                </button>
+              <div className={styles.hintCard}>
+                <Bar w="100%" h={52} pill />
+                <Bar w="100%" h={60} />
+              </div>
+              <div className={styles.railFoot}>
+                <div className={styles.btnRow}>
+                  <Bar w="100%" h={44} pill />
+                  <Bar w="100%" h={44} pill />
+                </div>
               </div>
             </div>
           </Rail>
@@ -155,19 +147,21 @@ export function BoardGhost({ width, height, name }: { width: number; height: num
 }
 
 /**
- * The filmstrip: the crown, `head` where the name and count go, and `count` slots with the `current` one ringed.
- * With the puzzles' `ids`, the others pair with their slots as the Filmstrip's do.
+ * The filmstrip: the crown, `head` where the name and count go, and `count` slots with the `current` one ringed,
+ * over its `caption` unless that's off. With the puzzles' `ids`, the others pair with their slots as the Filmstrip's do.
  */
 export function Film({
   count,
   current,
   head,
   ids,
+  caption = true,
 }: {
   count: number
   current: number
   head: ReactNode
   ids?: readonly string[] | undefined
+  caption?: boolean
 }) {
   const { listRef, currentRef } = useCentredFilm()
   const slot = <Ghost style={{ width: 64, aspectRatio: 1 }} />
@@ -182,7 +176,7 @@ export function Film({
           i === current ? (
             <li key={i} ref={currentRef} className={styles.filmCurrent}>
               {slot}
-              <Bar w={48} h={10} />
+              {caption && <Bar w={48} h={10} />}
             </li>
           ) : (
             <li key={i} {...(ids?.[i] !== undefined && slotMorph(ids[i]))}>
@@ -197,11 +191,15 @@ export function Film({
 
 const railMorph = boardMorph('rail', 'rail')
 
-/** The right rail, under the HUD's pills. */
-export function Rail({ children }: { children: ReactNode }) {
+/** The right rail, topped by the HUD's pills, or with `underPills` clearing the ones floating over the page. */
+export function Rail({ underPills = false, children }: { underPills?: boolean; children: ReactNode }) {
   return (
-    <aside className={styles.rail} {...railMorph} style={{ ...railMorph.style, width: RAIL_WIDTH }}>
-      <HudPills className={styles.railPills} />
+    <aside
+      className={underPills ? `${styles.rail} ${styles.underPills}` : styles.rail}
+      {...railMorph}
+      style={{ ...railMorph.style, width: RAIL_WIDTH }}
+    >
+      {!underPills && <HudPills className={styles.railPills} />}
       {children}
     </aside>
   )

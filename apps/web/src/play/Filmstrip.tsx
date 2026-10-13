@@ -61,18 +61,16 @@ export function PageHead(props: RowProps) {
 }
 
 interface FilmProps extends RowProps {
-  /** How much of the board is filled, shown under the current slot until it's solved. */
-  percent: number | null
   /** The sticker has just landed in the current slot. */
   glow?: boolean
 }
 
 /**
- * The province's slots down the left of Play, topped by the crown mark. It scrolls, and opens with the
- * current slot centred and ringed; `slotRef` is that slot, where the sticker flies.
+ * The province's slots down the left of Play, topped by the crown mark and the count. It scrolls, and opens with
+ * the current slot centred and ringed; `slotRef` is that slot, where the sticker flies.
  */
 export function Filmstrip(props: FilmProps) {
-  const { province, number, storage, slotRef, percent, glow } = props
+  const { province, number, storage, slotRef, glow } = props
   const current = province.puzzles[number - 1]!
   const has = stuck(props)
   const { listRef, currentRef } = useCentredFilm()
@@ -83,7 +81,6 @@ export function Filmstrip(props: FilmProps) {
         <CrownMark />
       </Link>
       <p className={styles.filmHead}>
-        {province.name}
         <span>
           {province.puzzles.filter(p => has(p.id)).length} / {province.puzzles.length}
         </span>
@@ -98,10 +95,6 @@ export function Filmstrip(props: FilmProps) {
                 ) : (
                   <Slot number={number} width={p.width} height={p.height} gold={number === GOLD_SLOT} tier={p.tier} next />
                 )}
-              </span>
-              <span className={styles.filmCaption}>
-                #{number} · {p.width}×{p.height}
-                {percent !== null && <b>{percent}%</b>}
               </span>
             </li>
           ) : (
