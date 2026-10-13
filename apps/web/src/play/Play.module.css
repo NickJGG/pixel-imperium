@@ -328,6 +328,19 @@
   font-size: var(--fs-14);
 }
 
+.railNote {
+  margin: var(--space-3) 0 0;
+  font: 600 var(--fs-14)/1.35 var(--font-ui);
+  color: var(--ink-soft);
+}
+
+.railHead .closing {
+  margin: var(--space-2) 0 0;
+  font: 400 var(--fs-14)/1.4 var(--font-display);
+  letter-spacing: -0.03em;
+  color: var(--gold-dk);
+}
+
 /* Fills the rail, so the foot's auto margin is the room left; useRailFold reads it. */
 .railBody {
   flex: 1;
@@ -340,6 +353,28 @@
   display: grid;
   gap: var(--space-2);
   margin-top: auto;
+}
+
+/* Solved: Next up, its Next (or Into) and Replay. */
+.railFoot > a {
+  justify-content: center;
+  min-height: 48px;
+}
+
+.railFoot > button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.railFoot > .confirm {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  padding: var(--space-3);
+  border-radius: var(--r-lg);
+}
+
+.railFoot > .confirm > span {
+  grid-column: 1 / -1;
 }
 
 .railFolds {
@@ -1397,7 +1432,7 @@
 }
 
 /* "Into the <next>", in the next province's colour. */
-.panelAfter > a.into {
+:is(.panelAfter, .railFoot) > a.into {
   --btn-bg: var(--tab);
   --btn-ink: var(--on-tab);
   --btn-edge: color-mix(in srgb, var(--tab) 55%, black);

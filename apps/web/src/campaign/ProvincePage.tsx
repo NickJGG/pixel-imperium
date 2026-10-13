@@ -269,12 +269,11 @@ function OpenProvince({
         ) : (
           next && (
             <footer className={styles.foot}>
-              <NextUp
-                puzzle={next}
-                number={province.puzzles.indexOf(next) + 1}
-                storage={storage}
-                fresh={progress.provinces.every(p => p.solved === 0)}
-              />
+              <NextUp puzzle={next} number={province.puzzles.indexOf(next) + 1} storage={storage}>
+                <Link to="/play/$id" params={{ id: next.id }} data-variant="primary">
+                  {progress.provinces.every(p => p.solved === 0) ? 'Start' : 'Continue'}
+                </Link>
+              </NextUp>
             </footer>
           )
         )}

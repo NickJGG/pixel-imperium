@@ -19,6 +19,7 @@ import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { type AccountState, useAccount } from '../account.ts'
 import { requestHint, submitSolve } from '../api.ts'
 import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
+import { NextUp } from '../campaign/NextUp.tsx'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
 import { boardMorph, columnPaper, slotName } from '../campaign/worlds/names.ts'
@@ -446,13 +447,16 @@ export function Play({
   const closing = conquest && album && !following && (
     <p className={styles.closing}>{album.campaign.closingLine || `${album.campaign.name} is yours.`}</p>
   )
-  const onward = !album ? null : !conquest ? (
+  // `named` for the after sheet; the rail's Next up already names the puzzle.
+  const onward = (named: boolean) => !album ? null : !conquest ? (
     next && (
       <Link to="/play/$id" params={{ id: next.id }} data-variant="primary" data-pad-default>
         Next
-        <small>
-          #{album.province.puzzles.indexOf(next) + 1} {next.title}
-        </small>
+        {named && (
+          <small>
+            #{album.province.puzzles.indexOf(next) + 1} {next.title}
+          </small>
+        )}
         <ArrowIcon />
         <PadGlyph button="A" />
       </Link>
@@ -481,8 +485,9 @@ export function Play({
       <PadGlyph button="A" />
     </Link>
   )
+  const onwardless = !album || (!conquest && !next)
   const backToPage = (
-    <Link to={context.back} data-variant="paper" data-pad-default={!onward || undefined}>
+    <Link to={context.back} data-variant="paper" data-pad-default={onwardless || undefined}>
       {context.place}
       <PadGlyph button="B" />
     </Link>
@@ -524,13 +529,35 @@ export function Play({
       )}
       {message}
       {closing}
-      {onward}
+      {onward(true)}
       <div className={styles.panelActions}>
         {replay}
         {backToPage}
       </div>
     </>
   )
+
+  // Solved, the rail's % pill gives way to what the solve earned; a conquest's stamp will say it instead.
+  const outcome = conquest ? null : moment === 'kept' ? (
+    <Dymo tone="pink" className={styles.tag}>
+      Sticker kept
+    </Dymo>
+  ) : foil ? (
+    <Dymo tone="pink" className={styles.tag}>
+      Foil sticker!
+    </Dymo>
+  ) : (
+    <Dymo className={styles.tag}>Solved</Dymo>
+  )
+  const solvedNote =
+    conquest && album ? (
+      <>
+        {album.province.flavour && <p className={`${styles.railNote} ${styles.flavour}`}>{album.province.flavour}</p>}
+        {closing}
+      </>
+    ) : (
+      moment === 'kept' && <p className={styles.railNote}>Solved again. Replays never change the sticker.</p>
+    )
 
   const { meta } = context
   const chip = !solved && context.chip
@@ -596,7 +623,7 @@ export function Play({
               </div>
             )}
           </div>
-          {!wide && offer}
+          {offer}
         </div>
         {wide && (
           <aside
@@ -608,23 +635,40 @@ export function Play({
             aria-label={puzzle.title}
           >
             <div className={styles.railHead}>
-              <Link to={context.back} className={styles.railBack} data-variant="paper" aria-label={`Back to ${context.place}`}>
+              <Link
+                to={context.back}
+                className={styles.railBack}
+                data-variant="paper"
+                data-pad-default={(done && onwardless) || undefined}
+                aria-label={`Back to ${context.place}`}
+              >
                 ← {context.place}
+                {solved && <PadGlyph button="B" />}
               </Link>
               <p className={styles.railKicker}>{meta}</p>
               <h1 className={styles.railName}>{puzzle.title}</h1>
-              {!done && (
-                <div className={styles.railBadges}>
-                  {!solved && <CountPill className={styles.railPercent}>{percent}%</CountPill>}
-                  {chip}
-                  {tag}
-                </div>
-              )}
+              <div className={styles.railBadges} role={done ? 'status' : undefined}>
+                {done ? (
+                  outcome
+                ) : (
+                  <>
+                    {!solved && <CountPill className={styles.railPercent}>{percent}%</CountPill>}
+                    {chip}
+                    {tag}
+                  </>
+                )}
+              </div>
+              {done && solvedNote}
             </div>
             {done ? (
-              <div className={styles.panelAfter}>
-                {afterBody}
-                <PadControls solved {...controls} />
+              <div className={styles.railBody}>
+                <div className={styles.railFoot}>
+                  {album && !conquest && next && (
+                    <NextUp puzzle={next} number={album.province.puzzles.indexOf(next) + 1} storage={storage} />
+                  )}
+                  {onward(false)}
+                  {replay}
+                </div>
               </div>
             ) : (
               <div ref={railBodyRef} className={styles.railBody} inert={solved}>
@@ -654,7 +698,6 @@ export function Play({
               </div>
             )}
             {!done && <PanelTag />}
-            {offer}
           </aside>
         )}
       </div>

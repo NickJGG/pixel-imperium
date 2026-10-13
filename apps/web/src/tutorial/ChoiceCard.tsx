@@ -30,7 +30,7 @@ export const TUTORIAL_OFFER: OfferCopy = {
 }
 
 export const techniquesOffer = (province: Province): OfferCopy => ({
-  tag: province.name,
+  tag: 'New techniques',
   tone: 'pink',
   heading: 'Bigger pictures ahead',
   text: `From here the grids reach ${province.maxSize}×${province.maxSize}, and the basics alone get slow. Five short lessons show the tricks that keep them moving.`,
@@ -102,7 +102,7 @@ export function ChoiceCard({ track, copy, back }: { track: Track; copy: OfferCop
         >
           {copy.learn}
         </Link>
-        <button type="button" data-variant="chip" onClick={mark}>
+        <button type="button" data-variant="paper" onClick={mark}>
           {copy.decline}
         </button>
         {copy.footer && <p className={styles.choiceFoot}>{copy.footer}</p>}

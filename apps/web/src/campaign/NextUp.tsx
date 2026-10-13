@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { PuzzleSummary } from '@pixel-imperium/protocol'
 import type { ProgressStorage } from '../play/progress-storage.ts'
@@ -9,12 +10,12 @@ interface Props {
   /** 1-based slot number on the province's pages. */
   number: number
   storage: ProgressStorage
-  /** Nothing solved yet anywhere in the campaign. */
-  fresh: boolean
+  /** The way in, beside the text. A narrow foot leaves it out and sets its own underneath. */
+  children?: ReactNode
 }
 
-/** The puzzle due next, for the foot of the active province's spread. */
-export function NextUp({ puzzle: p, number, storage, fresh }: Props) {
+/** The puzzle due next: the foot of the active province's spread, and of Play's rail once solved. */
+export function NextUp({ puzzle: p, number, storage, children }: Props) {
   return (
     <div className={styles.nextUp}>
       <Link to="/play/$id" params={{ id: p.id }} className={styles.nextSlot} tabIndex={-1} aria-hidden="true">
@@ -29,9 +30,7 @@ export function NextUp({ puzzle: p, number, storage, fresh }: Props) {
           {p.width}×{p.height}
         </p>
       </div>
-      <Link to="/play/$id" params={{ id: p.id }} data-variant="primary">
-        {fresh ? 'Start' : 'Continue'}
-      </Link>
+      {children}
     </div>
   )
 }
