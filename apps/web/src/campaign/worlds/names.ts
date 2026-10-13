@@ -14,11 +14,27 @@ export const boardMorph = (name: string, cls?: string) => ({
   style: { '--morph': name, ...(cls && { viewTransitionClass: cls }) } as CSSProperties,
 })
 
-/** Play's paper, pairing with the province's column on its page, which widens into it. */
-export const columnPaper = (provinceId: string) => boardMorph(`province-${provinceId}`, styles.pageColumn)
+/**
+ * Play's paper, pairing with the province's column on its page, which widens into it, or with whichever column a
+ * door into the board stood in (`data-pair`, as `World`'s), province or not.
+ */
+export const columnPaper = (provinceId: string | undefined) =>
+  provinceId === undefined
+    ? { 'data-pair': '', style: { viewTransitionClass: styles.pageColumn } as CSSProperties }
+    : { ...boardMorph(`province-${provinceId}`, styles.pageColumn), 'data-pair': '' }
 
 /** A slot on an album page or in a Filmstrip, flying between them. */
-export const slotMorph = (puzzleId: string) => boardMorph(slotName(puzzleId), 'slot')
+export const slotMorph = (puzzleId: string) => ({ ...boardMorph(slotName(puzzleId), 'slot'), 'data-slot': '' })
+
+/**
+ * A door into a puzzle's board with no Filmstrip to fly into, as Home's Next up or a Month's day cell. Named only by
+ * `morph-nav.ts`, since a page can have two doors into one board, and only the one taken grows. A `cell` gives way
+ * to its twin beside it on the way back.
+ */
+export const doorSlot = (puzzleId: string, cell = false) => ({
+  'data-door': slotName(puzzleId),
+  ...(cell && { 'data-cell': '' }),
+})
 
 /**
  * Unnames the slots a scrolled strip hides, so their partners fade with the page instead of flying to where they
@@ -45,3 +61,25 @@ export const named = (name: string) =>
   [...document.querySelectorAll<HTMLElement>('[data-morph]:not([data-unseen])')].find(
     el => el.style.getPropertyValue('--morph') === name,
   )
+
+const onScreen = (el: HTMLElement) => {
+  const { left, top, right, bottom } = el.getBoundingClientRect()
+  return right > left && left < innerWidth && right > 0 && top < innerHeight && bottom > 0
+}
+
+/**
+ * The slot on the page a door morph grows from or shrinks into, for the board `name`: the one in or around the link
+ * `clicked` is in, else one that isn't a calendar cell. A province's own slots count too, for a phone, where its page has no
+ * Filmstrip to fly to.
+ */
+export function doorOf(name: string, clicked: EventTarget | null): HTMLElement | undefined {
+  const doors = [...document.querySelectorAll<HTMLElement>(`[data-door="${CSS.escape(name)}"]`), named(name)].filter(
+    (el): el is HTMLElement => el !== undefined && onScreen(el),
+  )
+  const link = clicked instanceof Element ? clicked.closest('a') : null
+  return (
+    doors.find(el => link && (link.contains(el) || el.contains(link))) ??
+    doors.find(el => !el.hasAttribute('data-cell')) ??
+    doors[0]
+  )
+}

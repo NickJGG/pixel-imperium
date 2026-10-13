@@ -15,9 +15,10 @@ import {
   useSpineReach,
   useStep,
 } from '../campaign/worlds/Worlds.tsx'
+import { doorSlot } from '../campaign/worlds/names.ts'
 import { firstFocusable } from '../pad/spatial.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
-import { type DailyClock, startOf } from './clock.ts'
+import { type DailyClock, dailyId, startOf } from './clock.ts'
 import { DayFace, MonthCalendar } from './MonthCalendar.tsx'
 import { MONTH_NAMES, type MonthTally, dayParams, isSolvedWith, mm, monthParams, summaryOf, tallyOf } from './month.ts'
 import { FinishCard, StartChip, metaOf, useDailyClock } from './Today.tsx'
@@ -189,6 +190,7 @@ function OpenMonth({ data, month, tally, clock, current, storage }: MonthProps &
                 to="/daily/$year/$month/$day"
                 params={dayParams(clock.today)}
                 className={campaignStyles.nextSlot}
+                {...doorSlot(dailyId(clock.today))}
                 tabIndex={-1}
                 aria-hidden="true"
               >

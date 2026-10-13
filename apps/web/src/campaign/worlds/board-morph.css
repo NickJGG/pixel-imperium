@@ -10,27 +10,40 @@
   view-transition-name: var(--morph);
 }
 
-:root:active-view-transition-type(to-board, from-board)::view-transition-group(*),
-:root:active-view-transition-type(to-board, from-board)::view-transition-image-pair(*),
-:root:active-view-transition-type(to-board, from-board)::view-transition-old(*),
-:root:active-view-transition-type(to-board, from-board)::view-transition-new(*) {
+/*
+ * A door into a board with no Filmstrip counterpart (`door-board`, `door-back`): the same, but the strip comes whole,
+ * its slots unnamed, and the door's own column (`data-pair`) widens into Play's paper, whichever column it is. Only the
+ * slot taken grows into the board, named by `morph-nav.ts`.
+ */
+:root:active-view-transition-type(door-board, door-back) [data-morph]:not([data-slot]) {
+  view-transition-name: var(--morph);
+}
+
+:root:active-view-transition-type(door-board, door-back) [data-pair] {
+  view-transition-name: door-paper !important;
+}
+
+:root:active-view-transition-type(to-board, from-board, door-board, door-back)::view-transition-group(*),
+:root:active-view-transition-type(to-board, from-board, door-board, door-back)::view-transition-image-pair(*),
+:root:active-view-transition-type(to-board, from-board, door-board, door-back)::view-transition-old(*),
+:root:active-view-transition-type(to-board, from-board, door-board, door-back)::view-transition-new(*) {
   animation-duration: 1s;
   animation-timing-function: cubic-bezier(0.3, 0.7, 0.2, 1);
   animation-fill-mode: both;
 }
 
 /* Play's root behind its paper; the province page's, with its backdrop, holds until the paper covers it. */
-:root:active-view-transition-type(to-board, from-board)::view-transition-old(root),
-:root:active-view-transition-type(to-board, from-board)::view-transition-new(root) {
+:root:active-view-transition-type(to-board, from-board, door-board, door-back)::view-transition-old(root),
+:root:active-view-transition-type(to-board, from-board, door-board, door-back)::view-transition-new(root) {
   animation-name: none;
   mix-blend-mode: normal;
 }
 
-:root:active-view-transition-type(to-board)::view-transition-new(root) {
+:root:active-view-transition-type(to-board, door-board)::view-transition-new(root) {
   animation-name: board-fade-in-late;
 }
 
-:root:active-view-transition-type(from-board)::view-transition-old(root) {
+:root:active-view-transition-type(from-board, door-back)::view-transition-old(root) {
   animation-name: board-fade-out-early;
 }
 
@@ -52,28 +65,44 @@
   animation-name: board-fade-in-late;
 }
 
-:root:active-view-transition-type(to-board, from-board)::view-transition-group(.rail) {
+:root:active-view-transition-type(to-board, from-board, door-board, door-back)::view-transition-group(.rail) {
   z-index: 2;
   animation-name: board-rail-in;
 }
 
-:root:active-view-transition-type(from-board)::view-transition-group(.rail) {
+:root:active-view-transition-type(from-board, door-back)::view-transition-group(.rail) {
   animation-name: board-rail-out;
 }
 
-:root:active-view-transition-type(to-board, from-board)::view-transition-old(.rail),
-:root:active-view-transition-type(to-board, from-board)::view-transition-new(.rail) {
+:root:active-view-transition-type(to-board, from-board, door-board, door-back)::view-transition-old(.rail),
+:root:active-view-transition-type(to-board, from-board, door-board, door-back)::view-transition-new(.rail) {
   animation-name: none;
 }
 
 :root:active-view-transition-type(to-board)::view-transition-new(.film),
-:root:active-view-transition-type(to-board)::view-transition-new(.surface) {
+:root:active-view-transition-type(to-board, door-board)::view-transition-new(.surface) {
   animation-name: board-fade-in-late;
 }
 
 :root:active-view-transition-type(from-board)::view-transition-old(.film),
-:root:active-view-transition-type(from-board)::view-transition-old(.surface) {
+:root:active-view-transition-type(from-board, door-back)::view-transition-old(.surface) {
   animation-name: board-fade-out-early;
+}
+
+/* No slots fly into a door's Filmstrip: it slides in whole from the left, as the rail does from the right. */
+:root:active-view-transition-type(door-board)::view-transition-group(.film) {
+  z-index: 2;
+  animation-name: board-film-in;
+}
+
+:root:active-view-transition-type(door-back)::view-transition-group(.film) {
+  z-index: 2;
+  animation-name: board-film-out;
+}
+
+:root:active-view-transition-type(door-board, door-back)::view-transition-old(.film),
+:root:active-view-transition-type(door-board, door-back)::view-transition-new(.film) {
+  animation-name: none;
 }
 
 @keyframes board-peel {
@@ -95,6 +124,22 @@
   70%,
   100% {
     translate: 100% 0;
+    opacity: 0;
+  }
+}
+
+@keyframes board-film-in {
+  0%,
+  30% {
+    translate: -100% 0;
+    opacity: 0;
+  }
+}
+
+@keyframes board-film-out {
+  70%,
+  100% {
+    translate: -100% 0;
     opacity: 0;
   }
 }
@@ -192,4 +237,41 @@
     transform: rotate(10deg) translateY(-14px);
     opacity: 0;
   }
+}
+
+/*
+ * A phone's slot opening its board (`grow-board`, `grow-back`): with no column to widen and no strip, only the slot
+ * grows into the board, by `board-morph.ts`, while the page under it fades out early and Play's top line and dock fade
+ * in late. The way back plays it backwards, Play on top fading first.
+ */
+:root:active-view-transition-type(grow-board, grow-back)::view-transition-group(*),
+:root:active-view-transition-type(grow-board, grow-back)::view-transition-image-pair(*),
+:root:active-view-transition-type(grow-board, grow-back)::view-transition-old(*),
+:root:active-view-transition-type(grow-board, grow-back)::view-transition-new(*) {
+  animation-duration: 0.8s;
+  animation-timing-function: cubic-bezier(0.3, 0.7, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+:root:active-view-transition-type(grow-board, grow-back)::view-transition-old(*):only-child {
+  animation-name: board-fade-out-early;
+}
+
+:root:active-view-transition-type(grow-board, grow-back)::view-transition-new(*):only-child {
+  animation-name: board-fade-in-late;
+}
+
+:root:active-view-transition-type(grow-board, grow-back)::view-transition-old(root),
+:root:active-view-transition-type(grow-board, grow-back)::view-transition-new(root) {
+  animation-name: none;
+  mix-blend-mode: normal;
+}
+
+:root:active-view-transition-type(grow-board)::view-transition-new(root) {
+  animation-name: board-fade-in-late;
+}
+
+:root:active-view-transition-type(grow-back)::view-transition-old(root) {
+  z-index: 1;
+  animation-name: board-fade-out-early;
 }

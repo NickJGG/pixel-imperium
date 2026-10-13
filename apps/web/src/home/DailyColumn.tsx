@@ -4,7 +4,8 @@ import type { DailyYear, Profile } from '@pixel-imperium/protocol'
 import { CountPill } from '../album/CountPill.tsx'
 import { type Season, paperFor } from '../album/paper.ts'
 import { World } from '../campaign/worlds/Worlds.tsx'
-import { solveTime, solveTimes } from '../daily/clock.ts'
+import { doorSlot } from '../campaign/worlds/names.ts'
+import { dailyId, solveTime, solveTimes } from '../daily/clock.ts'
 import { DayFace, MonthCalendar } from '../daily/MonthCalendar.tsx'
 import { MONTH_NAMES, dayParams, dayStatus, isSolvedWith, monthParams, summaryOf, tallyOf, weeksOf } from '../daily/month.ts'
 import { FinishCard, StartChip, metaOf, useDailyClock } from '../daily/Today.tsx'
@@ -81,6 +82,7 @@ export function DailyColumn({
                 to="/daily/$year/$month/$day"
                 params={dayParams(today)}
                 className={styles.nextSlot}
+                {...doorSlot(dailyId(today))}
                 tabIndex={-1}
                 aria-hidden="true"
               >

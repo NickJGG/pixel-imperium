@@ -1,10 +1,10 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import type { CSSProperties } from 'react'
+import { type CSSProperties, useRef } from 'react'
 import type { Campaign, DailyYear, Profile } from '@pixel-imperium/protocol'
 import { paperFor, seasonOf } from '../album/paper.ts'
 import { useAccount } from '../account.ts'
 import { campaignProgress, continueAt } from '../campaign/progress.ts'
-import { Backdrop, MenuSpine, Worlds, usePhone, useStep } from '../campaign/worlds/Worlds.tsx'
+import { Backdrop, MenuSpine, Worlds, usePhone, useSpineReach, useStep } from '../campaign/worlds/Worlds.tsx'
 import { useLessonsDone } from '../tutorial/done.ts'
 import { dayKey } from '../profile/activity.ts'
 import { CampaignColumn } from './CampaignColumn.tsx'
@@ -61,6 +61,8 @@ export function HomePage({
     void navigate({ to: '/', search: searchFor(column), replace: true })
   }
   useStep(dir => goTo(stepColumn(columns, open, dir)))
+  const ref = useRef<HTMLElement>(null)
+  useSpineReach(ref)
 
   const spineName: Record<Column, string> = { campaign: campaign.name.replace(/^The /, ''), ...COLUMN_NAME }
 
@@ -110,7 +112,7 @@ export function HomePage({
   }
 
   return (
-    <main className={styles.page}>
+    <main ref={ref} className={styles.page}>
       <h1 className={styles.srOnly}>Home</h1>
       <Backdrop index={open === 'daily' ? season : open === 'learn' ? paperOf(paper.learn).index : active} />
       {phone ? (

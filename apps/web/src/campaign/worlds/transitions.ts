@@ -3,9 +3,12 @@
  * conditions; `morph-nav.ts` starts whatever this names. Home ↔ an album page or a Learn track, a step between an
  * album's pages, Learn's tracks or Home's columns, and a step into another Year each have a morph of their own, on desktop only. So does
  * a province page ↔ one of its puzzles, where Play stands its Filmstrip, and a step between two puzzles of one province
- * there. Every other move between two pages plays the slant wipe, on a phone too, reversed on Back and on any move to
- * Home or from a puzzle to its page.
+ * there. A door with no Filmstrip to fly into, Home's Next up or a Daily's slot on Home or its Month, grows its slot
+ * into the board as its column widens into Play's paper; on a phone any slot opening its board just grows. Every
+ * other move between two pages plays the slant wipe, on a phone too, boards and all, reversed on Back and on any move
+ * to Home or from a puzzle to its page.
  */
+import { dailyId } from '../../daily/clock.ts'
 
 export interface Place {
   pathname: string
@@ -53,6 +56,14 @@ const PLAY = /^\/play\/([^/]+)\/?$/
 /** A campaign puzzle's id from its page's path. */
 export const playIdOf = (pathname: string) => PLAY.exec(pathname)?.[1]
 
+const DAY = /^\/daily\/(\d{4})\/(\d{2})\/(\d{2})\/?$/
+
+/** The puzzle a board's page plays: a campaign puzzle or a Daily. */
+export function boardIdOf(pathname: string): string | undefined {
+  const day = DAY.exec(pathname)
+  return day ? dailyId(`${day[1]}-${day[2]}-${day[3]}`) : playIdOf(pathname)
+}
+
 /** Pages with a board: a puzzle, a Daily and a Lesson. */
 const BOARD = /^\/(?:play\/[^/]+|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+)\/?$/
 
@@ -83,6 +94,11 @@ const sameProvince = (from: Place, to: Place, env: Env) => {
   return province !== null && province === env.provinceOf(b)
 }
 
+/** `page` has a door straight into `board`: Home's Campaign or Daily column, or a Month's calendar and Today. */
+const doorInto = (page: Place, board: Place) =>
+  (isHome(page) && (PLAY.test(board.pathname) || DAY.test(board.pathname))) ||
+  (isMonthPath(page.pathname) && DAY.test(board.pathname))
+
 /** A campaign puzzle and a province page, either way round: the one kind of board move the wipe plays for now. */
 const isPuzzleAndProvince = (from: Place, to: Place) =>
   (PLAY.test(from.pathname) && isProvincePath(to.pathname)) || (isProvincePath(from.pathname) && PLAY.test(to.pathname))
@@ -109,8 +125,13 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
       return typed(albumOf(from.pathname) > albumOf(to.pathname) ? 'to-year-back' : 'to-year-forward')
   }
 
+  // Like the board morphs, into a board and out of it whichever way history went.
+  const grows = (page: Place, board: Place) => doorInto(page, board) || (env.phone && onItsPage(board, page, env))
+  if (grows(from, to)) return typed(env.phone ? 'grow-board' : 'door-board')
+  if (grows(to, from)) return typed(env.phone ? 'grow-back' : 'door-back')
+
   if (env.direction === 'replace') return null
-  const board = (pathname: string) => BOARD.test(pathname) && !isPuzzleAndProvince(from, to)
+  const board = (pathname: string) => !env.phone && BOARD.test(pathname) && !isPuzzleAndProvince(from, to)
   if ([from, to].some(({ pathname }) => board(pathname) || REDIRECT.test(pathname))) return null
   // Every page lies over Home, and a puzzle over its page, so going up always wipes out, whichever way history went.
   const back = isHome(to) || onItsPage(from, to, env) || (!isHome(from) && env.direction === 'back')

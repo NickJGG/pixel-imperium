@@ -39,7 +39,7 @@ export function FinishCard({ clock, data, storage }: { clock: DailyClock; data: 
     : null
   return (
     <Link to="/daily/$year/$month/$day" params={dayParams(date)} className={styles.finish}>
-      <DayFace date={date} status="finishing" summary={summary} storage={storage} />
+      <DayFace date={date} status="finishing" summary={summary} storage={storage} door />
       <div>
         <b>Finish {weekdayOf(date)}’s</b>
         <small>{[summary?.title, percent !== null && `${percent}% done`].filter(Boolean).join(' · ')}</small>

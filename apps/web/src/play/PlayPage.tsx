@@ -523,7 +523,7 @@ export function Play({
     album && <ChoiceCard track={TRACKS.techniques} copy={techniquesOffer(album.province)} back={context.here} />
   )
 
-  const paperMorph = album && columnPaper(album.province.id)
+  const paperMorph = columnPaper(album?.province.id)
   const surfaceMorph = boardMorph('surface', 'surface')
   const railMorph = boardMorph('rail', 'rail')
   const boardName = boardMorph(slotName(puzzle.id))
@@ -536,7 +536,7 @@ export function Play({
       className={styles.shell}
       data-rail={wide || undefined}
       {...paperMorph}
-      style={{ ...paper, ...paperMorph?.style }}
+      style={{ ...paper, ...paperMorph.style }}
     >
       {!wide && (
         <header className={styles.topLine}>

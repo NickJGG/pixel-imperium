@@ -1,11 +1,12 @@
 import { useSearch } from '@tanstack/react-router'
+import { useRef } from 'react'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { seasonOf } from '../album/paper.ts'
 import { getAccount, likelySignedIn } from '../account.ts'
 import { currentCampaign } from '../campaign/last-campaign.ts'
 import { campaignProgress, continueAt } from '../campaign/progress.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
-import { Backdrop, SkeletonSpine, World, Worlds, usePhone } from '../campaign/worlds/Worlds.tsx'
+import { Backdrop, SkeletonSpine, World, Worlds, usePhone, useSpineReach } from '../campaign/worlds/Worlds.tsx'
 import { MonthGridSkeleton } from '../daily/MonthCalendar.tsx'
 import { datesOf, leadOf } from '../daily/month.ts'
 import { currentDailyYear } from '../daily/year.ts'
@@ -41,6 +42,8 @@ export function HomeSkeleton() {
   const active = campaign ? activeProvince(campaign) : 0
   const season = seasonOf(Number(today.slice(5, 7)))
   const paper = papers(active, learnPapers(done), season)
+  const ref = useRef<HTMLElement>(null)
+  useSpineReach(ref)
   useAnnounceSkeleton()
 
   const wide = (column: Column, start: boolean) => {
@@ -67,7 +70,7 @@ export function HomeSkeleton() {
   }
 
   return (
-    <main className={styles.page} aria-busy="true">
+    <main ref={ref} className={styles.page} aria-busy="true">
       <SrLoading />
       <Backdrop index={open === 'daily' ? season : open === 'learn' ? paperOf(paper.learn).index : active} />
       {phone ? (

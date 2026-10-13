@@ -208,6 +208,9 @@ const dailyPlayRoute = createRoute({
   },
   component: DailyPlayPage,
   pendingComponent: PlaySkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
   notFoundComponent: () => <NotFound>There’s no Daily to play for that date.</NotFound>,
 })
 

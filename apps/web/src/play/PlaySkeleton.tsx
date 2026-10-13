@@ -3,6 +3,7 @@ import { useParams } from '@tanstack/react-router'
 import { paperStyle, seasonStyle } from '../album/paper.ts'
 import { currentCampaign } from '../campaign/last-campaign.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
+import { dailyId } from '../daily/clock.ts'
 import { boardMorph, columnPaper, slotMorph, slotName } from '../campaign/worlds/names.ts'
 import { CrownMark, HudPills, SoundButton, ThemeButton } from '../Hud.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
@@ -29,20 +30,21 @@ function findPuzzle(id: string) {
  * A puzzle while it loads, on its province's paper (the fog without its campaign in memory): the filmstrip, the
  * board and the rail, or the top line, the board and the dock where there's no room for a rail. A Daily is on its
  * Month's season paper, with no filmstrip. With its campaign in memory, it pairs with the province page as Play
- * does, so the board morph can play into it.
+ * does, so the board morph can play into it; so does a Daily's board, for its door's.
  */
 export function PlaySkeleton() {
-  const { id, month } = useParams({ strict: false })
+  const { id, year, month, day } = useParams({ strict: false })
   const wide = useRail()
   useAnnounceSkeleton()
   const found = id === undefined ? null : findPuzzle(id)
   const paper = found ? paperStyle(found.index) : month !== undefined ? seasonStyle(Number(month)) : FOG
-  const paperMorph = found && columnPaper(found.province.id)
+  const paperMorph = columnPaper(found?.province.id)
+  const daily = year !== undefined && month !== undefined && day !== undefined ? dailyId(`${year}-${month}-${day}`) : undefined
   const board = (
     <BoardGhost
       width={found?.puzzle.width ?? 15}
       height={found?.puzzle.height ?? 15}
-      name={found ? slotName(found.puzzle.id) : undefined}
+      name={found ? slotName(found.puzzle.id) : daily && slotName(daily)}
     />
   )
 
@@ -51,7 +53,7 @@ export function PlaySkeleton() {
       className={styles.shell}
       data-rail={wide || undefined}
       {...paperMorph}
-      style={{ ...paper, ...paperMorph?.style }}
+      style={{ ...paper, ...paperMorph.style }}
       aria-busy="true"
     >
       <SrLoading />

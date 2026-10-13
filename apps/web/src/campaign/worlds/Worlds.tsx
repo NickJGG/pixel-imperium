@@ -152,13 +152,17 @@ export function World({
   labelledBy?: string | undefined
   /** Where a carousel rests. */
   start?: boolean
-  /** An album page's column, or the Home column that opens onto it: the two sides of the Home morph. */
+  /**
+   * An album page's column, or the Home column that opens onto it: the two sides of the Home morph, and the column a
+   * door's board morph widens into Play's paper.
+   */
   pair?: boolean
 }) {
   return (
     <section
       className={[styles.world, className].filter(Boolean).join(' ')}
       style={{ ...paperFor(index), ...style, ...(pair && { viewTransitionClass: styles.pageColumn }) }}
+      data-pair={pair || undefined}
       data-fog={fog || undefined}
       data-start={start || undefined}
       aria-labelledby={labelledBy}
@@ -177,28 +181,30 @@ export function Backdrop({ index }: { index: PaperName }) {
 }
 
 let reachSheet: HTMLStyleElement | undefined
+const reaches = new Map<string, string>()
 
 /**
- * How far each province spine in `root` stands from the window edge it grows out of in the Home morph, as `--reach`
- * on its transition group, and how far it moves to clear that edge in the board morph, as `--push`. A sheet, since a
- * transition's pseudo-elements inherit from the root, not the spine; kept in the head, since the way home plays after
- * the province page has gone.
+ * How far each spine in `root` stands from the window edge a province's grows out of in the Home morph, as `--reach`
+ * on its transition group, and how far it moves to clear that edge in the board morphs, as `--push`. A sheet, since a
+ * transition's pseudo-elements inherit from the root, not the spine; kept in the head, and added to rather than
+ * replaced, since the way home plays after the page has gone and Home has measured its own.
  */
 export function useSpineReach(root: RefObject<HTMLElement | null>): void {
   useLayoutEffect(() => {
     const sheet = (reachSheet ??= document.head.appendChild(document.createElement('style')))
     const measure = () => {
       const width = document.documentElement.clientWidth
-      sheet.textContent = [...root.current!.querySelectorAll<HTMLElement>(`.${styles.provinceSpine}`)]
-        .map(spine => {
-          const { left, width: w } = spine.getBoundingClientRect()
-          const centre = left + w / 2
-          const before = centre < width / 2
-          const reach = before ? -centre : width - centre
-          const push = before ? -(left + w) : width - left
-          return `::view-transition-group(${spine.style.viewTransitionName}) { --reach: ${reach}px; --push: ${push}px; }`
-        })
-        .join('\n')
+      for (const spine of root.current!.querySelectorAll<HTMLElement>(`.${styles.spine}`)) {
+        const name = spine.style.viewTransitionName
+        if (!name) continue
+        const { left, width: w } = spine.getBoundingClientRect()
+        const centre = left + w / 2
+        const before = centre < width / 2
+        const reach = before ? -centre : width - centre
+        const push = before ? -(left + w) : width - left
+        reaches.set(name, `::view-transition-group(${name}) { --reach: ${reach}px; --push: ${push}px; }`)
+      }
+      sheet.textContent = [...reaches.values()].join('\n')
     }
     measure()
     addEventListener('resize', measure)

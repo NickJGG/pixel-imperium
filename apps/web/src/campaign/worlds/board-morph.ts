@@ -8,6 +8,9 @@
  * `next-board`, a step between two puzzles of a province, takes a path no pair of boxes can: the board shrinks in
  * place to a sticker, files into its slot in the Filmstrip and squashes as it lands, while the next slot lifts out,
  * flies to the middle and opens into the board. Script drives both, by keyframes measured from the two pages.
+ *
+ * A door with no Filmstrip (`door-board`, a phone's `grow-board`) drives its one slot the same way: it flies to the
+ * board's middle at its own size and opens into the board; the way back plays that backwards.
  */
 import { named, slotName } from './names.ts'
 
@@ -194,6 +197,23 @@ const boxOf = (el: HTMLElement | undefined): Box | undefined => {
   return { x: left, y: top, w: width, h: height }
 }
 
+/** Plays one board's keyframes on its pseudo-elements, which `drivenSheet` has handed to script. */
+function drive(name: string, frames: BoardKeyframes, duration: number, direction: PlaybackDirection = 'normal'): void {
+  for (const [part, keyframes] of [
+    ['group', frames.group],
+    ['image-pair', frames.pair],
+    ['old', frames.old],
+    ['new', frames.new],
+  ] as const)
+    document.documentElement.animate(keyframes, {
+      duration,
+      direction,
+      easing: 'linear',
+      fill: 'both',
+      pseudoElement: `::view-transition-${part}(${name})`,
+    })
+}
+
 /**
  * Plays `next-board`'s two boards over `transition`, from puzzle `from` to `to`; returns its cleanup. Called as the
  * transition starts, while the old page still stands, which it measures; the new one is measured once it's captured.
@@ -213,19 +233,63 @@ export function startNextBoard(transition: ViewTransition, from: string, to: str
       })
       sheet.textContent = driven.map(({ name, z }) => drivenSheet(name, z)).join('\n\n')
       document.head.appendChild(sheet)
-      for (const { name, frames } of driven)
-        for (const [part, keyframes] of [
-          ['group', frames.group],
-          ['image-pair', frames.pair],
-          ['old', frames.old],
-          ['new', frames.new],
-        ] as const)
-          document.documentElement.animate(keyframes, {
-            duration: NEXT_MS,
-            easing: 'linear',
-            fill: 'both',
-            pseudoElement: `::view-transition-${part}(${name})`,
-          })
+      for (const { name, frames } of driven) drive(name, frames, NEXT_MS)
+    },
+    () => {},
+  )
+  return () => sheet.remove()
+}
+
+/** How long a door's morph plays (`door-board`, as `to-board`), and a phone's grow. */
+export const DOOR_MS = 1000
+export const GROW_MS = 800
+
+/**
+ * A door's slot opening into its board: it peels up and flies to the board's middle at its own size, settles, and
+ * opens out, the clues arriving as it does. A phone's flight is shorter, over a shorter morph.
+ */
+export function doorKeyframes(slot: Box, board: Box, phone: boolean): BoardKeyframes {
+  const fly = phone ? 0.35 : 0.4
+  const grow = fly + 0.05
+  const middle = centredOn(board, slot)
+  return {
+    group: [place(slot, 0), place(middle, fly), place(middle, grow), place(board, 1)],
+    pair: [
+      { ...FLAT, offset: 0 },
+      { ...PEEL, offset: fly / 2 },
+      { ...FLAT, offset: fly },
+      { ...FLAT, offset: 1 },
+    ],
+    ...swap(grow + 0.05, grow + 0.2),
+  }
+}
+
+/** The way out of a board through its door: the way in played backwards, so the board is the old side. */
+export const doorBackKeyframes = (slot: Box, board: Box, phone: boolean): BoardKeyframes => {
+  const frames = doorKeyframes(slot, board, phone)
+  return { ...frames, old: frames.new, new: frames.old }
+}
+
+/**
+ * Plays a door's morph over `transition`, between the slot and the board named `name`, `back` from the board to the
+ * slot; returns its cleanup. `from` is on the old page, measured now; `to()` finds its partner once the new page is
+ * captured. Without both, the board keeps the stylesheet's fade.
+ */
+export function startDoor(
+  transition: ViewTransition,
+  name: string,
+  { back, phone, from, to }: { back: boolean; phone: boolean; from: HTMLElement | undefined; to: () => HTMLElement | undefined },
+): () => void {
+  const before = boxOf(from)
+  const sheet = document.createElement('style')
+  transition.ready.then(
+    () => {
+      const after = boxOf(to())
+      if (!before || !after) return
+      sheet.textContent = drivenSheet(name, 5)
+      document.head.appendChild(sheet)
+      const frames = back ? doorBackKeyframes(after, before, phone) : doorKeyframes(before, after, phone)
+      drive(name, frames, phone ? GROW_MS : DOOR_MS, back ? 'reverse' : 'normal')
     },
     () => {},
   )

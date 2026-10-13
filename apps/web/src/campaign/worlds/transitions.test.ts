@@ -53,7 +53,6 @@ describe('transitionFor: the morphs', () => {
   it('wipes between a puzzle and a province page instead, without the rail or out of its province', () => {
     expect(types('/c/main/meadow', '/play/p1', { rail: false })).toEqual(['wipe'])
     expect(types('/play/p1', '/c/main/meadow', { rail: false })).toEqual(['wipe', 'back'])
-    expect(types('/play/p1', '/c/main/meadow', phone)).toEqual(['wipe', 'back'])
     expect(types('/play/p1', '/c/main/marsh')).toEqual(['wipe'])
     expect(types('/play/unknown', '/c/main/meadow')).toEqual(['wipe'])
   })
@@ -65,9 +64,30 @@ describe('transitionFor: the morphs', () => {
 
   it('cuts between puzzles without the rail or of different provinces', () => {
     expect(types('/play/p1', '/play/p2', { rail: false })).toBeNull()
-    expect(types('/play/p1', '/play/p2', phone)).toBeNull()
     expect(types('/play/p1', '/play/p9')).toBeNull()
     expect(types('/play/p1', '/play/unknown')).toBeNull()
+  })
+
+  it('grows a door’s slot into its board, from Home or a Month, and shrinks it home', () => {
+    expect(types(at('/', { open: 'campaign' }), '/play/p1')).toEqual(['door-board'])
+    expect(types('/', '/daily/2026/10/13', { rail: false })).toEqual(['door-board'])
+    expect(types('/daily/2026/10', '/daily/2026/10/13')).toEqual(['door-board'])
+    expect(types('/daily/2026/10', '/daily/2026/09/30/')).toEqual(['door-board'])
+    expect(types('/play/p1', '/', { direction: 'back' })).toEqual(['door-back'])
+    expect(types('/daily/2026/10/13', '/daily/2026/10')).toEqual(['door-back'])
+    expect(types('/daily/2026/10/13', at('/', { open: 'daily' }), { direction: 'back' })).toEqual(['door-back'])
+  })
+
+  it('only grows the slot into its board on a phone, a province’s too, and wipes the rest of a board’s moves', () => {
+    expect(types('/', '/play/p1', phone)).toEqual(['grow-board'])
+    expect(types('/daily/2026/10', '/daily/2026/10/13', phone)).toEqual(['grow-board'])
+    expect(types('/c/main/meadow', '/play/p1', phone)).toEqual(['grow-board'])
+    expect(types('/play/p1', '/c/main/meadow', phone)).toEqual(['grow-back'])
+    expect(types('/daily/2026/10/13', '/', { ...phone, direction: 'back' })).toEqual(['grow-back'])
+    expect(types('/play/p1', '/play/p2', phone)).toEqual(['wipe'])
+    expect(types('/play/p1', '/c/main/marsh', phone)).toEqual(['wipe'])
+    expect(types('/c/main/meadow', '/learn/tutorial/first', phone)).toEqual(['wipe'])
+    expect(types('/play/p1', '/', { ...phone, direction: 'back', uaAnimated: true })).toBeNull()
   })
 
   it('plays none of them on a phone', () => {
@@ -118,7 +138,7 @@ describe('transitionFor: the wipe', () => {
         [board, '/c/main/meadow'],
       ] as const)
         expect(types(from, to)).toBeNull()
-    expect(types('/play/p1', '/')).toBeNull()
+    expect(types('/play/p1', '/settings')).toBeNull()
     expect(types('/', '/c/main')).toBeNull()
     expect(types('/', '/learn')).toBeNull()
     expect(types('/', '/u/ada/main/meadow')).toBeNull()

@@ -6,6 +6,7 @@ import { paperStyle } from '../album/paper.ts'
 import { SlotFace } from '../campaign/PuzzleSlot.tsx'
 import type { CampaignProgress, ContinueAt } from '../campaign/progress.ts'
 import { World } from '../campaign/worlds/Worlds.tsx'
+import { doorSlot } from '../campaign/worlds/names.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { Crest } from './Crest.tsx'
 import { crestPixels } from './crest.ts'
@@ -69,6 +70,7 @@ export function CampaignColumn({
                 to="/play/$id"
                 params={{ id: next.puzzle.id }}
                 className={styles.nextSlot}
+                {...doorSlot(next.puzzle.id)}
                 tabIndex={-1}
                 aria-hidden="true"
               >

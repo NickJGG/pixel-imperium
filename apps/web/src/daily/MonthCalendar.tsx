@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import type { DailySummary, DailyYear } from '@pixel-imperium/protocol'
 import { Slot } from '../album/Slot.tsx'
 import { Sticker, StickerBack, tiltOf } from '../album/Sticker.tsx'
+import { doorSlot } from '../campaign/worlds/names.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { Ghost } from '../skeleton/Skeleton.tsx'
 import { type DailyClock, dailyId, startOf } from './clock.ts'
@@ -126,6 +127,7 @@ function DayCell({
       to="/daily/$year/$month/$day"
       params={dayParams(date)}
       className={styles.dayLink}
+      {...doorSlot(dailyId(date), true)}
       data-pad-default={padDefault || undefined}
       aria-label={label}
     >
@@ -161,11 +163,14 @@ export function DayFace({
   status,
   summary,
   storage,
+  door = false,
 }: {
   date: string
   status: DayStatus
   summary: DailySummary | undefined
   storage: ProgressStorage
+  /** A door into its Daily's board on its own, outside a cell (`doorSlot`). */
+  door?: boolean
 }) {
   const id = dailyId(date)
   if (status === 'solved' && summary) {
@@ -186,7 +191,7 @@ export function DayFace({
   }
   if (playable(status) || status === 'solved') {
     return (
-      <span className={styles.backing} data-due={playable(status) || undefined}>
+      <span className={styles.backing} data-due={playable(status) || undefined} {...(door && doorSlot(id))}>
         <StickerBack width={1} height={1} tilt={tiltOf(id)} />
       </span>
     )

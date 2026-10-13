@@ -416,6 +416,46 @@
   animation-name: fade-in-late;
 }
 
+/*
+ * A door into a board on Home or a Month (`door-board`, `door-back`): the same, from whichever column holds the door,
+ * Home's spines shouldered off along with an album's.
+ */
+:root:active-view-transition-type(door-board, door-back) .backdrop {
+  display: block;
+}
+
+:root:active-view-transition-type(door-board)::view-transition-group(.provinceSpine),
+:root:active-view-transition-type(door-board)::view-transition-group(.menuSpine) {
+  z-index: 1;
+  animation-name: push-off;
+}
+
+:root:active-view-transition-type(door-back)::view-transition-group(.provinceSpine),
+:root:active-view-transition-type(door-back)::view-transition-group(.menuSpine) {
+  z-index: 1;
+  animation-name: push-in;
+}
+
+:root:active-view-transition-type(door-board, door-back)::view-transition-old(.provinceSpine),
+:root:active-view-transition-type(door-board, door-back)::view-transition-new(.provinceSpine),
+:root:active-view-transition-type(door-board, door-back)::view-transition-old(.menuSpine),
+:root:active-view-transition-type(door-board, door-back)::view-transition-new(.menuSpine),
+:root:active-view-transition-type(door-board, door-back)::view-transition-old(.pageColumn),
+:root:active-view-transition-type(door-board, door-back)::view-transition-new(.pageColumn) {
+  animation-name: none;
+  mix-blend-mode: normal;
+}
+
+:root:active-view-transition-type(door-board)::view-transition-old(.pageColumn) {
+  z-index: 1;
+  animation-name: fade-out-early;
+}
+
+:root:active-view-transition-type(door-back)::view-transition-new(.pageColumn) {
+  z-index: 1;
+  animation-name: fade-in-late;
+}
+
 /* Clear of the window's edge on its own side (`--push`, from `useSpineReach`). */
 @keyframes push-off {
   to {
