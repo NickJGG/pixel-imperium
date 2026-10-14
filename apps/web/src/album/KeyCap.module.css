@@ -1,0 +1,18 @@
+.keycap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--space-1);
+  font: 700 var(--fs-12)/1 var(--font-mono);
+  color: var(--on-key);
+  background: var(--key);
+  border-radius: var(--r-xs);
+  box-shadow: 0 2px 0 var(--shade);
+  pointer-events: none;
+}
+
+:root[data-pad] .keycap {
+  display: none;
+}

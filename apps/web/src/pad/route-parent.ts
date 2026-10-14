@@ -13,3 +13,6 @@ export function routeParent(pathname: string): string | null {
   if (first === 'settings') return '/?open=settings'
   return null
 }
+
+/** Where B and Esc go: the page's own parent, else the path's. */
+export const parentOf = (pathname: string, parent: string | undefined): string | null => parent ?? routeParent(pathname)

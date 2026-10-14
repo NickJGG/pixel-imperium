@@ -508,10 +508,9 @@ const BookendFace = ({ year, side }: Bookend) => (
  * A bookend in the cover's cobalt beside January or December, linking to the other Year's nearest Month. Paired
  * across the Home morph like a Month's spine.
  */
-export function YearSpine({ ref, ...bookend }: Bookend & { ref?: RefObject<HTMLAnchorElement | null> | undefined }) {
+export function YearSpine(bookend: Bookend) {
   return (
     <Link
-      ref={ref}
       to="/daily/$year/$month"
       params={{ year: String(bookend.year), month: bookend.side === 'before' ? '12' : '01' }}
       replace

@@ -54,7 +54,10 @@ export function ChoiceCard({ track, copy, back }: { track: Track; copy: OfferCop
   useEffect(() => {
     learnRef.current?.focus()
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') return mark()
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        return mark()
+      }
       if (e.key !== 'Tab') return
       const items = [...cardRef.current!.querySelectorAll<HTMLElement>('a, button')]
       const at = items.indexOf(document.activeElement as HTMLElement)

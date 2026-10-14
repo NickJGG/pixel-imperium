@@ -59,6 +59,25 @@ export function usePadPage(page: PadPage): void {
 }
 
 /**
+ * Esc goes up a level, as B does, unless something open would take it: a field, a dialog or a pad-contained
+ * menu. Those register their own Escape listeners later than this one, so their `preventDefault` can't be relied on.
+ */
+export function useEscapeUp(): void {
+  const dispatcher = usePadDispatcher()
+  useEffect(() => {
+    if (!dispatcher) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
+      if ((e.target as HTMLElement).closest?.('input, textarea, select, [contenteditable]')) return
+      if (document.querySelector('dialog[open], [data-pad-contain]')) return
+      if (dispatcher.up()) e.preventDefault()
+    }
+    addEventListener('keydown', onKey)
+    return () => removeEventListener('keydown', onKey)
+  }, [dispatcher])
+}
+
+/**
  * While `open`, keeps the d-pad inside `ref` and lets B close it through `onClose`. On close, focus that
  * was lost goes back to `restore` (for a confirm that replaced its button), else to whatever had it on
  * open, else to the page default in pad mode.

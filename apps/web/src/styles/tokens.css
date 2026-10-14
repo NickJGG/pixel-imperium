@@ -184,6 +184,9 @@
   --t-summer: #ffcf5c;
   --t-autumn: #ff8a5c;
   --on-tab: #1b1b28;
+  /* A key's badge, keyboard or controller, the same in every theme. */
+  --key: #ffffff;
+  --on-key: #111111;
 
   --board-bg: #17224f;
   --board-fill: #e6edff;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { routeParent } from './route-parent.ts'
+import { parentOf, routeParent } from './route-parent.ts'
 
 describe('routeParent', () => {
   it.each([
@@ -17,5 +17,17 @@ describe('routeParent', () => {
     ['/play/abc', null],
   ])('%s → %s', (path, parent) => {
     expect(routeParent(path)).toBe(parent)
+  })
+})
+
+describe('parentOf', () => {
+  it("takes the page's parent over the path's", () => {
+    expect(parentOf('/play/abc', '/c/rome/latium')).toBe('/c/rome/latium')
+    expect(parentOf('/c/rome/latium', '/c/elsewhere')).toBe('/c/elsewhere')
+  })
+
+  it("falls back to the path's", () => {
+    expect(parentOf('/c/rome/latium', undefined)).toBe('/c/rome')
+    expect(parentOf('/play/abc', undefined)).toBeNull()
   })
 })

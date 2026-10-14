@@ -5,7 +5,9 @@ import { AccountMenu, ThumbMenu } from './AccountMenu.tsx'
 import { AutoIcon, DayIcon, HomeIcon, NightIcon, PlayIcon, ProfileIcon, SoundIcon } from './album/icons.tsx'
 import { useCurrentCampaign } from './campaign/last-campaign.ts'
 import { type ContinueAt, campaignProgress, continueAt } from './campaign/progress.ts'
+import { useEscapeUp } from './pad/PadProvider.tsx'
 import { type Theme, updateSettings, useSettings } from './settings.ts'
+import { Trail } from './Trail.tsx'
 import app from './App.module.css'
 import styles from './Hud.module.css'
 
@@ -105,9 +107,11 @@ export function FloatingPills() {
 /**
  * The logo sticker top-left and the pills top-right. `float` lays it over the page instead of in its own
  * row; by default that follows the route. On a phone only sound and theme stay: the thumb bar has the rest.
+ * Mounted wherever the HUD shows, it's where Esc goes up a level.
  */
 export function Hud({ float }: { float?: boolean | undefined }) {
   const pathname = useRouterState({ select: s => s.location.pathname })
+  useEscapeUp()
   return (
     <header className={styles.hud} data-float={(float ?? floats(pathname)) || undefined}>
       <Link to="/" className={styles.logo}>
@@ -116,6 +120,7 @@ export function Hud({ float }: { float?: boolean | undefined }) {
           <span>Pixel</span> Imperium
         </span>
       </Link>
+      <Trail />
       <HudPills className={styles.pagePills} />
     </header>
   )

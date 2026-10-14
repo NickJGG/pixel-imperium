@@ -38,7 +38,11 @@ export function HintButton({ store, confirmFirst, note, confirmNote, popover = f
   useEffect(() => {
     if (!confirming) return
     confirmRef.current?.focus()
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setConfirming(false)
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      setConfirming(false)
+    }
     const onDown = (e: PointerEvent) => !anchorRef.current?.contains(e.target as Node) && setConfirming(false)
     window.addEventListener('keydown', onKey)
     if (popover) window.addEventListener('pointerdown', onDown)

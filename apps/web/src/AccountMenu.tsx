@@ -131,7 +131,11 @@ function Menu({ label, trigger, triggerClassName, triggerVariant, triggerSize, u
   useEffect(() => {
     if (!open) return
     const onPointer = (e: PointerEvent) => !rootRef.current?.contains(e.target as Node) && setOpen(false)
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      setOpen(false)
+    }
     window.addEventListener('pointerdown', onPointer)
     window.addEventListener('keydown', onKey)
     return () => {

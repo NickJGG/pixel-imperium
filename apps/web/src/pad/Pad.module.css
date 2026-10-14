@@ -19,8 +19,8 @@
   align-items: center;
   justify-content: center;
   font: 700 var(--fs-12)/1 var(--font-mono);
-  --face: var(--ink);
-  color: var(--card);
+  --face: var(--key);
+  color: var(--on-key);
   background: var(--face);
   border-radius: var(--r-pill);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--face) 60%, #000); /* token-exempt: darkens whatever face the glyph has */

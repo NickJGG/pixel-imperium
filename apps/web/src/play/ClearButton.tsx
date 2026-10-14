@@ -22,7 +22,11 @@ export function ClearButton({ store, solved, disabled = false }: Props) {
   useEffect(() => {
     if (!confirming) return
     confirmRef.current?.focus()
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setConfirming(false)
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      setConfirming(false)
+    }
     window.addEventListener('keydown', onKey)
     const unsubscribe = store.subscribe(() => store.strokeActive && setConfirming(false))
     return () => {

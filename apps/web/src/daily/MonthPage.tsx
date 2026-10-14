@@ -16,7 +16,6 @@ import {
   useStep,
 } from '../campaign/worlds/Worlds.tsx'
 import { doorSlot } from '../campaign/worlds/names.ts'
-import { firstFocusable } from '../pad/spatial.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { type DailyClock, dailyId, startOf } from './clock.ts'
 import { DayFace, MonthCalendar } from './MonthCalendar.tsx'
@@ -52,34 +51,20 @@ function Year({ data, month }: { data: DailyYear; month: number }) {
 
   const before = data.year > Number(data.launch.slice(0, 4)) ? data.year - 1 : null
   const after = data.year < Number(clock.today.slice(0, 4)) ? data.year + 1 : null
-  const beforeRef = useRef<HTMLAnchorElement>(null)
-  const afterRef = useRef<HTMLAnchorElement>(null)
-
   const goTo = (year: number, to: number) => {
     if (year === data.year && (to < 1 || to > 12 || to === month)) return
     void navigate({ to: '/daily/$year/$month', params: { year: String(year), month: mm(to) }, replace: true })
   }
-  // Past January or December the step lands on the bookend first, and only the next one leaves the Year. Where the
-  // step stands is kept here rather than read from focus, which the pad may put on a bookend when the page opens.
-  const onBookend = useRef<{ month: number; side: -1 | 1 } | null>(null)
   useStep(dir => {
-    const on = onBookend.current?.month === month ? onBookend.current.side : null
-    onBookend.current = null
-    if (on !== null) {
-      if (dir === on) return on < 0 ? goTo(before!, 12) : goTo(after!, 1)
-      const page = ref.current?.querySelector<HTMLElement>(':scope [data-start]')
-      return (page && firstFocusable(page))?.focus()
-    }
     const to = month + dir
-    const bookend = to < 1 && before !== null ? beforeRef : to > 12 && after !== null ? afterRef : null
-    if (!bookend) return goTo(data.year, to)
-    onBookend.current = { month, side: dir }
-    bookend.current?.focus()
+    if (to < 1 && before !== null) goTo(before, 12)
+    else if (to > 12 && after !== null) goTo(after, 1)
+    else goTo(data.year, to)
   })
   const bookends = (pages: ReactNode[]) => [
-    before !== null && <YearSpine key="before" ref={beforeRef} year={before} side="before" />,
+    before !== null && <YearSpine key="before" year={before} side="before" />,
     ...pages,
-    after !== null && <YearSpine key="after" ref={afterRef} year={after} side="after" />,
+    after !== null && <YearSpine key="after" year={after} side="after" />,
   ]
   const onSnap = (i: number) => {
     const m = i + (before === null ? 1 : 0)

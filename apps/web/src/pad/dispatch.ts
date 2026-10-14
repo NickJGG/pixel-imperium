@@ -1,6 +1,6 @@
 import { unlock } from '../sound.ts'
 import { type Frame, type PadButton, type PadEvent, isDirection } from './input.ts'
-import { routeParent } from './route-parent.ts'
+import { parentOf } from './route-parent.ts'
 import { currentScope, focusDefault, moveFocus, openPageMenu } from './spatial.ts'
 
 export interface PadBoard {
@@ -33,6 +33,8 @@ export interface Dispatcher {
   contain(root: HTMLElement, close: () => void): () => void
   /** Read at each event, so it can change between renders. */
   setPage(page: (() => PadPage) | null): void
+  /** Goes to the page's parent; returns whether there was one. */
+  up(): boolean
   dispatch(event: PadEvent): void
   analog(frame: Frame, dt: number): void
 }
@@ -50,6 +52,12 @@ export function createDispatcher(navigate: (href: string) => void): Dispatcher {
 
   const liveBoard = () => [...boards].find(b => b.live())
 
+  const up = () => {
+    const parent = parentOf(location.pathname, page?.().parent)
+    if (parent !== null) navigate(parent)
+    return parent !== null
+  }
+
   const back = () => {
     const scope = currentScope()
     if (scope) {
@@ -60,8 +68,7 @@ export function createDispatcher(navigate: (href: string) => void): Dispatcher {
     }
     const board = liveBoard()
     if (board) return board.canvas.focus()
-    const parent = page?.().parent ?? routeParent(location.pathname)
-    if (parent !== null) navigate(parent)
+    up()
   }
 
   const view = () => {
@@ -81,6 +88,7 @@ export function createDispatcher(navigate: (href: string) => void): Dispatcher {
     setPage(next) {
       page = next
     },
+    up,
     dispatch(event) {
       const { kind, button } = event
       if (button === waking) {

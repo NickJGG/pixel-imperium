@@ -98,6 +98,7 @@ export function useDismiss(
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
+      e.preventDefault()
       setOpen(false)
       button.current?.focus()
     }
