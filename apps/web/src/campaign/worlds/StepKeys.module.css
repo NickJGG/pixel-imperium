@@ -1,0 +1,82 @@
+/* Viewport coordinates, from the spines' rects. */
+.stepKeys {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.key {
+  position: absolute;
+  /* `StepKeys.tsx`'s KEY_REM. */
+  height: 1.6875rem;
+  min-height: 0;
+  padding: 0 0.75rem;
+  display: grid;
+  place-items: center;
+  font: 700 0.8125rem/1 var(--font-mono);
+  color: var(--on-key);
+  background: var(--key);
+  border: 0;
+  border-radius: var(--r-pill);
+  box-shadow: 0 3px 0 var(--shade);
+  cursor: pointer;
+  pointer-events: auto;
+  translate: -50% -50%;
+  rotate: calc(-1 * var(--slant-angle));
+}
+
+.face {
+  rotate: var(--slant-angle);
+}
+
+/* The pad's badge is the key. */
+:root[data-pad] .key {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/*
+ * A sideways step glides each key from its old spine to its new one with the columns (Worlds.module.css's timing).
+ * A change of level slides the spines off and in from the edges, so the keys fade out and in with the content,
+ * all but gone while they glide; `normal` undoes the way home's reverse.
+ */
+:root:active-view-transition-type(to-home, to-province, into-album, out-of-album, to-board, from-board, door-board, door-back)::view-transition-group(.key) {
+  animation-direction: normal;
+}
+
+:root:active-view-transition-type(to-home, to-province, into-album, out-of-album, to-board, from-board, door-board, door-back)::view-transition-old(.key) {
+  animation-name: fade-out-early;
+  animation-direction: normal;
+}
+
+:root:active-view-transition-type(to-home, to-province, into-album, out-of-album, to-board, from-board, door-board, door-back)::view-transition-new(.key) {
+  animation-name: fade-in-late;
+  animation-direction: normal;
+}
+
+@media (max-width: 720px) {
+  .stepKeys {
+    display: none;
+  }
+}
+
+/* Worlds.module.css's, which its module scopes to itself. */
+@keyframes fade-out-early {
+  40%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in-late {
+  0%,
+  60% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}

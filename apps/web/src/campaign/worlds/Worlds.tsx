@@ -16,6 +16,7 @@ import { reducedMotion } from '../../motion.ts'
 import type { PadPage } from '../../pad/dispatch.ts'
 import { usePadPage } from '../../pad/PadProvider.tsx'
 import type { ProvinceState } from '../progress.ts'
+import { registerStep, StepKeys } from './StepKeys.tsx'
 import styles from './Worlds.module.css'
 
 export const PHONE = '(max-width: 720px)'
@@ -33,8 +34,8 @@ export const usePhone = () => useSyncExternalStore(subscribePhone, () => matchMe
 export const morphName = (province: Pick<Province, 'id'>): CSSProperties => ({ viewTransitionName: `province-${province.id}` })
 
 /**
- * Steps to the column before or after with ←/→ and the pad's shoulders; the arrows are left alone while focus is in
- * a field or a dialog is open.
+ * Steps to the column before or after with ←/→, the pad's shoulders, or the keys under the open column's
+ * neighbours; the arrows are left alone while focus is in a field or a dialog is open.
  */
 export function useStep(step: (dir: -1 | 1) => void, page?: Omit<PadPage, 'step'>): void {
   usePadPage({ ...page, step })
@@ -51,7 +52,11 @@ export function useStep(step: (dir: -1 | 1) => void, page?: Omit<PadPage, 'step'
       stepRef.current(e.key === 'ArrowLeft' ? -1 : 1)
     }
     addEventListener('keydown', onKey)
-    return () => removeEventListener('keydown', onKey)
+    const unregister = registerStep(dir => stepRef.current(dir))
+    return () => {
+      removeEventListener('keydown', onKey)
+      unregister()
+    }
   }, [])
 }
 
@@ -126,9 +131,12 @@ export function Worlds({
   }, [carousel])
 
   return (
-    <div ref={ref} className={[styles.worlds, className].filter(Boolean).join(' ')} data-carousel={carousel || undefined}>
-      {children}
-    </div>
+    <>
+      <div ref={ref} className={[styles.worlds, className].filter(Boolean).join(' ')} data-carousel={carousel || undefined}>
+        {children}
+      </div>
+      <StepKeys row={ref} />
+    </>
   )
 }
 
