@@ -138,6 +138,14 @@ The second-to-last **Province** of the **Imperium**.
 The final and hardest **Province** of the **Imperium**.
 _Avoid_: Finale, boss
 
+**Voyage**:
+The second **Campaign**: six **Provinces** of 30 **Puzzles** each, sailing outward from the Shipyard to the **Edge**.
+_Avoid_: Expedition, journey
+
+**Edge**:
+The final and hardest **Province** of the **Voyage**, where the maps run out.
+_Avoid_: Edge of the Map, finale, boss
+
 **Tier**:
 A **Puzzle**'s difficulty relative to the rest of its **Province**: Easy, Medium or Hard, set by the author as where each band starts in the province's order.
 _Avoid_: Difficulty, rating (the solver's campaign-wide score), level, rank

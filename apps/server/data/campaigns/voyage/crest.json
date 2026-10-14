@@ -1,0 +1,31 @@
+{
+  "palette": { "J": "#2f7a3c", "j": "#5ec46f", "y": "#ffc92e", "b": "#6b4a2b", "n": "#16303a", "I": "#f2f4fb", "i": "#b8f3ff", "w": "#2a7fd4", "W": "#7fd0ff", "m": "#4d3a2a", "f": "#e0475b", "s": "#fff3dc", "h": "#8a5a33", "k": "#fbeccd", "S": "#ffc92e", "d": "#c99a6b", "D": "#f0cf8e", "x": "#3a1216", "o": "#ff9a3d", "R": "#ff4a4a" },
+  "rows": [
+    "JjJJjJJnnInnnnI",
+    "jJyJJjJnnnInnIn",
+    "JJjJwWwwWwwIIiI",
+    "bJJywWWmfWWIiII",
+    "bjbJWWsmsWwIIiI",
+    "JbJjwssmssWxxII",
+    "kSkkWhhhhhwxoxx",
+    "kkkwwwhhhwWwoRR",
+    "kdkWwwwWwwwWxxR",
+    "dddDwWwwwWwxxRx",
+    "DDDDdjDDxRxRxRx",
+    "DdDDDDDDxxRxxxx"
+  ],
+  "regions": [
+    "444444455555555",
+    "444444455555555",
+    "444422222225555",
+    "444421111125555",
+    "444421111125555",
+    "444421111126655",
+    "333321111126666",
+    "333221111122666",
+    "333221111122666",
+    "333322222226666",
+    "333333336666666",
+    "333333336666666"
+  ]
+}

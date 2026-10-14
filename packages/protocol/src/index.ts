@@ -37,7 +37,7 @@ export interface DailyYear {
 }
 
 /**
- * The named papers in tokens.css: one per Imperium province, one per season. Campaigns and provinces each name
+ * The named papers in tokens.css: one per campaign province, one per season. Campaigns and provinces each name
  * one; a new one needs its `--p-` in every theme and its `--t-` in Night.
  */
 export const PAPER_NAMES = [
@@ -47,6 +47,12 @@ export const PAPER_NAMES = [
   'forge',
   'capital',
   'throne',
+  'timber',
+  'teal',
+  'sand',
+  'lime',
+  'glacier',
+  'ember',
   'winter',
   'spring',
   'summer',

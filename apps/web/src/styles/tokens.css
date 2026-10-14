@@ -156,6 +156,12 @@
   --p-forge: #3f2414;
   --p-capital: #2a2152;
   --p-throne: #401632;
+  --p-timber: #31251a;
+  --p-teal: #0e3532;
+  --p-sand: #3a3120;
+  --p-lime: #26350f;
+  --p-glacier: #16303a;
+  --p-ember: #3a1216;
   --p-winter: #1c2c42;
   --p-spring: #173a2b;
   --p-summer: #3b3112;
@@ -166,6 +172,12 @@
   --t-forge: #ff9a3d;
   --t-capital: #b48cff;
   --t-throne: #ff4fa3;
+  --t-timber: #c99a6b;
+  --t-teal: #2fd9c4;
+  --t-sand: #f0cf8e;
+  --t-lime: #b8e639;
+  --t-glacier: #b8f3ff;
+  --t-ember: #ff4a4a;
   /* The Daily's seasons; the server's generated tints (SEASON_TINT) match these. */
   --t-winter: #a9d8ff;
   --t-spring: #8fe3a6;
@@ -213,6 +225,12 @@
     --p-forge: #ffd7b8;
     --p-capital: #e4d8ff;
     --p-throne: #ffcfe6;
+    --p-timber: #ecdcc9;
+    --p-teal: #c2f1e9;
+    --p-sand: #fbeccd;
+    --p-lime: #e3f5bf;
+    --p-glacier: #e2f9ff;
+    --p-ember: #ffd3d3;
     --p-winter: #dceeff;
     --p-spring: #d4f5dc;
     --p-summer: #fff0bd;
@@ -255,6 +273,12 @@
   --p-forge: #ffd7b8;
   --p-capital: #e4d8ff;
   --p-throne: #ffcfe6;
+  --p-timber: #ecdcc9;
+  --p-teal: #c2f1e9;
+  --p-sand: #fbeccd;
+  --p-lime: #e3f5bf;
+  --p-glacier: #e2f9ff;
+  --p-ember: #ffd3d3;
   --p-winter: #dceeff;
   --p-spring: #d4f5dc;
   --p-summer: #fff0bd;

@@ -29,7 +29,7 @@ export interface ProvinceDef {
 export interface CampaignDef {
   id: string
   name: string
-  /** Served outside production only, and exempt from the puzzle count. */
+  /** Served outside production only; its puzzle counts and crest regions need only stay within bounds. */
   draft: boolean
   /** `YYYY-MM-DD`; required outside drafts. Production serves the campaign from this date. */
   released?: string
@@ -144,7 +144,7 @@ function crestProblems(c: Campaign, crest: Crest): string[] {
     })
   }
   const total = c.provinces.reduce((n, p) => n + p.puzzles.length, 0)
-  if (width * height !== total) problems.push(`${where}: has ${width * height} pixels, expected ${total}`)
+  if (!c.draft && width * height !== total) problems.push(`${where}: has ${width * height} pixels, expected ${total}`)
 
   const unknown = [...new Set(crest.rows.join(''))].filter(ch => !(ch in crest.palette))
   if (unknown.length > 0) problems.push(`${where}: '${unknown.join('')}' not in its palette`)
@@ -156,7 +156,10 @@ function crestProblems(c: Campaign, crest: Crest): string[] {
   for (const ch of crest.regions.join('')) sizes.set(ch, (sizes.get(ch) ?? 0) + 1)
   c.provinces.forEach((p, k) => {
     const size = sizes.get(String(k + 1)) ?? 0
-    if (size !== p.puzzles.length) problems.push(`${where}: ${p.id}'s region has ${size} pixels, expected ${p.puzzles.length}`)
+    if (c.draft ? size < p.puzzles.length : size !== p.puzzles.length) {
+      const expected = c.draft ? `at least ${p.puzzles.length}` : p.puzzles.length
+      problems.push(`${where}: ${p.id}'s region has ${size} pixels, expected ${expected}`)
+    }
   })
   return problems
 }

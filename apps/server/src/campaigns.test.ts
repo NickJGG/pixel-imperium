@@ -123,6 +123,15 @@ describe('campaignProblems', () => {
     expect(campaignProblems([buildCampaign(source({}, undefined, def))])).toEqual(problems)
   })
 
+  it("lets a draft's crest outgrow its puzzles, but not fall short of them", () => {
+    const roomy: CrestDef = { palette: { a: '#111' }, rows: ['aaaa', 'aaaa'], regions: ['1112', '1222'] }
+    const draft = (def: CrestDef) => campaignProblems([buildCampaign(source({ draft: true }, undefined, def))])
+    expect(draft(roomy)).toEqual([])
+    expect(draft({ ...crest, regions: ['111', '122'] })).toEqual([
+      "c/crest: q's region has 2 pixels, expected at least 3",
+    ])
+  })
+
   it('flags puzzles outside the band or not a multiple of 5', () => {
     const c = buildCampaign(source({}, { p: three('p', 5, 5, block('p1', 15, 5)), q: three('q', 10, 10, block('q1', 10, 12)) }))
     expect(campaignProblems([c])).toEqual([
@@ -243,7 +252,7 @@ describe('authored campaigns', () => {
     it('has tier cuts matching the suggested ones', () => {
       const { puzzles } = solverReport(campaign)
       for (const p of campaign.provinces) {
-        expect([p.id, suggestTierCuts(puzzles.filter(x => x.provinceId === p.id))]).toEqual([p.id, p.tiers])
+        expect([p.id, suggestTierCuts(puzzles.filter(x => x.provinceId === p.id))]).toEqual([p.id, p.tiers ?? null])
       }
     })
   })
