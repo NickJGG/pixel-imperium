@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cluesFromSolution } from '@pixel-imperium/nonogram'
 import { stubStorage } from '../test-storage.ts'
 import { ProgressStorage, signedOutStorage as storage } from './progress-storage.ts'
-import { PlayStore, type Pos, type Tool, crosshairOf } from './store.ts'
+import { PlayStore, type Pos, type Tool, crosshairOf, elapsedAt } from './store.ts'
 
 // 4×3 plus sign with a tail:
 //   .#..
@@ -343,6 +343,129 @@ describe('PlayStore persistence', () => {
     solve(s)
     s.setPalette(palette)
     expect(makeStore().getState().palette).toEqual(palette)
+  })
+})
+
+describe('PlayStore clock', () => {
+  beforeEach(stubStorage)
+  afterEach(() => vi.unstubAllGlobals())
+
+  let t: number
+  beforeEach(() => (t = 1_000))
+  const clocked = () =>
+    new PlayStore({ id: 'test', width: 4, height: 3, clues: cluesFromSolution(4, 3, solution) }, { now: () => t })
+  const elapsed = (s: PlayStore) => elapsedAt(s.getState(), t)
+  /** Solves in two strokes, `ms` apart. */
+  const solveIn = (s: PlayStore, ms: number) => {
+    drag(s, 'fill', [at(0, 1), at(2, 1)])
+    t += ms
+    drag(s, 'fill', [at(1, 0), at(1, 2)])
+  }
+
+  it('starts on the first stroke, not on opening', () => {
+    const s = clocked()
+    t += 5_000
+    s.moveCursor(1, 1)
+    expect(elapsed(s)).toBe(0)
+    drag(s, 'fill', [at(0, 0)])
+    t += 3_000
+    expect(elapsed(s)).toBe(3_000)
+  })
+
+  it('pauses, and resumes on resume() or board input', () => {
+    const s = clocked()
+    drag(s, 'fill', [at(0, 0)])
+    t += 2_000
+    s.pause()
+    t += 60_000
+    expect(s.getState()).toMatchObject({ paused: true })
+    expect(elapsed(s)).toBe(2_000)
+    s.resume()
+    t += 1_000
+    expect(elapsed(s)).toBe(3_000)
+    s.pause()
+    drag(s, 'fill', [at(0, 1)])
+    t += 1_000
+    expect(s.getState().paused).toBe(false)
+    expect(elapsed(s)).toBe(4_000)
+  })
+
+  it("doesn't count time while suspended, and wakes only what suspend stopped", () => {
+    const s = clocked()
+    s.suspend()
+    s.wake()
+    expect(s.getState().runningSince).toBeNull()
+
+    drag(s, 'fill', [at(0, 0)])
+    t += 1_000
+    s.suspend()
+    t += 30_000
+    s.wake()
+    t += 1_000
+    expect(elapsed(s)).toBe(2_000)
+
+    s.pause()
+    s.suspend()
+    s.wake()
+    expect(s.getState()).toMatchObject({ paused: true, runningSince: null })
+  })
+
+  it('restarts the Attempt on clear, hint flag and all', () => {
+    const s = clocked()
+    drag(s, 'fill', [at(0, 0)])
+    s.showHint({ kind: 'mistake', index: 0 })
+    t += 4_000
+    s.clear({ autoMarkEmptyLines: false })
+    t += 4_000
+    expect(elapsed(s)).toBe(0)
+    expect(s.getState().attemptHinted).toBe(false)
+    expect(storage.loadAttemptHinted('test')).toBe(false)
+    drag(s, 'fill', [at(0, 0)])
+    t += 1_000
+    expect(elapsed(s)).toBe(1_000)
+  })
+
+  it('stops on the solve and sets the best, clearing the stored Attempt for a replay', () => {
+    const s = clocked()
+    solveIn(s, 7_000)
+    t += 10_000
+    expect(s.getState()).toMatchObject({ solved: true, solveMs: 7_000, bestMs: 7_000, runningSince: null })
+    expect(storage.loadBest('test')).toBe(7_000)
+    expect(storage.loadElapsed('test')).toBe(0)
+  })
+
+  it("doesn't set a best from a hinted Attempt, though the time still shows", () => {
+    const s = clocked()
+    drag(s, 'fill', [at(0, 0)])
+    s.showHint({ kind: 'mistake', index: 0 })
+    drag(s, 'fill', [at(0, 0)])
+    solveIn(s, 7_000)
+    expect(s.getState()).toMatchObject({ solved: true, solveMs: 7_000, bestMs: null, attemptHinted: true })
+    expect(storage.loadBest('test')).toBeNull()
+  })
+
+  it('lowers the best only on a faster replay', () => {
+    const s = clocked()
+    solveIn(s, 7_000)
+    s.clear({ autoMarkEmptyLines: false })
+    solveIn(s, 9_000)
+    expect(s.getState()).toMatchObject({ solveMs: 9_000, bestMs: 7_000 })
+    s.clear({ autoMarkEmptyLines: false })
+    solveIn(s, 4_000)
+    expect(s.getState()).toMatchObject({ solveMs: 4_000, bestMs: 4_000 })
+  })
+
+  it('keeps the Attempt time and hint across a new store over the same storage', () => {
+    const s = clocked()
+    drag(s, 'fill', [at(0, 0)])
+    s.showHint({ kind: 'mistake', index: 0 })
+    t += 6_000
+    s.suspend()
+    const reopened = clocked()
+    expect(reopened.getState()).toMatchObject({ elapsedMs: 6_000, runningSince: null, attemptHinted: true })
+    drag(reopened, 'fill', [at(0, 2)])
+    t += 1_000
+    expect(elapsed(reopened)).toBe(7_000)
   })
 })
 

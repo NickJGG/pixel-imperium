@@ -72,6 +72,10 @@ export interface Campaign {
 /** `POST /api/puzzles/:id/solve`; `cells` is row-major, marks sent as `'empty'`. */
 export interface SolveRequest {
   cells: ('filled' | 'empty')[]
+  /** The Attempt's Solve time; it can lower the account's Best time unless `hinted`. */
+  ms?: number
+  /** A Hint was used in this Attempt. */
+  hinted?: boolean
 }
 
 /**
@@ -132,6 +136,10 @@ export interface SavedProgress {
   cells: string
   replaying: boolean
   updatedAt: string
+  /** Active time spent on the current Attempt. */
+  elapsedMs: number
+  /** A Hint was used in the current Attempt, so its solve can't set a Best time. */
+  attemptHinted: boolean
 }
 
 export interface PutProgressResponse {
@@ -150,6 +158,8 @@ export interface PuzzleRecord {
   hinted: boolean
   /** When it was first solved; present only for a verified solve. */
   solvedAt: string | null
+  /** The fastest unhinted Solve time, if one was recorded. */
+  bestMs: number | null
 }
 
 /**
@@ -188,6 +198,10 @@ export interface ImportItem {
   replaying: boolean
   /** A hint was used on this device; the solve itself is never foil either way. */
   hinted?: boolean
+  /** The in-progress Attempt's active time, with `cells`. */
+  elapsedMs?: number
+  /** The device's Best time; kept only with a solve. */
+  bestMs?: number
 }
 
 /** `POST /api/me/import`. */

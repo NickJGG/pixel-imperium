@@ -214,6 +214,42 @@ describe('solve records', () => {
     expect(res).toMatchObject({ stamps: { earned: [] } })
   })
 
+  describe('best time', () => {
+    const timed = (ms: unknown, cookie: string, hinted?: boolean) =>
+      app.request('/api/puzzles/diag/solve', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', cookie },
+        body: JSON.stringify({ cells: solution, ms, ...(hinted !== undefined && { hinted }) }),
+      })
+    const best = async () => (await rows())[0]?.bestMs
+
+    it('only ever moves down', async () => {
+      const { cookie } = await signedInUser(db, auth)
+      await timed(90_000, cookie)
+      expect(await best()).toBe(90_000)
+      await timed(120_000, cookie)
+      expect(await best()).toBe(90_000)
+      await timed(45_000, cookie)
+      expect(await best()).toBe(45_000)
+    })
+
+    it('is left alone by a hinted solve', async () => {
+      const { cookie } = await signedInUser(db, auth)
+      await timed(90_000, cookie)
+      await timed(10_000, cookie, true)
+      expect(await best()).toBe(90_000)
+    })
+
+    it.each([['no', undefined], ['a negative', -5], ['a fractional', 1.5], ['a string', '100']])(
+      'ignores %s time',
+      async (_, ms) => {
+        const { cookie } = await signedInUser(db, auth)
+        expect(await (await timed(ms, cookie)).json()).toMatchObject({ solved: true })
+        expect(await best()).toBeNull()
+      },
+    )
+  })
+
   it('keeps the first solve time on a repeat solve', async () => {
     const { cookie } = await signedInUser(db, auth)
     await solve(solution, 'diag', cookie)
@@ -412,12 +448,19 @@ describe('/api/me', () => {
       puzzles: {
         diag: {
           solved: 'verified',
-          progress: { cells: '#..#', replaying: false, updatedAt: '2026-01-01T00:00:00.000Z' },
+          progress: {
+            cells: '#..#',
+            replaying: false,
+            updatedAt: '2026-01-01T00:00:00.000Z',
+            elapsedMs: 0,
+            attemptHinted: false,
+          },
           palette: ['#f00', null, null, '#00f'],
           crest: null,
           foil: false,
           hinted: false,
           solvedAt: '2026-01-03T00:00:00.000Z',
+          bestMs: null,
         },
         other: {
           solved: 'unverified',
@@ -427,6 +470,7 @@ describe('/api/me', () => {
           foil: false,
           hinted: false,
           solvedAt: null,
+          bestMs: null,
         },
       },
       assists,
@@ -498,7 +542,16 @@ describe('PUT /api/me/progress/:id', () => {
       cells: '..#x',
       replaying: true,
       updatedAt: '2026-01-03T00:00:00.000Z',
+      elapsedMs: 0,
+      attemptHinted: false,
     })
+  })
+
+  it('keeps the Attempt time and hint with the grid', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    const body = { cells: '#...', replaying: false, updatedAt: '2026-01-01T00:00:00.000Z', elapsedMs: 4_200, attemptHinted: true }
+    expect((await send('PUT', '/api/me/progress/diag', body, cookie)).status).toBe(200)
+    expect((await getProgress(cookie)).puzzles.diag?.progress).toMatchObject({ elapsedMs: 4_200, attemptHinted: true })
   })
 
   it('caps a future timestamp at the current time', async () => {
@@ -513,6 +566,8 @@ describe('PUT /api/me/progress/:id', () => {
     ['bad cell', { cells: '#..o', replaying: false, updatedAt: '2026-01-01T00:00:00.000Z' }],
     ['missing replaying', { cells: '#...', updatedAt: '2026-01-01T00:00:00.000Z' }],
     ['bad date', { cells: '#...', replaying: false, updatedAt: 'yesterday' }],
+    ['negative time', { cells: '#...', replaying: false, updatedAt: '2026-01-01T00:00:00.000Z', elapsedMs: -1 }],
+    ['fractional time', { cells: '#...', replaying: false, updatedAt: '2026-01-01T00:00:00.000Z', elapsedMs: 1.5 }],
   ])('400s on %s', async (_, body) => {
     const { cookie } = await signedInUser(db, auth)
     expect((await send('PUT', '/api/me/progress/diag', body, cookie)).status).toBe(400)
@@ -545,8 +600,23 @@ describe('POST /api/me/import', () => {
         foil: false,
         hinted: false,
         solvedAt: expect.any(String),
+        bestMs: null,
       },
     })
+  })
+
+  it('carries the Attempt time with a grid, and the best with a solve', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    await importing(cookie, [{ id: 'diag', cells: '#xx#', solved: true, replaying: false, elapsedMs: 900, bestMs: 61_000 }])
+    const { diag } = (await getProgress(cookie)).puzzles
+    expect(diag).toMatchObject({ bestMs: 61_000, progress: { elapsedMs: 900 } })
+  })
+
+  it('keeps the lower of the account and imported best', async () => {
+    const { id, cookie } = await signedInUser(db, auth)
+    await db.insert(solveTable).values({ userId: id, puzzleId: 'diag', verified: true, bestMs: 30_000 })
+    await importing(cookie, [{ id: 'diag', solved: true, replaying: false, bestMs: 61_000 }])
+    expect((await getProgress(cookie)).puzzles.diag?.bestMs).toBe(30_000)
   })
 
   it('never downgrades a verified solve', async () => {

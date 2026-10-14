@@ -64,13 +64,25 @@ function parseAssists(value: unknown): Assists | null {
   return Object.values(assists).every(v => typeof v === 'boolean') ? (assists as unknown as Assists) : null
 }
 
+/** A duration the `integer` columns can hold. */
+const isMs = (value: unknown): value is number =>
+  Number.isInteger(value) && (value as number) >= 0 && (value as number) <= 2 ** 31 - 1
+
 function parseImportItem(value: unknown): ImportItem | null {
   if (!value || typeof value !== 'object') return null
-  const { id, cells, solved, replaying, hinted } = value as Record<string, unknown>
+  const { id, cells, solved, replaying, hinted, elapsedMs, bestMs } = value as Record<string, unknown>
   if (typeof id !== 'string' || typeof solved !== 'boolean' || typeof replaying !== 'boolean') return null
   if (cells !== undefined && typeof cells !== 'string') return null
   if (hinted !== undefined && typeof hinted !== 'boolean') return null
-  return { id, solved, replaying, ...(cells !== undefined && { cells }), ...(hinted && { hinted }) }
+  return {
+    id,
+    solved,
+    replaying,
+    ...(cells !== undefined && { cells }),
+    ...(hinted && { hinted }),
+    ...(isMs(elapsedMs) && { elapsedMs }),
+    ...(isMs(bestMs) && { bestMs }),
+  }
 }
 
 const SHOWCASE_SIZE = 3
@@ -162,6 +174,13 @@ export function createApp(
       : insert.onConflictDoNothing()
   }
 
+  /** Apart from `recordSolve`, whose upsert leaves a verified row untouched. Postgres' `least` skips a null. */
+  const lowerBest = (tx: Pick<Db, 'update'>, userId: string, puzzleId: string, ms: number) =>
+    tx
+      .update(solve)
+      .set({ bestMs: sql`least(${solve.bestMs}, ${ms})` })
+      .where(and(eq(solve.userId, userId), eq(solve.puzzleId, puzzleId)))
+
   const hintAllowed = rateLimiter(60, 60_000)
 
   const verifiedSolvesOf = (userId: string) =>
@@ -229,8 +248,8 @@ export function createApp(
       const p = playable(c.req.param('id'))
       if (!p) return c.json(notFound(c.req.param('id')), 404)
 
-      const body: unknown = await c.req.json().catch(() => null)
-      const cells = (body as { cells?: unknown } | null)?.cells
+      const body = (await c.req.json().catch(() => null)) as { cells?: unknown; ms?: unknown; hinted?: unknown } | null
+      const cells = body?.cells
       if (
         !Array.isArray(cells) ||
         cells.length !== p.width * p.height ||
@@ -254,6 +273,8 @@ export function createApp(
           .from(solve)
           .where(and(eq(solve.userId, user.id), eq(solve.puzzleId, p.id)))
         foil = row!.foil
+        const { ms, hinted: attemptHinted } = body!
+        if (isMs(ms) && attemptHinted !== true) await lowerBest(db, user.id, p.id, ms)
         stamps = await solveStamps(user.id, p, recorded.length > 0)
       }
       const crest = crestColour(p.id)
@@ -359,11 +380,13 @@ export function createApp(
           foil: false,
           hinted: false,
           solvedAt: null,
+          bestMs: null,
         })
       for (const s of solves) {
         const r = record(s.puzzleId)
         r.solved = s.verified ? 'verified' : 'unverified'
         r.foil = s.foil
+        r.bestMs = s.bestMs
         if (s.verified) {
           r.palette = puzzleById(s.puzzleId)?.palette ?? null
           r.crest = crestColour(s.puzzleId) ?? null
@@ -372,7 +395,13 @@ export function createApp(
       }
       for (const { puzzleId } of hints) record(puzzleId).hinted = true
       for (const g of grids) {
-        record(g.puzzleId).progress = { cells: g.cells, replaying: g.replaying, updatedAt: g.updatedAt.toISOString() }
+        record(g.puzzleId).progress = {
+          cells: g.cells,
+          replaying: g.replaying,
+          updatedAt: g.updatedAt.toISOString(),
+          elapsedMs: g.elapsedMs,
+          attemptHinted: g.attemptHinted,
+        }
       }
       const showcase = (me?.showcase ?? []).filter(id => records[id]?.solved === 'verified' && puzzleById(id))
       return c.json<MyProgress>({
@@ -430,16 +459,28 @@ export function createApp(
 
       const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
       const updatedAt = new Date(typeof body?.updatedAt === 'string' ? body.updatedAt : NaN)
-      if (!body || !parseCells(body.cells, p) || typeof body.replaying !== 'boolean' || isNaN(updatedAt.getTime())) {
+      // Absent on clients from before the stopwatch.
+      const elapsedMs = body?.elapsedMs ?? 0
+      const attemptHinted = body?.attemptHinted ?? false
+      if (
+        !body ||
+        !parseCells(body.cells, p) ||
+        typeof body.replaying !== 'boolean' ||
+        isNaN(updatedAt.getTime()) ||
+        !isMs(elapsedMs) ||
+        typeof attemptHinted !== 'boolean'
+      ) {
         return c.json<ApiError>(
-          { error: `expected { cells: ${p.width * p.height} of '.#x', replaying: boolean, updatedAt: ISO date }` },
+          {
+            error: `expected { cells: ${p.width * p.height} of '.#x', replaying: boolean, updatedAt: ISO date, elapsedMs?: ms, attemptHinted?: boolean }`,
+          },
           400,
         )
       }
 
       // A client clock running ahead must not lock out every later write.
       const at = new Date(Math.min(updatedAt.getTime(), Date.now()))
-      const values = { cells: body.cells as string, replaying: body.replaying, updatedAt: at }
+      const values = { cells: body.cells as string, replaying: body.replaying, updatedAt: at, elapsedMs, attemptHinted }
       const applied = await db
         .insert(progress)
         .values({ userId: c.get('user')!.id, puzzleId: p.id, ...values })
@@ -476,13 +517,22 @@ export function createApp(
           const found = puzzleById(item.id)
           const p = found && !('date' in found && found.date > latestPlayableDate(now())) ? found : undefined
           const plan = p ? planImport(p, item) : { solve: null, progress: null }
-          if (plan.solve) await recordSolve(tx, userId, item.id, plan.solve, false)
+          if (plan.solve) {
+            await recordSolve(tx, userId, item.id, plan.solve, false)
+            if (item.bestMs !== undefined) await lowerBest(tx, userId, item.id, item.bestMs)
+          }
           if (p && item.hinted) await tx.insert(hint).values({ userId, puzzleId: item.id }).onConflictDoNothing()
           // The account's own grid wins over an imported one.
           if (plan.progress) {
             await tx
               .insert(progress)
-              .values({ userId, puzzleId: item.id, ...plan.progress, updatedAt: new Date() })
+              .values({
+                userId,
+                puzzleId: item.id,
+                ...plan.progress,
+                elapsedMs: item.elapsedMs ?? 0,
+                updatedAt: new Date(),
+              })
               .onConflictDoNothing()
           }
           results[item.id] = plan.solve ?? (plan.progress ? 'progress' : 'ignored')

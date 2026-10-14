@@ -34,6 +34,27 @@ describe('ProgressStorage', () => {
     expect(account.loadFoil('a')).toBe(false)
   })
 
+  it('round-trips the Attempt time and hint, moving the update time, and clears them', () => {
+    expect([account.loadElapsed('a'), account.loadAttemptHinted('a')]).toEqual([0, false])
+    account.saveElapsed('a', 4_200, '2026-01-01T00:00:00.000Z')
+    expect(account.loadElapsed('a')).toBe(4_200)
+    expect(account.loadUpdatedAt('a')).toBe('2026-01-01T00:00:00.000Z')
+    account.saveAttemptHinted('a', true, '2026-01-02T00:00:00.000Z')
+    expect(account.loadAttemptHinted('a')).toBe(true)
+    expect(account.loadUpdatedAt('a')).toBe('2026-01-02T00:00:00.000Z')
+    account.clear()
+    expect([account.loadElapsed('a'), account.loadAttemptHinted('a')]).toEqual([0, false])
+  })
+
+  it('keeps only the lowest best', () => {
+    expect(account.loadBest('a')).toBeNull()
+    account.saveBest('a', 90_000)
+    account.saveBest('a', 120_000)
+    expect(account.loadBest('a')).toBe(90_000)
+    account.saveBest('a', 45_000)
+    expect(account.loadBest('a')).toBe(45_000)
+  })
+
   it('keeps the first solve date, per account, and clears it', () => {
     expect(account.loadSolvedAt('a')).toBeNull()
     account.saveSolvedAt('a', '2026-01-01T00:00:00.000Z')

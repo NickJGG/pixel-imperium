@@ -10,7 +10,7 @@ import {
 } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
-import type { Campaign, Province, PuzzleClues, Tier } from '@pixel-imperium/protocol'
+import type { Campaign, Province, PuzzleClues, SolveRequest, Tier } from '@pixel-imperium/protocol'
 import { CountPill } from '../album/CountPill.tsx'
 import { Dymo } from '../album/Dymo.tsx'
 import { ArrowIcon, CheckIcon } from '../album/icons.tsx'
@@ -212,18 +212,26 @@ export function Play({
   useUndoKeys(store)
 
   // The local check already won; the server only supplies the reveal colors, so a failure just
-  // sends the sticker off without them.
+  // sends the sticker off without them. A Replay that sets a new best still tells an account's server.
   const [revealFailed, setRevealFailed] = useState(false)
   useEffect(() => {
-    if (!solved || store.getState().palette) return
+    if (!solved) return
+    const { palette, cells, solveMs, bestMs, attemptHinted } = store.getState()
+    const newBest = solveMs !== null && solveMs === bestMs && !attemptHinted && storage.userId !== null
+    if (palette && !newBest) return
+    const body: SolveRequest = {
+      cells: cells.map(c => (c === 'filled' ? 'filled' : 'empty')),
+      ...(solveMs !== null && { ms: Math.round(solveMs), hinted: attemptHinted }),
+    }
+    // Only the best left to send: never aborted, and on failure it stays on this device.
+    if (palette) return void submitSolve(puzzle.id, body).catch(() => {})
     const abort = new AbortController()
-    const cells = store.getState().cells.map(c => (c === 'filled' ? 'filled' : 'empty'))
-    submitSolve(puzzle.id, { cells }, abort.signal).then(
+    submitSolve(puzzle.id, body, abort.signal).then(
       res => (res.solved ? store.setPalette(res.palette, res.foil, res.crest, res.stamps) : setRevealFailed(true)),
       () => !abort.signal.aborted && setRevealFailed(true),
     )
     return () => abort.abort()
-  }, [solved, store, puzzle.id])
+  }, [solved, store, puzzle.id, storage])
 
   // A solve while zoomed glides back to fit before the reveal and the sticker's moment, so they
   // see the whole picture; the view stays locked there until a replay.

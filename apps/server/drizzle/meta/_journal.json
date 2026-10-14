@@ -50,6 +50,13 @@
       "when": 1791506529593,
       "tag": "0006_techniques_asked",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791940203406,
+      "tag": "0007_solve_time",
+      "breakpoints": true
     }
   ]
 }

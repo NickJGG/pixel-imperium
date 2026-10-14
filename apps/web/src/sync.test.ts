@@ -50,7 +50,13 @@ describe('ProgressSync', () => {
     await vi.advanceTimersByTimeAsync(1)
     expect(api.putProgress).toHaveBeenCalledExactlyOnceWith(
       'a',
-      { cells: '##', replaying: false, updatedAt: '2026-01-01T00:00:01.000Z' } satisfies SavedProgress,
+      {
+        cells: '##',
+        replaying: false,
+        updatedAt: '2026-01-01T00:00:01.000Z',
+        elapsedMs: 0,
+        attemptHinted: false,
+      } satisfies SavedProgress,
       false,
     )
     expect(storage.loadMeta('dirty')).toBeNull()
@@ -98,12 +104,19 @@ describe('ProgressSync', () => {
       puzzles: {
         b: {
           solved: 'verified',
-          progress: { cells: '#x', replaying: true, updatedAt: '2026-01-02T00:00:00.000Z' },
+          progress: {
+            cells: '#x',
+            replaying: true,
+            updatedAt: '2026-01-02T00:00:00.000Z',
+            elapsedMs: 4_200,
+            attemptHinted: true,
+          },
           palette: ['#f00', null],
           crest: '#abc',
           foil: true,
           hinted: false,
           solvedAt: '2026-01-01T12:00:00.000Z',
+          bestMs: 60_000,
         },
         c: {
           solved: 'unverified',
@@ -113,6 +126,7 @@ describe('ProgressSync', () => {
           foil: false,
           hinted: true,
           solvedAt: null,
+          bestMs: null,
         },
       },
       assists: null,
@@ -138,6 +152,26 @@ describe('ProgressSync', () => {
     expect([storage.loadFoil('c'), storage.loadHinted('c')]).toEqual([false, true])
     expect([storage.loadSolvedAt('b'), storage.loadSolvedAt('c')]).toEqual(['2026-01-01T12:00:00.000Z', null])
     expect(storage.loadShowcase()).toEqual(['b'])
+    expect([storage.loadElapsed('b'), storage.loadAttemptHinted('b'), storage.loadBest('b')]).toEqual([4_200, true, 60_000])
+    expect(storage.loadBest('c')).toBeNull()
+  })
+
+  it("pull keeps the lower of the device's and the account's best", async () => {
+    const record = { solved: 'verified', progress: null, palette: null, crest: null, foil: false, hinted: false, solvedAt: null } as const
+    const api = fakeApi({
+      puzzles: { a: { ...record, bestMs: 60_000 }, b: { ...record, bestMs: 30_000 } },
+      assists: null,
+      showcase: [],
+      tutorialAskedAt: null,
+      techniquesAskedAt: null,
+      lessonsDone: [],
+    })
+    for (const [id, best] of [['a', 45_000], ['b', 50_000]] as const) {
+      storage.saveSolved(id, 'verified')
+      storage.saveBest(id, best)
+    }
+    await new ProgressSync(storage, api).pull()
+    expect([storage.loadBest('a'), storage.loadBest('b')]).toEqual([45_000, 30_000])
   })
 
   it('pull sends local changes first and keeps the cache when offline', async () => {
@@ -159,10 +193,11 @@ describe('ProgressSync', () => {
     const api = fakeApi()
     storage.saveCells('a', '#x', '2026-01-01T00:00:00.000Z')
     storage.saveSolved('a', 'local')
+    storage.saveBest('a', 61_000)
     storage.saveSolved('b', 'unverified')
     await new ProgressSync(storage, api).reconnect()
 
-    expect(api.solve).toHaveBeenCalledExactlyOnceWith('a', { cells: ['filled', 'empty'] })
+    expect(api.solve).toHaveBeenCalledExactlyOnceWith('a', { cells: ['filled', 'empty'], ms: 61_000 })
     expect(storage.loadSolved('a')).toBe('verified')
     expect(storage.loadPalette('a', 2)).toEqual(['#f00', null])
     expect(storage.loadCrest('a')).toBe('#abc')

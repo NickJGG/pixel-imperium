@@ -230,12 +230,16 @@ export async function acceptImport(): Promise<void> {
   if (!sync) return
   const puzzles = signedOutStorage.puzzleIds().map((id): ImportItem => {
     const cells = signedOutStorage.loadCells(id)
+    const elapsedMs = signedOutStorage.loadElapsed(id)
+    const bestMs = signedOutStorage.loadBest(id)
     return {
       id,
       solved: signedOutStorage.loadSolved(id) !== null,
       replaying: signedOutStorage.loadReplay(id),
       ...(cells !== null && { cells }),
       ...(signedOutStorage.loadHinted(id) && { hinted: true }),
+      ...(elapsedMs > 0 && { elapsedMs }),
+      ...(bestMs !== null && { bestMs }),
     }
   })
   await importProgress({ puzzles })

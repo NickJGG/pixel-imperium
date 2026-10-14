@@ -41,7 +41,14 @@ export class ProgressSync {
         const updatedAt = this.storage.loadUpdatedAt(id)
         if (cells !== null && updatedAt !== null) {
           try {
-            await this.api.putProgress(id, { cells, replaying: this.storage.loadReplay(id), updatedAt }, keepalive)
+            const body = {
+              cells,
+              replaying: this.storage.loadReplay(id),
+              updatedAt,
+              elapsedMs: this.storage.loadElapsed(id),
+              attemptHinted: this.storage.loadAttemptHinted(id),
+            }
+            await this.api.putProgress(id, body, keepalive)
           } catch {
             return false
           }
@@ -61,8 +68,12 @@ export class ProgressSync {
     for (const id of pending) {
       const cells = this.storage.loadCells(id)
       if (cells === null) continue
+      const best = this.storage.loadBest(id)
       try {
-        const res = await this.api.solve(id, { cells: Array.from(cells, ch => (ch === '#' ? 'filled' : 'empty')) })
+        const res = await this.api.solve(id, {
+          cells: Array.from(cells, ch => (ch === '#' ? 'filled' : 'empty')),
+          ...(best !== null && { ms: best }),
+        })
         if (!res.solved) continue
         this.storage.saveSolved(id, 'verified')
         this.storage.savePalette(id, res.palette)
@@ -85,12 +96,19 @@ export class ProgressSync {
     } catch {
       return null
     }
+    // A best set here offline may never have reached the server.
+    const localBests = this.storage.puzzleIds().map(id => [id, this.storage.loadBest(id)] as const)
     this.storage.clear()
-    for (const [id, { solved, progress, palette, crest, foil, hinted, solvedAt }] of Object.entries(data.puzzles)) {
+    for (const [id, best] of localBests) if (best !== null) this.storage.saveBest(id, best)
+    for (const [id, record] of Object.entries(data.puzzles)) {
+      const { solved, progress, palette, crest, foil, hinted, solvedAt, bestMs } = record
       if (progress) {
         this.storage.saveCells(id, progress.cells, progress.updatedAt)
+        this.storage.saveElapsed(id, progress.elapsedMs, progress.updatedAt)
+        this.storage.saveAttemptHinted(id, progress.attemptHinted, progress.updatedAt)
         if (progress.replaying) this.storage.saveReplay(id)
       }
+      if (bestMs !== null) this.storage.saveBest(id, bestMs)
       if (solved) this.storage.saveSolved(id, solved)
       if (palette) this.storage.savePalette(id, palette)
       if (crest) this.storage.saveCrest(id, crest)

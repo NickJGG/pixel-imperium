@@ -128,6 +128,15 @@ class LessonStorage extends ProgressStorage {
   override loadHinted(): boolean {
     return false
   }
+  override loadElapsed(): number {
+    return 0
+  }
+  override loadAttemptHinted(): boolean {
+    return false
+  }
+  override loadBest(): null {
+    return null
+  }
   override saveCells(): void {}
   override saveSolved(): void {}
   override saveReplay(): void {}
@@ -135,6 +144,9 @@ class LessonStorage extends ProgressStorage {
   override savePalette(): void {}
   override saveFoil(): void {}
   override saveHinted(): void {}
+  override saveElapsed(): void {}
+  override saveAttemptHinted(): void {}
+  override saveBest(): void {}
 }
 
 function useStoreValue<T>(store: PlayStore, select: (s: PlayState) => T): T {

@@ -10,6 +10,10 @@
  * Solving locks the grid. Only `clear()` unlocks it, as a replay: the puzzle stays solved
  * in storage, with a replay flag until it is solved again. The first solve settles foil.
  *
+ * The clock times the Attempt in active time: board input starts it, and resumes it after a
+ * `pause()` (the player's) or a `suspend()` (the page hidden or left); `clear()` restarts the
+ * Attempt. A solve stops it, and sets a Best time unless a Hint was used in the Attempt.
+ *
  * `cells` in the published state is a new array only when a cell changed, so it can
  * key derived per-line work.
  */
@@ -52,6 +56,17 @@ export interface PlayState {
   hinted: boolean
   /** What this visit's solve did for an account's Stamps; `null` signed out, or until the server answers. */
   stamps: SolveStamps | null
+  /** The Attempt's time up to `runningSince`; see `elapsedAt`. */
+  elapsedMs: number
+  /** When the clock last started, by the store's `now`; `null` while stopped. */
+  runningSince: number | null
+  /** Stopped by the player, as opposed to suspended with the page. */
+  paused: boolean
+  /** A Hint was used in the current Attempt. */
+  attemptHinted: boolean
+  /** The Solve time of a solve made in this visit. */
+  solveMs: number | null
+  bestMs: number | null
 }
 
 interface Change {
@@ -97,16 +112,27 @@ export function crosshairOf(state: PlayState): Pos | null {
   return state.hover ?? (state.focused ? state.cursor : null)
 }
 
+/** The Attempt's time at `now`, counting the running stretch. */
+export function elapsedAt(
+  { elapsedMs, runningSince }: Pick<PlayState, 'elapsedMs' | 'runningSince'>,
+  now: number,
+): number {
+  return runningSince === null ? elapsedMs : elapsedMs + now - runningSince
+}
+
 export interface PlayStoreOptions {
   /** Marks lines with no clues as part of the initial, non-undoable state. */
   autoMarkEmptyLines?: boolean
   storage?: ProgressStorage
   /** Called after each edit is persisted. */
   onSave?: (() => void) | undefined
+  /** The clock's time source, in ms. */
+  now?: () => number
 }
 
 export class PlayStore {
   readonly puzzle: PlayPuzzle
+  readonly now: () => number
   private readonly storage: ProgressStorage
   private readonly onSave: (() => void) | undefined
   private cells: Cell[]
@@ -114,13 +140,19 @@ export class PlayStore {
   private redoStack: Change[][] = []
   private stroke: ActiveStroke | null = null
   private cellsChanged = false
+  /** The clock was running when the page went away, so `wake()` restarts it. */
+  private suspended = false
   private state: PlayState
   private listeners = new Set<() => void>()
 
-  constructor(puzzle: PlayPuzzle, { autoMarkEmptyLines = false, storage = signedOutStorage, onSave }: PlayStoreOptions = {}) {
+  constructor(
+    puzzle: PlayPuzzle,
+    { autoMarkEmptyLines = false, storage = signedOutStorage, onSave, now = () => performance.now() }: PlayStoreOptions = {},
+  ) {
     this.puzzle = puzzle
     this.storage = storage
     this.onSave = onSave
+    this.now = now
     const { id, width, height } = puzzle
     this.cells = storage.loadProgress(id, width * height) ?? Array<Cell>(width * height).fill('empty')
     if (autoMarkEmptyLines) autoMark(this.cells, puzzle)
@@ -139,6 +171,12 @@ export class PlayStore {
       hint: null,
       hinted: storage.loadHinted(id),
       stamps: null,
+      elapsedMs: storage.loadElapsed(id),
+      runningSince: null,
+      paused: false,
+      attemptHinted: storage.loadAttemptHinted(id),
+      solveMs: null,
+      bestMs: storage.loadBest(id),
     }
   }
 
@@ -156,6 +194,7 @@ export class PlayStore {
   beginStroke(pos: Pos, tool: Tool, { lockAxis }: { lockAxis: boolean }): void {
     if (this.state.solved) return
     this.endStroke()
+    this.startClock()
     const target = toolState[tool]
     const first = this.cells[this.index(pos)]
     const from = first === 'empty' ? 'empty' : first === target ? target : null
@@ -241,6 +280,7 @@ export class PlayStore {
     this.endStroke()
     const changes = this.undoStack.pop()
     if (!changes) return
+    this.startClock()
     for (const c of changes) this.cells[c.index] = c.from
     this.cellsChanged = true
     this.redoStack.push(changes)
@@ -252,6 +292,7 @@ export class PlayStore {
     this.endStroke()
     const changes = this.redoStack.pop()
     if (!changes) return
+    this.startClock()
     for (const c of changes) this.cells[c.index] = c.to
     this.cellsChanged = true
     this.undoStack.push(changes)
@@ -271,9 +312,37 @@ export class PlayStore {
     this.cellsChanged = true
     this.undoStack.push(changes)
     this.redoStack = []
-    if (!this.state.solved) return this.commit()
+    this.suspended = false
+    this.storage.saveAttemptHinted(this.puzzle.id, false)
+    const restart = { elapsedMs: 0, runningSince: null, paused: false, attemptHinted: false, solveMs: null }
+    if (!this.state.solved) return this.commit(restart)
     this.storage.saveReplay(this.puzzle.id)
-    this.commit({ replaying: true, palette: null, stamps: null })
+    this.commit({ ...restart, replaying: true, palette: null, stamps: null })
+  }
+
+  /** The player's pause; only board input or `resume()` restarts the clock. */
+  pause(): void {
+    if (this.state.solved || this.state.paused) return
+    this.suspended = false
+    this.stopClock({ paused: true })
+  }
+
+  resume(): void {
+    if (this.state.paused) this.startClock()
+  }
+
+  /** Stops the clock while the page is hidden or left. */
+  suspend(): void {
+    if (this.state.runningSince === null) return
+    this.suspended = true
+    this.stopClock({})
+  }
+
+  /** Restarts the clock if `suspend()` stopped it, but never a pause or an Attempt not yet begun. */
+  wake(): void {
+    if (!this.suspended) return
+    this.suspended = false
+    this.startClock()
   }
 
   /** `wrap` carries a step off one edge round to the other; a stroke jumps there rather than paint the way across. */
@@ -319,7 +388,39 @@ export class PlayStore {
 
   showHint(hint: HintResponse): void {
     this.storage.saveHinted(this.puzzle.id)
-    this.emit({ hint, hinted: true })
+    this.storage.saveAttemptHinted(this.puzzle.id, true)
+    this.onSave?.()
+    this.emit({ hint, hinted: true, attemptHinted: true })
+  }
+
+  private startClock(): void {
+    if (this.state.solved || this.state.runningSince !== null) return
+    this.suspended = false
+    this.emit({ runningSince: this.now(), paused: false })
+  }
+
+  private stopClock(patch: Partial<PlayState>): void {
+    const elapsedMs = elapsedAt(this.state, this.now())
+    this.storage.saveElapsed(this.puzzle.id, elapsedMs)
+    this.onSave?.()
+    this.emit({ ...patch, elapsedMs, runningSince: null })
+  }
+
+  /** Banks the running stretch and stores it; on the solve, stops the clock and settles the Best time. */
+  private clockAfterEdit(patch: Partial<PlayState>, solvedNow: boolean): Partial<PlayState> {
+    const { id } = this.puzzle
+    const now = this.now()
+    const clock = { ...this.state, ...patch }
+    const elapsedMs = elapsedAt(clock, now)
+    if (!solvedNow) {
+      this.storage.saveElapsed(id, elapsedMs)
+      return { elapsedMs, runningSince: clock.runningSince === null ? null : now }
+    }
+    if (!clock.attemptHinted) this.storage.saveBest(id, elapsedMs)
+    // Stored clean for the next Replay; the state keeps this Attempt's for the time card.
+    this.storage.saveElapsed(id, 0)
+    this.storage.saveAttemptHinted(id, false)
+    return { elapsedMs, runningSince: null, paused: false, solveMs: elapsedMs, bestMs: this.storage.loadBest(id) }
   }
 
   private apply(pos: Pos): void {
@@ -338,11 +439,13 @@ export class PlayStore {
     this.storage.saveProgress(id, this.cells)
     const solved = this.checkSolved()
     if (solved) this.storage.clearReplay(id)
+    const clock = this.clockAfterEdit(patch, solved && !this.state.solved)
     this.onSave?.()
-    if (!solved) return this.emit({ hint: null, ...patch, solved: false })
+    if (!solved) return this.emit({ hint: null, ...patch, ...clock, solved: false })
     // A re-solve already has its reveal colors from the first solve.
     this.emit({
       hint: null,
+      ...clock,
       solved: true,
       replaying: false,
       palette: this.state.palette ?? this.storage.loadPalette(id, width * height),

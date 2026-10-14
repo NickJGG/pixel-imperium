@@ -5,7 +5,7 @@
  */
 import type { Assists } from '@pixel-imperium/protocol'
 import { sql } from 'drizzle-orm'
-import { boolean, index, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { boolean, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
 export const user = pgTable(
   'user',
@@ -103,6 +103,8 @@ export const solve = pgTable(
     /** Decided when the row is first inserted, from whether a hint came first; never changed after. */
     foil: boolean('foil').default(false).notNull(),
     solvedAt: timestamp('solved_at').defaultNow().notNull(),
+    /** The fastest unhinted Solve time in ms, trusted from the client; only ever lowered. */
+    bestMs: integer('best_ms'),
   },
   t => [primaryKey({ columns: [t.userId, t.puzzleId] })],
 )
@@ -130,6 +132,9 @@ export const progress = pgTable(
     cells: text('cells').notNull(),
     replaying: boolean('replaying').default(false).notNull(),
     updatedAt: timestamp('updated_at').notNull(),
+    /** Active time on the current Attempt. */
+    elapsedMs: integer('elapsed_ms').default(0).notNull(),
+    attemptHinted: boolean('attempt_hinted').default(false).notNull(),
   },
   t => [primaryKey({ columns: [t.userId, t.puzzleId] })],
 )

@@ -11,7 +11,20 @@ const decode: Record<string, Cell> = { '.': 'empty', '#': 'filled', x: 'marked' 
 
 export const encodeCells = (cells: readonly Cell[]): string => cells.map(c => encode[c]).join('')
 
-const KINDS = ['progress', 'solved', 'replay', 'palette', 'updated', 'foil', 'hinted', 'solved-at', 'crest'] as const
+const KINDS = [
+  'progress',
+  'solved',
+  'replay',
+  'palette',
+  'updated',
+  'foil',
+  'hinted',
+  'solved-at',
+  'crest',
+  'elapsed',
+  'best',
+  'attempt-hinted',
+] as const
 type Kind = (typeof KINDS)[number]
 
 /** `local`: solved on this device, not (yet) confirmed by the server for an account. */
@@ -155,6 +168,40 @@ export class ProgressStorage {
 
   saveHinted(puzzleId: string): void {
     write(this.key('hinted', puzzleId), '1')
+  }
+
+  /** Active time on the current Attempt, in ms. */
+  loadElapsed(puzzleId: string): number {
+    return Number(read(this.key('elapsed', puzzleId))) || 0
+  }
+
+  /** Moves `updated` too, so last-write-wins sync carries the time. */
+  saveElapsed(puzzleId: string, ms: number, updatedAt = new Date().toISOString()): void {
+    write(this.key('elapsed', puzzleId), ms > 0 ? String(Math.round(ms)) : null)
+    write(this.key('updated', puzzleId), updatedAt)
+  }
+
+  /** A Hint was used in the current Attempt, so its solve can't set a Best time. */
+  loadAttemptHinted(puzzleId: string): boolean {
+    return read(this.key('attempt-hinted', puzzleId)) === '1'
+  }
+
+  /** Moves `updated` too, like `saveElapsed`. */
+  saveAttemptHinted(puzzleId: string, hinted: boolean, updatedAt = new Date().toISOString()): void {
+    write(this.key('attempt-hinted', puzzleId), hinted ? '1' : null)
+    write(this.key('updated', puzzleId), updatedAt)
+  }
+
+  /** The fastest unhinted Solve time, in ms. */
+  loadBest(puzzleId: string): number | null {
+    const ms = Number(read(this.key('best', puzzleId)) ?? NaN)
+    return Number.isFinite(ms) && ms >= 0 ? ms : null
+  }
+
+  /** Keeps the lower of `ms` and the stored best. */
+  saveBest(puzzleId: string, ms: number): void {
+    const best = this.loadBest(puzzleId)
+    if (best === null || ms < best) write(this.key('best', puzzleId), String(Math.round(ms)))
   }
 
   /** Every puzzle with a saved grid, solve or hint. */

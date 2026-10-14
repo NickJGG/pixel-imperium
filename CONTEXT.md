@@ -61,6 +61,18 @@ _Avoid_: Drill, step (a step is one prompt within a lesson)
 One callout within a step of a **Lesson**. Talk beats explain and wait for Next; the step's last beat, the do beat, waits for the step's cells.
 _Avoid_: Slide, page, tip
 
+**Attempt**:
+One run at a **Puzzle** from an empty grid to its solve: it starts on the first move, and a Clear or **Replay** starts a new one.
+_Avoid_: Run, try, session
+
+**Solve time**:
+How long an **Attempt** took, counting only time the puzzle was open, visible and not paused.
+_Avoid_: Score, duration, elapsed
+
+**Best time**:
+A **Puzzle**'s fastest **Solve time** for a **Player**, from an **Attempt** with no **Hint**; seen only by that **Player**.
+_Avoid_: Record, PB, high score, personal best (in product copy)
+
 ### Players
 
 **Player**:
