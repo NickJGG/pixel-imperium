@@ -1,9 +1,10 @@
 {
   "id": "voyage",
   "name": "The Voyage",
-  "draft": true,
+  "draft": false,
+  "released": "2026-10-14",
   "paper": "teal",
-  "closingLine": "Placeholder: the closing line comes at launch.",
+  "closingLine": "From the slipway to the edge of the world, every coast is drawn. Fair winds, captain.",
   "puzzlesPerProvince": 30,
   "provinces": [
     { "id": "shipyard", "name": "The Shipyard", "theme": "Fitting out the ship", "flavour": "The ship is fitted out. Past the harbour mouth, the open water is calling.", "paper": "timber", "minSize": 5, "maxSize": 10, "tiers": [10, 28] },
@@ -11,6 +12,6 @@
     { "id": "dunes", "name": "The Dunes", "theme": "Desert crossing", "flavour": "The sands are crossed. Past the last dune, the green closes in like a wall.", "paper": "sand", "minSize": 15, "maxSize": 20, "tiers": [11, 26], "techniques": true },
     { "id": "jungle", "name": "The Jungle", "theme": "Rainforest", "flavour": "The lost city is found. North of the canopy, the rivers begin to freeze.", "paper": "lime", "minSize": 20, "maxSize": 25, "tiers": [12, 26] },
     { "id": "ice", "name": "The Ice", "theme": "Polar wastes", "flavour": "The flag is planted. Past the pole, the map runs out.", "paper": "glacier", "minSize": 25, "maxSize": 30, "tiers": [12, 23] },
-    { "id": "edge", "name": "The Edge", "theme": "Here be dragons", "flavour": "The dragons are charted. From the harbour mouth to the edge of the world, the map is yours.", "paper": "ember", "minSize": 30, "maxSize": 30, "tiers": [7, 22] }
+    { "id": "edge", "name": "The Edge", "theme": "Here be dragons", "flavour": "The dragons are charted. Past the last of them, the margin of the map lies blank no more.", "paper": "ember", "minSize": 30, "maxSize": 30, "tiers": [7, 22] }
   ]
 }
