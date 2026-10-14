@@ -32,7 +32,10 @@ export function CampaignStack({
   storage: ProgressStorage
   /** Its heading's id, for the `World`'s label. */
   titleId: string
-  /** What Open leads to: the active province, or on Home, the campaign's own column on Campaigns. */
+  /**
+   * What Open leads to: the active province, or on Home, the campaign's own column on Campaigns, as "All campaigns"
+   * unless it's the Featured one, still new to the player.
+   */
   opens?: 'province' | 'campaign'
   /** Wears a New badge in its kicker; on Home, whose column for it lasts only so long, with the window's end. */
   featured?: 'row' | 'home' | undefined
@@ -116,7 +119,7 @@ export function CampaignStack({
               data-variant="paper"
               data-pad-default={!next || undefined}
             >
-              Open {campaign.name.replace(/^The /, 'the ')}
+              {featured === 'home' ? `Open ${campaign.name.replace(/^The /, 'the ')}` : 'All campaigns'}
             </Link>
           ) : (
             province && (

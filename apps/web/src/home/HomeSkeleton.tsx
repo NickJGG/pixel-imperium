@@ -15,7 +15,7 @@ import { currentDailyYear } from '../daily/year.ts'
 import { dayKey } from '../profile/activity.ts'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { useLessonsDone } from '../tutorial/done.ts'
-import { COLUMN_NAME, type Column, columnsFor, learnPapers, openColumn, papers } from './columns.ts'
+import { COLUMN_NAME, type Column, campaignSpineName, columnsFor, learnPapers, openColumn, papers } from './columns.ts'
 import { backdropPaper, columnName, paperOf } from './HomePage.tsx'
 import styles from './Home.module.css'
 
@@ -87,7 +87,15 @@ export function HomeSkeleton() {
                 pairs="menu"
                 before={columns.indexOf(c) < columns.indexOf(open)}
                 style={columnName(c)}
-                name={c === 'featured' ? featured!.name.replace(/^The /, '') : COLUMN_NAME[c]}
+                name={
+                  c === 'campaign'
+                    ? campaign
+                      ? campaignSpineName(campaign)
+                      : <Bar w={18} h={110} />
+                    : c === 'featured'
+                      ? campaignSpineName(featured!)
+                      : COLUMN_NAME[c]
+                }
               >
                 {c === 'featured' && <NewBadge />}
               </SkeletonSpine>

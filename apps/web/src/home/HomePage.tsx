@@ -14,7 +14,7 @@ import { LearnColumn } from './LearnColumn.tsx'
 import { ProfileColumn } from './ProfileColumn.tsx'
 import { SettingsColumn } from './SettingsColumn.tsx'
 import { SignInColumn } from './SignInColumn.tsx'
-import { COLUMN_NAME, type Column, type Paper, columnsFor, learnPapers, openColumn, papers, searchFor, stepColumn } from './columns.ts'
+import { COLUMN_NAME, type Column, campaignSpineName, type Paper, columnsFor, learnPapers, openColumn, papers, searchFor, stepColumn } from './columns.ts'
 import styles from './Home.module.css'
 
 /** Pairs a column across a morph, wide when it's open and a spine when it isn't. */
@@ -133,7 +133,7 @@ export function HomePage({
             return (
               <MenuSpine
                 key={c}
-                name={c === 'featured' ? showcase!.name.replace(/^The /, '') : COLUMN_NAME[c]}
+                name={c === 'campaign' || c === 'featured' ? campaignSpineName(c === 'campaign' ? campaign : showcase!) : COLUMN_NAME[c]}
                 search={searchFor(c)}
                 before={columns.indexOf(c) < columns.indexOf(open)}
                 featured={c === 'featured'}

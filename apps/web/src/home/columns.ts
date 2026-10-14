@@ -11,18 +11,16 @@ export interface HomeSearch {
   open?: OpenColumn
 }
 
-/**
- * Each column's spine name; Campaign's leads to Campaigns, whichever campaign it holds. Featured's is its campaign's
- * own name.
- */
-export const COLUMN_NAME: Record<Exclude<Column, 'featured'>, string> = {
-  campaign: 'Campaigns',
+/** Each other column's spine name; Campaign's and Featured's are their campaigns', by `campaignSpineName`. */
+export const COLUMN_NAME: Record<Exclude<Column, 'campaign' | 'featured'>, string> = {
   daily: 'Daily',
   learn: 'Learn',
   profile: 'Profile',
   settings: 'Settings',
   signin: 'Sign in',
 }
+
+export const campaignSpineName = (campaign: { name: string }): string => campaign.name.replace(/^The /, '')
 
 const SIGNED_IN: readonly Column[] = ['campaign', 'daily', 'learn', 'profile', 'settings']
 const SIGNED_OUT: readonly Column[] = ['campaign', 'daily', 'learn', 'signin']
