@@ -7,7 +7,7 @@
   "puzzlesPerProvince": 30,
   "provinces": [
     { "id": "shipyard", "name": "The Shipyard", "theme": "Fitting out the ship", "flavour": "The ship is fitted out. Past the harbour mouth, the open water is calling.", "paper": "timber", "minSize": 5, "maxSize": 10, "tiers": [10, 28] },
-    { "id": "sea", "name": "The Open Sea", "theme": "The ship and the weather", "flavour": "Placeholder: the storms are behind you. Ahead, a shore of sand.", "paper": "teal", "minSize": 10, "maxSize": 15 },
+    { "id": "sea", "name": "The Open Sea", "theme": "The ship and the weather", "flavour": "The storms are weathered. Off the bow, a shore of sand shimmers in the heat.", "paper": "teal", "minSize": 10, "maxSize": 15, "tiers": [19, 28] },
     { "id": "dunes", "name": "The Dunes", "theme": "Desert crossing", "flavour": "Placeholder: the desert is crossed. Beyond it, the green closes in.", "paper": "sand", "minSize": 15, "maxSize": 20, "techniques": true },
     { "id": "jungle", "name": "The Jungle", "theme": "Rainforest", "flavour": "Placeholder: the jungle parts. Far to the north, the ice is waiting.", "paper": "lime", "minSize": 20, "maxSize": 25 },
     { "id": "ice", "name": "The Ice", "theme": "Polar wastes", "flavour": "Placeholder: the ice gives way. Past it, the map runs out.", "paper": "glacier", "minSize": 25, "maxSize": 30 },
