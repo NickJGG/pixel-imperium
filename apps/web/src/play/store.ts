@@ -67,6 +67,8 @@ export interface PlayState {
   /** The Solve time of a solve made in this visit. */
   solveMs: number | null
   bestMs: number | null
+  /** The Best time as it stood before `solveMs`. */
+  priorBestMs: number | null
 }
 
 interface Change {
@@ -177,6 +179,7 @@ export class PlayStore {
       attemptHinted: storage.loadAttemptHinted(id),
       solveMs: null,
       bestMs: storage.loadBest(id),
+      priorBestMs: null,
     }
   }
 
@@ -420,7 +423,14 @@ export class PlayStore {
     // Stored clean for the next Replay; the state keeps this Attempt's for the time card.
     this.storage.saveElapsed(id, 0)
     this.storage.saveAttemptHinted(id, false)
-    return { elapsedMs, runningSince: null, paused: false, solveMs: elapsedMs, bestMs: this.storage.loadBest(id) }
+    return {
+      elapsedMs,
+      runningSince: null,
+      paused: false,
+      solveMs: elapsedMs,
+      bestMs: this.storage.loadBest(id),
+      priorBestMs: this.state.bestMs,
+    }
   }
 
   private apply(pos: Pos): void {

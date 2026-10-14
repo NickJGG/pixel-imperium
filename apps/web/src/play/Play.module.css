@@ -1627,6 +1627,146 @@
   }
 }
 
+/* The Attempt's clock: in the rail's badges, or in the surface's corner where there's no rail. */
+.clock {
+  --btn-bg: color-mix(in srgb, var(--ink) 12%, transparent);
+  --btn-ink: var(--ink);
+  --btn-edge: transparent;
+  flex: none;
+  min-height: 0;
+  gap: 0.4em;
+  padding: 0.25em 0.75em;
+  font: 700 var(--fs-14) / 1.2 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  box-shadow: none;
+}
+
+.clock svg {
+  width: 0.85em;
+  height: 0.85em;
+  fill: currentColor;
+  stroke: none;
+}
+
+.clock:disabled {
+  cursor: default;
+}
+
+.clock:hover:not(:disabled) {
+  --btn-bg: color-mix(in srgb, var(--ink) 20%, transparent);
+  transform: none;
+  box-shadow: none;
+}
+
+.clock[data-paused],
+.clock[data-paused]:hover:not(:disabled) {
+  --btn-bg: var(--gold);
+  --btn-ink: var(--on-gold);
+}
+
+.clockCorner {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 3;
+}
+
+.surface[data-paused] > .stage {
+  filter: blur(14px);
+  opacity: 0.55;
+}
+
+.pauseVeil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+}
+
+.pauseCard {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-6);
+  text-align: center;
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow:
+    0 5px 0 var(--shade),
+    0 0 0 2px var(--line-soft);
+}
+
+.pauseCard > small {
+  font: var(--type-kicker);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.pauseCard > b {
+  font: var(--type-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.pauseCard > p {
+  margin: 0;
+  font: 500 var(--fs-14) / 1.35 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.pauseCard > button {
+  margin-top: var(--space-2);
+}
+
+/* A solve's time, under the rail's outcome or the after sheet's message. */
+.timeCard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: var(--space-3);
+  justify-self: stretch;
+  align-self: stretch;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: var(--r-md);
+}
+
+.panelAfter .timeCard {
+  margin-top: 0;
+}
+
+.timeCard > svg {
+  grid-row: span 2;
+  width: 26px;
+  height: 26px;
+  opacity: 0.8;
+}
+
+.timeCard > b {
+  display: block;
+  font: var(--type-name);
+  font-size: var(--fs-18);
+  font-variant-numeric: tabular-nums;
+}
+
+.timeCard > span {
+  font: 500 var(--fs-14) / 1.35 var(--font-ui);
+  color: var(--ink-soft);
+}
+
+.timeCard em {
+  font-style: normal;
+  font-weight: 700;
+  padding: 0 var(--space-2);
+  color: var(--on-gold);
+  background: var(--gold);
+  border-radius: var(--r-pill);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .colClues,
   .rowClues,

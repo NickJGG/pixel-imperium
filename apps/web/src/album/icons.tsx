@@ -92,6 +92,13 @@ export const ArrowIcon = () => (
   </Icon>
 )
 
+export const WatchIcon = () => (
+  <Icon>
+    <circle cx="12" cy="13.5" r="7.5" />
+    <path d="M12 9.5v4l2.5 2M9.5 3h5M19 6.5l1.5-1.5" />
+  </Icon>
+)
+
 export const CheckIcon = () => (
   <Icon>
     <path d="M4.5 12.5l5 5L20 7" />

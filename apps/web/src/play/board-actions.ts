@@ -1,13 +1,18 @@
-/** Board actions shared by the keyboard and the controller; both keep the cursor in view. */
+/**
+ * Board actions shared by the keyboard and the controller; both keep the cursor in view. While the clock is
+ * paused the board is hidden, so an action only resumes it.
+ */
 import type { PlayStore, Tool } from './store.ts'
 import type { BoardView } from './viewport.ts'
 
 export function move(store: PlayStore, view: BoardView, dRow: number, dCol: number, wrap = false): void {
+  if (store.getState().paused) return store.resume()
   store.moveCursor(dRow, dCol, wrap)
   view.follow(store.getState().cursor)
 }
 
 export function startStroke(store: PlayStore, view: BoardView, tool: Tool, lockAxis: boolean): void {
+  if (store.getState().paused) return store.resume()
   const { cursor } = store.getState()
   store.beginStroke(cursor, tool, { lockAxis })
   view.follow(cursor)

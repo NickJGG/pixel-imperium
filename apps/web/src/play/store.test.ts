@@ -429,7 +429,13 @@ describe('PlayStore clock', () => {
     const s = clocked()
     solveIn(s, 7_000)
     t += 10_000
-    expect(s.getState()).toMatchObject({ solved: true, solveMs: 7_000, bestMs: 7_000, runningSince: null })
+    expect(s.getState()).toMatchObject({
+      solved: true,
+      solveMs: 7_000,
+      bestMs: 7_000,
+      priorBestMs: null,
+      runningSince: null,
+    })
     expect(storage.loadBest('test')).toBe(7_000)
     expect(storage.loadElapsed('test')).toBe(0)
   })
@@ -449,10 +455,10 @@ describe('PlayStore clock', () => {
     solveIn(s, 7_000)
     s.clear({ autoMarkEmptyLines: false })
     solveIn(s, 9_000)
-    expect(s.getState()).toMatchObject({ solveMs: 9_000, bestMs: 7_000 })
+    expect(s.getState()).toMatchObject({ solveMs: 9_000, bestMs: 7_000, priorBestMs: 7_000 })
     s.clear({ autoMarkEmptyLines: false })
     solveIn(s, 4_000)
-    expect(s.getState()).toMatchObject({ solveMs: 4_000, bestMs: 4_000 })
+    expect(s.getState()).toMatchObject({ solveMs: 4_000, bestMs: 4_000, priorBestMs: 7_000 })
   })
 
   it('keeps the Attempt time and hint across a new store over the same storage', () => {

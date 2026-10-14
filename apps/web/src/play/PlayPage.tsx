@@ -42,6 +42,7 @@ import { AssistsDisclosure, ControlsDisclosure } from './AssistsDisclosure.tsx'
 import { AssistSwitches } from './AssistSwitches.tsx'
 import { Board, REVEAL_MS } from './Board.tsx'
 import { ClearButton, LoopIcon } from './ClearButton.tsx'
+import { ClockPill, PauseVeil, TimeCard } from './ClockPill.tsx'
 import { ColClues, RowClues } from './Clues.tsx'
 import { ControlsLegend } from './ControlsLegend.tsx'
 import { Dock } from './Dock.tsx'
@@ -191,6 +192,7 @@ export function Play({
   const canClear = useMemo(() => cells.some((c, i) => c !== fresh[i]), [cells, fresh])
   const crossRow = useStoreValue(store, s => (settings.crosshair ? (crosshairOf(s)?.row ?? null) : null))
   const crossCol = useStoreValue(store, s => (settings.crosshair ? (crosshairOf(s)?.col ?? null) : null))
+  const paused = useStoreValue(store, s => s.paused && !s.solved)
 
   const [lineHints] = useState(() => createLineHints(puzzle))
   const hints = useMemo(() => lineHints(cells), [lineHints, cells])
@@ -210,6 +212,19 @@ export function Play({
   const wide = useRail()
 
   useUndoKeys(store)
+
+  // Capture, so the clock is stored before the account's own listeners flush the sync.
+  useEffect(() => {
+    const onVisibility = () => (document.visibilityState === 'hidden' ? store.suspend() : store.wake())
+    const onHide = () => store.suspend()
+    document.addEventListener('visibilitychange', onVisibility, true)
+    window.addEventListener('pagehide', onHide, true)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility, true)
+      window.removeEventListener('pagehide', onHide, true)
+      store.suspend()
+    }
+  }, [store])
 
   // The local check already won; the server only supplies the reveal colors, so a failure just
   // sends the sticker off without them. A Replay that sets a new best still tells an account's server.
@@ -538,6 +553,7 @@ export function Play({
         tag
       )}
       {message}
+      <TimeCard store={store} />
       {closing}
       {onward(true)}
       <div className={styles.panelActions}>
@@ -615,7 +631,7 @@ export function Play({
       {wide && <FloatingPills />}
       <div className={styles.shellBody}>
         {wide && slotRow && <Filmstrip {...slotRow} slotRef={setSlot} glow={solved && moment === 'landed'} />}
-        <div className={styles.surface} {...surfaceMorph}>
+        <div className={styles.surface} data-paused={paused || undefined} {...surfaceMorph}>
           <div ref={stageRef} className={styles.stage}>
             {cellSize > 0 && (
               <div
@@ -633,6 +649,12 @@ export function Play({
               </div>
             )}
           </div>
+          {paused && <PauseVeil store={store} />}
+          {!wide && !solved && (
+            <div className={styles.clockCorner}>
+              <ClockPill store={store} />
+            </div>
+          )}
           {offer}
         </div>
         {wide && (
@@ -664,11 +686,13 @@ export function Play({
                   <>
                     {!solved && <CountPill className={styles.railPercent}>{percent}%</CountPill>}
                     {chip}
+                    {!solved && <ClockPill store={store} />}
                     {tag}
                   </>
                 )}
               </div>
               {done && solvedNote}
+              {done && <TimeCard store={store} />}
             </div>
             {done ? (
               <div className={styles.railBody}>
