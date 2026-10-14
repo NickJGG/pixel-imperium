@@ -1,8 +1,8 @@
 import { useSearch } from '@tanstack/react-router'
 import { useRef } from 'react'
-import type { Campaign } from '@pixel-imperium/protocol'
 import { seasonOf } from '../album/paper.ts'
 import { likelySignedIn } from '../account.ts'
+import { CampaignStackSkeleton } from '../campaign/CampaignColumn.tsx'
 import { currentCampaign } from '../campaign/last-campaign.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { Backdrop, SkeletonSpine, World, Worlds, usePhone, useSpineReach } from '../campaign/worlds/Worlds.tsx'
@@ -51,7 +51,7 @@ export function HomeSkeleton() {
         pair={column === 'campaign' || column === 'daily' || column === 'learn'}
       >
         {column === 'campaign' ? (
-          <CampaignStack campaign={campaign} />
+          <CampaignStackSkeleton campaign={campaign} />
         ) : column === 'daily' ? (
           <DailyStack today={today} />
         ) : (
@@ -88,40 +88,6 @@ export function HomeSkeleton() {
         </Worlds>
       )}
     </main>
-  )
-}
-
-function CampaignStack({ campaign }: { campaign: Campaign | null }) {
-  const crest = campaign?.crest
-  return (
-    <div className={styles.column}>
-      <div className={styles.stack}>
-        <Bar w="68%" h={14} />
-        <Bar w="80%" h={52} />
-        <Bar w={104} h={30} pill />
-        <div className={styles.bar}>
-          {Array.from({ length: campaign?.provinces.length ?? 6 }, (_, i) => (
-            <Bar key={i} h={8} style={{ flex: 1 }} />
-          ))}
-        </div>
-        <Bar w="46%" h={16} />
-        <div className={styles.next}>
-          <Ghost style={{ width: 64, height: 64 }} />
-          <div className={styles.nextText}>
-            <p className={styles.kicker}>Next up</p>
-            <Bar w={160} h={20} style={{ margin: 'var(--space-1) 0' }} />
-            <Bar w={90} h={16} />
-          </div>
-        </div>
-        <div className={styles.actions}>
-          <Bar w="100%" h={52} pill />
-          <Bar w="100%" h={52} pill />
-        </div>
-      </div>
-      <div className={styles.picture}>
-        <Ghost style={{ width: 'min(100%, 520px)', aspectRatio: crest ? `${crest.width} / ${crest.height}` : 1 }} />
-      </div>
-    </div>
   )
 }
 

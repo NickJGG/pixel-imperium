@@ -138,6 +138,25 @@
   background: var(--cover-dk);
 }
 
+/* Campaigns hidden past the window's edge: a fan of thin fogged spines. */
+.stub {
+  --spine-w: 44px;
+  color: var(--ink-soft);
+  background: repeating-linear-gradient(90deg, var(--card-2) 0 8px, var(--card) 8px 14px);
+}
+
+.stub::before {
+  background: var(--line-soft);
+}
+
+.stubCount {
+  font: var(--type-kicker);
+  color: var(--desk);
+  background: var(--ink);
+  border-radius: var(--r-pill);
+  padding: 2px 8px; /* token-exempt: pill inset */
+}
+
 .arrow {
   font: var(--type-title);
   line-height: 1;

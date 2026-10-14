@@ -2,7 +2,9 @@ import { Outlet, createRootRoute, createRoute, createRouter, notFound, redirect,
 import { accountReady, getAccount, useAccount } from './account.ts'
 import { fetchCampaign, fetchCampaigns, fetchProfile, fetchPuzzle } from './api.ts'
 import { LoadError, NotFound } from './EdgeStates.tsx'
-import { pickCampaign, rememberCampaign } from './campaign/last-campaign.ts'
+import { CampaignsPage } from './campaign/CampaignsPage.tsx'
+import { CampaignsSkeleton } from './campaign/CampaignsSkeleton.tsx'
+import { pickCampaign, rememberCampaign, rememberCampaigns } from './campaign/last-campaign.ts'
 import { DailyPlayPage } from './daily/DailyPlayPage.tsx'
 import { dailyId } from './daily/clock.ts'
 import { MonthPage } from './daily/MonthPage.tsx'
@@ -10,7 +12,6 @@ import { MonthSkeleton } from './daily/MonthSkeleton.tsx'
 import { loadDailyYear } from './daily/year.ts'
 import { ProvincePage } from './campaign/ProvincePage.tsx'
 import { ProvinceSkeleton } from './campaign/ProvinceSkeleton.tsx'
-import { campaignProgress, continueAt } from './campaign/progress.ts'
 import { PENDING_MS, installMorphNavigation, morphPendingMs } from './campaign/worlds/morph-nav.ts'
 import { homeSearch } from './home/columns.ts'
 import { HomePage } from './home/HomePage.tsx'
@@ -80,21 +81,18 @@ const unveilSearch = (search: Record<string, unknown>): { conquest?: string | tr
     ? { conquest: typeof search.conquest === 'string' && search.conquest !== '' ? search.conquest : true }
     : {}
 
-/** The album opens on the province being worked through, or the last once every one is conquered. */
-async function openAlbum(campaignId: string, search: { conquest?: string | true }): Promise<never> {
-  const campaign = await loadCampaign(campaignId)
-  const { storage } = getAccount()
-  const progress = campaignProgress(campaign, storage)
-  const province =
-    continueAt(campaign, progress, id => storage.loadSolved(id) !== null)?.province ?? campaign.provinces.at(-1)
-  if (!province) throw notFound()
-  throw redirect({
-    to: '/c/$campaignId/$provinceId',
-    params: { campaignId: campaign.id, provinceId: province.id },
-    search,
-    replace: true,
-  })
+async function loadCampaigns() {
+  const campaigns = await fetchCampaigns()
+  rememberCampaigns(campaigns)
+  return campaigns
 }
+
+/** The signed-in player's profile, `null` signed out or if it fails to load. */
+const loadOwnProfile = () =>
+  accountReady.then(() => {
+    const handle = getAccount().account?.handle
+    return handle ? fetchProfile(handle).catch(() => null) : null
+  })
 
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -105,14 +103,11 @@ const homeRoute = createRoute({
    * Daily column; Home stands without either.
    */
   loader: async () => {
-    const id = pickCampaign(await fetchCampaigns())
+    const id = pickCampaign(await loadCampaigns())
     const [campaign, dailyYear, profile] = await Promise.all([
       id === null ? null : loadCampaign(id),
       loadDailyYear(new Date().getFullYear()).catch(() => null),
-      accountReady.then(() => {
-        const handle = getAccount().account?.handle
-        return handle ? fetchProfile(handle).catch(() => null) : null
-      }),
+      loadOwnProfile(),
     ])
     return { campaign, dailyYear, profile }
   },
@@ -130,11 +125,34 @@ const homeRoute = createRoute({
   },
 })
 
+/** Campaigns opens on the last campaign played, or the default. */
+const campaignsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/c',
+  beforeLoad: async () => {
+    const id = pickCampaign(await loadCampaigns())
+    if (id === null) throw notFound()
+    throw redirect({ to: '/c/$campaignId', params: { campaignId: id }, replace: true })
+  },
+})
+
+/** Every campaign in a row, this one open; the signed-in profile's campaigns count as started too. */
 const campaignRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/c/$campaignId',
-  validateSearch: unveilSearch,
-  beforeLoad: ({ params, search }) => openAlbum(params.campaignId, search),
+  loader: async ({ params }) => {
+    const [campaigns, campaign, profile] = await Promise.all([
+      loadCampaigns(),
+      loadCampaign(params.campaignId),
+      loadOwnProfile(),
+    ])
+    return { campaigns, campaign, profile }
+  },
+  component: () => <CampaignsPage {...campaignRoute.useLoaderData()} />,
+  pendingComponent: CampaignsSkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
   notFoundComponent: () => <NotFound>There’s no campaign by that name.</NotFound>,
 })
 
@@ -344,6 +362,7 @@ const lessonRoute = createRoute({
 export const router = createRouter({
   routeTree: rootRoute.addChildren([
     homeRoute,
+    campaignsRoute,
     campaignRoute,
     provinceRoute,
     playRoute,

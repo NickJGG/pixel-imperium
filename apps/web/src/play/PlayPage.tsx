@@ -22,6 +22,7 @@ import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { NextUp } from '../campaign/NextUp.tsx'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
+import { markStarted } from '../campaign/started-campaigns.ts'
 import { boardMorph, columnPaper, slotName } from '../campaign/worlds/names.ts'
 import { getPadMode } from '../pad/mode.ts'
 import { PadControls } from '../pad/PadControls.tsx'
@@ -164,7 +165,10 @@ export function Play({
       new PlayStore(puzzle, {
         autoMarkEmptyLines: getSettings().autoMarkEmptyLines,
         storage,
-        onSave: sync ? () => sync.markDirty(puzzle.id) : undefined,
+        onSave: () => {
+          if (album) markStarted(storage, album.campaign.id)
+          sync?.markDirty(puzzle.id)
+        },
       }),
   )
   const [boardView] = useState(() => new BoardView(puzzle, true))

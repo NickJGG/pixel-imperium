@@ -6,7 +6,7 @@
  */
 import { type CSSProperties, type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import { Link } from '@tanstack/react-router'
-import type { Province } from '@pixel-imperium/protocol'
+import type { CampaignSummary, Province } from '@pixel-imperium/protocol'
 import { CountPill } from '../../album/CountPill.tsx'
 import { Lock } from '../../album/Lock.tsx'
 import { type PaperId, paperFor, seasonOf } from '../../album/paper.ts'
@@ -396,6 +396,79 @@ export function TrackSpine({
   )
 }
 
+/** Pairs a campaign's column across a morph, like `morphName`. */
+export const campaignMorphName = (campaign: string): CSSProperties => ({ viewTransitionName: `campaign-${campaign}` })
+
+/**
+ * A campaign's spine on Campaigns, built like a province's: its name in its paper, then `badge` under it. Links to
+ * the campaign's column, replacing the page in history, morphing into it like a province.
+ */
+export function CampaignSpine({
+  campaign,
+  badge,
+}: {
+  campaign: Pick<CampaignSummary, 'id' | 'name' | 'paper'>
+  badge?: ReactNode
+}) {
+  return (
+    <Link
+      to="/c/$campaignId"
+      params={{ campaignId: campaign.id }}
+      replace
+      className={`${styles.world} ${styles.spine} ${styles.provinceSpine}`}
+      style={{ ...paperFor(campaign.paper), ...campaignMorphName(campaign.id), viewTransitionClass: columnClass('spine', styles.provinceSpine) }}
+      data-state="active"
+      aria-label={campaign.name}
+    >
+      <span className={styles.stack}>
+        <span className={styles.name}>{campaign.name.replace(/^The /, '')}</span>
+        {badge}
+      </span>
+    </Link>
+  )
+}
+
+/** Campaigns hidden past one edge of Campaigns' window. */
+interface Stub {
+  hidden: number
+  side: 'before' | 'after'
+}
+
+const stubProps = ({ side }: Stub) => ({
+  className: `${styles.world} ${styles.spine} ${styles.provinceSpine} ${styles.stub}`,
+  style: { viewTransitionName: `campaigns-${side}`, viewTransitionClass: columnClass('spine', styles.provinceSpine) },
+})
+
+const StubFace = ({ hidden }: Stub) => (
+  <span className={styles.stack}>
+    <span className={styles.stubCount}>+{hidden}</span>
+  </span>
+)
+
+/** The edge of Campaigns' window: a fan of fogged slivers and a "+N". Links a whole window along, to `to`. */
+export function CampaignStub({ to, ...stub }: Stub & { to: string }) {
+  return (
+    <Link
+      to="/c/$campaignId"
+      params={{ campaignId: to }}
+      replace
+      {...stubProps(stub)}
+      aria-label={`${stub.hidden} more campaign${stub.hidden === 1 ? '' : 's'} ${stub.side}`}
+    >
+      <StubFace {...stub} />
+    </Link>
+  )
+}
+
+/** A stub standing in for one while its page loads. */
+export function SkeletonCampaignStub(stub: Stub) {
+  return (
+    <div {...stubProps(stub)} aria-hidden="true">
+      <StubFace {...stub} />
+    </div>
+  )
+}
+
 /** Another Year: the one before January's, or after December's. */
 interface Bookend {
   year: number
@@ -496,10 +569,10 @@ export function SkeletonSpine({
   style,
 }: {
   /**
-   * Which spine it stands in for across a morph, with that spine's morph name in `style`: a province's, which
-   * reaches in from the window's edge, or a Home column's.
+   * Which spine it stands in for across a morph, with that spine's morph name in `style`: a province's or a
+   * campaign's, which reaches in from the window's edge, or a Home column's.
    */
-  pairs?: 'province' | 'menu' | undefined
+  pairs?: 'province' | 'campaign' | 'menu' | undefined
   /** A Home column's spine left of the open column. */
   before?: boolean
   paper: PaperId
@@ -513,13 +586,14 @@ export function SkeletonSpine({
   className?: string | undefined
   style?: CSSProperties | undefined
 }) {
+  const album = pairs === 'province' || pairs === 'campaign'
   return (
     <div
-      className={[styles.world, styles.spine, pairs === 'province' && styles.provinceSpine, className].filter(Boolean).join(' ')}
+      className={[styles.world, styles.spine, album && styles.provinceSpine, className].filter(Boolean).join(' ')}
       style={{
         ...paperFor(paper),
         ...style,
-        ...(pairs && { viewTransitionClass: columnClass('spine', pairs === 'province' ? styles.provinceSpine : menuSpineClass(before)) }),
+        ...(pairs && { viewTransitionClass: columnClass('spine', album ? styles.provinceSpine : menuSpineClass(before)) }),
       }}
       data-state={fog ? 'locked' : state}
       data-thin={thin || undefined}

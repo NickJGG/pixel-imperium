@@ -3,7 +3,6 @@ import { type CSSProperties, useRef } from 'react'
 import type { Campaign, DailyYear, Profile } from '@pixel-imperium/protocol'
 import { type PaperId, paperFor, seasonOf } from '../album/paper.ts'
 import { useAccount } from '../account.ts'
-import { campaignProgress, continueAt } from '../campaign/progress.ts'
 import { Backdrop, MenuSpine, Worlds, usePhone, useSpineReach, useStep } from '../campaign/worlds/Worlds.tsx'
 import { useLessonsDone } from '../tutorial/done.ts'
 import { dayKey } from '../profile/activity.ts'
@@ -50,9 +49,6 @@ export function HomePage({
   const daily = dailyYear && today >= dailyYear.launch ? dailyYear : null
   const columns = columnsFor(account !== null, daily !== null)
   const open = openColumn(columns, search)
-  const progress = campaignProgress(campaign, storage)
-  const next = continueAt(campaign, progress, id => storage.loadSolved(id) !== null)
-  const active = next ? campaign.provinces.indexOf(next.province) : campaign.provinces.length - 1
   const season = seasonOf(Number(today.slice(5, 7)))
   const paper = papers(campaign.paper, learnPapers(done), season)
 
@@ -71,9 +67,7 @@ export function HomePage({
     const common = { start, style: columnName(column) }
     switch (column) {
       case 'campaign':
-        return (
-          <CampaignColumn key={column} {...common} campaign={campaign} progress={progress} next={next} active={active} storage={storage} />
-        )
+        return <CampaignColumn key={column} {...common} campaign={campaign} storage={storage} />
       case 'daily':
         return (
           daily && (
