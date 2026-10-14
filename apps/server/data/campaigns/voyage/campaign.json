@@ -6,7 +6,7 @@
   "closingLine": "Placeholder: the closing line comes at launch.",
   "puzzlesPerProvince": 30,
   "provinces": [
-    { "id": "shipyard", "name": "The Shipyard", "theme": "Fitting out the ship", "flavour": "Placeholder: the hull is sound. Past the harbour mouth, open water.", "paper": "timber", "minSize": 5, "maxSize": 10 },
+    { "id": "shipyard", "name": "The Shipyard", "theme": "Fitting out the ship", "flavour": "The ship is fitted out. Past the harbour mouth, the open water is calling.", "paper": "timber", "minSize": 5, "maxSize": 10, "tiers": [10, 28] },
     { "id": "sea", "name": "The Open Sea", "theme": "The ship and the weather", "flavour": "Placeholder: the storms are behind you. Ahead, a shore of sand.", "paper": "teal", "minSize": 10, "maxSize": 15 },
     { "id": "dunes", "name": "The Dunes", "theme": "Desert crossing", "flavour": "Placeholder: the desert is crossed. Beyond it, the green closes in.", "paper": "sand", "minSize": 15, "maxSize": 20, "techniques": true },
     { "id": "jungle", "name": "The Jungle", "theme": "Rainforest", "flavour": "Placeholder: the jungle parts. Far to the north, the ice is waiting.", "paper": "lime", "minSize": 20, "maxSize": 25 },

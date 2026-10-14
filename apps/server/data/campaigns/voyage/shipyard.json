@@ -1,1 +1,447 @@
-[]
+[
+  {
+    "id": "barrel",
+    "title": "Barrel",
+    "palette": { "b": "#9a6a3a", "k": "#4a4f56" },
+    "rows": [
+      ".kkk.",
+      "bbbbb",
+      "kkkkk",
+      "bbbbb",
+      ".kkk."
+    ]
+  },
+  {
+    "id": "ships-biscuit",
+    "title": "Ship's Biscuit",
+    "palette": { "b": "#d9b77a" },
+    "rows": [
+      "bbbbb",
+      "b.b.b",
+      "bbbbb",
+      "b.b.b",
+      "bbbbb"
+    ]
+  },
+  {
+    "id": "crate",
+    "title": "Crate",
+    "palette": { "d": "#7a5530", "c": "#b5874f" },
+    "rows": [
+      "ddddd",
+      "dc.cd",
+      "d.c.d",
+      "dc.cd",
+      "ddddd"
+    ]
+  },
+  {
+    "id": "bollard",
+    "title": "Bollard",
+    "palette": { "k": "#3a3d42", "w": "#8a6a4a" },
+    "rows": [
+      "kkkkk",
+      ".kkk.",
+      ".kkk.",
+      ".kkk.",
+      "wwwww"
+    ]
+  },
+  {
+    "id": "rope-coil",
+    "title": "Rope Coil",
+    "palette": { "r": "#c9a36b" },
+    "rows": [
+      "rrrrr",
+      "....r",
+      "rrr.r",
+      "r...r",
+      "rrrrr"
+    ]
+  },
+  {
+    "id": "life-ring",
+    "title": "Life Ring",
+    "palette": { "w": "#f4f1ea", "r": "#d63a2f" },
+    "rows": [
+      ".wrw.",
+      "wr.rw",
+      "r...r",
+      "wr.rw",
+      ".wrw."
+    ]
+  },
+  {
+    "id": "flour-sack",
+    "title": "Flour Sack",
+    "palette": { "s": "#e8dcc0", "t": "#8a6a4a" },
+    "rows": [
+      ".s.s.",
+      "..t..",
+      ".sss.",
+      "sssss",
+      "sssss"
+    ]
+  },
+  {
+    "id": "cannonballs",
+    "title": "Cannonballs",
+    "palette": { "k": "#3a3d42", "w": "#8a6a4a" },
+    "rows": [
+      "..k..",
+      ".k.k.",
+      "k.k.k",
+      "wwwww",
+      "w...w"
+    ]
+  },
+  {
+    "id": "spyglass",
+    "title": "Spyglass",
+    "palette": { "y": "#d4a640", "d": "#7a5530" },
+    "rows": [
+      "......yyyy",
+      "...yyyyyyy",
+      "yyyddddyyy",
+      "...yyyyyyy",
+      "......yyyy"
+    ]
+  },
+  {
+    "id": "sea-chart",
+    "title": "Sea Chart",
+    "palette": { "p": "#c9a36b", "l": "#9bbf6a", "r": "#c8312b" },
+    "rows": [
+      "pppppppppp",
+      "plll.....p",
+      "pll..rrr.p",
+      "pl...r...p",
+      "p....r...p",
+      "p....r.llp",
+      "p..rrr.llp",
+      "p..r..lllp",
+      "p..r.lll.p",
+      "pppppppppp"
+    ]
+  },
+  {
+    "id": "ship-in-a-bottle",
+    "title": "Ship in a Bottle",
+    "palette": { "c": "#a87a4a", "g": "#9fd4c8", "s": "#f4f1ea", "h": "#7a4a2a" },
+    "rows": [
+      "....cc....",
+      "...gggg...",
+      "gggg..gggg",
+      "g...s....g",
+      "g..ss.s..g",
+      "g.sss.ss.g",
+      "g.sss.ss.g",
+      "g.hhhhhh.g",
+      "g..hhhh..g",
+      "gggggggggg"
+    ]
+  },
+  {
+    "id": "sea-chest",
+    "title": "Sea Chest",
+    "palette": { "b": "#7a4a2a", "k": "#3a3d42", "y": "#d4a640" },
+    "rows": [
+      "...bbbb...",
+      ".bkbbbbkb.",
+      "bbkbbbbkbb",
+      "kkkyyyykkk",
+      "bbky..ykbb",
+      "bbkyyyykbb",
+      "bbkbbbbkbb",
+      "bbkbbbbkbb",
+      "kkkkkkkkkk",
+      "kk......kk"
+    ]
+  },
+  {
+    "id": "tricorn-hat",
+    "title": "Tricorn Hat",
+    "palette": { "k": "#2e2a26", "y": "#d4a640" },
+    "rows": [
+      "...kkkk...",
+      "..kkkkkk..",
+      "y.kkkkkk.y",
+      "yykkkkkkyy",
+      "kyykkkkyyk",
+      "kkyyyyyykk",
+      ".kkkkkkkk.",
+      "..kkkkkk..",
+      "...kkkk...",
+      "....kk...."
+    ]
+  },
+  {
+    "id": "capstan",
+    "title": "Capstan",
+    "palette": { "k": "#3a3d42", "p": "#b08a5a", "w": "#7a5530", "d": "#a87a4a" },
+    "rows": [
+      "...kkkk...",
+      ".kkkkkkkk.",
+      "pppppppppp",
+      "..wwwwww..",
+      "..w.ww.w..",
+      "..w.ww.w..",
+      "..w.ww.w..",
+      "..wwwwww..",
+      ".kkkkkkkk.",
+      "dddddddddd"
+    ]
+  },
+  {
+    "id": "souwester",
+    "title": "Sou'wester",
+    "palette": { "y": "#f0c63a", "d": "#c9962a", "s": "#e8b98a", "b": "#8a5a2b" },
+    "rows": [
+      "...yyyy...",
+      "..yyyyyy..",
+      "..dddddd..",
+      "yyyyyyyyyy",
+      "y.ssssss.y",
+      "y.s.ss.s.y",
+      "..ssssss..",
+      "..sbbbbs..",
+      "...bbbb...",
+      "....bb...."
+    ]
+  },
+  {
+    "id": "oar",
+    "title": "Oar",
+    "palette": { "o": "#b08a5a", "d": "#7a5530" },
+    "rows": [
+      ".ddd.",
+      "..o..",
+      "..o..",
+      "..o..",
+      "..o..",
+      "..o..",
+      ".ooo.",
+      ".ooo.",
+      ".ooo.",
+      "..o.."
+    ]
+  },
+  {
+    "id": "anchor-chain",
+    "title": "Anchor Chain",
+    "palette": { "c": "#6b7078" },
+    "rows": [
+      ".cc....cc.",
+      "cc.c..c.cc",
+      "c..cccc..c",
+      "cc.c..c.cc",
+      ".cc....cc."
+    ]
+  },
+  {
+    "id": "hammock",
+    "title": "Hammock",
+    "palette": { "p": "#7a5530", "r": "#c9a36b", "c": "#e8dcc0" },
+    "rows": [
+      "p........p",
+      "pr......rp",
+      "p.cccccc.p",
+      "p..cccc..p",
+      "p........p"
+    ]
+  },
+  {
+    "id": "hull-ribs",
+    "title": "Hull Ribs",
+    "palette": { "f": "#a87a4a", "k": "#6b4423", "s": "#8f8a80" },
+    "rows": [
+      "f.f.f.f.f.",
+      "ffffffffff",
+      "f.f.f.f.f.",
+      "f.f.f.f.f.",
+      "ffffffffff",
+      ".f.f.f.f..",
+      ".f.f.f.f..",
+      "..kkkkkk..",
+      "...s..s...",
+      "..ss..ss.."
+    ]
+  },
+  {
+    "id": "ships-wheel",
+    "title": "Ship's Wheel",
+    "palette": { "w": "#8a5a2b", "h": "#d4a640" },
+    "rows": [
+      "....ww....",
+      "..wwwwww..",
+      ".ww.ww.ww.",
+      ".wwwhhwww.",
+      "wwwhhhhwww",
+      "wwwhhhhwww",
+      ".wwwhhwww.",
+      ".ww.ww.ww.",
+      "..wwwwww..",
+      "....ww...."
+    ]
+  },
+  {
+    "id": "parrot",
+    "title": "Parrot",
+    "palette": { "r": "#d63a2f", "k": "#2e2a26", "y": "#f0c63a", "b": "#2f6fd6", "p": "#7a5530" },
+    "rows": [
+      "...rrr....",
+      "..rr.rrk..",
+      "..rrrrrkk.",
+      "..rrrrr.k.",
+      "...rrrr...",
+      "..yrrrr...",
+      "..yybrr...",
+      "..ybbbr...",
+      "ppppppppp.",
+      "....bb...."
+    ]
+  },
+  {
+    "id": "figurehead",
+    "title": "Figurehead",
+    "palette": { "h": "#d4a640", "s": "#f2ead8", "w": "#7a4a2a" },
+    "rows": [
+      "..hhh.....",
+      ".hh.hss...",
+      "hhh.s.s...",
+      "hh.hsss...",
+      "hhh.sssss.",
+      "hh.hsss...",
+      ".hh.ss....",
+      "..hh.ss...",
+      "ww..wwwss.",
+      "wwwwwwwww."
+    ]
+  },
+  {
+    "id": "hand-saw",
+    "title": "Hand Saw",
+    "palette": { "h": "#8a5a2b", "s": "#b9c0c8" },
+    "rows": [
+      "hhh.......",
+      "h.hsssssss",
+      "hhhssssss.",
+      "hh.sssss..",
+      "....s.s.s."
+    ]
+  },
+  {
+    "id": "cannon",
+    "title": "Cannon",
+    "palette": { "k": "#3a3d42", "w": "#8a5a2b" },
+    "rows": [
+      "......kkkk",
+      "..kkkkkkkk",
+      "kkkkkkkkk.",
+      ".wwwwww...",
+      ".ww..ww..."
+    ]
+  },
+  {
+    "id": "tackle-block",
+    "title": "Tackle Block",
+    "palette": { "k": "#4a4f56", "w": "#9a6a3a", "s": "#d4a640", "r": "#c9a36b" },
+    "rows": [
+      "....kkk...",
+      "....k.k...",
+      ".....k....",
+      "...wwww...",
+      "..wwssww..",
+      "..ws..sw..",
+      "..ws..sw..",
+      "..wwssww..",
+      "...wwww...",
+      "...r..r..."
+    ]
+  },
+  {
+    "id": "rudder",
+    "title": "Rudder",
+    "palette": { "t": "#a87a4a", "w": "#7a4a2a", "k": "#4a4f56", "s": "#5b3a1e" },
+    "rows": [
+      "tttttww...",
+      ".....ww...",
+      ".....ww...",
+      "...skwwww.",
+      "...s.wwwww",
+      "...skwwwww",
+      "...s.wwwww",
+      "...skwwwww",
+      "...s.wwwww",
+      "...s.wwww."
+    ]
+  },
+  {
+    "id": "crows-nest",
+    "title": "Crow's Nest",
+    "palette": { "m": "#7a5530", "f": "#d63a2f", "b": "#a87a4a", "r": "#c9a36b" },
+    "rows": [
+      "....mmfff.",
+      "....mmff..",
+      "....mm....",
+      ".bbbbbbbb.",
+      ".bb.bb.bb.",
+      ".bbbbbbbb.",
+      "..bbbbbb..",
+      ".rrrmmrrr.",
+      "r...mm...r",
+      "rr..mm..rr"
+    ]
+  },
+  {
+    "id": "bosuns-whistle",
+    "title": "Bosun's Whistle",
+    "palette": { "s": "#c9ced4", "k": "#8f969e", "c": "#6b7078" },
+    "rows": [
+      "......ssss",
+      "......s..s",
+      "ssssssss.s",
+      "sssssssss.",
+      "....kkk...",
+      "...kk.kk..",
+      "....kkk...",
+      ".....c....",
+      "....c.c...",
+      ".....c...."
+    ]
+  },
+  {
+    "id": "limes",
+    "title": "Limes",
+    "palette": { "g": "#5fa83a", "l": "#c8e88a", "d": "#3f7d2c" },
+    "rows": [
+      "..dd......",
+      "..ggg.....",
+      ".ggggg....",
+      "gggggg....",
+      "gggggg....",
+      ".gggg.ggg.",
+      ".....glllg",
+      ".....gl.lg",
+      ".....glllg",
+      "......ggg."
+    ]
+  },
+  {
+    "id": "launch-day",
+    "title": "Launch Day",
+    "palette": { "f": "#d63a2f", "m": "#7a5530", "h": "#8a5a33", "s": "#8f8a80", "w": "#2a7fd4" },
+    "rows": [
+      "....m.....",
+      "..f.mf....",
+      ".f..m.f...",
+      "hh..m....h",
+      "hhhhhhhhhh",
+      ".hh.hh.hhh",
+      "..hhhhhhh.",
+      "s..s.s.s..",
+      ".ssssssss.",
+      "......wwww"
+    ]
+  }
+]
