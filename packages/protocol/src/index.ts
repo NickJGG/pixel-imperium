@@ -36,12 +36,34 @@ export interface DailyYear {
   months: DailySummary[][]
 }
 
+/**
+ * The named papers in tokens.css: one per Imperium province, one per season. Campaigns and provinces each name
+ * one; a new one needs its `--p-` in every theme and its `--t-` in Night.
+ */
+export const PAPER_NAMES = [
+  'marches',
+  'coast',
+  'wildwood',
+  'forge',
+  'capital',
+  'throne',
+  'winter',
+  'spring',
+  'summer',
+  'autumn',
+] as const
+
+export type PaperId = (typeof PAPER_NAMES)[number]
+
 /** `GET /api/campaigns` returns `CampaignSummary[]`, in default-first order. */
 export interface CampaignSummary {
   id: string
   name: string
-  /** The volume's cover colour on the shelf; the album's cobalt when absent. */
-  coverColour?: string
+  /** `YYYY-MM-DD`; absent in a draft without one. */
+  released?: string
+  paper: PaperId
+  /** Its puzzles across every province. */
+  total: number
 }
 
 export interface Province {
@@ -51,6 +73,7 @@ export interface Province {
   theme: string
   /** Shown once the province is conquered. */
   flavour: string
+  paper: PaperId
   /** The longest a puzzle's side gets here. */
   maxSize: number
   /** Offer the Techniques when this province starts. */
@@ -63,6 +86,9 @@ export interface Province {
 export interface Campaign {
   id: string
   name: string
+  /** As `CampaignSummary`'s. */
+  released?: string
+  paper: PaperId
   closingLine: string
   /** Absent in a draft without one; colours come one per solve, beside the palette. */
   crest?: { width: number; height: number }

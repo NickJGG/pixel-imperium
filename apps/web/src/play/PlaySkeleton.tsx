@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { useParams } from '@tanstack/react-router'
-import { paperStyle, seasonStyle } from '../album/paper.ts'
+import { paperFor, seasonStyle } from '../album/paper.ts'
 import { currentCampaign } from '../campaign/last-campaign.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { dailyId } from '../daily/clock.ts'
@@ -18,9 +18,9 @@ const FOG = { '--paper': 'var(--card)', '--tab': 'var(--line-soft)' } as CSSProp
 /** The puzzle's province, place and size in the campaign in memory, if it's there. */
 function findPuzzle(id: string) {
   const provinces = currentCampaign()?.provinces ?? []
-  for (const [index, province] of provinces.entries()) {
+  for (const province of provinces) {
     const number = province.puzzles.findIndex(p => p.id === id) + 1
-    if (number > 0) return { index, number, province, puzzle: province.puzzles[number - 1]! }
+    if (number > 0) return { number, province, puzzle: province.puzzles[number - 1]! }
   }
   return null
 }
@@ -36,7 +36,7 @@ export function PlaySkeleton() {
   const wide = useRail()
   useAnnounceSkeleton()
   const found = id === undefined ? null : findPuzzle(id)
-  const paper = found ? paperStyle(found.index) : month !== undefined ? seasonStyle(Number(month)) : FOG
+  const paper = found ? paperFor(found.province.paper) : month !== undefined ? seasonStyle(Number(month)) : FOG
   const paperMorph = columnPaper(found ? `province-${found.province.id}` : undefined)
   const daily = year !== undefined && month !== undefined && day !== undefined ? dailyId(`${year}-${month}-${day}`) : undefined
   const board = (

@@ -55,7 +55,7 @@ export function SettingsPage() {
   return (
     <main className={styles.page}>
       <Worlds>
-        <World index={0} className={styles.cover} labelledBy="handle-title">
+        <World paper="marches" className={styles.cover} labelledBy="handle-title">
           <div className={styles.column} data-surface="cobalt">
             <p className={styles.kicker}>Settings · Handle</p>
             <HandleHero id="handle-title" handle={account.handle} />
@@ -63,7 +63,7 @@ export function SettingsPage() {
           </div>
         </World>
 
-        <World index={1} labelledBy="play-title">
+        <World paper="coast" labelledBy="play-title">
           <div className={styles.column}>
             <p className={styles.kicker}>This device</p>
             <h2 id="play-title" className={styles.name}>
@@ -73,7 +73,7 @@ export function SettingsPage() {
           </div>
         </World>
 
-        <World index={4} labelledBy="methods-title">
+        <World paper="capital" labelledBy="methods-title">
           <div className={styles.column}>
             <p className={styles.kicker}>Account</p>
             <h2 id="methods-title" className={styles.name}>
@@ -94,7 +94,7 @@ export function SettingsPage() {
           </div>
         </World>
 
-        <World index={5} labelledBy="delete-title">
+        <World paper="throne" labelledBy="delete-title">
           <div className={styles.column}>
             <p className={styles.kicker}>Account</p>
             <h2 id="delete-title" className={styles.name}>

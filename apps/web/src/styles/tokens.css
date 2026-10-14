@@ -9,6 +9,8 @@
  * Theme-invariant groups: type, cobalt (ink and dot pattern for things that sit on the cover blue,
  * whatever the theme), foil (the sticker shimmer), scrim and gutter shade, radii, spacing, and the
  * Worlds slant: the lean of the cut between province columns, and how far it runs across a full-height column.
+ * Papers are a named pool (`PAPER_NAMES` in the protocol) that campaign data picks from: a new one needs its --p-
+ * in all three theme blocks and its --t- in Night.
  */
 
 /* Registered so the canvas, which reads these at draw time, gets a resolved colour even where Play mixes them. */

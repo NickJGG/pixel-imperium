@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import type { Campaign, StampId } from '@pixel-imperium/protocol'
 import { MONTH_NAMES } from '../daily/month.ts'
 import { BoltIcon, CheckIcon, CrownIcon, FlameIcon, PageStarIcon, SparkleIcon, StickerIcon } from './icons.tsx'
-import { paperFor, paperStyle, seasonOf } from './paper.ts'
+import { paperFor, seasonOf } from './paper.ts'
 import styles from './Stamp.module.css'
 
 export interface StampDef {
@@ -42,7 +42,7 @@ export function stampDef(id: StampId, campaign?: Campaign): StampDef {
     label: i < 0 ? 'Page conquered' : `${provinces[i]!.name.replace(/^The /, '')} conquered`,
     icon: <CheckIcon />,
     tone: 'tab',
-    ...(i >= 0 && { style: paperStyle(i) }),
+    ...(i >= 0 && { style: paperFor(provinces[i]!.paper) }),
   }
 }
 

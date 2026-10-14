@@ -50,7 +50,7 @@ The page at `/learn` listing every **Lesson** of the **Tutorial** (labelled "Bas
 _Avoid_: Academy, school, lessons page, hub (in product copy)
 
 **Home**:
-The page at `/`: the main menu, one column each for the **Campaign**, **Learn**, the **Profile** and Settings (Sign in in place of the last two for **Signed-out play**).
+The page at `/`: the main menu, one column each for the **Campaign** last played (leading on to **Campaigns**), the **Daily**, **Learn**, the **Profile** and Settings (Sign in in place of the last two for **Signed-out play**), plus a temporary column for the newest **Featured** **Campaign**.
 _Avoid_: Menu, dashboard, hub (in product copy)
 
 **Lesson**:
@@ -112,6 +112,14 @@ _Avoid_: Migration, sync
 A single-player journey through a fixed sequence of **Provinces**.
 _Avoid_: Story mode, adventure
 
+**Campaigns**:
+The page at `/c/<id>`: every **Campaign** side by side, the one at that address open; a **Player**'s started ones first, then any **Featured** one, then the rest.
+_Avoid_: Shelf, library, archive, atlas
+
+**Featured**:
+A **Campaign** in the 30 days after its release, badged New for everyone.
+_Avoid_: Spotlight, fresh, latest, new (as a term; "New" is the badge's copy)
+
 **Province**:
 A named group of **Puzzles** within the **Campaign**, unlocked one at a time in a fixed order.
 _Avoid_: Chapter, world, region, level
@@ -162,6 +170,8 @@ _Avoid_: Daily streak, chain, combo
 - A **Campaign** has an ordered list of **Provinces**; the **Imperium**'s is four outer **Provinces**, then the **Capital**, then the **Throne**
 - A **Province** has its **Campaign**'s number of **Puzzles** (30 in the **Imperium**), ordered from easiest to hardest
 - Each **Province** unlocks on the **Conquest** of the one before it
+- Every released **Campaign** is open from the start; **Campaigns** orders them started first, then **Featured**, then the rest, each group by release
+- At most one **Featured** **Campaign** has a column on **Home**: the newest; it leaves once the **Player** starts it
 - A **Province**'s **Tiers** run Easy, then Medium, then Hard in its order, each covering a contiguous run of its **Puzzles**
 - A **Sticker** is **Foil** or not for good once its **Puzzle** is first solved; a **Replay** never changes it
 - Using one **Hint** on a **Puzzle** before its first solve rules out **Foil** for that **Puzzle**

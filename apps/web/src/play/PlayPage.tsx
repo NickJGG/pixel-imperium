@@ -14,7 +14,7 @@ import type { Campaign, Province, PuzzleClues, SolveRequest, Tier } from '@pixel
 import { CountPill } from '../album/CountPill.tsx'
 import { Dymo } from '../album/Dymo.tsx'
 import { ArrowIcon, CheckIcon } from '../album/icons.tsx'
-import { paperStyle } from '../album/paper.ts'
+import { paperFor } from '../album/paper.ts'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { type AccountState, useAccount } from '../account.ts'
 import { requestHint, submitSolve } from '../api.ts'
@@ -88,7 +88,7 @@ export function PlayPage() {
       account={account}
       context={{
         place: province.name,
-        paper: paperStyle(index),
+        paper: paperFor(province.paper),
         back: `/c/${campaign.id}/${province.id}`,
         here: `/play/${puzzle.id}`,
         meta: [puzzle.tier && TIER_NAME[puzzle.tier], `${puzzle.width}×${puzzle.height}`].filter(Boolean).join(' · '),
@@ -491,7 +491,7 @@ export function Play({
       to="/c/$campaignId/$provinceId"
       params={{ campaignId: album.campaign.id, provinceId: following.id }}
       className={styles.into}
-      style={paperStyle(album.index + 1)}
+      style={paperFor(following.paper)}
       data-variant="primary"
       data-pad-default
     >

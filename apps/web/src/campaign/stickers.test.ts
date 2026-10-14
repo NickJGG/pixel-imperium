@@ -8,8 +8,8 @@ const puzzle = (id: string) => ({ id, title: id, width: 1, height: 1, filledCoun
 
 const campaign: Pick<Campaign, 'provinces'> = {
   provinces: [
-    { id: 'a', name: 'A', theme: '', flavour: '', maxSize: 5, puzzles: [puzzle('a1'), puzzle('a2'), puzzle('a3')] },
-    { id: 'b', name: 'B', theme: '', flavour: '', maxSize: 5, puzzles: [puzzle('b1'), puzzle('b2')] },
+    { id: 'a', name: 'A', theme: '', flavour: '', paper: 'marches', maxSize: 5, puzzles: [puzzle('a1'), puzzle('a2'), puzzle('a3')] },
+    { id: 'b', name: 'B', theme: '', flavour: '', paper: 'marches', maxSize: 5, puzzles: [puzzle('b1'), puzzle('b2')] },
   ],
 }
 

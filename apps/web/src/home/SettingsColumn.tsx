@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import type { CSSProperties } from 'react'
-import type { PaperName } from '../album/paper.ts'
+import type { PaperId } from '../album/paper.ts'
 import { PROVIDERS } from '../auth.ts'
 import { World } from '../campaign/worlds/Worlds.tsx'
 import { CrownMark } from '../Hud.tsx'
@@ -21,14 +21,14 @@ const barcodeOf = (handle: string): number[] =>
 export function SettingsColumn({
   handle,
   joinedAt,
-  index,
+  paper,
   start,
   style,
 }: {
   handle: string
   /** From the profile; `undefined` until it has loaded. */
   joinedAt: string | undefined
-  index: PaperName
+  paper: PaperId
   start: boolean
   style: CSSProperties
 }) {
@@ -50,7 +50,7 @@ export function SettingsColumn({
   ]
 
   return (
-    <World index={index} labelledBy="home-settings" style={style} start={start}>
+    <World paper={paper} labelledBy="home-settings" style={style} start={start}>
       <div className={styles.column}>
         <div className={styles.stack}>
           <p className={styles.kicker}>Handle · Play · Sign-in</p>

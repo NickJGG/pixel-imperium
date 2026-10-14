@@ -129,18 +129,21 @@ export function createApp(
     return p && (!('date' in p) || isPlayableDate(p.date, now())) ? p : undefined
   }
   const campaignPayloads = new Map(
-    campaigns.map(({ id, name, closingLine, crest, provinces }): [string, CampaignPayload] => [
+    campaigns.map(({ id, name, released, paper, closingLine, crest, provinces }): [string, CampaignPayload] => [
       id,
       {
         id,
         name,
+        ...(released && { released }),
+        paper,
         closingLine,
         ...(crest && { crest: { width: crest.width, height: crest.height } }),
-        provinces: provinces.map(({ id, name, theme, flavour, maxSize, techniques, puzzles }) => ({
+        provinces: provinces.map(({ id, name, theme, flavour, paper, maxSize, techniques, puzzles }) => ({
           id,
           name,
           theme,
           flavour,
+          paper,
           maxSize,
           ...(techniques && { techniques }),
           puzzles: puzzles.map(p => {
@@ -219,7 +222,15 @@ export function createApp(
     })
     .get('/campaigns', c =>
       c.json(
-        campaigns.map(({ id, name, coverColour }): CampaignSummary => ({ id, name, ...(coverColour && { coverColour }) })),
+        campaigns.map(
+          ({ id, name, released, paper, provinces }): CampaignSummary => ({
+            id,
+            name,
+            ...(released && { released }),
+            paper,
+            total: provinces.reduce((n, p) => n + p.puzzles.length, 0),
+          }),
+        ),
       ),
     )
     .get('/campaigns/:id', c => {

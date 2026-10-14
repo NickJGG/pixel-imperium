@@ -11,7 +11,7 @@ import { type Cell, hintFor } from '@pixel-imperium/nonogram'
 import type { Assists } from '@pixel-imperium/protocol'
 import { Dymo } from '../album/Dymo.tsx'
 import { ArrowIcon } from '../album/icons.tsx'
-import { paperStyle } from '../album/paper.ts'
+import { paperFor } from '../album/paper.ts'
 import { PixelArt } from '../campaign/PixelArt.tsx'
 import { boardMorph, columnPaper, dymoMorph, slotName } from '../campaign/worlds/names.ts'
 import { lessonId } from '../campaign/worlds/transitions.ts'
@@ -387,7 +387,7 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
         className={stacked ? `${playStyles.play} ${styles.page}` : `${playStyles.shell} ${styles.shell}`}
         data-rail={!stacked || undefined}
         {...paperMorph}
-        style={{ ...paperStyle(track.paper), ...paperMorph.style }}
+        style={{ ...paperFor(track.paper), ...paperMorph.style }}
       >
         {!stacked && <FloatingPills />}
         <div className={stacked ? `${playStyles.desk} ${styles.desk}` : playStyles.shellBody} style={stacked ? { gap: SIDE_PAGE_GAP } : undefined}>

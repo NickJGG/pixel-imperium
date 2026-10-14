@@ -27,7 +27,7 @@ describe('offers asked', () => {
   })
 
   it('offers the techniques only in the flagged province, never asked, with none done', () => {
-    const province: Province = { id: 'w', name: 'W', theme: '', flavour: '', maxSize: 20, puzzles: [] }
+    const province: Province = { id: 'w', name: 'W', theme: '', flavour: '', paper: 'marches', maxSize: 20, puzzles: [] }
     const flagged = { ...province, techniques: true as const }
     const none = new Set<string>()
     expect(asked.shouldOfferTechniques(null, flagged, none)).toBe(true)

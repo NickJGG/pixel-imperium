@@ -63,7 +63,7 @@ export function ProfilePage() {
   return (
     <main className={styles.page}>
       <Worlds>
-        <World index={0} className={styles.cover}>
+        <World paper="marches" className={styles.cover}>
           <div className={styles.column} data-surface="cobalt">
             {tabs.length > 1 && album ? (
               <nav className={styles.tabs} aria-label="Albums">
@@ -120,14 +120,14 @@ export function ProfilePage() {
         {album &&
           record &&
           (own && editing ? (
-            <World index={4} style={{ flex: '2 1 0' }} labelledBy="showcase-edit-title">
+            <World paper="capital" style={{ flex: '2 1 0' }} labelledBy="showcase-edit-title">
               <div className={styles.column}>
                 <ShowcaseEditor stickers={stickers} picks={editing} onChange={setEditing} onClose={stopEditing} />
               </div>
             </World>
           ) : (
             <>
-              <World index={1} labelledBy="record-title">
+              <World paper="coast" labelledBy="record-title">
                 <div className={styles.column}>
                   <Summary
                     titleId="record-title"
@@ -141,7 +141,7 @@ export function ProfilePage() {
                   />
                 </div>
               </World>
-              <World index={4} labelledBy="stamps-title">
+              <World paper="capital" labelledBy="stamps-title">
                 <div className={styles.column}>
                   <h2 id="stamps-title" className={styles.kicker}>
                     Stamps · {earned} / {stamps.length}

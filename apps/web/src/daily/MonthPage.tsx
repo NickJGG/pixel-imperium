@@ -99,7 +99,7 @@ function Year({ data, month }: { data: DailyYear; month: number }) {
         <Worlds carousel onSnap={onSnap}>{bookends(MONTHS.map(page))}</Worlds>
       ) : (
         <>
-          <Backdrop index={seasonOf(month)} />
+          <Backdrop paper={seasonOf(month)} />
           <Worlds>
             {bookends(
               MONTHS.map(m => {
@@ -143,7 +143,7 @@ function OpenMonth({ data, month, tally, clock, current, storage }: MonthProps &
   const solvedToday = isSolvedWith(storage)(clock.today)
 
   return (
-    <World index={seasonOf(month)} labelledBy={id} style={monthMorphName(month)} start={current} pair={current}>
+    <World paper={seasonOf(month)} labelledBy={id} style={monthMorphName(month)} start={current} pair={current}>
       <div className={provinceStyles.zoom}>
         <header className={provinceStyles.head}>
           <div className={provinceStyles.title}>
@@ -231,7 +231,7 @@ function DimMonth({ data, month, tally, clock, current }: MonthProps) {
   const backName = back && MONTH_NAMES[Number(back.slice(5, 7)) - 1]
 
   return (
-    <World index={seasonOf(month)} fog labelledBy={id} style={monthMorphName(month)} start={current}>
+    <World paper={seasonOf(month)} fog labelledBy={id} style={monthMorphName(month)} start={current}>
       <div className={`${provinceStyles.zoom} ${provinceStyles.locked}`}>
         <div className={provinceStyles.lockedMsg}>
           <p className={provinceStyles.kicker}>Daily {data.year}</p>

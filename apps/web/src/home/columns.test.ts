@@ -52,34 +52,39 @@ describe('stepColumn', () => {
 
 describe('learnPapers', () => {
   it('puts the track of the next Lesson first', () => {
-    expect(learnPapers(new Set())).toEqual([0, 1])
-    expect(learnPapers(finished(TRACKS.tutorial))).toEqual([1, 0])
+    expect(learnPapers(new Set())).toEqual(['marches', 'coast'])
+    expect(learnPapers(finished(TRACKS.tutorial))).toEqual(['coast', 'marches'])
   })
 
   it('goes back to Basics once both are finished', () => {
-    expect(learnPapers(finished(TRACKS.tutorial, TRACKS.techniques))).toEqual([0, 1])
+    expect(learnPapers(finished(TRACKS.tutorial, TRACKS.techniques))).toEqual(['marches', 'coast'])
   })
 })
 
 describe('papers', () => {
   it('dresses each column for where it leads', () => {
-    expect(papers(2, [1, 0], 'autumn')).toEqual({
-      campaign: 2,
+    expect(papers('wildwood', ['coast', 'marches'], 'autumn')).toEqual({
+      campaign: 'wildwood',
       daily: 'autumn',
-      learn: 1,
+      learn: 'coast',
       profile: 'cover',
-      settings: 4,
-      signin: 5,
+      settings: 'capital',
+      signin: 'throne',
     })
   })
 
   it('moves Learn to its other track rather than match Campaign', () => {
-    expect(papers(0, [0, 1], 'winter').learn).toBe(1)
-    expect(papers(1, [1, 0], 'winter').learn).toBe(0)
+    expect(papers('marches', ['marches', 'coast'], 'winter').learn).toBe('coast')
+    expect(papers('coast', ['coast', 'marches'], 'winter').learn).toBe('marches')
   })
 
   it('moves Settings and Sign in to the Forge rather than match Campaign', () => {
-    expect(papers(4, [0, 1], 'winter').settings).toBe(3)
-    expect(papers(5, [0, 1], 'winter').signin).toBe(3)
+    expect(papers('capital', ['marches', 'coast'], 'winter').settings).toBe('forge')
+    expect(papers('throne', ['marches', 'coast'], 'winter')).toMatchObject({ settings: 'capital', signin: 'forge' })
+  })
+
+  it('moves Settings and Sign in to the Forge rather than match Learn', () => {
+    expect(papers('marches', ['capital', 'coast'], 'winter').settings).toBe('forge')
+    expect(papers('marches', ['throne', 'coast'], 'winter').signin).toBe('forge')
   })
 })

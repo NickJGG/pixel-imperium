@@ -9,7 +9,7 @@ import { Link } from '@tanstack/react-router'
 import type { Province } from '@pixel-imperium/protocol'
 import { CountPill } from '../../album/CountPill.tsx'
 import { Lock } from '../../album/Lock.tsx'
-import { type PaperName, paperFor, paperStyle, seasonOf } from '../../album/paper.ts'
+import { type PaperId, paperFor, seasonOf } from '../../album/paper.ts'
 import type { HomeSearch } from '../../home/columns.ts'
 import { reducedMotion } from '../../motion.ts'
 import type { PadPage } from '../../pad/dispatch.ts'
@@ -140,7 +140,7 @@ const columnClass = (kind: 'page' | 'spine', more?: string | false | undefined) 
 
 /** An opened column in a province's paper, with its colour stripe across the top. */
 export function World({
-  index,
+  paper,
   fog = false,
   children,
   className,
@@ -149,8 +149,7 @@ export function World({
   start = false,
   pair = false,
 }: {
-  /** Its paper: a province's index in its campaign, or a Month's season. */
-  index: PaperName
+  paper: PaperId
   /** Still locked: opened in the fog instead of its paper. */
   fog?: boolean
   children?: ReactNode
@@ -168,7 +167,7 @@ export function World({
   return (
     <section
       className={[styles.world, className].filter(Boolean).join(' ')}
-      style={{ ...paperFor(index), ...style, viewTransitionClass: columnClass('page', pair && styles.pageColumn) }}
+      style={{ ...paperFor(paper), ...style, viewTransitionClass: columnClass('page', pair && styles.pageColumn) }}
       data-pair={pair || undefined}
       data-fog={fog || undefined}
       data-start={start || undefined}
@@ -183,8 +182,8 @@ export function World({
  * The page column's paper, dots and stripe across the whole window, shown only during the Home morph so they
  * hold still while the spines and content move over them.
  */
-export function Backdrop({ index }: { index: PaperName }) {
-  return <span className={styles.backdrop} style={paperFor(index)} aria-hidden="true" />
+export function Backdrop({ paper }: { paper: PaperId }) {
+  return <span className={styles.backdrop} style={paperFor(paper)} aria-hidden="true" />
 }
 
 let reachSheet: HTMLStyleElement | undefined
@@ -254,7 +253,6 @@ const stateLabel: Record<ProvinceState, string> = {
 export function Spine({
   campaignId,
   province,
-  index,
   state,
   count,
   thin = false,
@@ -262,7 +260,6 @@ export function Spine({
 }: {
   campaignId: string
   province: Province
-  index: number
   state: ProvinceState
   /** E.g. "17/30", shown when the province is open. */
   count?: string | undefined
@@ -278,7 +275,7 @@ export function Spine({
       params={{ campaignId, provinceId: province.id }}
       replace
       className={`${styles.world} ${styles.spine} ${styles.provinceSpine}`}
-      style={{ ...paperStyle(index), ...morphName(province), viewTransitionClass: columnClass('spine', styles.provinceSpine) }}
+      style={{ ...paperFor(province.paper), ...morphName(province), viewTransitionClass: columnClass('spine', styles.provinceSpine) }}
       data-state={state}
       data-thin={thin || undefined}
       data-conquered={state === 'conquered' || undefined}
@@ -370,8 +367,7 @@ export function TrackSpine({
 }: {
   track: string
   name: string
-  /** As `paperStyle`'s index. */
-  paper: number
+  paper: PaperId
   done: number
   total: number
   back: string | undefined
@@ -384,7 +380,7 @@ export function TrackSpine({
       search={back === undefined ? {} : { back }}
       replace
       className={`${styles.world} ${styles.spine} ${styles.provinceSpine}`}
-      style={{ ...paperStyle(paper), ...trackMorphName(track), viewTransitionClass: columnClass('spine', styles.provinceSpine) }}
+      style={{ ...paperFor(paper), ...trackMorphName(track), viewTransitionClass: columnClass('spine', styles.provinceSpine) }}
       data-state="active"
       data-thin
       data-conquered={complete || undefined}
@@ -506,8 +502,7 @@ export function SkeletonSpine({
   pairs?: 'province' | 'menu' | undefined
   /** A Home column's spine left of the open column. */
   before?: boolean
-  /** Its paper, as `paperFor`'s. */
-  paper: PaperName
+  paper: PaperId
   /** A province spine's state, for its width and fog. */
   state?: ProvinceState | undefined
   fog?: boolean

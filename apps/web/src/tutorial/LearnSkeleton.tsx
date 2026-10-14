@@ -20,7 +20,7 @@ export function LearnSkeleton() {
   return (
     <main ref={ref} className={styles.page} aria-busy="true">
       <SrLoading />
-      <Backdrop index={track.paper} />
+      <Backdrop paper={track.paper} />
       <Worlds carousel={phone}>
         {TRACK_ORDER.map(t =>
           t === track || phone ? (
@@ -46,7 +46,7 @@ export function LearnSkeleton() {
 
 function TrackWorld({ track, current }: { track: Track; current: boolean }) {
   return (
-    <World index={track.paper} style={trackMorphName(track.id)} start={current} pair={current}>
+    <World paper={track.paper} style={trackMorphName(track.id)} start={current} pair={current}>
       <div className={styles.column} aria-hidden="true">
         <Bar w={120} h={12} />
         <p className={styles.kicker}>

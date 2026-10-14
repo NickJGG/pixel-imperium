@@ -35,7 +35,7 @@ export function MonthSkeleton() {
   useAnnounceSkeleton()
 
   const column = (m: number) => (
-    <World key={m} index={seasonOf(m)} fog={dim(m)} style={monthMorphName(m)} start={m === month} pair={m === month}>
+    <World key={m} paper={seasonOf(m)} fog={dim(m)} style={monthMorphName(m)} start={m === month} pair={m === month}>
       <div className={provinceStyles.zoom}>
         <header className={provinceStyles.head}>
           <div className={provinceStyles.title}>
@@ -64,7 +64,7 @@ export function MonthSkeleton() {
   return (
     <main ref={ref} className={provinceStyles.page} aria-busy="true">
       <SrLoading />
-      <Backdrop index={seasonOf(month)} />
+      <Backdrop paper={seasonOf(month)} />
       <Worlds carousel={phone}>
         {before && <SkeletonYearSpine year={year - 1} side="before" />}
         {MONTHS.map(m =>

@@ -149,7 +149,7 @@ function Zoomed({
   useSpineReach(ref)
   return (
     <main ref={ref} className={styles.page}>
-      <Backdrop index={campaign.provinces.indexOf(province)} />
+      <Backdrop paper={province.paper} />
       <Worlds>
         {campaign.provinces.map((p, i) => {
           if (p === province) return <Fragment key={p.id}>{children}</Fragment>
@@ -159,7 +159,6 @@ function Zoomed({
               key={p.id}
               campaignId={campaign.id}
               province={p}
-              index={i}
               state={state}
               count={`${solved}/${total}`}
               thin
@@ -214,7 +213,7 @@ function OpenProvince({
   const id = `province-${province.id}`
 
   return (
-    <World index={index} labelledBy={id} style={morphName(province)} start={start} pair={current}>
+    <World paper={province.paper} labelledBy={id} style={morphName(province)} start={start} pair={current}>
       <div className={styles.zoom}>
         <header className={styles.head}>
           <div className={styles.title}>
@@ -313,7 +312,7 @@ function LockedColumn({
   const range = sizes.length === 0 ? '' : sizes[0] === sizes.at(-1) ? sizes[0] : `${sizes[0]} to ${sizes.at(-1)}`
 
   return (
-    <World index={index} fog labelledBy={titleId} style={morphName(province)} start={start}>
+    <World paper={province.paper} fog labelledBy={titleId} style={morphName(province)} start={start}>
       <div className={`${styles.zoom} ${styles.locked}`}>
         <div className={styles.sealed} aria-hidden="true">
           <div className={styles.ghosts}>

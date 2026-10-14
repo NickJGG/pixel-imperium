@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { type CSSProperties, useMemo } from 'react'
 import { CountPill } from '../album/CountPill.tsx'
-import { type PaperName, paperStyle } from '../album/paper.ts'
+import { type PaperId, paperFor } from '../album/paper.ts'
 import { World } from '../campaign/worlds/Worlds.tsx'
 import { doorSlot } from '../campaign/worlds/names.ts'
 import { lessonId } from '../campaign/worlds/transitions.ts'
@@ -20,13 +20,12 @@ const lessonLink = (track: Track, lesson: string) =>
  */
 export function LearnColumn({
   done,
-  index,
+  paper,
   start,
   style,
 }: {
   done: ReadonlySet<string>
-  /** Its paper, as `paperFor`'s. */
-  index: PaperName
+  paper: PaperId
   start: boolean
   style: CSSProperties
 }) {
@@ -41,7 +40,7 @@ export function LearnColumn({
   const here = counts[ORDER.indexOf(track)]!
 
   return (
-    <World index={index} labelledBy="home-learn" style={style} start={start} pair>
+    <World paper={paper} labelledBy="home-learn" style={style} start={start} pair>
       <div className={styles.column}>
         <div className={styles.stack}>
           <p className={styles.kicker}>Lessons</p>
@@ -53,7 +52,7 @@ export function LearnColumn({
           </CountPill>
           <div className={styles.bar} aria-hidden="true">
             {ORDER.map((t, i) => (
-              <i key={t.id} style={{ ...paperStyle(t.paper), '--f': `${(counts[i]! / t.lessons.length) * 100}%` } as CSSProperties} />
+              <i key={t.id} style={{ ...paperFor(t.paper), '--f': `${(counts[i]! / t.lessons.length) * 100}%` } as CSSProperties} />
             ))}
           </div>
           <p className={styles.sub}>

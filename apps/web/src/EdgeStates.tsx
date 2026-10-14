@@ -1,6 +1,6 @@
 import { type ReactNode, useId } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
-import type { PaperName } from './album/paper.ts'
+import type { PaperId } from './album/paper.ts'
 import { World, Worlds } from './campaign/worlds/Worlds.tsx'
 import styles from './EdgeStates.module.css'
 
@@ -13,7 +13,7 @@ export function EdgeState({
   children,
   actions,
 }: {
-  paper: PaperName
+  paper: PaperId
   kicker: string
   title: string
   mark: ReactNode
@@ -24,7 +24,7 @@ export function EdgeState({
   return (
     <main className={styles.page} data-edge>
       <Worlds>
-        <World index={paper} labelledBy={id}>
+        <World paper={paper} labelledBy={id}>
           <div className={styles.split}>
             <div className={styles.column}>
               <p className={styles.kicker}>{kicker}</p>
@@ -48,7 +48,7 @@ export function EdgeState({
 export function NotFound({ children }: { children: ReactNode }) {
   return (
     <EdgeState
-      paper={3}
+      paper="forge"
       kicker="404"
       title="Nothing here"
       mark="?"
@@ -67,7 +67,7 @@ export function LoadError({ error }: { error: unknown }) {
   const router = useRouter()
   return (
     <EdgeState
-      paper={5}
+      paper="throne"
       kicker="Error"
       title="Couldn’t load this"
       mark="!"

@@ -1,5 +1,5 @@
 import type { Campaign, DailyYear, PuzzleSummary } from '@pixel-imperium/protocol'
-import { type PaperName, seasonOf } from '../album/paper.ts'
+import { type PaperId, seasonOf } from '../album/paper.ts'
 import { provinceStates } from '../campaign/progress.ts'
 import { dailyId } from '../daily/clock.ts'
 import { MONTH_NAMES, datesOf, mm } from '../daily/month.ts'
@@ -36,7 +36,7 @@ export const albumProvinces = (album: ProfileAlbum): { puzzles: readonly PuzzleS
 export interface AlbumPage {
   id: string
   name: string
-  paper: PaperName
+  paper: PaperId
   solved: number
   total: number
   complete: boolean
@@ -52,7 +52,7 @@ export function albumPages(album: ProfileAlbum, isSolved: (puzzleId: string) => 
     return provinceStates(album.campaign, isSolved).provinces.map(({ state, solved, total }, i) => ({
       id: provinces[i]!.id,
       name: provinces[i]!.name,
-      paper: i,
+      paper: provinces[i]!.paper,
       solved,
       total,
       complete: state === 'conquered',

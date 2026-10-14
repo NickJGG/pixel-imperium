@@ -1,4 +1,5 @@
 /** The guided sequences that run on `LessonPage`: the basics Tutorial and the Techniques after it. */
+import type { PaperId } from '../album/paper.ts'
 import { LESSONS, type Lesson } from './lessons.ts'
 import { TECHNIQUES } from './techniques.ts'
 
@@ -8,8 +9,8 @@ export interface Track {
   /** Its section on Learn. */
   name: string
   blurb: string
-  /** Its paper, as `paperStyle`'s index: Learn's column and its Lessons' screen. */
-  paper: number
+  /** Its paper: Learn's column and its Lessons' screen. */
+  paper: PaperId
   lessons: readonly Lesson[]
   /** localStorage key for the place to resume from, as `ResumeAt`. */
   resumeKey: string
@@ -23,7 +24,7 @@ export const TRACKS: Record<Track['id'], Track> = {
     label: 'How to play',
     name: 'Basics',
     blurb: 'How to read clues, rule cells out and find overlaps. About two minutes.',
-    paper: 0,
+    paper: 'marches',
     lessons: LESSONS,
     resumeKey: 'pixel-imperium:tutorial-at',
     doneDymo: 'Tutorial complete',
@@ -34,7 +35,7 @@ export const TRACKS: Record<Track['id'], Track> = {
     label: 'Advanced techniques',
     name: 'Techniques',
     blurb: 'Edges, joins, telling blocks apart and what-ifs, for the bigger pictures.',
-    paper: 1,
+    paper: 'coast',
     lessons: TECHNIQUES,
     resumeKey: 'pixel-imperium:techniques-at',
     doneDymo: 'Techniques complete',

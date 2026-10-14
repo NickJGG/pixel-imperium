@@ -63,7 +63,7 @@ export function LearnPage({ track, back }: { track: Track; back: LearnBack }) {
   return (
     <main ref={ref} className={styles.page}>
       <h1 className={styles.srOnly}>Learn</h1>
-      <Backdrop index={track.paper} />
+      <Backdrop paper={track.paper} />
       {phone ? (
         <Worlds carousel onSnap={i => goTo(TRACK_ORDER[i])}>
           {TRACK_ORDER.map(world)}
@@ -115,7 +115,7 @@ function TrackWorld({ track, current, done, fresh, back, tag, lead }: TrackProps
   const id = `${track.id}-title`
 
   return (
-    <World index={track.paper} labelledBy={id} style={trackMorphName(track.id)} start={current} pair={current}>
+    <World paper={track.paper} labelledBy={id} style={trackMorphName(track.id)} start={current} pair={current}>
       <div className={styles.column}>
         {lead}
         <p className={styles.kicker}>

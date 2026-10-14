@@ -39,9 +39,18 @@ function fixture(id: string, provinces: Record<string, SeedPuzzle[]>, crest?: Cr
       id,
       name: `Campaign ${id}`,
       draft: true,
+      paper: 'throne',
       closingLine: 'Done.',
       puzzlesPerProvince: 30,
-      provinces: Object.keys(provinces).map(p => ({ id: p, name: `Province ${p}`, theme: '', flavour: `${p} falls.`, minSize: 5, maxSize: 5 })),
+      provinces: Object.keys(provinces).map(p => ({
+        id: p,
+        name: `Province ${p}`,
+        theme: '',
+        flavour: `${p} falls.`,
+        paper: 'coast',
+        minSize: 5,
+        maxSize: 5,
+      })),
     },
     provinces,
     ...(crest && { crest }),
@@ -63,14 +72,14 @@ function solve(cells: unknown, id = 'diag', cookie?: string) {
 }
 
 describe('GET /api/campaigns', () => {
-  it('lists campaigns in order, with any cover colour', async () => {
-    const multi = createApp([{ ...fixture('b', { x: [] }), coverColour: '#c0392b' }, fixture('a', { y: [] })], {
-      db,
-      auth,
-    })
+  it('lists campaigns in order, with any release date, their paper and puzzle count', async () => {
+    const multi = createApp(
+      [{ ...fixture('b', { x: [diagonal], y: [] }), released: '2026-10-05' }, fixture('a', { y: [] })],
+      { db, auth },
+    )
     expect(await (await multi.request('/api/campaigns')).json()).toEqual<CampaignSummary[]>([
-      { id: 'b', name: 'Campaign b', coverColour: '#c0392b' },
-      { id: 'a', name: 'Campaign a' },
+      { id: 'b', name: 'Campaign b', released: '2026-10-05', paper: 'throne', total: 1 },
+      { id: 'a', name: 'Campaign a', paper: 'throne', total: 0 },
     ])
   })
 })
@@ -81,6 +90,7 @@ describe('GET /api/campaigns/:id', () => {
     expect(await res.json()).toEqual<Campaign>({
       id: 'main',
       name: 'Campaign main',
+      paper: 'throne',
       closingLine: 'Done.',
       provinces: [
         {
@@ -88,10 +98,11 @@ describe('GET /api/campaigns/:id', () => {
           name: 'Province first',
           theme: '',
           flavour: 'first falls.',
+          paper: 'coast',
           maxSize: 5,
           puzzles: [{ id: 'diag', title: 'Diagonal', width: 2, height: 2, filledCount: 2 }],
         },
-        { id: 'second', name: 'Province second', theme: '', flavour: 'second falls.', maxSize: 5, puzzles: [] },
+        { id: 'second', name: 'Province second', theme: '', flavour: 'second falls.', paper: 'coast', maxSize: 5, puzzles: [] },
       ],
     })
   })
@@ -101,6 +112,11 @@ describe('GET /api/campaigns/:id', () => {
     const flagged = { ...base, provinces: [{ ...base.provinces[0]!, techniques: true as const }, base.provinces[1]!] }
     const { provinces } = (await (await createApp([flagged], { db, auth }).request('/api/campaigns/t')).json()) as Campaign
     expect(provinces.map(p => p.techniques)).toEqual([true, undefined])
+  })
+
+  it('serves the release date where set', async () => {
+    const dated = createApp([{ ...fixture('d', { x: [] }), released: '2026-10-05' }], { db, auth })
+    expect(((await (await dated.request('/api/campaigns/d')).json()) as Campaign).released).toBe('2026-10-05')
   })
 
   it('404s on unknown id', async () => {

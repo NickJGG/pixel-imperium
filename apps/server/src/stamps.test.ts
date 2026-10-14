@@ -13,9 +13,10 @@ const campaign = buildCampaign({
     id: 'test',
     name: 'Test',
     draft: true,
+    paper: 'throne',
     closingLine: '',
     puzzlesPerProvince: 30,
-    provinces: ['a', 'b', 'c'].map(id => ({ id, name: id, theme: '', flavour: '', minSize: 5, maxSize: 5 })),
+    provinces: ['a', 'b', 'c'].map(id => ({ id, name: id, theme: '', flavour: '', paper: 'coast', minSize: 5, maxSize: 5 })),
   },
   provinces: { a: ids('a', 12).map(puzzle), b: ids('b', 2).map(puzzle), c: [puzzle('c0')] },
 })

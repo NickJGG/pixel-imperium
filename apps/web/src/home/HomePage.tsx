@@ -1,7 +1,7 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { type CSSProperties, useRef } from 'react'
 import type { Campaign, DailyYear, Profile } from '@pixel-imperium/protocol'
-import { paperFor, seasonOf } from '../album/paper.ts'
+import { type PaperId, paperFor, seasonOf } from '../album/paper.ts'
 import { useAccount } from '../account.ts'
 import { campaignProgress, continueAt } from '../campaign/progress.ts'
 import { Backdrop, MenuSpine, Worlds, usePhone, useSpineReach, useStep } from '../campaign/worlds/Worlds.tsx'
@@ -19,8 +19,8 @@ import styles from './Home.module.css'
 /** Pairs a column across a morph, wide when it's open and a spine when it isn't. */
 export const columnName = (column: Column): CSSProperties => ({ viewTransitionName: `home-${column}` })
 
-export const paperOf = (paper: Paper) =>
-  paper === 'cover' ? { index: 0, className: styles.cover } : { index: paper, className: undefined }
+export const paperOf = (paper: Paper): { paper: PaperId; className: string | undefined } =>
+  paper === 'cover' ? { paper: 'marches', className: styles.cover } : { paper, className: undefined }
 
 /**
  * Home, the main menu: one entry's column open wide, the others as spines beside it; on a phone, a carousel of
@@ -54,7 +54,7 @@ export function HomePage({
   const next = continueAt(campaign, progress, id => storage.loadSolved(id) !== null)
   const active = next ? campaign.provinces.indexOf(next.province) : campaign.provinces.length - 1
   const season = seasonOf(Number(today.slice(5, 7)))
-  const paper = papers(active, learnPapers(done), season)
+  const paper = papers(campaign.paper, learnPapers(done), season)
 
   const goTo = (column: Column | undefined) => {
     if (!column || column === open) return
@@ -67,7 +67,7 @@ export function HomePage({
   const spineName: Record<Column, string> = { campaign: campaign.name.replace(/^The /, ''), ...COLUMN_NAME }
 
   const wide = (column: Column, start: boolean) => {
-    const { index, className } = paperOf(paper[column])
+    const { paper: worn, className } = paperOf(paper[column])
     const common = { start, style: columnName(column) }
     switch (column) {
       case 'campaign':
@@ -88,7 +88,7 @@ export function HomePage({
           )
         )
       case 'learn':
-        return <LearnColumn key={column} {...common} done={done} index={index} />
+        return <LearnColumn key={column} {...common} done={done} paper={worn} />
       case 'profile':
         return (
           account && (
@@ -105,16 +105,16 @@ export function HomePage({
           )
         )
       case 'settings':
-        return account && <SettingsColumn key={column} {...common} handle={account.handle} joinedAt={own?.joinedAt} index={index} />
+        return account && <SettingsColumn key={column} {...common} handle={account.handle} joinedAt={own?.joinedAt} paper={worn} />
       case 'signin':
-        return <SignInColumn key={column} {...common} index={index} />
+        return <SignInColumn key={column} {...common} paper={worn} />
     }
   }
 
   return (
     <main ref={ref} className={styles.page}>
       <h1 className={styles.srOnly}>Home</h1>
-      <Backdrop index={open === 'daily' ? season : open === 'learn' ? paperOf(paper.learn).index : active} />
+      <Backdrop paper={open === 'daily' ? season : open === 'learn' ? paperOf(paper.learn).paper : campaign.paper} />
       {phone ? (
         <Worlds carousel onSnap={i => goTo(columns[i])}>
           {columns.map(c => wide(c, c === open))}
@@ -123,7 +123,7 @@ export function HomePage({
         <Worlds>
           {columns.map(c => {
             if (c === open) return wide(c, true)
-            const { index, className } = paperOf(paper[c])
+            const { paper: worn, className } = paperOf(paper[c])
             return (
               <MenuSpine
                 key={c}
@@ -131,7 +131,7 @@ export function HomePage({
                 search={searchFor(c)}
                 before={columns.indexOf(c) < columns.indexOf(open)}
                 className={className}
-                style={{ ...paperFor(index), ...columnName(c) }}
+                style={{ ...paperFor(worn), ...columnName(c) }}
               />
             )
           })}

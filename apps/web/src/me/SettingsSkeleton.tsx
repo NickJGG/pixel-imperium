@@ -15,7 +15,7 @@ export function SettingsSkeleton() {
     <main className={styles.page} aria-busy="true">
       <SrLoading />
       <Worlds>
-        <World index={0} className={styles.cover}>
+        <World paper="marches" className={styles.cover}>
           <div className={styles.column} data-surface="cobalt" inert>
             <p className={styles.kicker}>Settings · Handle</p>
             <Bar w="70%" h={52} />
@@ -28,7 +28,7 @@ export function SettingsSkeleton() {
           </div>
         </World>
 
-        <World index={1}>
+        <World paper="coast">
           <div className={styles.column} inert>
             <p className={styles.kicker}>This device</p>
             <h2 className={styles.name}>Play</h2>
@@ -50,7 +50,7 @@ export function SettingsSkeleton() {
           </div>
         </World>
 
-        <World index={4}>
+        <World paper="capital">
           <div className={styles.column} inert>
             <p className={styles.kicker}>Account</p>
             <h2 className={styles.name}>Sign-in methods</h2>
@@ -69,7 +69,7 @@ export function SettingsSkeleton() {
           </div>
         </World>
 
-        <World index={5}>
+        <World paper="throne">
           <div className={styles.column} inert>
             <p className={styles.kicker}>Account</p>
             <h2 className={styles.name}>Delete account</h2>

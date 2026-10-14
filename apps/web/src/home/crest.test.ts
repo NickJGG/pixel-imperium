@@ -7,8 +7,8 @@ const puzzle = (id: string, crest: number) => ({ id, title: id, width: 5, height
 const campaign: Pick<Campaign, 'crest' | 'provinces'> = {
   crest: { width: 2, height: 2 },
   provinces: [
-    { id: 'a', name: 'A', theme: '', flavour: '', maxSize: 5, puzzles: [puzzle('a1', 3), puzzle('a2', 0)] },
-    { id: 'b', name: 'B', theme: '', flavour: '', maxSize: 5, puzzles: [puzzle('b1', 1), puzzle('b2', 2)] },
+    { id: 'a', name: 'A', theme: '', flavour: '', paper: 'marches', maxSize: 5, puzzles: [puzzle('a1', 3), puzzle('a2', 0)] },
+    { id: 'b', name: 'B', theme: '', flavour: '', paper: 'marches', maxSize: 5, puzzles: [puzzle('b1', 1), puzzle('b2', 2)] },
   ],
 }
 

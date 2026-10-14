@@ -1,5 +1,5 @@
 /** Home's columns: which the menu offers, which one is open, and the paper each wears. */
-import type { Season } from '../album/paper.ts'
+import type { PaperId, Season } from '../album/paper.ts'
 import { TRACKS, nextTrack } from '../tutorial/tracks.ts'
 
 export type Column = 'campaign' | 'daily' | 'learn' | 'profile' | 'settings' | 'signin'
@@ -45,35 +45,32 @@ export const stepColumn = (columns: readonly Column[], from: Column, dir: -1 | 1
   columns[columns.indexOf(from) + dir]
 
 /** The tracks' papers, the one Learn's next Lesson is in first; Basics again once both are finished. */
-export function learnPapers(done: ReadonlySet<string>): [number, number] {
+export function learnPapers(done: ReadonlySet<string>): [PaperId, PaperId] {
   const next = nextTrack(done)
   return [next.paper, (next === TRACKS.tutorial ? TRACKS.techniques : TRACKS.tutorial).paper]
 }
 
-/** A province paper, as `paperStyle`'s index, a season's, or the album's cobalt cover. */
-export type Paper = number | Season | 'cover'
-
-const CAPITAL = 4
-const THRONE = 5
-const FORGE = 3
+/** A named paper, or the album's cobalt cover. */
+export type Paper = PaperId | 'cover'
 
 /**
- * Each column wears where it leads: Campaign the active province's paper, Daily this Month's season's, Learn its
- * next Lesson's track's, Profile the cobalt cover, Settings the Capital's and Sign in the Throne's. One that would match Campaign's takes another:
- * Learn its other track's, Settings and Sign in the Forge's.
+ * Each column wears where it leads: Campaign the campaign's paper, Daily this Month's season's, Learn its next
+ * Lesson's track's, Profile the cobalt cover, Settings the Capital's and Sign in the Throne's. Learn takes its other
+ * track's rather than match Campaign; Settings or Sign in takes the Forge's rather than match Campaign or Learn.
  */
 export function papers(
-  active: number,
-  [learn, otherLearn]: readonly [number, number],
+  campaign: PaperId,
+  [learn, otherLearn]: readonly [PaperId, PaperId],
   season: Season,
 ): Record<Column, Paper> {
-  const campaign = active % 6
+  const learnPaper = learn === campaign ? otherLearn : learn
+  const clear = (paper: PaperId): PaperId => (paper === campaign || paper === learnPaper ? 'forge' : paper)
   return {
-    campaign: active,
+    campaign,
     daily: season,
-    learn: learn === campaign ? otherLearn : learn,
+    learn: learnPaper,
     profile: 'cover',
-    settings: campaign === CAPITAL ? FORGE : CAPITAL,
-    signin: campaign === THRONE ? FORGE : THRONE,
+    settings: clear('capital'),
+    signin: clear('throne'),
   }
 }

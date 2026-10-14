@@ -8,10 +8,10 @@ const puzzle = (id: string) => ({ id, title: id, width: 5, height: 5, filledCoun
 
 const campaign: Pick<Campaign, 'provinces'> = {
   provinces: [
-    { id: 'a', name: 'A', theme: '', flavour: '', maxSize: 5, puzzles: [puzzle('a1'), puzzle('a2')] },
-    { id: 'b', name: 'B', theme: '', flavour: '', maxSize: 5, puzzles: [puzzle('b1')] },
-    { id: 'c', name: 'C', theme: '', flavour: '', maxSize: 5, puzzles: [puzzle('c1')] },
-    { id: 'd', name: 'D', theme: '', flavour: '', maxSize: 5, puzzles: [puzzle('d1')] },
+    { id: 'a', name: 'A', theme: '', flavour: '', paper: 'marches', maxSize: 5, puzzles: [puzzle('a1'), puzzle('a2')] },
+    { id: 'b', name: 'B', theme: '', flavour: '', paper: 'marches', maxSize: 5, puzzles: [puzzle('b1')] },
+    { id: 'c', name: 'C', theme: '', flavour: '', paper: 'marches', maxSize: 5, puzzles: [puzzle('c1')] },
+    { id: 'd', name: 'D', theme: '', flavour: '', paper: 'marches', maxSize: 5, puzzles: [puzzle('d1')] },
   ],
 }
 
@@ -43,7 +43,9 @@ describe('provinceStates', () => {
   })
 
   it('never conquers an empty province', () => {
-    const empty = { provinces: [{ id: 'e', name: 'E', theme: '', flavour: '', maxSize: 5, puzzles: [] }, ...campaign.provinces] }
+    const empty: Pick<Campaign, 'provinces'> = {
+      provinces: [{ id: 'e', name: 'E', theme: '', flavour: '', paper: 'marches', maxSize: 5, puzzles: [] }, ...campaign.provinces],
+    }
     const { provinces, conquered } = provinceStates(empty, () => true)
     expect(provinces.map(p => p.state)).toEqual(['active', 'next', 'locked', 'locked', 'locked'])
     expect(conquered).toBe(false)

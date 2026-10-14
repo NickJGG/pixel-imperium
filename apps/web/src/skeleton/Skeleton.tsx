@@ -43,7 +43,7 @@ export function Fallback() {
     <main className={styles.page} aria-busy="true">
       <SrLoading />
       <Worlds>
-        <World index={0} fog />
+        <World paper="marches" fog />
       </Worlds>
     </main>
   )

@@ -27,7 +27,7 @@ export function ProfileSkeleton() {
     <main className={styles.page} aria-busy="true">
       <SrLoading />
       <Worlds>
-        <World index={0} className={styles.cover}>
+        <World paper="marches" className={styles.cover}>
           <div className={styles.column} data-surface="cobalt">
             <Bar w={140} h={12} />
             <HandleHero handle={handle} />
@@ -41,7 +41,7 @@ export function ProfileSkeleton() {
             <Bar w={200} h={12} />
           </div>
         </World>
-        <World index={1}>
+        <World paper="coast">
           <div className={styles.column}>
             <p className={styles.kicker}>Record</p>
             <Bar w={160} h={48} />
@@ -73,7 +73,7 @@ export function ProfileSkeleton() {
             </div>
           </div>
         </World>
-        <World index={4}>
+        <World paper="capital">
           <div className={styles.column}>
             <p className={styles.kicker}>Stamps</p>
             <ul className={styles.stamps} aria-hidden="true">

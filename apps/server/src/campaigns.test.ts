@@ -8,6 +8,7 @@ import {
   solverReport,
   suggestTierCuts,
 } from './campaigns.ts'
+import type { PaperId } from '@pixel-imperium/protocol'
 import type { SeedPuzzle } from './puzzles.ts'
 
 const block = (id: string, width: number, height: number): SeedPuzzle => ({
@@ -35,11 +36,13 @@ function source(
       id: 'c',
       name: 'C',
       draft: false,
+      released: '2026-10-05',
+      paper: 'throne',
       closingLine: '',
       puzzlesPerProvince: 3,
       provinces: [
-        { id: 'p', name: 'P', theme: '', flavour: '', minSize: 5, maxSize: 10, tiers: [2, 3] },
-        { id: 'q', name: 'Q', theme: '', flavour: '', minSize: 10, maxSize: 10, tiers: [2, 3] },
+        { id: 'p', name: 'P', theme: '', flavour: '', paper: 'marches', minSize: 5, maxSize: 10, tiers: [2, 3] },
+        { id: 'q', name: 'Q', theme: '', flavour: '', paper: 'coast', minSize: 10, maxSize: 10, tiers: [2, 3] },
       ],
       ...overrides,
     },
@@ -75,6 +78,27 @@ describe('campaignProblems', () => {
   it('needs a crest unless draft', () => {
     expect(campaignProblems([buildCampaign(source({}, undefined, null))])).toEqual(['c: needs a crest'])
     expect(campaignProblems([buildCampaign(source({ draft: true }, undefined, null))])).toEqual([])
+  })
+
+  it('needs a real released date, unless draft', () => {
+    const undated = (draft: boolean) => {
+      const { released: _, ...campaign } = source({ draft }).campaign
+      return campaignProblems([buildCampaign({ ...source(), campaign })])
+    }
+    expect(undated(false)).toEqual(['c: needs a released date'])
+    expect(undated(true)).toEqual([])
+    expect(campaignProblems([buildCampaign(source({ released: '2026-02-30', draft: true }))])).toEqual([
+      "c: released '2026-02-30' is not a YYYY-MM-DD date",
+    ])
+  })
+
+  it('needs papers from the pool', () => {
+    const s = source()
+    const provinces = [{ ...s.campaign.provinces[0]!, paper: 'mauve' as PaperId }, s.campaign.provinces[1]!]
+    expect(campaignProblems([buildCampaign(source({ paper: 'cover' as PaperId, provinces }))])).toEqual([
+      "c: paper 'cover' is not in the pool",
+      "c/p: paper 'mauve' is not in the pool",
+    ])
   })
 
   it.each<[string, CrestDef, string[]]>([
@@ -194,6 +218,15 @@ describe('authored campaigns', () => {
 
   it('leave drafts out when asked', () => {
     expect(loadCampaigns({ includeDrafts: false }).filter(c => c.draft)).toEqual([])
+  })
+
+  it('leave out campaigns not yet released, unless drafts are in', () => {
+    const { released } = loadCampaigns({ includeDrafts: false }).find(c => c.id === 'imperium')!
+    const ids = (includeDrafts: boolean, now: number) => loadCampaigns({ includeDrafts, now }).map(c => c.id)
+    const day = Date.parse(`${released}T00:00:00Z`)
+    expect(ids(false, day - 1)).not.toContain('imperium')
+    expect(ids(false, day)).toContain('imperium')
+    expect(ids(true, day - 1)).toContain('imperium')
   })
 
   describe.each(loadCampaigns({ includeDrafts: true }).map(c => [c.id, c] as const))('%s', (_, campaign) => {

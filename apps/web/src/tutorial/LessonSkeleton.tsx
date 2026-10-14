@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useParams, useSearch } from '@tanstack/react-router'
 import { Dymo } from '../album/Dymo.tsx'
-import { paperStyle } from '../album/paper.ts'
+import { paperFor } from '../album/paper.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { boardMorph, columnPaper, dymoMorph, slotName } from '../campaign/worlds/names.ts'
 import { lessonId } from '../campaign/worlds/transitions.ts'
@@ -59,7 +59,7 @@ export function LessonSkeleton() {
         <main
           className={`${playStyles.play} ${styles.page}`}
           {...paperMorph}
-          style={{ ...paperStyle(track.paper), ...paperMorph.style }}
+          style={{ ...paperFor(track.paper), ...paperMorph.style }}
           aria-busy="true"
         >
           <SrLoading />
@@ -85,7 +85,7 @@ export function LessonSkeleton() {
       className={playStyles.shell}
       data-rail
       {...paperMorph}
-      style={{ ...paperStyle(track.paper), ...paperMorph.style }}
+      style={{ ...paperFor(track.paper), ...paperMorph.style }}
       aria-busy="true"
     >
       <SrLoading />

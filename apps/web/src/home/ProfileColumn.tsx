@@ -54,7 +54,7 @@ export function ProfileColumn({
   const solved = days.reduce((n, d) => n + d.count, 0)
 
   return (
-    <World index={0} className={className} labelledBy="home-profile" style={style} start={start}>
+    <World paper="marches" className={className} labelledBy="home-profile" style={style} start={start}>
       <div className={styles.column} data-surface="cobalt">
         <div className={styles.stack}>
           <p className={styles.kicker}>Profile</p>

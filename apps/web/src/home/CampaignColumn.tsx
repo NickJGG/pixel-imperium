@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router'
 import type { CSSProperties } from 'react'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { CountPill } from '../album/CountPill.tsx'
-import { paperStyle } from '../album/paper.ts'
+import { paperFor } from '../album/paper.ts'
 import { SlotFace } from '../campaign/PuzzleSlot.tsx'
 import type { CampaignProgress, ContinueAt } from '../campaign/progress.ts'
 import { World } from '../campaign/worlds/Worlds.tsx'
@@ -28,7 +28,7 @@ export function CampaignColumn({
   campaign: Campaign
   progress: CampaignProgress
   next: ContinueAt | null
-  /** The province being worked through, or the last once all are conquered, by index: its paper is the column's. */
+  /** The province being worked through, or the last once all are conquered, by index. */
   active: number
   storage: ProgressStorage
   start: boolean
@@ -42,7 +42,7 @@ export function CampaignColumn({
   const pixels = crestPixels(campaign, storage)
 
   return (
-    <World index={active} labelledBy="home-campaign" style={style} start={start} pair>
+    <World paper={campaign.paper} labelledBy="home-campaign" style={style} start={start} pair>
       <div className={styles.column}>
         <div className={styles.stack}>
           <p className={styles.kicker}>
@@ -58,7 +58,7 @@ export function CampaignColumn({
             {campaign.provinces.map((p, i) => {
               const { solved, total } = progress.provinces[i]!
               const share = total === 0 ? 0 : (solved / total) * 100
-              return <i key={p.id} style={{ ...paperStyle(i), '--f': `${share}%` } as CSSProperties} />
+              return <i key={p.id} style={{ ...paperFor(p.paper), '--f': `${share}%` } as CSSProperties} />
             })}
           </div>
           <p className={styles.sub}>

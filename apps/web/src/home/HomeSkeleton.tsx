@@ -2,9 +2,8 @@ import { useSearch } from '@tanstack/react-router'
 import { useRef } from 'react'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { seasonOf } from '../album/paper.ts'
-import { getAccount, likelySignedIn } from '../account.ts'
+import { likelySignedIn } from '../account.ts'
 import { currentCampaign } from '../campaign/last-campaign.ts'
-import { campaignProgress, continueAt } from '../campaign/progress.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { Backdrop, SkeletonSpine, World, Worlds, usePhone, useSpineReach } from '../campaign/worlds/Worlds.tsx'
 import { MonthGridSkeleton } from '../daily/MonthCalendar.tsx'
@@ -16,13 +15,6 @@ import { useLessonsDone } from '../tutorial/done.ts'
 import { COLUMN_NAME, type Column, columnsFor, learnPapers, openColumn, papers } from './columns.ts'
 import { columnName, paperOf } from './HomePage.tsx'
 import styles from './Home.module.css'
-
-/** The province Home's Campaign column wears, as `HomePage` works it out. */
-function activeProvince(campaign: Campaign): number {
-  const { storage } = getAccount()
-  const next = continueAt(campaign, campaignProgress(campaign, storage), id => storage.loadSolved(id) !== null)
-  return next ? campaign.provinces.indexOf(next.province) : campaign.provinces.length - 1
-}
 
 /**
  * Home while it loads: the open column wide and the rest as spines, or a carousel on a phone. The columns guess the
@@ -39,19 +31,19 @@ export function HomeSkeleton() {
   const launch = currentDailyYear()?.launch
   const columns = columnsFor(likelySignedIn(), launch === undefined || today >= launch)
   const open = openColumn(columns, search)
-  const active = campaign ? activeProvince(campaign) : 0
+  const campaignPaper = campaign?.paper ?? 'marches'
   const season = seasonOf(Number(today.slice(5, 7)))
-  const paper = papers(active, learnPapers(done), season)
+  const paper = papers(campaignPaper, learnPapers(done), season)
   const ref = useRef<HTMLElement>(null)
   useSpineReach(ref)
   useAnnounceSkeleton()
 
   const wide = (column: Column, start: boolean) => {
-    const { index, className } = paperOf(paper[column])
+    const { paper: worn, className } = paperOf(paper[column])
     return (
       <World
         key={column}
-        index={index}
+        paper={worn}
         fog={column === 'campaign' && !campaign}
         className={className}
         style={columnName(column)}
@@ -72,18 +64,18 @@ export function HomeSkeleton() {
   return (
     <main ref={ref} className={styles.page} aria-busy="true">
       <SrLoading />
-      <Backdrop index={open === 'daily' ? season : open === 'learn' ? paperOf(paper.learn).index : active} />
+      <Backdrop paper={open === 'daily' ? season : open === 'learn' ? paperOf(paper.learn).paper : campaignPaper} />
       {phone ? (
         <Worlds carousel>{columns.map(c => wide(c, c === open))}</Worlds>
       ) : (
         <Worlds>
           {columns.map(c => {
             if (c === open) return wide(c, true)
-            const { index, className } = paperOf(paper[c])
+            const { paper: worn, className } = paperOf(paper[c])
             return (
               <SkeletonSpine
                 key={c}
-                paper={index}
+                paper={worn}
                 fog={c === 'campaign' && !campaign}
                 className={className}
                 pairs="menu"

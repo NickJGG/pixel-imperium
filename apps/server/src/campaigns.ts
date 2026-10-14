@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
-import type { Tier } from '@pixel-imperium/protocol'
+import { PAPER_NAMES, type PaperId, type Tier } from '@pixel-imperium/protocol'
 import { isUnique, logicPassCount, rateDifficulty } from '@pixel-imperium/nonogram'
+import { dateStart } from './dailies.ts'
 import { type Puzzle, type SeedPuzzle, parseSeedPuzzle } from './puzzles.ts'
 
 /**
@@ -15,6 +16,7 @@ export interface ProvinceDef {
   name: string
   theme: string
   flavour: string
+  paper: PaperId
   /** Inclusive bounds on both dimensions. */
   minSize: number
   maxSize: number
@@ -29,9 +31,11 @@ export interface CampaignDef {
   name: string
   /** Served outside production only, and exempt from the puzzle count. */
   draft: boolean
+  /** `YYYY-MM-DD`; required outside drafts. Production serves the campaign from this date. */
+  released?: string
+  /** Its spine and column on Home and the Campaigns row. */
+  paper: PaperId
   closingLine: string
-  /** CSS colour for the volume's spine; cobalt when absent. */
-  coverColour?: string
   puzzlesPerProvince: number
   provinces: ProvinceDef[]
 }
@@ -160,6 +164,8 @@ function crestProblems(c: Campaign, crest: Crest): string[] {
 const tierAt = (slot: number, [medium, hard]: [number, number]): Tier =>
   slot >= hard ? 'hard' : slot >= medium ? 'medium' : 'easy'
 
+const isPaper = (name: string) => (PAPER_NAMES as readonly string[]).includes(name)
+
 const isStep = (n: number) => Number.isInteger(n) && n > 0 && n % 5 === 0
 
 /** Structural rule violations across all campaigns; cheap enough to run at startup. */
@@ -180,6 +186,11 @@ export function campaignProblems(campaigns: readonly Campaign[]): string[] {
       problems.push(`${c.id}: puzzlesPerProvince must be a positive integer`)
     }
 
+    if (c.released === undefined) {
+      if (!c.draft) problems.push(`${c.id}: needs a released date`)
+    } else if (dateStart(c.released) === null) problems.push(`${c.id}: released '${c.released}' is not a YYYY-MM-DD date`)
+    if (!isPaper(c.paper)) problems.push(`${c.id}: paper '${c.paper}' is not in the pool`)
+
     if (c.crest) problems.push(...crestProblems(c, c.crest))
     else if (!c.draft) problems.push(`${c.id}: needs a crest`)
 
@@ -189,6 +200,7 @@ export function campaignProblems(campaigns: readonly Campaign[]): string[] {
       const where = `${c.id}/${p.id}`
       if (provinceIds.has(p.id)) problems.push(`${where}: province id is used twice`)
       provinceIds.add(p.id)
+      if (!isPaper(p.paper)) problems.push(`${where}: paper '${p.paper}' is not in the pool`)
       if (!isStep(p.minSize) || !isStep(p.maxSize) || p.minSize > p.maxSize) {
         problems.push(`${where}: size band ${p.minSize}–${p.maxSize} must be multiples of 5, low to high`)
       }
@@ -310,10 +322,16 @@ export function solverReport(campaign: Campaign): { puzzles: PuzzleReport[]; pro
   return { puzzles, problems }
 }
 
-/** Reads, builds and structurally checks every campaign, throwing on any problem. */
-export function loadCampaigns({ includeDrafts }: { includeDrafts: boolean }, dir: URL = CAMPAIGNS_DIR): Campaign[] {
+/**
+ * Reads, builds and structurally checks every campaign, throwing on any problem. Without `includeDrafts`, drafts
+ * and campaigns released after `now`'s UTC date are left out; the server reads them once, at startup.
+ */
+export function loadCampaigns(
+  { includeDrafts, now = Date.now() }: { includeDrafts: boolean; now?: number },
+  dir: URL = CAMPAIGNS_DIR,
+): Campaign[] {
   const campaigns = readCampaignSources(dir).map(buildCampaign)
   const problems = campaignProblems(campaigns)
   if (problems.length > 0) throw new Error(`invalid campaign data:\n${problems.join('\n')}`)
-  return campaigns.filter(c => includeDrafts || !c.draft)
+  return campaigns.filter(c => includeDrafts || (!c.draft && dateStart(c.released!)! <= now))
 }

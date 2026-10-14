@@ -56,7 +56,7 @@ export function DailyColumn({
   }, [profile, storage, today])
 
   return (
-    <World index={season} labelledBy="home-daily" style={style} start={start} pair>
+    <World paper={season} labelledBy="home-daily" style={style} start={start} pair>
       <div className={styles.column}>
         <div className={styles.stack}>
           <p className={styles.kicker}>Daily · {streak > 0 ? `${streak}-day streak` : `${name} ${year}`}</p>
