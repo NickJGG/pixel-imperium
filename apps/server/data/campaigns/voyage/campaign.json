@@ -10,7 +10,7 @@
     { "id": "sea", "name": "The Open Sea", "theme": "The ship and the weather", "flavour": "The storms are weathered. Off the bow, a shore of sand shimmers in the heat.", "paper": "teal", "minSize": 10, "maxSize": 15, "tiers": [19, 28] },
     { "id": "dunes", "name": "The Dunes", "theme": "Desert crossing", "flavour": "The sands are crossed. Past the last dune, the green closes in like a wall.", "paper": "sand", "minSize": 15, "maxSize": 20, "tiers": [11, 26], "techniques": true },
     { "id": "jungle", "name": "The Jungle", "theme": "Rainforest", "flavour": "The lost city is found. North of the canopy, the rivers begin to freeze.", "paper": "lime", "minSize": 20, "maxSize": 25, "tiers": [12, 26] },
-    { "id": "ice", "name": "The Ice", "theme": "Polar wastes", "flavour": "Placeholder: the ice gives way. Past it, the map runs out.", "paper": "glacier", "minSize": 25, "maxSize": 30 },
+    { "id": "ice", "name": "The Ice", "theme": "Polar wastes", "flavour": "The flag is planted. Past the pole, the map runs out.", "paper": "glacier", "minSize": 25, "maxSize": 30, "tiers": [12, 23] },
     { "id": "edge", "name": "The Edge", "theme": "Here be dragons", "flavour": "Placeholder: you reached the edge of the map.", "paper": "ember", "minSize": 30, "maxSize": 30 }
   ]
 }
