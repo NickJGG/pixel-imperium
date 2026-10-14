@@ -17,26 +17,6 @@ const themeIcon: Record<Theme, ReactNode> = { dark: <NightIcon />, light: <DayIc
 const floats = (pathname: string) =>
   /^\/(?:c\/[^/]+(?:\/[^/]+)?\/?|daily\/[^/]+\/[^/]+\/?|learn(?:\/[^/]+)?\/?|settings\/?|u\/[^/]+\/?)?$/.test(pathname)
 
-const PROVINCE = /^\/c\/([^/]+)\/[^/]+\/?$/
-
-/** On a province's page, up to its campaign on Campaigns, once the province's loader has remembered the campaign. */
-function UpCrumb({ pathname }: { pathname: string }) {
-  const campaign = useCurrentCampaign()
-  const id = PROVINCE.exec(pathname)?.[1]
-  if (!campaign || campaign.id !== id) return null
-  return (
-    <Link
-      to="/c/$campaignId"
-      params={{ campaignId: campaign.id }}
-      className={styles.crumb}
-      data-variant="paper"
-      data-size="compact"
-    >
-      <span aria-hidden="true">▲</span> {campaign.name}
-    </Link>
-  )
-}
-
 /** The next puzzle in the campaign last shown, recomputed on every navigation since solves land between them. */
 function useContinue(): ContinueAt | null {
   const campaign = useCurrentCampaign()
@@ -123,9 +103,8 @@ export function FloatingPills() {
 }
 
 /**
- * The logo sticker top-left, beside it on a province's page the way up to its campaign, and the pills top-right.
- * `float` lays it over the page instead of in its own row; by default that follows the route. On a phone only sound
- * and theme stay: the thumb bar and B have the rest.
+ * The logo sticker top-left and the pills top-right. `float` lays it over the page instead of in its own
+ * row; by default that follows the route. On a phone only sound and theme stay: the thumb bar has the rest.
  */
 export function Hud({ float }: { float?: boolean | undefined }) {
   const pathname = useRouterState({ select: s => s.location.pathname })
@@ -137,7 +116,6 @@ export function Hud({ float }: { float?: boolean | undefined }) {
           <span>Pixel</span> Imperium
         </span>
       </Link>
-      <UpCrumb pathname={pathname} />
       <HudPills className={styles.pagePills} />
     </header>
   )
