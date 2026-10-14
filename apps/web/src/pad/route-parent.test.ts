@@ -3,8 +3,8 @@ import { routeParent } from './route-parent.ts'
 
 describe('routeParent', () => {
   it.each([
-    ['/c/rome/latium', '/'],
-    ['/c/rome', null],
+    ['/c/rome/latium', '/c/rome'],
+    ['/c/rome', '/'],
     ['/daily/2026/10', '/?open=daily'],
     ['/daily/2026/10/12', null],
     ['/', null],

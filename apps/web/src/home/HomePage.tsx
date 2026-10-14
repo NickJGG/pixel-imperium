@@ -60,8 +60,6 @@ export function HomePage({
   const ref = useRef<HTMLElement>(null)
   useSpineReach(ref)
 
-  const spineName: Record<Column, string> = { campaign: campaign.name.replace(/^The /, ''), ...COLUMN_NAME }
-
   const wide = (column: Column, start: boolean) => {
     const { paper: worn, className } = paperOf(paper[column])
     const common = { start, style: columnName(column) }
@@ -121,7 +119,7 @@ export function HomePage({
             return (
               <MenuSpine
                 key={c}
-                name={spineName[c]}
+                name={COLUMN_NAME[c]}
                 search={searchFor(c)}
                 before={columns.indexOf(c) < columns.indexOf(open)}
                 className={className}

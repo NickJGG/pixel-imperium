@@ -11,8 +11,9 @@ export interface HomeSearch {
   open?: OpenColumn
 }
 
-/** The spine names that don't come from data; Campaign's is the campaign's own. */
-export const COLUMN_NAME: Record<OpenColumn, string> = {
+/** Each column's spine name; Campaign's leads to Campaigns, whichever campaign it holds. */
+export const COLUMN_NAME: Record<Column, string> = {
+  campaign: 'Campaigns',
   daily: 'Daily',
   learn: 'Learn',
   profile: 'Profile',

@@ -81,7 +81,7 @@ export function HomeSkeleton() {
                 pairs="menu"
                 before={columns.indexOf(c) < columns.indexOf(open)}
                 style={columnName(c)}
-                name={c === 'campaign' ? <Bar w={24} h={140} /> : COLUMN_NAME[c]}
+                name={COLUMN_NAME[c]}
               />
             )
           })}

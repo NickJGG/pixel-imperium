@@ -65,6 +65,14 @@
   color: var(--pink);
 }
 
+/* Clear of the logo's tilt, level with its middle. */
+.crumb {
+  --btn-bg: var(--line-soft);
+  --btn-ink: var(--ink);
+  --btn-edge: var(--shade);
+  margin: var(--space-3) 0 0 var(--space-2);
+}
+
 /* Every pill one style, whatever variant AccountMenu gives its trigger. */
 .tools {
   display: flex;
@@ -106,7 +114,8 @@
     font-size: 11px; /* token-exempt: brand logo */
   }
 
-  .pagePills > .account {
+  .pagePills > .account,
+  .crumb {
     display: none;
   }
 }

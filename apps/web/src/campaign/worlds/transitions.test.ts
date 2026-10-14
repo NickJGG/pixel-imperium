@@ -31,10 +31,20 @@ describe('transitionFor: the morphs', () => {
     expect(types('/daily/2026/10', '/')).toEqual(['to-home'])
     expect(types(at('/', { open: 'learn' }), '/learn/tutorial')).toEqual(['to-province'])
     expect(types('/learn/techniques', at('/', { open: 'learn' }))).toEqual(['to-home'])
+    expect(types('/', '/c/main')).toEqual(['to-province'])
+    expect(types('/c/main/', '/', { direction: 'back' })).toEqual(['to-home'])
+  })
+
+  it('opens a province from Campaigns and comes back up, only within its campaign', () => {
+    expect(types('/c/main', '/c/main/meadow')).toEqual(['into-album'])
+    expect(types('/c/main/meadow', '/c/main/', { direction: 'back' })).toEqual(['out-of-album'])
+    expect(types('/c/main/meadow', '/c/main')).toEqual(['out-of-album'])
+    expect(types('/c/other', '/c/main/meadow')).toEqual(['wipe'])
   })
 
   it('steps between pages of one album, and between Home’s columns', () => {
     expect(types('/c/main/meadow', '/c/main/marsh')).toEqual(['step'])
+    expect(types('/c/main', '/c/other', { direction: 'replace' })).toEqual(['step'])
     expect(types('/daily/2026/09', '/daily/2026/10', { direction: 'replace' })).toEqual(['step'])
     expect(types(at('/', { open: 'campaign' }), at('/', { open: 'daily' }), { direction: 'replace' })).toEqual(['step'])
     expect(types('/learn/tutorial', '/learn/techniques', { direction: 'replace' })).toEqual(['step'])
@@ -125,6 +135,7 @@ describe('transitionFor: the morphs', () => {
     expect(types('/', '/learn/tutorial', phone)).toEqual(['wipe'])
     expect(types(at('/', { open: 'campaign' }), at('/', { open: 'daily' }), phone)).toBeNull()
     expect(types('/', '/c/main/meadow', phone)).toEqual(['wipe'])
+    expect(types('/c/main', '/c/other', { ...phone, direction: 'replace' })).toBeNull()
     expect(types('/daily/2026/01', '/daily/2025/12', phone)).toEqual(['wipe'])
   })
 })
@@ -140,6 +151,12 @@ describe('transitionFor: the wipe', () => {
     expect(types('/settings', '/')).toEqual(['wipe', 'back'])
     expect(types('/u/ada', '/', { direction: 'back' })).toEqual(['wipe', 'back'])
     expect(types('/', '/u/ada', { direction: 'back' })).toEqual(['wipe'])
+  })
+
+  it('wipes out from a province up to Campaigns, and in from it, on a phone', () => {
+    expect(types('/c/main/meadow', '/c/main', phone)).toEqual(['wipe', 'back'])
+    expect(types('/c/main', '/c/main/meadow', { ...phone, direction: 'back' })).toEqual(['wipe'])
+    expect(types('/c/main', '/c/main/meadow', phone)).toEqual(['wipe'])
   })
 
   it('wipes on a phone too', () => {
@@ -168,7 +185,7 @@ describe('transitionFor: the wipe', () => {
       ] as const)
         expect(types(from, to)).toBeNull()
     expect(types('/play/p1', '/settings')).toBeNull()
-    expect(types('/', '/c/main')).toBeNull()
+    expect(types('/', '/c')).toBeNull()
     expect(types('/', '/learn')).toBeNull()
     expect(types('/', '/u/ada/main/meadow')).toBeNull()
   })

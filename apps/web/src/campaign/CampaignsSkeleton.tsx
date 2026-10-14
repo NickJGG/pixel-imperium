@@ -66,7 +66,7 @@ export function CampaignsSkeleton() {
   return page(
     <Worlds>
       {lo > 0 && <SkeletonCampaignStub hidden={lo} side="before" />}
-      {row.slice(lo, hi).map(c =>
+      {row.slice(lo, hi).map((c, i) =>
         c.id === campaignId ? (
           open
         ) : (
@@ -75,6 +75,7 @@ export function CampaignsSkeleton() {
             paper={c.paper}
             state="active"
             pairs="campaign"
+            before={lo + i < at}
             style={campaignMorphName(c.id)}
             name={c.name.replace(/^The /, '')}
           />

@@ -82,7 +82,9 @@ export function CampaignsPage({
       <Backdrop paper={campaign.paper} />
       <Worlds>
         {lo > 0 && <CampaignStub to={row[jump(at, -1, row.length)]!.id} hidden={lo} side="before" />}
-        {row.slice(lo, hi).map(c => (c.id === campaign.id ? open : <CampaignSpine key={c.id} campaign={c} />))}
+        {row.slice(lo, hi).map((c, i) =>
+          c.id === campaign.id ? open : <CampaignSpine key={c.id} campaign={c} before={lo + i < at} />,
+        )}
         {hi < row.length && <CampaignStub to={row[jump(at, 1, row.length)]!.id} hidden={row.length - hi} side="after" />}
       </Worlds>
     </main>

@@ -400,14 +400,24 @@ export function TrackSpine({
 export const campaignMorphName = (campaign: string): CSSProperties => ({ viewTransitionName: `campaign-${campaign}` })
 
 /**
+ * A spine's class on Campaigns: a province's across the Home morph, but sliding off the side of the open column it
+ * stands on, as Home's do, into one of the campaign's provinces.
+ */
+const campaignSpineClass = (before: boolean) =>
+  [styles.provinceSpine, styles.campaignSpine, before && styles.campaignSpineBefore].filter(Boolean).join(' ')
+
+/**
  * A campaign's spine on Campaigns, built like a province's: its name in its paper, then `badge` under it. Links to
  * the campaign's column, replacing the page in history, morphing into it like a province.
  */
 export function CampaignSpine({
   campaign,
+  before,
   badge,
 }: {
   campaign: Pick<CampaignSummary, 'id' | 'name' | 'paper'>
+  /** Left of the open column. */
+  before: boolean
   badge?: ReactNode
 }) {
   return (
@@ -416,7 +426,7 @@ export function CampaignSpine({
       params={{ campaignId: campaign.id }}
       replace
       className={`${styles.world} ${styles.spine} ${styles.provinceSpine}`}
-      style={{ ...paperFor(campaign.paper), ...campaignMorphName(campaign.id), viewTransitionClass: columnClass('spine', styles.provinceSpine) }}
+      style={{ ...paperFor(campaign.paper), ...campaignMorphName(campaign.id), viewTransitionClass: columnClass('spine', campaignSpineClass(before)) }}
       data-state="active"
       aria-label={campaign.name}
     >
@@ -436,7 +446,7 @@ interface Stub {
 
 const stubProps = ({ side }: Stub) => ({
   className: `${styles.world} ${styles.spine} ${styles.provinceSpine} ${styles.stub}`,
-  style: { viewTransitionName: `campaigns-${side}`, viewTransitionClass: columnClass('spine', styles.provinceSpine) },
+  style: { viewTransitionName: `campaigns-${side}`, viewTransitionClass: columnClass('spine', campaignSpineClass(side === 'before')) },
 })
 
 const StubFace = ({ hidden }: Stub) => (
@@ -573,7 +583,7 @@ export function SkeletonSpine({
    * campaign's, which reaches in from the window's edge, or a Home column's.
    */
   pairs?: 'province' | 'campaign' | 'menu' | undefined
-  /** A Home column's spine left of the open column. */
+  /** A Home column's or a campaign's spine left of the open column. */
   before?: boolean
   paper: PaperId
   /** A province spine's state, for its width and fog. */
@@ -593,7 +603,12 @@ export function SkeletonSpine({
       style={{
         ...paperFor(paper),
         ...style,
-        ...(pairs && { viewTransitionClass: columnClass('spine', album ? styles.provinceSpine : menuSpineClass(before)) }),
+        ...(pairs && {
+          viewTransitionClass: columnClass(
+            'spine',
+            pairs === 'campaign' ? campaignSpineClass(before) : album ? styles.provinceSpine : menuSpineClass(before),
+          ),
+        }),
       }}
       data-state={fog ? 'locked' : state}
       data-thin={thin || undefined}

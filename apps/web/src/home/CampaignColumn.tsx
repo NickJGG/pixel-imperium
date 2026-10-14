@@ -4,7 +4,7 @@ import { CampaignStack } from '../campaign/CampaignColumn.tsx'
 import { World } from '../campaign/worlds/Worlds.tsx'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 
-/** Home's way into the last-played campaign: its campaign column, paired with the album page it opens onto. */
+/** Home's way into the last-played campaign: its campaign column, opening onto it on Campaigns. */
 export function CampaignColumn({
   campaign,
   storage,
@@ -18,7 +18,7 @@ export function CampaignColumn({
 }) {
   return (
     <World paper={campaign.paper} labelledBy="home-campaign" style={style} start={start} pair>
-      <CampaignStack campaign={campaign} storage={storage} titleId="home-campaign" />
+      <CampaignStack campaign={campaign} storage={storage} titleId="home-campaign" opens="campaign" />
     </World>
   )
 }

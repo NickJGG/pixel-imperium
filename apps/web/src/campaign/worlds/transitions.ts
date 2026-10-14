@@ -1,13 +1,14 @@
 /**
  * Which view transition a navigation plays, if any, as a pure function of the two places and the moment's
- * conditions; `morph-nav.ts` starts whatever this names. Home ↔ an album page or a Learn track, a step between an
- * album's pages, Learn's tracks or Home's columns, and a step into another Year each have a morph of their own, on desktop only. So does
- * a province page ↔ one of its puzzles, where Play stands its Filmstrip, and a step between two puzzles of one province
- * there. A door with no Filmstrip to fly into, Home's Next up or a Daily's slot on Home or its Month, grows its slot
- * into the board as its column widens into Play's paper; on a phone any slot opening its board just grows. Every
- * other move between two pages plays the slant wipe, on a phone too, boards and all, reversed on Back and on any move
- * to Home or from a puzzle to its page. A Lesson moves as a puzzle does, its track's page standing for a province's,
- * with Home's Learn column and the offer of a track over a puzzle for doors.
+ * conditions; `morph-nav.ts` starts whatever this names. Home ↔ an album page, Campaigns or a Learn track, Campaigns ↔
+ * one of its campaign's provinces, a step between an album's pages, Campaigns' campaigns, Learn's tracks or Home's
+ * columns, and a step into another Year each have a morph of their own, on desktop only. So does a province page ↔
+ * one of its puzzles, where Play stands its Filmstrip, and a step between two puzzles of one province there. A door
+ * with no Filmstrip to fly into, Home's Next up or a Daily's slot on Home or its Month, grows its slot into the board
+ * as its column widens into Play's paper; on a phone any slot opening its board just grows. Every other move between
+ * two pages plays the slant wipe, on a phone too, boards and all, reversed on Back and on any move up: to Home, from a
+ * puzzle to its page, from a province to Campaigns. A Lesson moves as a puzzle does, its track's page standing for a
+ * province's, with Home's Learn column and the offer of a track over a puzzle for doors.
  * Leaving a 404, a load error or a closed Daily always wipes: they stand at a page's address with nothing of it to morph.
  */
 import { dailyId } from '../../daily/clock.ts'
@@ -46,6 +47,11 @@ export interface Transition {
 const PROVINCE = /^\/c\/[^/]+\/[^/]+\/?$/
 
 export const isProvincePath = (pathname: string) => PROVINCE.test(pathname)
+
+const CAMPAIGNS = /^\/c\/[^/]+\/?$/
+
+/** Campaigns, open on one campaign, `/c/<campaign>`. */
+export const isCampaignsPath = (pathname: string) => CAMPAIGNS.test(pathname)
 
 const MONTH = /^\/daily\/\d{4}\/\d{2}\/?$/
 
@@ -86,14 +92,21 @@ export function boardIdOf(pathname: string): string | undefined {
 /** Pages with a board: a puzzle, a Daily and a Lesson. */
 const BOARD = /^\/(?:play\/[^/]+|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+)\/?$/
 
-/** Addresses that only redirect: a Campaign, an old profile spread, Learn without its track. */
-const REDIRECT = /^\/(?:c\/[^/]+|u\/[^/]+\/[^/]+\/[^/]+|learn)\/?$/
+/** Addresses that only redirect: Campaigns without its campaign, an old profile spread, Learn without its track. */
+const REDIRECT = /^\/(?:c|u\/[^/]+\/[^/]+\/[^/]+|learn)\/?$/
 
 /** A Campaign's id or a Year, the album a province or Month page belongs to. */
 const albumOf = (pathname: string) => pathname.split('/')[2]!
 
-/** A province page, a Month of Dailies' page or a Learn track: the pages Home's columns open onto. */
-const isAlbumPath = (pathname: string) => isProvincePath(pathname) || isMonthPath(pathname) || isTrackPath(pathname)
+/** Campaigns, a province page, a Month of Dailies' page or a Learn track: the pages Home's columns open onto. */
+const isAlbumPath = (pathname: string) =>
+  isCampaignsPath(pathname) || isProvincePath(pathname) || isMonthPath(pathname) || isTrackPath(pathname)
+
+/** `province` is one of the provinces of the campaign `campaigns` is open on. */
+const inCampaign = (province: Place, campaigns: Place) =>
+  isProvincePath(province.pathname) &&
+  isCampaignsPath(campaigns.pathname) &&
+  albumOf(province.pathname) === albumOf(campaigns.pathname)
 
 const isHome = (place: Place) => place.pathname === '/'
 
@@ -148,7 +161,7 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
 
   const same = (test: (pathname: string) => boolean) => test(from.pathname) && test(to.pathname)
   if ((same(isProvincePath) || same(isMonthPath)) && albumOf(from.pathname) === albumOf(to.pathname)) return step()
-  if (same(isTrackPath)) return step()
+  if (same(isTrackPath) || same(isCampaignsPath)) return step()
   if (!env.phone) {
     const rail = LESSON.test(from.pathname) || LESSON.test(to.pathname) ? env.lessonRail : env.rail
     if (rail && onItsPage(to, from, env)) return typed('to-board')
@@ -156,6 +169,8 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
     if (rail && sameProvince(from, to, env)) return typed('next-board')
     if (isAlbumPath(from.pathname) && isHome(to)) return typed('to-home')
     if (isHome(from) && isAlbumPath(to.pathname)) return typed('to-province')
+    if (inCampaign(to, from)) return typed('into-album')
+    if (inCampaign(from, to)) return typed('out-of-album')
     if (same(isMonthPath))
       return typed(albumOf(from.pathname) > albumOf(to.pathname) ? 'to-year-back' : 'to-year-forward')
   }
@@ -175,7 +190,9 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
 
 function wipe(from: Place, to: Place, env: Env): Transition | null {
   if (!env.typed) return null
-  // Every page lies over Home, and a puzzle over its page, so going up always wipes out, whichever way history went.
-  const back = isHome(to) || onItsPage(from, to, env) || (!isHome(from) && env.direction === 'back')
+  // Every page lies over Home, a puzzle over its page and a province over Campaigns, so going up always wipes out,
+  // whichever way history went.
+  const up = isHome(to) || onItsPage(from, to, env) || inCampaign(from, to)
+  const back = up || (!isHome(from) && !inCampaign(to, from) && env.direction === 'back')
   return { types: back ? ['wipe', 'back'] : ['wipe'] }
 }

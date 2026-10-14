@@ -14,18 +14,21 @@ import styles from '../home/Home.module.css'
 
 /**
  * A campaign's column, inside its `World`: how far along it is, the puzzle due next, Continue and Open, and the
- * Crest beside them. Once every province is conquered there's no Next up and no Continue, and Open goes to the last
- * province. Unstarted, it all reads zero: Start, the first province, a blank Crest.
+ * Crest beside them. Once every province is conquered there's no Next up and no Continue, and Open, when it opens a
+ * province, goes to the last. Unstarted, it all reads zero: Start, the first province, a blank Crest.
  */
 export function CampaignStack({
   campaign,
   storage,
   titleId,
+  opens = 'province',
 }: {
   campaign: Campaign
   storage: ProgressStorage
   /** Its heading's id, for the `World`'s label. */
   titleId: string
+  /** What Open leads to: the active province, or on Home, the campaign's own column on Campaigns. */
+  opens?: 'province' | 'campaign'
 }) {
   const progress = campaignProgress(campaign, storage)
   const next = continueAt(campaign, progress, id => storage.loadSolved(id) !== null)
@@ -90,15 +93,26 @@ export function CampaignStack({
               {next.fresh ? 'Start' : 'Continue'}
             </Link>
           )}
-          {province && (
+          {opens === 'campaign' ? (
             <Link
-              to="/c/$campaignId/$provinceId"
-              params={{ campaignId: campaign.id, provinceId: province.id }}
+              to="/c/$campaignId"
+              params={{ campaignId: campaign.id }}
               data-variant="paper"
               data-pad-default={!next || undefined}
             >
-              Open {province.name.replace(/^The /, 'the ')}
+              Open {campaign.name.replace(/^The /, 'the ')}
             </Link>
+          ) : (
+            province && (
+              <Link
+                to="/c/$campaignId/$provinceId"
+                params={{ campaignId: campaign.id, provinceId: province.id }}
+                data-variant="paper"
+                data-pad-default={!next || undefined}
+              >
+                Open {province.name.replace(/^The /, 'the ')}
+              </Link>
+            )
           )}
         </div>
       </div>

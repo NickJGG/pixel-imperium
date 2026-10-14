@@ -407,6 +407,60 @@
 }
 
 /*
+ * Campaigns ↔ one of its campaign's provinces (`into-album`, `out-of-album`): the same again, a level down. The
+ * campaign spines and stubs slide off as Home's do, and the province's spines grow out of the window's edges. Both
+ * are `.provinceSpine`, for the Home morph; `.campaignSpine` comes after, so it wins.
+ */
+:root:active-view-transition-type(into-album, out-of-album) .backdrop {
+  display: block;
+}
+
+:root:active-view-transition-type(into-album, out-of-album)::view-transition-group(*),
+:root:active-view-transition-type(into-album, out-of-album)::view-transition-old(*),
+:root:active-view-transition-type(into-album, out-of-album)::view-transition-new(*) {
+  animation-duration: 1s;
+  animation-timing-function: cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+:root:active-view-transition-type(out-of-album)::view-transition-group(*),
+:root:active-view-transition-type(out-of-album)::view-transition-old(*),
+:root:active-view-transition-type(out-of-album)::view-transition-new(*) {
+  animation-direction: reverse;
+}
+
+:root:active-view-transition-type(into-album, out-of-album)::view-transition-group(.provinceSpine) {
+  animation-name: reach-in;
+}
+
+:root:active-view-transition-type(into-album)::view-transition-new(.provinceSpine),
+:root:active-view-transition-type(out-of-album)::view-transition-old(.provinceSpine) {
+  animation-name: open-out;
+}
+
+:root:active-view-transition-type(into-album)::view-transition-old(.pageColumn),
+:root:active-view-transition-type(out-of-album)::view-transition-new(.pageColumn) {
+  animation-name: fade-out-early;
+}
+
+:root:active-view-transition-type(into-album)::view-transition-new(.pageColumn),
+:root:active-view-transition-type(out-of-album)::view-transition-old(.pageColumn) {
+  animation-name: fade-in-late;
+}
+
+:root:active-view-transition-type(into-album, out-of-album)::view-transition-group(.campaignSpine) {
+  animation-name: off-right;
+}
+
+:root:active-view-transition-type(into-album, out-of-album)::view-transition-group(.campaignSpineBefore) {
+  animation-name: off-left;
+}
+
+:root:active-view-transition-type(into-album, out-of-album)::view-transition-old(.campaignSpine),
+:root:active-view-transition-type(into-album, out-of-album)::view-transition-new(.campaignSpine) {
+  animation-name: none;
+}
+
+/*
  * A province page ↔ one of its puzzles (board-morph.css has the board's side): the column widens into Play's paper,
  * shouldering the spines off the window's edges as its title fades, over the backdrop. The way back plays it in
  * reverse, by keyframes of its own so it keeps the easing.
