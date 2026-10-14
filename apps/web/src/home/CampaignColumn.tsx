@@ -4,21 +4,34 @@ import { CampaignStack } from '../campaign/CampaignColumn.tsx'
 import { World } from '../campaign/worlds/Worlds.tsx'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 
-/** Home's way into the last-played campaign: its campaign column, opening onto it on Campaigns. */
+/**
+ * Home's way into a campaign, the last played or the Featured one: its campaign column, opening onto it on
+ * Campaigns.
+ */
 export function CampaignColumn({
   campaign,
   storage,
+  featured = false,
   start,
   style,
 }: {
   campaign: Campaign
   storage: ProgressStorage
+  /** The Featured campaign's column, rather than the last played's. */
+  featured?: boolean
   start: boolean
   style: CSSProperties
 }) {
+  const titleId = featured ? 'home-featured' : 'home-campaign'
   return (
-    <World paper={campaign.paper} labelledBy="home-campaign" style={style} start={start} pair>
-      <CampaignStack campaign={campaign} storage={storage} titleId="home-campaign" opens="campaign" />
+    <World paper={campaign.paper} labelledBy={titleId} style={style} start={start} pair>
+      <CampaignStack
+        campaign={campaign}
+        storage={storage}
+        titleId={titleId}
+        opens="campaign"
+        featured={featured ? 'home' : undefined}
+      />
     </World>
   )
 }

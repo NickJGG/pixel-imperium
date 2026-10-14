@@ -1,9 +1,12 @@
 import { useSearch } from '@tanstack/react-router'
 import { useRef } from 'react'
 import { seasonOf } from '../album/paper.ts'
-import { likelySignedIn } from '../account.ts'
+import { getAccount, likelySignedIn } from '../account.ts'
+import { NewBadge } from '../album/NewBadge.tsx'
 import { CampaignStackSkeleton } from '../campaign/CampaignColumn.tsx'
-import { currentCampaign } from '../campaign/last-campaign.ts'
+import { newestFeatured } from '../campaign/campaigns.ts'
+import { currentCampaign, currentCampaigns } from '../campaign/last-campaign.ts'
+import { startedCampaigns } from '../campaign/started-campaigns.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { Backdrop, SkeletonSpine, World, Worlds, usePhone, useSpineReach } from '../campaign/worlds/Worlds.tsx'
 import { MonthGridSkeleton } from '../daily/MonthCalendar.tsx'
@@ -13,13 +16,13 @@ import { dayKey } from '../profile/activity.ts'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { useLessonsDone } from '../tutorial/done.ts'
 import { COLUMN_NAME, type Column, columnsFor, learnPapers, openColumn, papers } from './columns.ts'
-import { columnName, paperOf } from './HomePage.tsx'
+import { backdropPaper, columnName, paperOf } from './HomePage.tsx'
 import styles from './Home.module.css'
 
 /**
  * Home while it loads: the open column wide and the rest as spines, or a carousel on a phone. The columns guess the
- * account from the last one this device saw, and the Daily column's launch from the Year last loaded; without a
- * campaign in memory, the Campaign column is in the fog.
+ * account from the last one this device saw, the Daily column's launch from the Year last loaded, and the Featured
+ * column from the campaigns list last loaded; without a campaign in memory, the Campaign column is in the fog.
  * Its columns pair with Home's own, so a morph can play into it.
  */
 export function HomeSkeleton() {
@@ -29,11 +32,14 @@ export function HomeSkeleton() {
   const campaign = currentCampaign()
   const today = dayKey(new Date())
   const launch = currentDailyYear()?.launch
-  const columns = columnsFor(likelySignedIn(), launch === undefined || today >= launch)
+  const listed = currentCampaigns()
+  const guess = listed && newestFeatured(listed, startedCampaigns(getAccount().storage), today)
+  const featured = guess && guess.id !== campaign?.id ? guess : null
+  const columns = columnsFor(likelySignedIn(), launch === undefined || today >= launch, featured !== null)
   const open = openColumn(columns, search)
   const campaignPaper = campaign?.paper ?? 'marches'
   const season = seasonOf(Number(today.slice(5, 7)))
-  const paper = papers(campaignPaper, learnPapers(done), season)
+  const paper = papers(campaignPaper, learnPapers(done), season, featured?.paper)
   const ref = useRef<HTMLElement>(null)
   useSpineReach(ref)
   useAnnounceSkeleton()
@@ -48,10 +54,10 @@ export function HomeSkeleton() {
         className={className}
         style={columnName(column)}
         start={start}
-        pair={column === 'campaign' || column === 'daily' || column === 'learn'}
+        pair={column === 'campaign' || column === 'featured' || column === 'daily' || column === 'learn'}
       >
-        {column === 'campaign' ? (
-          <CampaignStackSkeleton campaign={campaign} />
+        {column === 'campaign' || column === 'featured' ? (
+          <CampaignStackSkeleton campaign={column === 'campaign' ? campaign : null} />
         ) : column === 'daily' ? (
           <DailyStack today={today} />
         ) : (
@@ -64,7 +70,7 @@ export function HomeSkeleton() {
   return (
     <main ref={ref} className={styles.page} aria-busy="true">
       <SrLoading />
-      <Backdrop paper={open === 'daily' ? season : open === 'learn' ? paperOf(paper.learn).paper : campaignPaper} />
+      <Backdrop paper={backdropPaper(open, paper)} />
       {phone ? (
         <Worlds carousel>{columns.map(c => wide(c, c === open))}</Worlds>
       ) : (
@@ -81,8 +87,10 @@ export function HomeSkeleton() {
                 pairs="menu"
                 before={columns.indexOf(c) < columns.indexOf(open)}
                 style={columnName(c)}
-                name={COLUMN_NAME[c]}
-              />
+                name={c === 'featured' ? featured!.name.replace(/^The /, '') : COLUMN_NAME[c]}
+              >
+                {c === 'featured' && <NewBadge />}
+              </SkeletonSpine>
             )
           })}
         </Worlds>

@@ -1,10 +1,11 @@
 import { useParams } from '@tanstack/react-router'
 import { type ReactNode, useRef } from 'react'
 import { getAccount } from '../account.ts'
+import { NewBadge } from '../album/NewBadge.tsx'
 import { dayKey } from '../profile/activity.ts'
 import { SrLoading } from '../skeleton/Skeleton.tsx'
 import { CampaignStackSkeleton } from './CampaignColumn.tsx'
-import { rowOrder, windowOf } from './campaigns.ts'
+import { isFeatured, rowOrder, windowOf } from './campaigns.ts'
 import { currentCampaign, currentCampaigns } from './last-campaign.ts'
 import { startedCampaigns } from './started-campaigns.ts'
 import { useAnnounceSkeleton } from './worlds/morph-nav.ts'
@@ -34,7 +35,8 @@ export function CampaignsSkeleton() {
   const cached = currentCampaign()
   const campaign = cached?.id === campaignId ? cached : null
   const list = currentCampaigns()
-  const row = list && rowOrder(list, startedCampaigns(getAccount().storage), dayKey(new Date()))
+  const today = dayKey(new Date())
+  const row = list && rowOrder(list, startedCampaigns(getAccount().storage), today)
   const at = row?.findIndex(c => c.id === campaignId) ?? -1
   const paper = campaign?.paper ?? row?.[at]?.paper ?? 'marches'
 
@@ -65,7 +67,7 @@ export function CampaignsSkeleton() {
   const { lo, hi } = windowOf(row.length, at)
   return page(
     <Worlds>
-      {lo > 0 && <SkeletonCampaignStub hidden={lo} side="before" />}
+      {lo > 0 && <SkeletonCampaignStub hidden={lo} side="before" featured={row.slice(0, lo).some(c => isFeatured(c, today))} />}
       {row.slice(lo, hi).map((c, i) =>
         c.id === campaignId ? (
           open
@@ -78,10 +80,18 @@ export function CampaignsSkeleton() {
             before={lo + i < at}
             style={campaignMorphName(c.id)}
             name={c.name.replace(/^The /, '')}
-          />
+          >
+            {isFeatured(c, today) && <NewBadge />}
+          </SkeletonSpine>
         ),
       )}
-      {hi < row.length && <SkeletonCampaignStub hidden={row.length - hi} side="after" />}
+      {hi < row.length && (
+        <SkeletonCampaignStub
+          hidden={row.length - hi}
+          side="after"
+          featured={row.slice(hi).some(c => isFeatured(c, today))}
+        />
+      )}
     </Worlds>,
   )
 }

@@ -1,10 +1,11 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useRef, useState } from 'react'
 import type { Campaign, CampaignSummary, Profile } from '@pixel-imperium/protocol'
+import { NewBadge } from '../album/NewBadge.tsx'
 import { useAccount } from '../account.ts'
 import { dayKey } from '../profile/activity.ts'
 import { CampaignStack } from './CampaignColumn.tsx'
-import { jump, rowOrder, windowOf } from './campaigns.ts'
+import { isFeatured, jump, rowOrder, windowOf } from './campaigns.ts'
 import { useStartedCampaigns } from './started-campaigns.ts'
 import {
   Backdrop,
@@ -45,6 +46,8 @@ export function CampaignsPage({
   const row = rowOrder(listed, started, today)
   const at = row.findIndex(c => c.id === campaign.id)
 
+  const anyFeatured = (cs: readonly CampaignSummary[]) => cs.some(c => isFeatured(c, today))
+
   const goTo = (i: number) => {
     const to = row[i]
     if (!to || i === at) return
@@ -57,7 +60,12 @@ export function CampaignsPage({
   const titleId = `campaign-${campaign.id}`
   const open = (
     <World key={campaign.id} paper={campaign.paper} labelledBy={titleId} style={campaignMorphName(campaign.id)} start pair>
-      <CampaignStack campaign={campaign} storage={storage} titleId={titleId} />
+      <CampaignStack
+        campaign={campaign}
+        storage={storage}
+        titleId={titleId}
+        featured={isFeatured(campaign, today) ? 'row' : undefined}
+      />
     </World>
   )
 
@@ -67,7 +75,7 @@ export function CampaignsPage({
         <h1 className={homeStyles.srOnly}>Campaigns</h1>
         <Backdrop paper={campaign.paper} />
         <Worlds carousel onSnap={goTo}>
-          {row.map(c => (c.id === campaign.id ? open : <Unopened key={c.id} campaign={c} />))}
+          {row.map(c => (c.id === campaign.id ? open : <Unopened key={c.id} campaign={c} featured={isFeatured(c, today)} />))}
         </Worlds>
         <p className={styles.counter}>
           {at + 1} of {row.length}
@@ -81,11 +89,24 @@ export function CampaignsPage({
       <h1 className={homeStyles.srOnly}>Campaigns</h1>
       <Backdrop paper={campaign.paper} />
       <Worlds>
-        {lo > 0 && <CampaignStub to={row[jump(at, -1, row.length)]!.id} hidden={lo} side="before" />}
-        {row.slice(lo, hi).map((c, i) =>
-          c.id === campaign.id ? open : <CampaignSpine key={c.id} campaign={c} before={lo + i < at} />,
+        {lo > 0 && (
+          <CampaignStub to={row[jump(at, -1, row.length)]!.id} hidden={lo} side="before" featured={anyFeatured(row.slice(0, lo))} />
         )}
-        {hi < row.length && <CampaignStub to={row[jump(at, 1, row.length)]!.id} hidden={row.length - hi} side="after" />}
+        {row.slice(lo, hi).map((c, i) =>
+          c.id === campaign.id ? (
+            open
+          ) : (
+            <CampaignSpine key={c.id} campaign={c} before={lo + i < at} featured={isFeatured(c, today)} />
+          ),
+        )}
+        {hi < row.length && (
+          <CampaignStub
+            to={row[jump(at, 1, row.length)]!.id}
+            hidden={row.length - hi}
+            side="after"
+            featured={anyFeatured(row.slice(hi))}
+          />
+        )}
       </Worlds>
     </main>
   )
@@ -100,13 +121,16 @@ const summaryOf = (campaign: Campaign): CampaignSummary => ({
 })
 
 /** A carousel's neighbour, known only by its summary until the carousel rests on it and it loads. */
-function Unopened({ campaign }: { campaign: CampaignSummary }) {
+function Unopened({ campaign, featured }: { campaign: CampaignSummary; featured: boolean }) {
   const titleId = `campaign-${campaign.id}`
   return (
     <World paper={campaign.paper} labelledBy={titleId} style={campaignMorphName(campaign.id)}>
       <div className={homeStyles.column}>
         <div className={homeStyles.stack}>
-          <p className={homeStyles.kicker}>Campaign · {campaign.total} puzzles</p>
+          <p className={homeStyles.kicker}>
+            Campaign · {featured && <><NewBadge /> · </>}
+            {campaign.total} puzzles
+          </p>
           <h2 id={titleId} className={homeStyles.hero}>
             {campaign.name}
           </h2>

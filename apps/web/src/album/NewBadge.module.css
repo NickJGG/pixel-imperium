@@ -1,0 +1,11 @@
+.badge {
+  display: inline-block;
+  padding: 2px 7px; /* token-exempt: pill inset */
+  font: var(--type-micro);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--on-gold);
+  background: var(--gold);
+  border-radius: var(--r-pill);
+  box-shadow: 0 2px 0 var(--gold-dk);
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { featuredUntil, isFeatured, jump, rowOrder, windowOf } from './campaigns.ts'
+import { featuredUntil, isFeatured, jump, newestFeatured, rowOrder, windowOf } from './campaigns.ts'
 
 describe('featured', () => {
   it('lasts 30 days past the release, across a month and a year', () => {
@@ -17,6 +17,30 @@ describe('featured', () => {
 
   it('never features a campaign without a release date', () => {
     expect(isFeatured({}, '2026-10-01')).toBe(false)
+  })
+})
+
+describe('newestFeatured', () => {
+  const today = '2026-10-14'
+  const old = { id: 'old', released: '2025-01-01' }
+  const earlier = { id: 'earlier', released: '2026-09-20' }
+  const newest = { id: 'newest', released: '2026-10-10' }
+
+  it('picks the newest of two Featured at once', () => {
+    expect(newestFeatured([old, newest, earlier], new Set(), today)).toBe(newest)
+  })
+
+  it('gives none once the newest is started, not even the older one', () => {
+    expect(newestFeatured([old, newest, earlier], new Set(['newest']), today)).toBeUndefined()
+  })
+
+  it('gives none once the window has passed', () => {
+    expect(newestFeatured([old, newest], new Set(), '2026-11-09')).toBe(newest)
+    expect(newestFeatured([old, newest], new Set(), '2026-11-10')).toBeUndefined()
+  })
+
+  it('gives none with nothing Featured', () => {
+    expect(newestFeatured([old, { id: 'draft' }], new Set(), today)).toBeUndefined()
   })
 })
 

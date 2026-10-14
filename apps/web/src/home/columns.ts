@@ -2,7 +2,7 @@
 import type { PaperId, Season } from '../album/paper.ts'
 import { TRACKS, nextTrack } from '../tutorial/tracks.ts'
 
-export type Column = 'campaign' | 'daily' | 'learn' | 'profile' | 'settings' | 'signin'
+export type Column = 'campaign' | 'featured' | 'daily' | 'learn' | 'profile' | 'settings' | 'signin'
 
 export type OpenColumn = Exclude<Column, 'campaign'>
 
@@ -11,8 +11,11 @@ export interface HomeSearch {
   open?: OpenColumn
 }
 
-/** Each column's spine name; Campaign's leads to Campaigns, whichever campaign it holds. */
-export const COLUMN_NAME: Record<Column, string> = {
+/**
+ * Each column's spine name; Campaign's leads to Campaigns, whichever campaign it holds. Featured's is its campaign's
+ * own name.
+ */
+export const COLUMN_NAME: Record<Exclude<Column, 'featured'>, string> = {
   campaign: 'Campaigns',
   daily: 'Daily',
   learn: 'Learn',
@@ -24,13 +27,16 @@ export const COLUMN_NAME: Record<Column, string> = {
 const SIGNED_IN: readonly Column[] = ['campaign', 'daily', 'learn', 'profile', 'settings']
 const SIGNED_OUT: readonly Column[] = ['campaign', 'daily', 'learn', 'signin']
 
-/** `daily` is whether the Daily has launched; until then its column is left out. */
-export const columnsFor = (signedIn: boolean, daily: boolean): readonly Column[] => {
-  const columns = signedIn ? SIGNED_IN : SIGNED_OUT
-  return daily ? columns : columns.filter(c => c !== 'daily')
+/**
+ * `daily` is whether the Daily has launched; until then its column is left out. `featured` is whether there's a
+ * Featured campaign for Home to show, the player not having started it; its column follows Campaign's while there is.
+ */
+export const columnsFor = (signedIn: boolean, daily: boolean, featured = false): readonly Column[] => {
+  const columns = (signedIn ? SIGNED_IN : SIGNED_OUT).filter(c => daily || c !== 'daily')
+  return featured ? ['campaign', 'featured', ...columns.slice(1)] : columns
 }
 
-const OPENABLE: readonly string[] = ['daily', 'learn', 'profile', 'settings', 'signin'] satisfies OpenColumn[]
+const OPENABLE: readonly string[] = ['featured', 'daily', 'learn', 'profile', 'settings', 'signin'] satisfies OpenColumn[]
 
 export const homeSearch = (search: Record<string, unknown>): HomeSearch =>
   typeof search.open === 'string' && OPENABLE.includes(search.open) ? { open: search.open as OpenColumn } : {}
@@ -55,19 +61,23 @@ export function learnPapers(done: ReadonlySet<string>): [PaperId, PaperId] {
 export type Paper = PaperId | 'cover'
 
 /**
- * Each column wears where it leads: Campaign the campaign's paper, Daily this Month's season's, Learn its next
- * Lesson's track's, Profile the cobalt cover, Settings the Capital's and Sign in the Throne's. Learn takes its other
- * track's rather than match Campaign; Settings or Sign in takes the Forge's rather than match Campaign or Learn.
+ * Each column wears where it leads: Campaign and Featured their campaigns' papers, Daily this Month's season's, Learn
+ * its next Lesson's track's, Profile the cobalt cover, Settings the Capital's and Sign in the Throne's. Learn takes
+ * its other track's rather than match Campaign; Settings or Sign in takes the Forge's rather than match Campaign,
+ * Featured or Learn.
  */
 export function papers(
   campaign: PaperId,
   [learn, otherLearn]: readonly [PaperId, PaperId],
   season: Season,
+  featured: PaperId = campaign,
 ): Record<Column, Paper> {
   const learnPaper = learn === campaign ? otherLearn : learn
-  const clear = (paper: PaperId): PaperId => (paper === campaign || paper === learnPaper ? 'forge' : paper)
+  const taken = [campaign, featured, learnPaper]
+  const clear = (paper: PaperId): PaperId => (taken.includes(paper) ? 'forge' : paper)
   return {
     campaign,
+    featured,
     daily: season,
     learn: learnPaper,
     profile: 'cover',

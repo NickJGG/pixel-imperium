@@ -17,6 +17,21 @@ export const isFeatured = (c: Pick<CampaignSummary, 'released'>, today: string):
   c.released !== undefined && c.released <= today && today <= featuredUntil(c.released)
 
 /**
+ * The campaign Home gives its own column: the newest Featured one, while the player hasn't started it. An older one
+ * still Featured gets none, even once the newest is started.
+ */
+export function newestFeatured<C extends Pick<CampaignSummary, 'id' | 'released'>>(
+  summaries: readonly C[],
+  started: ReadonlySet<string>,
+  today: string,
+): C | undefined {
+  const newest = summaries
+    .filter(c => isFeatured(c, today))
+    .reduce<C | undefined>((m, c) => (m && (m.released ?? '') >= (c.released ?? '') ? m : c), undefined)
+  return newest && !started.has(newest.id) ? newest : undefined
+}
+
+/**
  * The player's started campaigns, then Featured ones they haven't started, then the rest, each group by release
  * date (a draft without one last), ties in `summaries`' own order.
  */

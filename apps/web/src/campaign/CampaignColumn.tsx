@@ -2,11 +2,15 @@ import { Link } from '@tanstack/react-router'
 import type { CSSProperties } from 'react'
 import type { Campaign } from '@pixel-imperium/protocol'
 import { CountPill } from '../album/CountPill.tsx'
+import { NewBadge } from '../album/NewBadge.tsx'
 import { paperFor } from '../album/paper.ts'
+import { startOf } from '../daily/clock.ts'
 import { Crest } from '../home/Crest.tsx'
 import { crestPixels } from '../home/crest.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
+import { shortDate } from '../profile/activity.ts'
 import { Bar, Ghost } from '../skeleton/Skeleton.tsx'
+import { featuredUntil } from './campaigns.ts'
 import { campaignProgress, continueAt } from './progress.ts'
 import { SlotFace } from './PuzzleSlot.tsx'
 import { doorSlot } from './worlds/names.ts'
@@ -22,6 +26,7 @@ export function CampaignStack({
   storage,
   titleId,
   opens = 'province',
+  featured,
 }: {
   campaign: Campaign
   storage: ProgressStorage
@@ -29,6 +34,8 @@ export function CampaignStack({
   titleId: string
   /** What Open leads to: the active province, or on Home, the campaign's own column on Campaigns. */
   opens?: 'province' | 'campaign'
+  /** Wears a New badge in its kicker; on Home, whose column for it lasts only so long, with the window's end. */
+  featured?: 'row' | 'home' | undefined
 }) {
   const progress = campaignProgress(campaign, storage)
   const next = continueAt(campaign, progress, id => storage.loadSolved(id) !== null)
@@ -44,7 +51,16 @@ export function CampaignStack({
     <div className={styles.column}>
       <div className={styles.stack}>
         <p className={styles.kicker}>
-          Campaign · {conquered} of {campaign.provinces.length} conquered
+          {featured === 'home' && campaign.released !== undefined ? (
+            <>
+              <NewBadge /> · until {shortDate(startOf(featuredUntil(campaign.released)), new Date())}
+            </>
+          ) : (
+            <>
+              Campaign · {featured && <><NewBadge /> · </>}
+              {conquered} of {campaign.provinces.length} conquered
+            </>
+          )}
         </p>
         <h2 id={titleId} className={styles.hero}>
           {campaign.name}

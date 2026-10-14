@@ -9,6 +9,7 @@ import { Link } from '@tanstack/react-router'
 import type { CampaignSummary, Province } from '@pixel-imperium/protocol'
 import { CountPill } from '../../album/CountPill.tsx'
 import { Lock } from '../../album/Lock.tsx'
+import { NewBadge } from '../../album/NewBadge.tsx'
 import { type PaperId, paperFor, seasonOf } from '../../album/paper.ts'
 import type { HomeSearch } from '../../home/columns.ts'
 import { reducedMotion } from '../../motion.ts'
@@ -407,18 +408,18 @@ const campaignSpineClass = (before: boolean) =>
   [styles.provinceSpine, styles.campaignSpine, before && styles.campaignSpineBefore].filter(Boolean).join(' ')
 
 /**
- * A campaign's spine on Campaigns, built like a province's: its name in its paper, then `badge` under it. Links to
+ * A campaign's spine on Campaigns, built like a province's: its name in its paper, a New badge under it while it's Featured. Links to
  * the campaign's column, replacing the page in history, morphing into it like a province.
  */
 export function CampaignSpine({
   campaign,
   before,
-  badge,
+  featured = false,
 }: {
   campaign: Pick<CampaignSummary, 'id' | 'name' | 'paper'>
   /** Left of the open column. */
   before: boolean
-  badge?: ReactNode
+  featured?: boolean
 }) {
   return (
     <Link
@@ -432,7 +433,7 @@ export function CampaignSpine({
     >
       <span className={styles.stack}>
         <span className={styles.name}>{campaign.name.replace(/^The /, '')}</span>
-        {badge}
+        {featured && <NewBadge />}
       </span>
     </Link>
   )
@@ -442,6 +443,8 @@ export function CampaignSpine({
 interface Stub {
   hidden: number
   side: 'before' | 'after'
+  /** One of the hidden campaigns is Featured. */
+  featured?: boolean | undefined
 }
 
 const stubProps = ({ side }: Stub) => ({
@@ -449,9 +452,10 @@ const stubProps = ({ side }: Stub) => ({
   style: { viewTransitionName: `campaigns-${side}`, viewTransitionClass: columnClass('spine', campaignSpineClass(side === 'before')) },
 })
 
-const StubFace = ({ hidden }: Stub) => (
+const StubFace = ({ hidden, featured }: Stub) => (
   <span className={styles.stack}>
     <span className={styles.stubCount}>+{hidden}</span>
+    {featured && <NewBadge />}
   </span>
 )
 
@@ -536,6 +540,7 @@ export function MenuSpine({
   name,
   search,
   before,
+  featured = false,
   className,
   style,
 }: {
@@ -543,6 +548,8 @@ export function MenuSpine({
   search: HomeSearch
   /** Left of the open column. */
   before: boolean
+  /** Home's column for a Featured campaign, which wears a New badge. */
+  featured?: boolean
   className?: string | undefined
   /** Its paper and the morph name it shares with the entry's opened column. */
   style: CSSProperties
@@ -557,6 +564,7 @@ export function MenuSpine({
     >
       <span className={styles.stack}>
         <span className={styles.name}>{name}</span>
+        {featured && <NewBadge />}
       </span>
     </Link>
   )

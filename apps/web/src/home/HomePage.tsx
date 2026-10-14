@@ -3,6 +3,8 @@ import { type CSSProperties, useRef } from 'react'
 import type { Campaign, DailyYear, Profile } from '@pixel-imperium/protocol'
 import { type PaperId, paperFor, seasonOf } from '../album/paper.ts'
 import { useAccount } from '../account.ts'
+import { isFeatured } from '../campaign/campaigns.ts'
+import { useStartedCampaigns } from '../campaign/started-campaigns.ts'
 import { Backdrop, MenuSpine, Worlds, usePhone, useSpineReach, useStep } from '../campaign/worlds/Worlds.tsx'
 import { useLessonsDone } from '../tutorial/done.ts'
 import { dayKey } from '../profile/activity.ts'
@@ -21,6 +23,10 @@ export const columnName = (column: Column): CSSProperties => ({ viewTransitionNa
 export const paperOf = (paper: Paper): { paper: PaperId; className: string | undefined } =>
   paper === 'cover' ? { paper: 'marches', className: styles.cover } : { paper, className: undefined }
 
+/** Home's backdrop: the open column's paper where it has one of its own, else the campaign's. */
+export const backdropPaper = (open: Column, paper: Record<Column, Paper>): PaperId =>
+  paperOf(paper[open === 'daily' || open === 'learn' || open === 'featured' ? open : 'campaign']).paper
+
 /**
  * Home, the main menu: one entry's column open wide, the others as spines beside it; on a phone, a carousel of
  * whole columns. Moving to another column (a spine, a swipe, ←/→, LB/RB) replaces `?open=` in the URL, so Back from
@@ -28,10 +34,13 @@ export const paperOf = (paper: Paper): { paper: PaperId; className: string | und
  */
 export function HomePage({
   campaign,
+  featured,
   profile,
   dailyYear,
 }: {
   campaign: Campaign
+  /** The newest Featured campaign, if there is one this device hasn't started. */
+  featured: Campaign | null
   profile: Profile | null
   /** This Year's Dailies, `null` before launch. */
   dailyYear: DailyYear | null
@@ -47,10 +56,13 @@ export function HomePage({
 
   const today = dayKey(new Date())
   const daily = dailyYear && today >= dailyYear.launch ? dailyYear : null
-  const columns = columnsFor(account !== null, daily !== null)
+  const started = useStartedCampaigns(storage, own?.campaigns.map(c => c.id))
+  const showcase =
+    featured && featured.id !== campaign.id && !started.has(featured.id) && isFeatured(featured, today) ? featured : null
+  const columns = columnsFor(account !== null, daily !== null, showcase !== null)
   const open = openColumn(columns, search)
   const season = seasonOf(Number(today.slice(5, 7)))
-  const paper = papers(campaign.paper, learnPapers(done), season)
+  const paper = papers(campaign.paper, learnPapers(done), season, showcase?.paper)
 
   const goTo = (column: Column | undefined) => {
     if (!column || column === open) return
@@ -66,6 +78,8 @@ export function HomePage({
     switch (column) {
       case 'campaign':
         return <CampaignColumn key={column} {...common} campaign={campaign} storage={storage} />
+      case 'featured':
+        return showcase && <CampaignColumn key={column} {...common} campaign={showcase} storage={storage} featured />
       case 'daily':
         return (
           daily && (
@@ -106,7 +120,7 @@ export function HomePage({
   return (
     <main ref={ref} className={styles.page}>
       <h1 className={styles.srOnly}>Home</h1>
-      <Backdrop paper={open === 'daily' ? season : open === 'learn' ? paperOf(paper.learn).paper : campaign.paper} />
+      <Backdrop paper={backdropPaper(open, paper)} />
       {phone ? (
         <Worlds carousel onSnap={i => goTo(columns[i])}>
           {columns.map(c => wide(c, c === open))}
@@ -119,9 +133,10 @@ export function HomePage({
             return (
               <MenuSpine
                 key={c}
-                name={COLUMN_NAME[c]}
+                name={c === 'featured' ? showcase!.name.replace(/^The /, '') : COLUMN_NAME[c]}
                 search={searchFor(c)}
                 before={columns.indexOf(c) < columns.indexOf(open)}
+                featured={c === 'featured'}
                 className={className}
                 style={{ ...paperFor(worn), ...columnName(c) }}
               />

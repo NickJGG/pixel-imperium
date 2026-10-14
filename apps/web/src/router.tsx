@@ -1,10 +1,13 @@
 import { Outlet, createRootRoute, createRoute, createRouter, notFound, redirect, useRouterState } from '@tanstack/react-router'
+import type { CampaignSummary } from '@pixel-imperium/protocol'
 import { accountReady, getAccount, useAccount } from './account.ts'
 import { fetchCampaign, fetchCampaigns, fetchProfile, fetchPuzzle } from './api.ts'
 import { LoadError, NotFound } from './EdgeStates.tsx'
 import { CampaignsPage } from './campaign/CampaignsPage.tsx'
 import { CampaignsSkeleton } from './campaign/CampaignsSkeleton.tsx'
+import { newestFeatured } from './campaign/campaigns.ts'
 import { pickCampaign, rememberCampaign, rememberCampaigns } from './campaign/last-campaign.ts'
+import { seedStarted, startedCampaigns } from './campaign/started-campaigns.ts'
 import { DailyPlayPage } from './daily/DailyPlayPage.tsx'
 import { dailyId } from './daily/clock.ts'
 import { MonthPage } from './daily/MonthPage.tsx'
@@ -27,6 +30,7 @@ import { PlaySkeleton } from './play/PlaySkeleton.tsx'
 import { campaignAlbum, yearAlbum, yearAlbumId, yearAlbumName, yearOfAlbum } from './profile/album.ts'
 import { ProfilePage } from './profile/ProfilePage.tsx'
 import { ProfileSkeleton } from './profile/ProfileSkeleton.tsx'
+import { dayKey } from './profile/activity.ts'
 import { Fallback } from './skeleton/Skeleton.tsx'
 import { getDone } from './tutorial/done.ts'
 import { isBackPath, loadHandoff, loadLearnBack } from './tutorial/handoff.ts'
@@ -94,27 +98,43 @@ const loadOwnProfile = () =>
     return handle ? fetchProfile(handle).catch(() => null) : null
   })
 
+/**
+ * The newest Featured campaign, for Home's column for it, unless the player has started it or it's the campaign Home
+ * already holds. Not remembered: Home's Campaign column stays the last played.
+ */
+const loadFeatured = (campaigns: readonly CampaignSummary[], picked: string | null) =>
+  accountReady.then(async () => {
+    const { storage } = getAccount()
+    const featured = newestFeatured(campaigns, startedCampaigns(storage), dayKey(new Date()))
+    if (!featured || featured.id === picked) return null
+    const campaign = await fetchCampaign(featured.id).catch(() => null)
+    if (campaign) seedStarted(campaign, storage)
+    return campaign
+  })
+
 const homeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   validateSearch: homeSearch,
   /**
    * The profile is the signed-in player's, for the Profile and Settings columns, and this Year's Dailies are for the
-   * Daily column; Home stands without either.
+   * Daily column; Home stands without either, or without a Featured campaign.
    */
   loader: async () => {
-    const id = pickCampaign(await loadCampaigns())
-    const [campaign, dailyYear, profile] = await Promise.all([
+    const campaigns = await loadCampaigns()
+    const id = pickCampaign(campaigns)
+    const [campaign, featured, dailyYear, profile] = await Promise.all([
       id === null ? null : loadCampaign(id),
+      loadFeatured(campaigns, id),
       loadDailyYear(new Date().getFullYear()).catch(() => null),
       loadOwnProfile(),
     ])
-    return { campaign, dailyYear, profile }
+    return { campaign, featured, dailyYear, profile }
   },
   component: () => {
-    const { campaign, dailyYear, profile } = homeRoute.useLoaderData()
+    const { campaign, featured, dailyYear, profile } = homeRoute.useLoaderData()
     return campaign ? (
-      <HomePage campaign={campaign} dailyYear={dailyYear} profile={profile} />
+      <HomePage campaign={campaign} featured={featured} dailyYear={dailyYear} profile={profile} />
     ) : (
       <main className={styles.message}>No campaigns yet.</main>
     )
