@@ -55,7 +55,7 @@ export function RailTools({ store, lines = true }: { store: PlayStore; lines?: b
   )
 }
 
-/** A keyboard shortcut's badge in a button's corner, in the controller glyphs' look; shown only with a mouse. */
+/** A shortcut's badge in a button's corner, in the controller glyphs' look; mouse only, on hover or focus. */
 function Keycap({ children }: { children: string }) {
   return (
     <kbd className={styles.keycap} aria-hidden="true">

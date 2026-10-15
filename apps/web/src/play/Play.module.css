@@ -432,7 +432,8 @@
   }
 }
 
-/* A shortcut's keycap on a tool's corner, in the controller glyphs' look; only with a mouse, and never in pad mode. */
+/* A shortcut's keycap on a tool's corner, in the controller glyphs' look; only with a mouse, on the hovered or focused
+   button, and never in pad mode. */
 .keycap {
   position: absolute;
   top: -7px;
@@ -451,7 +452,7 @@
 }
 
 @media (pointer: fine) {
-  :root:not([data-pad]) .keycap {
+  :root:not([data-pad]) :is(button, a):is(:hover, :focus-visible) > .keycap {
     display: inline-flex;
   }
 }

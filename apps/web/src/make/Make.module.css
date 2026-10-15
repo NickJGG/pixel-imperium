@@ -3,17 +3,6 @@
   overflow-y: auto;
 }
 
-/* Keycaps show only on the hovered or focused button, so the tools read quietly. Outranks Play's mouse rule. */
-:root:not([data-pad]) .make .keycap {
-  display: none;
-}
-
-@media (pointer: fine) {
-  :root:not([data-pad]) .make :is(button, a):is(:hover, :focus-visible) > .keycap {
-    display: inline-flex;
-  }
-}
-
 .strip {
   position: relative;
   z-index: 3;
