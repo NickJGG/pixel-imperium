@@ -14,6 +14,11 @@
   }
 }
 
+.strip {
+  position: relative;
+  z-index: 3;
+}
+
 .chips > li {
   display: grid;
   justify-items: center;
@@ -37,6 +42,46 @@
 .make .chip[data-empty] {
   background: var(--paper)
     repeating-linear-gradient(45deg, transparent 0 5px, color-mix(in srgb, var(--ink) 18%, transparent) 5px 7px);
+}
+
+.make .chips > li[data-color] > .chip {
+  touch-action: none;
+  user-select: none;
+}
+
+/* Where the dragged chip will drop. */
+.make .chips > li[data-ghost] > .chip {
+  background: transparent;
+  box-shadow: none;
+  outline: 2px dashed var(--tab-dk);
+  outline-offset: -2px;
+  transform: none;
+}
+
+.chips > li[data-ghost] > :not(.chip),
+.chips > li[data-ghost] .keycap {
+  opacity: 0.3;
+}
+
+/* The dragged chip, lifted off the strip like a sticker. */
+.floater {
+  position: absolute;
+  z-index: 4;
+  width: 48px;
+  height: 48px;
+  background: var(--c);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ink) 15%, transparent);
+  transform: rotate(-6deg) scale(1.1);
+  filter: drop-shadow(0 12px 8px var(--shade));
+  pointer-events: none;
+  cursor: grabbing;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floater {
+    transform: none;
+  }
 }
 
 .make .add {
@@ -159,6 +204,108 @@
 }
 
 .notice {
+  margin: 0;
+  font: var(--type-small);
+  color: var(--ink-soft);
+}
+
+/* The color sheet, beside whatever opened it. */
+.make .sheet {
+  position: absolute;
+  left: calc(100% + 14px);
+  z-index: 5;
+  width: 236px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+
+.sv,
+.hue {
+  position: relative;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.sv {
+  height: 140px;
+  border-radius: var(--r-sm);
+  background:
+    linear-gradient(to top, #000, transparent),
+    linear-gradient(to right, #fff, hsl(var(--hue) 100% 50%));
+}
+
+.hue {
+  height: 14px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red);
+}
+
+.sv > b,
+.hue > b {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.4);
+  pointer-events: none;
+}
+
+.hue > b {
+  top: 50%;
+}
+
+.hexRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hexRow i {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+.hexRow input {
+  flex: 1;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  font: 700 var(--fs-14) var(--font-mono);
+  color: inherit;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  border: 0;
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 3px 0 color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+.quick {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+
+.make .quick > button {
+  --btn-bg: var(--c);
+  --btn-edge: var(--shade);
+  --press: 2px;
+  min-height: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  border-radius: var(--r-xs);
+}
+
+.make .quick > button[aria-pressed='true'] {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.sheetNote {
   margin: 0;
   font: var(--type-small);
   color: var(--ink-soft);

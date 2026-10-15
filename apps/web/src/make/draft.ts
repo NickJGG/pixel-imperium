@@ -314,3 +314,10 @@ export function moveColor(d: Draft, from: number, to: number): Draft {
   colors.splice(to, 0, moved!)
   return { ...d, colors }
 }
+
+/** Changes a color in place, its cells with it; a no-op if `hex` is already another of the strip's colors. */
+export function recolor(d: Draft, from: string, hex: string): Draft {
+  const to = hex.toLowerCase()
+  if (from === to || !d.colors.includes(from) || d.colors.includes(to)) return d
+  return { ...d, colors: d.colors.map(c => (c === from ? to : c)), cells: d.cells.map(c => (c === from ? to : c)) }
+}

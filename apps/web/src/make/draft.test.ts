@@ -19,6 +19,7 @@ import {
   paletteLetters,
   parsePaste,
   pick,
+  recolor,
   rect,
   removeColor,
   resize,
@@ -201,6 +202,13 @@ describe('colors', () => {
     expect(moveColor(d, 2, 0).colors).toEqual(['#000003', '#000001', '#000002'])
     expect(moveColor(d, 0, 1).colors).toEqual(['#000002', '#000001', '#000003'])
     expect(moveColor(d, 0, 5)).toBe(d)
+  })
+
+  it('recolors in place, cells and all, never onto another color', () => {
+    const d = recolor(draftOf('kw'), K, '#ABCDEF')
+    expect(d.colors).toEqual(['#abcdef', W])
+    expect(d.cells).toEqual(['#abcdef', W])
+    expect(recolor(d, '#abcdef', W)).toBe(d)
   })
 })
 

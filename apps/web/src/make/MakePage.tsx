@@ -27,8 +27,10 @@ import {
   stepSize,
   toSeed,
 } from './draft.ts'
-import { commit, getDraft, redo, undo, useDraft, useHistory } from './draft-store.ts'
+import { commit, getDraft, redo, strokeStart, undo, useDraft, useHistory } from './draft-store.ts'
+import { ColorSheet } from './ColorSheet.tsx'
 import { EditCanvas, type Tool } from './EditCanvas.tsx'
+import { useChipDrag } from './useChipDrag.ts'
 import playStyles from '../play/Play.module.css'
 import styles from './Make.module.css'
 
@@ -124,6 +126,7 @@ export function MakePage() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return
+      if (strokeStart()) return
       const key = e.key.toLowerCase()
       const d = getDraft()
       if (e.ctrlKey || e.metaKey) {
@@ -332,12 +335,27 @@ export function MakePage() {
   )
 }
 
-/** Empty first, then the colors in order, each under its number key; captions preview the exported letter. */
+/**
+ * Empty first, then the colors in order, each under its number key; captions preview the exported letter. "+"
+ * opens the color sheet for a new color, and the chosen chip (clicked again, or any chip double-clicked) for
+ * its own. Colors drag to reorder; empty stays put.
+ */
 function ColorStrip({ draft, chosen, onChoose }: { draft: Draft; chosen: string | null; onChoose: (c: string | null) => void }) {
   const { listRef, currentRef } = useCentredFilm()
-  const letters = paletteLetters(draft.colors)
+  const stripRef = useRef<HTMLElement>(null)
+  const [sheet, setSheet] = useState<{ target: string | null; anchor: HTMLElement } | null>(null)
+  const { drag, order, floaterRef, onPointerDown, consumeDrag } = useChipDrag(draft.colors, stripRef, listRef, (from, to) =>
+    commit(moveColor(getDraft(), from, to)),
+  )
+  useEffect(() => {
+    if (drag) setSheet(null)
+  }, [drag])
+  const letters = paletteLetters(order)
+  const editing = sheet !== null && sheet.target !== null
+  const adding = sheet !== null && sheet.target === null
+
   return (
-    <nav className={playStyles.film} aria-label="Colors">
+    <nav ref={stripRef} className={`${playStyles.film} ${styles.strip}`} aria-label="Colors">
       <Link to="/" className={playStyles.filmMark} aria-label="Pixel Imperium">
         <CrownMark />
       </Link>
@@ -348,10 +366,17 @@ function ColorStrip({ draft, chosen, onChoose }: { draft: Draft; chosen: string 
         </span>
       </p>
       <ol ref={listRef} className={`${playStyles.filmSlots} ${styles.chips}`}>
-        {[null, ...draft.colors].map((c, i) => {
+        {[null, ...order].map((c, i) => {
           const current = c === chosen
           return (
-            <li key={c ?? ''} ref={current ? currentRef : undefined} className={current ? playStyles.filmCurrent : undefined}>
+            <li
+              key={c ?? ''}
+              ref={current ? currentRef : undefined}
+              className={current ? playStyles.filmCurrent : undefined}
+              data-color={c ?? undefined}
+              data-ghost={(c !== null && c === drag?.color) || undefined}
+              data-sheet-anchor={(current && editing) || undefined}
+            >
               <button
                 type="button"
                 className={styles.chip}
@@ -359,7 +384,15 @@ function ColorStrip({ draft, chosen, onChoose }: { draft: Draft; chosen: string 
                 style={c === null ? undefined : ({ '--c': c } as CSSProperties)}
                 aria-label={c === null ? 'Empty' : `Color ${i}, ${c}`}
                 aria-pressed={current}
-                onClick={() => onChoose(c)}
+                onPointerDown={c === null ? undefined : e => onPointerDown(e, c)}
+                onClick={e => {
+                  if (consumeDrag()) return
+                  if (c === null || !current) return onChoose(c)
+                  setSheet(editing ? null : { target: c, anchor: e.currentTarget.parentElement! })
+                }}
+                onDoubleClick={e => {
+                  if (c !== null && !editing) setSheet({ target: c, anchor: e.currentTarget.parentElement! })
+                }}
               >
                 <Keycap>{String(i)}</Keycap>
               </button>
@@ -368,9 +401,34 @@ function ColorStrip({ draft, chosen, onChoose }: { draft: Draft; chosen: string 
           )
         })}
       </ol>
-      <button type="button" className={styles.add} aria-label="Add a color" disabled>
+      <button
+        type="button"
+        className={styles.add}
+        aria-label="Add a color"
+        aria-expanded={adding}
+        data-sheet-anchor={adding || undefined}
+        disabled={draft.colors.length >= MAX_COLORS}
+        onClick={e => setSheet(adding ? null : { target: null, anchor: e.currentTarget })}
+      >
         +
       </button>
+      {sheet && (
+        <ColorSheet
+          key={sheet.target ?? ''}
+          target={sheet.target}
+          anchor={sheet.anchor}
+          onChoose={onChoose}
+          onClose={() => setSheet(null)}
+        />
+      )}
+      {drag && (
+        <div
+          ref={floaterRef}
+          className={styles.floater}
+          style={{ top: drag.top, left: drag.left, '--c': drag.color } as CSSProperties}
+          aria-hidden="true"
+        />
+      )}
     </nav>
   )
 }
