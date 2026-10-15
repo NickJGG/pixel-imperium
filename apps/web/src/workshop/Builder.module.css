@@ -41,6 +41,19 @@
   border-left: var(--space-2) solid var(--chip);
 }
 
+/* The province's count pill's height: its line plus its padding, at its font size. */
+.paperSwatch {
+  width: 1.7em;
+  height: 1.7em;
+  font-size: var(--fs-16);
+  min-height: 0;
+  padding: 0;
+  background: var(--chip);
+  border: 2px solid color-mix(in srgb, var(--ink) 25%, transparent);
+  border-radius: var(--r-sm);
+  box-shadow: none;
+}
+
 /* The editable album's slots: a ghost while dragged, a bar on the side a drop would land. */
 .slot {
   position: relative;

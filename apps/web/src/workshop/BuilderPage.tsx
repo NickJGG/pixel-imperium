@@ -274,6 +274,7 @@ function BuilderColumn({
             paper={draft.paper}
             fallback="the campaign’s"
             none={{ label: 'Campaign’s', note: 'The campaign’s own paper.' }}
+            swatch
             onChange={paper => editCampaign(d => setProvince(d, k, { paper }))}
           />
           <CountPill className={provinceStyles.count}>

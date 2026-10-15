@@ -73,29 +73,46 @@ export function PaperChip({
   paper,
   fallback,
   none,
+  swatch = false,
   onChange,
 }: {
   paper: HexPaper | null
   /** Shown while `paper` is unset. */
   fallback: string
   none: { label: string; note: string } | false
+  /** Just a square of the paper's color, its label left to screen readers. */
+  swatch?: boolean
   onChange: (paper: HexPaper | null) => void
 }) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const label = `Paper · ${paper ? 'picked' : fallback}`
+  const chip = { '--chip': paper ? derivePaper(paper).tab : 'var(--tab)' } as CSSProperties
   return (
     <>
-      <button
-        ref={triggerRef}
-        type="button"
-        data-variant="paper"
-        data-size="compact"
-        className={styles.paperChip}
-        style={{ '--chip': paper ? derivePaper(paper).tab : 'var(--tab)' } as CSSProperties}
-        onClick={() => setOpen(true)}
-      >
-        Paper · {paper ? 'picked' : fallback}
-      </button>
+      {swatch ? (
+        <button
+          ref={triggerRef}
+          type="button"
+          className={styles.paperSwatch}
+          style={chip}
+          aria-label={label}
+          title={label}
+          onClick={() => setOpen(true)}
+        />
+      ) : (
+        <button
+          ref={triggerRef}
+          type="button"
+          data-variant="paper"
+          data-size="compact"
+          className={styles.paperChip}
+          style={chip}
+          onClick={() => setOpen(true)}
+        >
+          {label}
+        </button>
+      )}
       {open && (
         <Sheet title="Paper" restore={triggerRef} onClose={() => setOpen(false)}>
           <PaperField paper={paper} onChange={onChange} none={none} />
