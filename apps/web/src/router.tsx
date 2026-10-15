@@ -1,4 +1,13 @@
-import { Outlet, createRootRoute, createRoute, createRouter, notFound, redirect, useRouterState } from '@tanstack/react-router'
+import {
+  Outlet,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  lazyRouteComponent,
+  notFound,
+  redirect,
+  useRouterState,
+} from '@tanstack/react-router'
 import type { CampaignSummary } from '@pixel-imperium/protocol'
 import { accountReady, getAccount, useAccount } from './account.ts'
 import { fetchProfile } from './api.ts'
@@ -44,12 +53,12 @@ import styles from './App.module.css'
 
 function Root() {
   const { needsHandle } = useAccount()
-  // Play and a Lesson carry the HUD's pills in their own rail or top line, or place the HUD themselves. Read from the
+  // Play, a Lesson and Make carry the HUD's pills in their own rail or top line, or place the HUD themselves. Read from the
   // matches shown, not the address, which changes first: leaving Play, the HUD would mount over it before a morph
   // captures it, and its logo would hold still instead of slapping on.
   const playing = useRouterState({
     select: s =>
-      /^\/(?:play\/|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+)/.test(s.matches.at(-1)?.pathname ?? s.location.pathname),
+      /^\/(?:play\/|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+|make$)/.test(s.matches.at(-1)?.pathname ?? s.location.pathname),
   })
   // An edge state in their place wants the HUD back, floating like any Worlds page's.
   const edge = useRouterState({
@@ -386,6 +395,17 @@ const lessonRoute = createRoute({
   notFoundComponent: () => <NotFound>There’s no lesson by that name.</NotFound>,
 })
 
+/** Dev only, and its own chunk: the puzzle editor. A production build holds no trace of it. */
+const devRoutes = import.meta.env.DEV
+  ? [
+      createRoute({
+        getParentRoute: () => rootRoute,
+        path: '/make',
+        component: lazyRouteComponent(() => import('./make/MakePage.tsx'), 'MakePage'),
+      }),
+    ]
+  : []
+
 export const router = createRouter({
   routeTree: rootRoute.addChildren([
     homeRoute,
@@ -401,6 +421,7 @@ export const router = createRouter({
     learnRoute,
     trackRoute,
     lessonRoute,
+    ...devRoutes,
   ]),
   defaultErrorComponent: LoadError,
   defaultPendingComponent: Fallback,

@@ -1,0 +1,165 @@
+/* /make: Play's anatomy (Play.module.css) on the workshop's paper, with what Play has no use for. */
+.rail {
+  overflow-y: auto;
+}
+
+/* Keycaps show only on the hovered or focused button, so the tools read quietly. Outranks Play's mouse rule. */
+:root:not([data-pad]) .make .keycap {
+  display: none;
+}
+
+@media (pointer: fine) {
+  :root:not([data-pad]) .make :is(button, a):is(:hover, :focus-visible) > .keycap {
+    display: inline-flex;
+  }
+}
+
+.chips > li {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+}
+
+.make .chip {
+  --btn-bg: var(--c);
+  --btn-edge: var(--shade);
+  --press: 3px;
+  position: relative;
+  width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border-radius: var(--r-md);
+  box-shadow:
+    0 var(--press) 0 var(--btn-edge),
+    inset 0 0 0 2px color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+.make .chip[data-empty] {
+  background: var(--paper)
+    repeating-linear-gradient(45deg, transparent 0 5px, color-mix(in srgb, var(--ink) 18%, transparent) 5px 7px);
+}
+
+.make .add {
+  --press: 3px;
+  flex: none;
+  width: 48px;
+  min-height: 48px;
+  margin-bottom: var(--space-4);
+  padding: 0;
+  font-size: var(--fs-28);
+  border-radius: var(--r-md);
+}
+
+.make .title {
+  --btn-bg: transparent;
+  --btn-edge: transparent;
+  min-height: 0;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  text-align: left;
+  white-space: normal;
+  border-radius: var(--r-xs);
+  cursor: text;
+}
+
+.make .title:is(:hover, :active) {
+  transform: none;
+  text-decoration: underline dotted 2px;
+  text-underline-offset: 4px;
+}
+
+.titleForm {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.titleForm label {
+  display: grid;
+  gap: var(--space-1);
+  font: var(--type-kicker);
+  text-transform: uppercase;
+}
+
+.titleForm input {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  font: var(--type-small);
+  color: inherit;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  border: 0;
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 3px 0 color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+.titleForm button {
+  justify-self: start;
+}
+
+.make .roomy {
+  gap: var(--space-5);
+}
+
+.make .tools {
+  display: flex;
+}
+
+.make .tools > button {
+  position: relative;
+  padding: 0;
+}
+
+.make .tools svg {
+  width: 18px;
+  height: 18px;
+}
+
+.make .tools .keycap {
+  top: -10px;
+  right: -2px;
+}
+
+.sizeRow {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-small);
+}
+
+.make .stepper button {
+  --press: 3px;
+  width: 36px;
+  padding: 0;
+}
+
+.stepper b {
+  min-width: 2ch;
+  text-align: center;
+  font: 700 var(--fs-14) var(--font-mono);
+}
+
+.make .flip {
+  position: relative;
+}
+
+.make .flip svg {
+  width: 15px;
+  height: 15px;
+}
+
+.make .playtest {
+  min-height: 48px;
+}
+
+.notice {
+  margin: 0;
+  font: var(--type-small);
+  color: var(--ink-soft);
+}
