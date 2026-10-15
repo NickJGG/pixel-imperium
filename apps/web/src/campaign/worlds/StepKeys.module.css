@@ -39,11 +39,21 @@
 
 /*
  * A sideways step glides each key from its old spine to its new one with the columns (Worlds.module.css's timing).
- * A change of level slides the spines off and in from the edges, so the keys fade out and in with the content,
- * all but gone while they glide; `normal` undoes the way home's reverse.
+ * A change of level slides the spines off and in from the edges, and `StepKeys.tsx` moves each key with its spine,
+ * the old one off its shared group's box; failing a spine, the keys fade out and in with the content, all but gone
+ * while they glide, and `normal` undoes the way home's reverse.
  */
 :root:active-view-transition-type(to-home, to-province, into-album, out-of-album, to-board, from-board, door-board, door-back)::view-transition-group(.key) {
   animation-direction: normal;
+}
+
+:root:active-view-transition-type(to-home, to-province, into-album, out-of-album, to-board, from-board, door-board, door-back)::view-transition-image-pair(.key) {
+  overflow: visible;
+}
+
+:root:active-view-transition-type(to-home, to-province, into-album, out-of-album, to-board, from-board, door-board, door-back)::view-transition-old(.key),
+:root:active-view-transition-type(to-home, to-province, into-album, out-of-album, to-board, from-board, door-board, door-back)::view-transition-new(.key) {
+  mix-blend-mode: normal;
 }
 
 :root:active-view-transition-type(to-home, to-province, into-album, out-of-album, to-board, from-board, door-board, door-back)::view-transition-old(.key) {

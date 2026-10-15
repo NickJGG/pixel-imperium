@@ -1,4 +1,4 @@
-import { type RefObject, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { type RefObject, useLayoutEffect, useState, useSyncExternalStore } from 'react'
 import { PadGlyph } from '../../pad/PadGlyph.tsx'
 import { usePadMode } from '../../pad/mode.ts'
 import styles from './StepKeys.module.css'
@@ -41,40 +41,103 @@ const KEY_REM = 1.6875
 
 const keyName = (dir: Dir) => (dir === -1 ? 'step-key-prev' : 'step-key-next')
 
-const followed = new WeakSet<ViewTransition>()
+/** The transitions whose spines slide or grow at the window's edges, which `StepKeys.module.css` fades the keys over. */
+const LEVELS = ['to-home', 'to-province', 'into-album', 'out-of-album', 'to-board', 'from-board', 'door-board', 'door-back']
+
+/** The keys as last laid out, and the row they stood under. */
+let laidOut: { keys: readonly Key[]; row: HTMLElement | null } = { keys: [], row: null }
+const planned = new WeakSet<ViewTransition>()
+
+/**
+ * Called before the keys are laid out again or leave: the first call in a transition holds the keys its old state
+ * captured, and plans their part once both states are in.
+ */
+function notice(): void {
+  const transition = document.activeViewTransition
+  if (!transition || planned.has(transition)) return
+  planned.add(transition)
+  const before = laidOut.keys
+  transition.ready.then(() => {
+    const { keys, row } = laidOut
+    if (transition.types.has('step')) follow(row, before, keys)
+    else if (LEVELS.some(type => transition.types.has(type))) ride(before, keys)
+  }, () => {})
+}
+
+/** The view-transition animations on `pseudo`. */
+const on = (pseudo: string) =>
+  document.getAnimations().filter(a => a.effect instanceof KeyframeEffect && a.effect.pseudoElement === pseudo) as (Animation & {
+    effect: KeyframeEffect
+  })[]
 
 /**
  * A key on only one side of a step, beside an end column as it folds or opens, has no partner to glide from or to,
  * so it rides along with its column's group instead of appearing or vanishing where it rests.
  */
-function follow(row: HTMLElement, before: readonly Key[], after: readonly Key[]): void {
-  const transition = document.activeViewTransition
-  if (!transition?.types.has('step') || followed.has(transition)) return
-  const lone = ([-1, 1] as const).flatMap(dir => {
+function follow(row: HTMLElement | null, before: readonly Key[], after: readonly Key[]): void {
+  for (const dir of [-1, 1] as const) {
     const old = before.find(k => k.dir === dir)
     const now = after.find(k => k.dir === dir)
-    return old && now ? [] : now ? [{ key: now, entering: true }] : old ? [{ key: old, entering: false }] : []
-  })
-  if (lone.length === 0) return
-  followed.add(transition)
-  transition.ready.then(() => {
-    const animations = document.getAnimations()
-    for (const { key, entering } of lone) {
-      const effect = animations
-        .map(a => a.effect)
-        .find(e => e instanceof KeyframeEffect && e.pseudoElement === `::view-transition-group(${key.column})`) as KeyframeEffect | undefined
-      const from = effect?.getKeyframes()[0]
-      const column = [...row.children].find(c => (c as HTMLElement).style.viewTransitionName === key.column)
-      if (!effect || !from?.transform || !from.width || !column) continue
-      const r = column.getBoundingClientRect()
-      const dx = new DOMMatrix(String(from.transform)).e + parseFloat(String(from.width)) / 2 - (r.left + r.width / 2)
-      document.documentElement.animate(
-        { translate: entering ? [`${dx}px 0`, '0 0'] : ['0 0', `${-dx}px 0`] },
-        // A CSS animation's timing function is its keyframes', not its effect's.
-        { ...effect.getTiming(), easing: from.easing ?? 'ease', pseudoElement: `::view-transition-group(${keyName(key.dir)})` },
-      )
+    const key = old && now ? undefined : (now ?? old)
+    if (!key || !row) continue
+    const effect = on(`::view-transition-group(${key.column})`)[0]?.effect
+    const from = effect?.getKeyframes()[0]
+    const column = [...row.children].find(c => (c as HTMLElement).style.viewTransitionName === key.column)
+    if (!effect || !from?.transform || !from.width || !column) continue
+    const r = column.getBoundingClientRect()
+    const dx = new DOMMatrix(String(from.transform)).e + parseFloat(String(from.width)) / 2 - (r.left + r.width / 2)
+    document.documentElement.animate(
+      { translate: key === now ? [`${dx}px 0`, '0 0'] : ['0 0', `${-dx}px 0`] },
+      // A CSS animation's timing function is its keyframes', not its effect's.
+      { ...effect.getTiming(), easing: from.easing ?? 'ease', pseudoElement: `::view-transition-group(${keyName(dir)})` },
+    )
+  }
+}
+
+/**
+ * Across a change of level, each key moves as its spine does: its spine group's translation and opacity, and its
+ * spine snapshot's clip and opacity, played on the key's own snapshot. The two sides' keys share a group when both
+ * have one, so the group stands still where the new key rests and the old key's snapshot is offset back to its own
+ * place.
+ */
+function ride(before: readonly Key[], after: readonly Key[]): void {
+  const slant = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--slant-angle')) * Math.PI) / 180
+  // A key leans back by the slant, so a move across the window is turned into the key's frame.
+  const lean = (x: number, y: number) =>
+    `translate(${x * Math.cos(slant) - y * Math.sin(slant)}px, ${x * Math.sin(slant) + y * Math.cos(slant)}px)`
+
+  for (const [side, keys] of [['old', before], ['new', after]] as const) {
+    for (const key of keys) {
+      const image = `::view-transition-${side}(${keyName(key.dir)})`
+      const own = on(image)
+      if (own.length === 0) continue
+      const partner = side === 'old' ? after.find(k => k.dir === key.dir) : undefined
+      if (partner) on(`::view-transition-group(${keyName(key.dir)})`).forEach(a => a.cancel())
+      const [dx, dy] = partner ? [key.x - partner.x, key.y - partner.y] : [0, 0]
+
+      const group = on(`::view-transition-group(${key.column})`)[0]?.effect
+      const paper = on(`::view-transition-${side}(${key.column})`)[0]?.effect
+      const timing = { ...(group ?? paper ?? own[0]!.effect).getTiming(), fill: 'both' as const, pseudoElement: image }
+      const spine = getComputedStyle(document.documentElement, `::view-transition-group(${key.column})`)
+      const px = (length = '0') => {
+        const value = length.replace(/var\((--[\w-]+)\)/, (_, name: string) => spine.getPropertyValue(name).trim())
+        return (value.endsWith('%') ? (parseFloat(value) / 100) * parseFloat(spine.width) : parseFloat(value)) || 0
+      }
+      const moves = (group?.getKeyframes() ?? [])
+        .filter(f => f.translate !== undefined || f.opacity !== undefined)
+        .map(({ computedOffset, easing, translate, opacity }) => {
+          const [x, y] = String(translate ?? '0').split(/\s+/)
+          return { offset: computedOffset, easing, transform: lean(dx + px(x), dy + px(y)), ...(opacity !== undefined && { opacity }) }
+        })
+      const rest = lean(dx, dy)
+      if (moves[0]?.offset !== 0) moves.unshift({ offset: 0, easing: 'linear', transform: rest })
+      if (moves.at(-1)!.offset !== 1) moves.push({ offset: 1, easing: 'linear', transform: rest })
+
+      if (group || paper) own.forEach(a => a.cancel())
+      document.documentElement.animate(moves, timing)
+      if (paper) document.documentElement.animate(paper.getKeyframes().map(({ computedOffset, ...f }) => f), timing)
     }
-  }, () => {})
+  }
 }
 
 /**
@@ -85,12 +148,20 @@ export function StepKeys({ row }: { row: RefObject<HTMLDivElement | null> }) {
   const step = useSyncExternalStore(subscribe, () => stepper)
   const pad = usePadMode()
   const [keys, setKeys] = useState<readonly Key[]>([])
-  const shown = useRef<readonly Key[]>([])
+
+  useLayoutEffect(
+    () => () => {
+      notice()
+      laidOut = { keys: [], row: null }
+    },
+    [],
+  )
 
   useLayoutEffect(() => {
     const el = row.current
     if (!el || !step) {
-      shown.current = []
+      notice()
+      laidOut = { keys: [], row: el }
       return setKeys(keys => (keys.length === 0 ? keys : []))
     }
     const open = [...el.children].find(c => c.classList.contains(worlds.world!) && !c.classList.contains(worlds.spine!))
@@ -117,8 +188,8 @@ export function StepKeys({ row }: { row: RefObject<HTMLDivElement | null> }) {
           y: Math.round(y),
         }
       })
-      follow(el, shown.current, next)
-      shown.current = next
+      notice()
+      laidOut = { keys: next, row: el }
       setKeys(keys => (JSON.stringify(keys) === JSON.stringify(next) ? keys : next))
     }
 
