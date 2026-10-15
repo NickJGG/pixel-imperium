@@ -1,8 +1,8 @@
 /**
  * Which view transition a navigation plays, if any, as a pure function of the two places and the moment's
  * conditions; `morph-nav.ts` starts whatever this names. Home ↔ an album page, Campaigns or a Learn track, Campaigns ↔
- * one of its campaign's provinces, a step between an album's pages, Campaigns' campaigns, Learn's tracks or Home's
- * columns, and a step into another Year each have a morph of their own, on desktop only. So does a province page ↔
+ * one of its campaign's provinces, a step between an album's pages, Campaigns' campaigns, Learn's tracks, Home's or
+ * the Workshop's columns or a draft campaign's provinces, and a step into another Year each have a morph of their own, on desktop only. So does a province page ↔
  * one of its puzzles, where Play stands its Filmstrip, and a step between two puzzles of one province there. A door
  * with no Filmstrip to fly into, Home's Next up or a Daily's slot on Home or its Month, grows its slot into the board
  * as its column widens into Play's paper; on a phone any slot opening its board just grows. Every other move between
@@ -112,6 +112,13 @@ const isHome = (place: Place) => place.pathname === '/'
 
 const openOf = (place: Place) => (place.search as { open?: unknown }).open
 
+const tabOf = (place: Place) => (place.search as { tab?: unknown }).tab
+
+const DRAFT_PAGE = /^\/workshop\/c\/([^/]+\/(?:playtest\/)?)\d+\/?$/
+
+/** A draft campaign's province page, in its builder or its playtest: which draft, and which of the two. */
+const draftAlbumOf = (pathname: string) => DRAFT_PAGE.exec(pathname)?.[1]
+
 /** `board` is a campaign puzzle and `page` the province page it sits on, or a Lesson and its track's page. */
 const onItsPage = (board: Place, page: Place, env: Env) => {
   const at = page.pathname.replace(/\/$/, '')
@@ -154,14 +161,20 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
   // A phone's carousel has already slid to the column it steps to.
   const step = () => (env.phone ? null : (typed('step') ?? { types: [] }))
 
-  // The same page with another search: Home's column steps; anything else, like Profile's `?c=`, cuts.
-  if (from.pathname === to.pathname) return isHome(from) && openOf(from) !== openOf(to) ? step() : null
+  // The same page with another search: Home's or the Workshop's column steps; anything else, like Profile's `?c=` or
+  // the Workshop's other tab, cuts.
+  if (from.pathname === to.pathname) {
+    const columns = isHome(from) || (from.pathname === '/workshop' && tabOf(from) === tabOf(to))
+    return columns && openOf(from) !== openOf(to) ? step() : null
+  }
 
   if (env.edge) return env.direction === 'replace' ? null : wipe(from, to, env)
 
   const same = (test: (pathname: string) => boolean) => test(from.pathname) && test(to.pathname)
   if ((same(isProvincePath) || same(isMonthPath)) && albumOf(from.pathname) === albumOf(to.pathname)) return step()
   if (same(isTrackPath) || same(isCampaignsPath)) return step()
+  const draft = draftAlbumOf(from.pathname)
+  if (draft !== undefined && draft === draftAlbumOf(to.pathname)) return step()
   if (!env.phone) {
     const rail = LESSON.test(from.pathname) || LESSON.test(to.pathname) ? env.lessonRail : env.rail
     if (rail && onItsPage(to, from, env)) return typed('to-board')

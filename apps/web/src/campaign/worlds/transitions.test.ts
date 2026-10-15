@@ -51,6 +51,16 @@ describe('transitionFor: the morphs', () => {
     expect(types('/c/main/meadow', '/c/main/marsh', { typed: false })).toEqual([])
   })
 
+  it('steps between the Workshop’s columns and a draft campaign’s provinces', () => {
+    const replace = { direction: 'replace' } as const
+    expect(types(at('/workshop'), at('/workshop', { open: 'd-1' }), replace)).toEqual(['step'])
+    expect(types(at('/workshop', { tab: 'played' }), at('/workshop', { tab: 'played', open: 'c1' }), replace)).toEqual(['step'])
+    expect(types(at('/workshop'), at('/workshop', { tab: 'played' }), replace)).toBeNull()
+    expect(types('/workshop/c/d-1/1', '/workshop/c/d-1/2', replace)).toEqual(['step'])
+    expect(types('/workshop/c/d-1/playtest/1', '/workshop/c/d-1/playtest/2', replace)).toEqual(['step'])
+    expect(types('/workshop/c/d-1/1', '/workshop/c/d-1/playtest/1')).toEqual(['wipe'])
+  })
+
   it('slides into another Year', () => {
     expect(types('/daily/2026/01', '/daily/2025/12')).toEqual(['to-year-back'])
     expect(types('/daily/2025/12', '/daily/2026/01')).toEqual(['to-year-forward'])

@@ -15,6 +15,13 @@ describe('routeParent', () => {
     ['/settings', '/?open=settings'],
     ['/u/ann', '/?open=profile'],
     ['/play/abc', null],
+    ['/workshop', '/?open=workshop'],
+    ['/workshop/puzzles', '/workshop'],
+    ['/workshop/p/abc', '/workshop'],
+    ['/workshop/c/d-1/crest', '/workshop?open=d-1'],
+    ['/workshop/c/d-1/2', '/workshop?open=d-1'],
+    ['/workshop/c/d-1/playtest/2', '/workshop?open=d-1'],
+    ['/workshop/c/d-1/playtest/2/3', '/workshop/c/d-1/playtest/2'],
   ])('%s → %s', (path, parent) => {
     expect(routeParent(path)).toBe(parent)
   })

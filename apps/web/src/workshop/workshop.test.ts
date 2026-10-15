@@ -99,7 +99,7 @@ describe('yourCampaigns', () => {
     const campaign = (id: string, more = {}) => ({ id, title: id, paper: '#ff0000' as const, total: 3, createdAt: '2026-01-01T00:00:00Z', ...more })
     const entries = yourCampaigns({
       made: { puzzles: [], campaigns: [campaign('live'), campaign('retired', { retired: true })] },
-      drafts: { puzzles: [], campaigns: [{ id: 'd-x', title: '', updatedAt: '2026-01-02T00:00:00Z' }] },
+      drafts: { puzzles: [], campaigns: [{ id: 'd-x', title: '', paper: null, updatedAt: '2026-01-02T00:00:00Z' }] },
     })
     expect(entries.map(e => [e.kind, e.campaign.id])).toEqual([
       ['published', 'live'],

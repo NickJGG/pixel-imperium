@@ -105,7 +105,7 @@ export function WorkshopPage({
               : {
                   key: e.campaign.id,
                   name: `${titleOf(e.campaign.title)} · draft`,
-                  paper: 'workshop',
+                  paper: e.campaign.paper ?? 'workshop',
                   render: start => (
                     <DraftCampaignColumn
                       key={e.campaign.id}

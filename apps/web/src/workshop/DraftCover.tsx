@@ -63,7 +63,7 @@ export function DraftCampaignColumn({
   if (opening) return <DraftCover draftKey={draftKey} opening={opening} start={start} />
   const titleId = `workshop-${summary.id}`
   return (
-    <World paper="workshop" labelledBy={titleId} style={workshopMorphName(summary.id)} start={start}>
+    <World paper={summary.paper ?? 'workshop'} labelledBy={titleId} style={workshopMorphName(summary.id)} start={start}>
       <div className={home.column}>
         <div className={home.stack}>
           <p className={home.kicker}>Your campaign · draft</p>

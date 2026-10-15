@@ -423,6 +423,7 @@ export interface DraftCampaign {
 export interface DraftCampaignSummary {
   id: string
   title: string
+  paper: HexPaper | null
   updatedAt: string
 }
 

@@ -122,7 +122,7 @@ export function workshopRoutes({ db, isOfficialId }: { db: Db; isOfficialId: (id
       ])
       return c.json<Drafts>({
         puzzles: puzzles.map(p => ({ ...p, paper: p.paper as HexPaper | null, updatedAt: p.updatedAt.toISOString() })),
-        campaigns: campaigns.map(d => ({ id: d.id, title: d.doc.title, updatedAt: d.updatedAt.toISOString() })),
+        campaigns: campaigns.map(d => ({ id: d.id, title: d.doc.title, paper: d.doc.paper, updatedAt: d.updatedAt.toISOString() })),
       })
     })
     .get('/me/drafts/puzzles/:id', async c => {
