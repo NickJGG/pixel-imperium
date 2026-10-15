@@ -6,8 +6,13 @@
   pointer-events: none;
 }
 
-.key {
+.holder {
   position: absolute;
+  display: flex;
+  translate: -50% -50%;
+}
+
+.key {
   /* `StepKeys.tsx`'s KEY_REM. */
   height: 1.6875rem;
   min-height: 0;
@@ -22,7 +27,6 @@
   box-shadow: 0 3px 0 var(--shade);
   cursor: pointer;
   pointer-events: auto;
-  translate: -50% -50%;
   rotate: calc(-1 * var(--slant-angle));
 }
 
@@ -47,7 +51,8 @@
   animation-direction: normal;
 }
 
-:root:active-view-transition-type(to-home, to-province, into-album, out-of-album, to-board, from-board, door-board, door-back)::view-transition-image-pair(.key) {
+/* Over Worlds.module.css's clip on every pair, which would crop the tilted key and its shadow to the holder's box. */
+:root::view-transition-image-pair(.key) {
   overflow: visible;
 }
 

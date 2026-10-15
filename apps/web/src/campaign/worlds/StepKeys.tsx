@@ -101,10 +101,7 @@ function follow(row: HTMLElement | null, before: readonly Key[], after: readonly
  * place.
  */
 function ride(before: readonly Key[], after: readonly Key[]): void {
-  const slant = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--slant-angle')) * Math.PI) / 180
-  // A key leans back by the slant, so a move across the window is turned into the key's frame.
-  const lean = (x: number, y: number) =>
-    `translate(${x * Math.cos(slant) - y * Math.sin(slant)}px, ${x * Math.sin(slant) + y * Math.cos(slant)}px)`
+  const shift = (x: number, y: number) => `translate(${x}px, ${y}px)`
 
   for (const [side, keys] of [['old', before], ['new', after]] as const) {
     for (const key of keys) {
@@ -127,9 +124,9 @@ function ride(before: readonly Key[], after: readonly Key[]): void {
         .filter(f => f.translate !== undefined || f.opacity !== undefined)
         .map(({ computedOffset, easing, translate, opacity }) => {
           const [x, y] = String(translate ?? '0').split(/\s+/)
-          return { offset: computedOffset, easing, transform: lean(dx + px(x), dy + px(y)), ...(opacity !== undefined && { opacity }) }
+          return { offset: computedOffset, easing, transform: shift(dx + px(x), dy + px(y)), ...(opacity !== undefined && { opacity }) }
         })
-      const rest = lean(dx, dy)
+      const rest = shift(dx, dy)
       if (moves[0]?.offset !== 0) moves.unshift({ offset: 0, easing: 'linear', transform: rest })
       if (moves.at(-1)!.offset !== 1) moves.push({ offset: 1, easing: 'linear', transform: rest })
 
@@ -208,22 +205,17 @@ export function StepKeys({ row }: { row: RefObject<HTMLDivElement | null> }) {
   return (
     <div className={styles.stepKeys}>
       {keys.map(key => (
-        <button
+        // Named on an untilted holder: a named element's own tilt moves to its group, which rotates the flat
+        // snapshot as a bitmap and blurs it.
+        <span
           key={key.dir}
-          type="button"
-          className={styles.key}
-          style={{
-            left: key.x,
-            top: key.y,
-            viewTransitionName: keyName(key.dir),
-            viewTransitionClass: styles.key,
-          }}
-          tabIndex={-1}
-          aria-label={key.name}
-          onClick={() => step(key.dir)}
+          className={styles.holder}
+          style={{ left: key.x, top: key.y, viewTransitionName: keyName(key.dir), viewTransitionClass: styles.key }}
         >
-          <span className={styles.face}>{pad ? <PadGlyph button={key.dir === -1 ? 'LB' : 'RB'} /> : key.dir === -1 ? '←' : '→'}</span>
-        </button>
+          <button type="button" className={styles.key} tabIndex={-1} aria-label={key.name} onClick={() => step(key.dir)}>
+            <span className={styles.face}>{pad ? <PadGlyph button={key.dir === -1 ? 'LB' : 'RB'} /> : key.dir === -1 ? '←' : '→'}</span>
+          </button>
+        </span>
       ))}
     </div>
   )
