@@ -9,7 +9,7 @@ import { CountPill } from '../album/CountPill.tsx'
 import { Lock } from '../album/Lock.tsx'
 import { TIER_NAME } from '../campaign/ProvincePage.tsx'
 import { SlotFace } from '../campaign/PuzzleSlot.tsx'
-import { type CampaignProgress, isOpen, provinceStates, shelfRows, tierGroups } from '../campaign/progress.ts'
+import { type CampaignProgress, isOpen, provinceStates, shelfLayout, tierGroups } from '../campaign/progress.ts'
 import { Backdrop, DraftProvinceSpine, World, Worlds, draftProvinceMorph, usePhone, useSpineReach, useStep } from '../campaign/worlds/Worlds.tsx'
 import { FloatingPills } from '../Hud.tsx'
 import type { Draft } from '../make/draft.ts'
@@ -166,8 +166,7 @@ function PlaytestProvince({
   const { state, solved, total } = progress.provinces[k]!
   const next = province.puzzles.findIndex(p => storage.loadSolved(p.id) === null)
   const groups = tierGroups(province)
-  const rows = shelfRows(groups.map(g => g.slots.length))
-  const columns = groups.map(g => Math.max(1, Math.ceil(g.slots.length / rows)))
+  const { rows, columns } = shelfLayout(groups.map(g => g.slots.length))
   const tiered = province.puzzles.some(p => p.tier)
   const id = `playtest-${k + 1}`
   return (

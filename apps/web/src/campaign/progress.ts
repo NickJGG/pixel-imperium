@@ -101,12 +101,20 @@ export function tierGroups(province: Pick<Province, 'puzzles'>): TierGroup[] {
   )
 }
 
+/** An official province's shelves: 30 puzzles stand 4 deep and about 8 across, its tiers together. */
+const FULL_ROWS = 4
+const FULL_COLUMNS = 8
+
 /**
- * How many deep slots stand on a province's shelves, given each tier's count: 4 at most, sized to share the
- * column's height, but shallower when its biggest tier is small, so a few slots read left to right.
+ * Each shelf's slot columns, and how deep they stand, given each tier's count: as deep as an official province's and at
+ * least as wide, the last shelf padded out with empty columns, so a slot is the same size in a province of any size.
  */
-export const shelfRows = (counts: readonly number[]): number =>
-  Math.min(4, Math.max(1, Math.ceil(Math.max(0, ...counts) / 3)))
+export function shelfLayout(counts: readonly number[]): { rows: number; columns: number[] } {
+  const columns = counts.map(n => Math.max(1, Math.ceil(n / FULL_ROWS)))
+  const spare = FULL_COLUMNS - columns.reduce((a, b) => a + b, 0)
+  if (spare > 0 && columns.length > 0) columns[columns.length - 1]! += spare
+  return { rows: FULL_ROWS, columns }
+}
 
 /** The province flagged to offer the Techniques has started. */
 export const techniquesRecommended = (campaign: Pick<Campaign, 'provinces'>, progress: CampaignProgress) =>

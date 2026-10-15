@@ -11,7 +11,7 @@ import { play } from '../sound.ts'
 import { useHudTrail } from '../Trail.tsx'
 import { markConquestsSeen, unseenConquests } from './conquests-seen.ts'
 import { NextUp } from './NextUp.tsx'
-import { type CampaignProgress, campaignProgress, isOpen, shelfRows, tierGroups } from './progress.ts'
+import { type CampaignProgress, campaignProgress, isOpen, shelfLayout, tierGroups } from './progress.ts'
 import { PuzzleSlot } from './PuzzleSlot.tsx'
 import { slotMorph } from './worlds/names.ts'
 import { Backdrop, Curtain, Spine, World, Worlds, morphName, usePhone, useSpineReach, useStep } from './worlds/Worlds.tsx'
@@ -209,8 +209,7 @@ function OpenProvince({
   const { state, solved, total } = progress.provinces[index]!
   const next = state === 'active' ? province.puzzles.find(p => !p.removed && storage.loadSolved(p.id) === null) : undefined
   const groups = tierGroups(province)
-  const rows = shelfRows(groups.map(g => g.slots.length))
-  const columns = groups.map(g => Math.ceil(g.slots.length / rows))
+  const { rows, columns } = shelfLayout(groups.map(g => g.slots.length))
   const id = `province-${province.id}`
 
   return (

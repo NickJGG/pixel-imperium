@@ -12,7 +12,7 @@ import { Slot } from '../album/Slot.tsx'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { useAccount } from '../account.ts'
 import { TIER_NAME } from '../campaign/ProvincePage.tsx'
-import { shelfRows, tierGroups } from '../campaign/progress.ts'
+import { shelfLayout, tierGroups } from '../campaign/progress.ts'
 import {
   AddProvinceSpine,
   Backdrop,
@@ -221,8 +221,7 @@ function BuilderColumn({
   const groups = tiers ? tierGroups(province) : [{ tier: null, slots: province.puzzles.map((puzzle, i) => ({ puzzle, number: i + 1 })) }]
   const plusSlot = !tiers && count < TIERED_FROM && room > 0
   const sizes = groups.map((g, gi) => g.slots.length + (plusSlot && gi === groups.length - 1 ? 1 : 0))
-  const rows = shelfRows(sizes)
-  const columns = sizes.map(s => Math.max(1, Math.ceil(s / rows)))
+  const { rows, columns } = shelfLayout(sizes)
 
   const move = (i: number, dir: -1 | 1) => {
     if (i + dir < 0 || i + dir >= count) return

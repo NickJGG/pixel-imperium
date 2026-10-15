@@ -6,7 +6,7 @@ import { provinceTrail } from '../home/columns.ts'
 import { useHudTrail } from '../Trail.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { currentCampaign } from './last-campaign.ts'
-import { type ProvinceState, campaignProgress, isOpen, shelfRows, tierGroups } from './progress.ts'
+import { type ProvinceState, campaignProgress, isOpen, shelfLayout, tierGroups } from './progress.ts'
 import { TIER_NAME } from './ProvincePage.tsx'
 import { useAnnounceSkeleton } from './worlds/morph-nav.ts'
 import { Backdrop, SkeletonSpine, World, Worlds, morphName, usePhone, useSpineReach } from './worlds/Worlds.tsx'
@@ -102,8 +102,7 @@ function Column({
   state: ProvinceState | undefined
 }) {
   const shelves = province ? tierGroups(province).map(g => ({ tier: g.tier, count: g.slots.length })) : SHELVES
-  const rows = shelfRows(shelves.map(s => s.count))
-  const columns = shelves.map(s => Math.ceil(s.count / rows))
+  const { rows, columns } = shelfLayout(shelves.map(s => s.count))
   return (
     <World paper={province?.paper ?? 'marches'} fog={!state || !isOpen(state)} style={morphName({ id })} start pair>
       <div className={styles.zoom}>
