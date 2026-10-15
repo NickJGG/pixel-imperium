@@ -9,7 +9,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "validate:campaigns": "tsx src/validate-campaigns.ts",
-    "validate:dailies": "tsx src/validate-dailies.ts"
+    "validate:dailies": "tsx src/validate-dailies.ts",
+    "reports": "tsx src/reports.ts",
+    "takedown": "tsx src/takedown.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.3",

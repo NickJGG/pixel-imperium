@@ -1,11 +1,11 @@
 /**
  * Better Auth's tables (`user`, `session`, `account`, `verification`) mirror what its Drizzle schema
  * generator emits for our config; keep them in step when changing `auth.ts` options.
- * Puzzle ids reference the campaign files in `data/campaigns/`, so they carry no foreign key.
+ * Puzzle ids reference the campaign files in `data/campaigns/` or a `made_puzzle` row, so they carry no foreign key.
  */
-import type { Assists } from '@pixel-imperium/protocol'
+import type { Assists, CrestDraft, DraftCampaignDoc, MadeProvince, SeedPuzzle } from '@pixel-imperium/protocol'
 import { sql } from 'drizzle-orm'
-import { boolean, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { boolean, index, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
 export const user = pgTable(
   'user',
@@ -29,6 +29,8 @@ export const user = pgTable(
     tutorialAskedAt: timestamp('tutorial_asked_at'),
     /** When the player was first offered the Techniques, on any device. */
     techniquesAskedAt: timestamp('techniques_asked_at'),
+    /** Set by `pnpm takedown --ban`; the Author can no longer publish. */
+    publishBannedAt: timestamp('publish_banned_at'),
   },
   t => [uniqueIndex('user_handle_lower_idx').on(sql`lower(${t.handle})`)],
 )
@@ -158,3 +160,92 @@ export const lessonDone = pgTable(
   },
   t => [primaryKey({ columns: [t.userId, t.lesson] })],
 )
+
+/** A Workshop puzzle not yet published; the id is the client's, unique per Account. */
+export const draftPuzzle = pgTable(
+  'draft_puzzle',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    id: text('id').notNull(),
+    title: text('title').notNull(),
+    width: integer('width').notNull(),
+    height: integer('height').notNull(),
+    /** Row-major hex colors, `null` for empty cells. */
+    cells: jsonb('cells').$type<(string | null)[]>().notNull(),
+    /** The color strip's order. */
+    colors: jsonb('colors').$type<string[]>().notNull(),
+    paper: text('paper'),
+    updatedAt: timestamp('updated_at').notNull(),
+  },
+  t => [primaryKey({ columns: [t.userId, t.id] })],
+)
+
+/** A Workshop campaign not yet published; the id is the client's, unique per Account. */
+export const draftCampaign = pgTable(
+  'draft_campaign',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    id: text('id').notNull(),
+    doc: jsonb('doc').$type<DraftCampaignDoc>().notNull(),
+    updatedAt: timestamp('updated_at').notNull(),
+  },
+  t => [primaryKey({ columns: [t.userId, t.id] })],
+)
+
+/** A published player-made puzzle. Its picture is final; only the title and paper change. */
+export const madePuzzle = pgTable(
+  'made_puzzle',
+  {
+    id: text('id').primaryKey(),
+    authorId: text('author_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    /** `seed.title` is left stale; `title` is the current one. */
+    seed: jsonb('seed').$type<SeedPuzzle>().notNull(),
+    paper: text('paper'),
+    /** Line-logic sweeps to solve, from the publish check. */
+    passes: integer('passes').notNull(),
+    campaignId: text('campaign_id'),
+    /** The draft it was published from, so a campaign draft still naming that draft finds it. */
+    draftId: text('draft_id'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    retiredAt: timestamp('retired_at'),
+    /** Taken down by an admin: gone for everyone. */
+    removedAt: timestamp('removed_at'),
+  },
+  t => [index('made_puzzle_author_idx').on(t.authorId), index('made_puzzle_campaign_idx').on(t.campaignId)],
+)
+
+/** A published player-made campaign. Its structure is final; titles, names, flavour and papers change. */
+export const madeCampaign = pgTable(
+  'made_campaign',
+  {
+    id: text('id').primaryKey(),
+    authorId: text('author_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    paper: text('paper').notNull(),
+    provinces: jsonb('provinces').$type<MadeProvince[]>().notNull(),
+    crest: jsonb('crest').$type<CrestDraft>(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    retiredAt: timestamp('retired_at'),
+    removedAt: timestamp('removed_at'),
+  },
+  t => [index('made_campaign_author_idx').on(t.authorId)],
+)
+
+/** A player's report of a player-made puzzle or campaign, from an Account or, signed out, an IP. */
+export const report = pgTable('report', {
+  id: serial('id').primaryKey(),
+  targetId: text('target_id').notNull(),
+  reason: text('reason').notNull(),
+  reporterId: text('reporter_id').references(() => user.id, { onDelete: 'set null' }),
+  reporterIp: text('reporter_ip'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})

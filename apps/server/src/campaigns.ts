@@ -112,7 +112,7 @@ export function buildCampaign({ campaign, provinces, crest }: CampaignSource): C
   return crest ? { ...built, crest: buildCrest(crest, built.provinces) } : built
 }
 
-function buildCrest(def: CrestDef, provinces: readonly { puzzles: readonly { id: string }[] }[]): Crest {
+export function buildCrest(def: CrestDef, provinces: readonly { puzzles: readonly { id: string }[] }[]): Crest {
   const width = def.rows[0]?.length ?? 0
   const regions = new Map<string, number[]>()
   const holes: number[] = []
@@ -177,7 +177,22 @@ function crestProblems(c: Campaign, crest: Crest): string[] {
   return problems
 }
 
-const tierAt = (slot: number, [medium, hard]: [number, number]): Tier =>
+/**
+ * Whether a player-made crest fits provinces of `counts` puzzles: every rule an official crest meets. `pixels` is its
+ * filled pixels, for the builder's "n / m".
+ */
+export function crestFit(def: CrestDef, counts: readonly number[]): { pixels: number; fits: boolean } {
+  const provinces = counts.map((n, k) => ({ id: String(k + 1), puzzles: Array.from({ length: n }, (_, i) => ({ id: `${k}:${i}` })) }))
+  const crest = buildCrest(def, provinces)
+  const pixels = crest.width * crest.height - crest.holes.length
+  const campaign = { id: 'crest', draft: false, provinces } as unknown as Campaign
+  const malformed = Object.values(def.palette).some(hex => typeof hex !== 'string' || !HEX.test(hex))
+  return { pixels, fits: crest.width > 0 && !malformed && crestProblems(campaign, crest).length === 0 }
+}
+
+const HEX = /^#[0-9a-f]{6}$/i
+
+export const tierAt = (slot: number, [medium, hard]: [number, number]): Tier =>
   slot >= hard ? 'hard' : slot >= medium ? 'medium' : 'easy'
 
 const isPaper = (name: string) => (PAPER_NAMES as readonly string[]).includes(name)

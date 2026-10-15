@@ -1,4 +1,4 @@
-import { Hono } from 'hono'
+import { type Context, Hono } from 'hono'
 import { hintFor, satisfiesClues } from '@pixel-imperium/nonogram'
 import type {
   ApiError,
@@ -18,8 +18,10 @@ import type {
   PutHandleResponse,
   PutProgressResponse,
   PuzzleClues,
+  HexPaper,
   PuzzleRecord,
   PuzzleSummary,
+  RetiredError,
   Showcase,
   SolveResponse,
   SolveStamps,
@@ -28,7 +30,7 @@ import type {
 import { and, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm'
 import type { Auth } from './auth.ts'
 import type { Db } from './db/index.ts'
-import { hint, lessonDone, progress, solve, user, userSettings } from './db/schema.ts'
+import { hint, lessonDone, madeCampaign, madePuzzle, progress, solve, user, userSettings } from './db/schema.ts'
 import { handleProblem } from './handles.ts'
 import { rateLimiter } from './rate-limit.ts'
 import { parseCells, planImport } from './import.ts'
@@ -44,6 +46,16 @@ import {
   yearAlbum,
 } from './dailies.ts'
 import { type StampSolve, stampProgress, stampsFor } from './stamps.ts'
+import {
+  type MadeCampaignRow,
+  type MadePuzzle,
+  hasStarted,
+  isMadeId,
+  loadMadePuzzle,
+  madeCrest,
+  madePuzzleFrom,
+} from './made.ts'
+import { workshopRoutes } from './workshop.ts'
 
 export interface AppDeps {
   db: Db
@@ -55,6 +67,13 @@ export interface AppDeps {
 const NO_DAILIES: Dailies = { launch: '9999-12-31', authored: new Map() }
 
 type SessionUser = Auth['$Infer']['Session']['user']
+
+export type AppEnv = { Variables: { user: SessionUser | null } }
+
+type Found = CampaignPuzzle | DailyPuzzle | MadePuzzle
+
+/** A puzzle a request may play, or why not: unknown or taken down (404), or retired before this player started it (410). */
+type Lookup = { puzzle: Found } | { status: 404 | 410; error: ApiError | RetiredError }
 
 const ASSIST_KEYS = ['fadeClues', 'impossibleLines', 'autoMarkEmptyLines', 'crosshair', 'lockLine'] as const
 
@@ -163,6 +182,89 @@ export function createApp(
   }
   const notFound = (id: string): ApiError =>
     dailyDate(id) === null ? { error: `no puzzle '${id}'` } : { error: `no Daily '${id}' to play today` }
+  const isOfficialId = (id: string) => byId.has(id) || campaignsById.has(id)
+
+  /** Its Author, a signed-in player with a grid or solve on it, or a signed-out device saying it has progress (`?started=1`). */
+  const mayPlayRetired = async (c: Context<AppEnv>, authorId: string, startedIds: readonly string[]) => {
+    const viewer = c.get('user')
+    if (!viewer) return c.req.query('started') === '1'
+    return viewer.id === authorId || hasStarted(db, viewer.id, startedIds)
+  }
+  const retiredError = (author: string): RetiredError => ({ error: `@${author} retired this`, retired: true, author })
+
+  /** `playable`, falling back to published player-made puzzles. */
+  const findPuzzle = async (c: Context<AppEnv>, id: string): Promise<Lookup> => {
+    const official = playable(id)
+    if (official) return { puzzle: official }
+    const made = await loadMadePuzzle(db, id)
+    if (!made) return { status: 404, error: notFound(id) }
+    if (made.made.retired && !(await mayPlayRetired(c, made.authorId, made.startedIds))) {
+      return { status: 410, error: retiredError(made.made.author) }
+    }
+    return { puzzle: made }
+  }
+  const isOwn = (c: Context<AppEnv>, p: Found) => 'made' in p && c.get('user')?.id === p.authorId
+
+  /** Published puzzles by id; taken-down ones left out. */
+  const madePuzzlesById = async (ids: readonly string[]) => {
+    const wanted = ids.filter(isMadeId)
+    if (wanted.length === 0) return new Map<string, MadePuzzle>()
+    const rows = await db
+      .select({ puzzle: madePuzzle, author: user.handle, campaign: madeCampaign })
+      .from(madePuzzle)
+      .innerJoin(user, eq(user.id, madePuzzle.authorId))
+      .leftJoin(madeCampaign, eq(madeCampaign.id, madePuzzle.campaignId))
+      .where(and(inArray(madePuzzle.id, wanted), isNull(madePuzzle.removedAt)))
+    return new Map(
+      rows
+        .filter(r => !r.campaign?.removedAt)
+        .map(r => [r.puzzle.id, madePuzzleFrom(r.puzzle, r.author, r.campaign)] as const),
+    )
+  }
+
+  /** A published campaign as the album sees it; taken-down puzzles stay as blank slots. */
+  const madeCampaignPayload = async (c: MadeCampaignRow, author: string): Promise<CampaignPayload> => {
+    const rows = await db.select().from(madePuzzle).where(eq(madePuzzle.campaignId, c.id))
+    const puzzles = new Map(rows.map(r => [r.id, r]))
+    const crest = madeCrest(c)
+    return {
+      id: c.id,
+      name: c.title,
+      paper: c.paper as HexPaper,
+      closingLine: '',
+      ...(crest && {
+        crest: { width: crest.width, height: crest.height, ...(crest.holes.length > 0 && { holes: crest.holes }) },
+      }),
+      provinces: c.provinces.map((province, k) => {
+        const summaries = province.puzzleIds.flatMap((id): PuzzleSummary[] => {
+          const row = puzzles.get(id)
+          if (!row) return []
+          const at = crest?.at.get(id)
+          return [
+            {
+              ...summarize(madePuzzleFrom(row, author, c)),
+              ...(row.removedAt && { title: '', removed: true as const }),
+              ...(at !== undefined && { crest: at }),
+            },
+          ]
+        })
+        return {
+          id: String(k + 1),
+          name: province.name,
+          theme: '',
+          flavour: province.flavour,
+          paper: province.paper ?? (c.paper as HexPaper),
+          maxSize: Math.max(0, ...summaries.map(p => Math.max(p.width, p.height))),
+          puzzles: summaries,
+        }
+      }),
+      author,
+      ...(c.retiredAt && { retired: true as const }),
+    }
+  }
+
+  /** A solved puzzle's Crest pixel color, if its campaign has a Crest. */
+  const crestOf = (p: Found) => ('made' in p ? p.campaign && madeCrest(p.campaign)?.color.get(p.id) : crestColor(p.id))
 
   /**
    * A verified solve upgrades an unverified one; nothing ever downgrades or re-dates a solve.
@@ -210,7 +312,7 @@ export function createApp(
     }
   }
 
-  return new Hono<{ Variables: { user: SessionUser | null } }>()
+  return new Hono<AppEnv>()
     .basePath('/api')
     .on(['GET', 'POST'], '/auth/*', c => auth.handler(c.req.raw))
     .use(async (c, next) => {
@@ -235,10 +337,24 @@ export function createApp(
         ),
       ),
     )
-    .get('/campaigns/:id', c => {
-      const campaign = campaignPayloads.get(c.req.param('id'))
-      if (!campaign) return c.json<ApiError>({ error: `no campaign '${c.req.param('id')}'` }, 404)
-      return c.json(campaign)
+    .get('/campaigns/:id', async c => {
+      const id = c.req.param('id')
+      const official = campaignPayloads.get(id)
+      if (official) return c.json(official)
+      const [row] = isMadeId(id)
+        ? await db
+            .select({ campaign: madeCampaign, author: user.handle })
+            .from(madeCampaign)
+            .innerJoin(user, eq(user.id, madeCampaign.authorId))
+            .where(and(eq(madeCampaign.id, id), isNull(madeCampaign.removedAt)))
+        : []
+      if (!row) return c.json<ApiError>({ error: `no campaign '${id}'` }, 404)
+      const { campaign, author } = row
+      const ids = campaign.provinces.flatMap(p => p.puzzleIds)
+      if (campaign.retiredAt && !(await mayPlayRetired(c, campaign.authorId, ids))) {
+        return c.json<RetiredError>(retiredError(author), 410)
+      }
+      return c.json(await madeCampaignPayload(campaign, author))
     })
     .get('/daily/:year', c => {
       const year = Number(c.req.param('year'))
@@ -251,15 +367,22 @@ export function createApp(
       )
       return c.json<DailyYear>({ year, launch: dailies.launch, months })
     })
-    .get('/puzzles/:id', c => {
-      const p = playable(c.req.param('id'))
-      if (!p) return c.json(notFound(c.req.param('id')), 404)
-      const context = 'date' in p ? { daily: p.date } : { campaignId: p.campaignId, provinceId: p.provinceId }
+    .get('/puzzles/:id', async c => {
+      const found = await findPuzzle(c, c.req.param('id'))
+      if ('status' in found) return c.json(found.error, found.status)
+      const p = found.puzzle
+      const context =
+        'date' in p
+          ? { daily: p.date }
+          : 'made' in p
+            ? { made: p.made }
+            : { campaignId: p.campaignId, provinceId: p.provinceId }
       return c.json<PuzzleClues>({ ...summarize(p), ...context, clues: p.clues })
     })
     .post('/puzzles/:id/solve', async c => {
-      const p = playable(c.req.param('id'))
-      if (!p) return c.json(notFound(c.req.param('id')), 404)
+      const found = await findPuzzle(c, c.req.param('id'))
+      if ('status' in found) return c.json(found.error, found.status)
+      const p = found.puzzle
 
       const body = (await c.req.json().catch(() => null)) as { cells?: unknown; ms?: unknown; hinted?: unknown } | null
       const cells = body?.cells
@@ -274,7 +397,8 @@ export function createApp(
       if (!satisfiesClues({ width: p.width, height: p.height, cells }, p.clues)) {
         return c.json<SolveResponse>({ solved: false })
       }
-      const user = c.get('user')
+      // An Author's play of their own work is a playtest: it records nothing.
+      const user = isOwn(c, p) ? null : c.get('user')
       let foil: boolean | null = null
       let stamps: SolveStamps | undefined
       if (user) {
@@ -288,14 +412,16 @@ export function createApp(
         foil = row!.foil
         const { ms, hinted: attemptHinted } = body!
         if (isMs(ms) && attemptHinted !== true) await lowerBest(db, user.id, p.id, ms)
-        stamps = await solveStamps(user.id, p, recorded.length > 0)
+        // Stamps are per album, so a one-puzzle campaign could farm them.
+        if (!('made' in p)) stamps = await solveStamps(user.id, p, recorded.length > 0)
       }
-      const crest = crestColor(p.id)
+      const crest = crestOf(p)
       return c.json<SolveResponse>({ solved: true, palette: p.palette, foil, ...(crest && { crest }), ...(stamps && { stamps }) })
     })
     .post('/puzzles/:id/hint', async c => {
-      const p = playable(c.req.param('id'))
-      if (!p) return c.json(notFound(c.req.param('id')), 404)
+      const found = await findPuzzle(c, c.req.param('id'))
+      if ('status' in found) return c.json(found.error, found.status)
+      const p = found.puzzle
       const user = c.get('user')
       if (!hintAllowed(user?.id ?? c.req.header('x-forwarded-for') ?? 'anonymous')) {
         return c.json<ApiError>({ error: 'too many hints; try again in a minute' }, 429)
@@ -307,7 +433,7 @@ export function createApp(
 
       const nudge = hintFor(p.palette, cells)
       if (!nudge) return c.json<ApiError>({ error: 'nothing to hint: the grid is solved' }, 409)
-      if (user) await db.insert(hint).values({ userId: user.id, puzzleId: p.id }).onConflictDoNothing()
+      if (user && !isOwn(c, p)) await db.insert(hint).values({ userId: user.id, puzzleId: p.id }).onConflictDoNothing()
       return c.json<HintResponse>(nudge)
     })
     .get('/handles/:handle/available', async c => {
@@ -353,6 +479,7 @@ export function createApp(
         showcase: owner.showcase.filter(id => verified.has(id) && puzzleById(id)),
       })
     })
+    .route('/', workshopRoutes({ db, isOfficialId }))
     .put('/me/handle', async c => {
       const body = (await c.req.json().catch(() => null)) as { handle?: unknown } | null
       const handle = typeof body?.handle === 'string' ? body.handle : ''
@@ -395,14 +522,16 @@ export function createApp(
           solvedAt: null,
           bestMs: null,
         })
+      const made = await madePuzzlesById(solves.filter(s => s.verified && !puzzleById(s.puzzleId)).map(s => s.puzzleId))
       for (const s of solves) {
         const r = record(s.puzzleId)
         r.solved = s.verified ? 'verified' : 'unverified'
         r.foil = s.foil
         r.bestMs = s.bestMs
         if (s.verified) {
-          r.palette = puzzleById(s.puzzleId)?.palette ?? null
-          r.crest = crestColor(s.puzzleId) ?? null
+          const p = puzzleById(s.puzzleId) ?? made.get(s.puzzleId)
+          r.palette = p?.palette ?? null
+          r.crest = (p && crestOf(p)) ?? null
           r.solvedAt = s.solvedAt.toISOString()
         }
       }
@@ -467,8 +596,9 @@ export function createApp(
       return c.json<Showcase>({ puzzleIds })
     })
     .put('/me/progress/:id', async c => {
-      const p = playable(c.req.param('id'))
-      if (!p) return c.json(notFound(c.req.param('id')), 404)
+      const found = await findPuzzle(c, c.req.param('id'))
+      if ('status' in found) return c.json(found.error, found.status)
+      const p = found.puzzle
 
       const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null
       const updatedAt = new Date(typeof body?.updatedAt === 'string' ? body.updatedAt : NaN)
@@ -491,6 +621,7 @@ export function createApp(
         )
       }
 
+      if (isOwn(c, p)) return c.json<PutProgressResponse>({ applied: false })
       // A client clock running ahead must not lock out every later write.
       const at = new Date(Math.min(updatedAt.getTime(), Date.now()))
       const values = { cells: body.cells as string, replaying: body.replaying, updatedAt: at, elapsedMs, attemptHinted }
@@ -522,12 +653,14 @@ export function createApp(
 
       const userId = c.get('user')!.id
       const results: Record<string, ImportOutcome> = {}
+      const parsed = items.map(parseImportItem)
+      const made = await madePuzzlesById(parsed.flatMap(item => (item && !puzzleById(item.id) ? [item.id] : [])))
       await db.transaction(async tx => {
-        for (const raw of items) {
-          const item = parseImportItem(raw)
+        for (const item of parsed) {
           if (!item) continue
           // Today-only governs play, not import, but a Daily still to come isn't known yet.
-          const found = puzzleById(item.id)
+          const own = made.get(item.id)
+          const found = puzzleById(item.id) ?? (own?.authorId === userId ? undefined : own)
           const p = found && !('date' in found && found.date > latestPlayableDate(now())) ? found : undefined
           const plan = p ? planImport(p, item) : { solve: null, progress: null }
           if (plan.solve) {

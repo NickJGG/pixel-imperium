@@ -15,10 +15,23 @@ export interface PuzzleSummary {
   tier?: Tier
   /** Its row-major pixel in the campaign's Crest; in campaign payloads only, absent without a Crest. */
   crest?: number
+  /** A player-made puzzle taken down by an admin: an empty slot, its title blank. */
+  removed?: true
 }
 
-/** Where a puzzle belongs: a Campaign's Province, or a Daily's `YYYY-MM-DD` date. */
-export type PuzzleContext = { campaignId: string; provinceId: string } | { daily: string }
+/**
+ * A player-made Puzzle's place: its Author's handle, the paper they picked (absent = the Workshop's), and its
+ * Campaign and Province (`"1"`–`"6"`) when it's in one. `retired` reaches only players who started it.
+ */
+export interface MadeContext {
+  author: string
+  paper?: Paper
+  campaign?: { id: string; provinceId: string }
+  retired?: true
+}
+
+/** Where a puzzle belongs: an official Campaign's Province, a Daily's `YYYY-MM-DD` date, or its Author. */
+export type PuzzleContext = { campaignId: string; provinceId: string } | { daily: string } | { made: MadeContext }
 
 /** `GET /api/puzzles/:id`. Never includes the solution or palette. */
 export type PuzzleClues = PuzzleSummary & PuzzleContext & { clues: Clues }
@@ -107,6 +120,19 @@ export interface Campaign {
    */
   crest?: { width: number; height: number; holes?: number[] }
   provinces: Province[]
+  /** A player-made campaign's Author's handle; its provinces are id'd `"1"`–`"6"`. */
+  author?: string
+  /** A player-made campaign its Author retired; only players who started it are served it. */
+  retired?: true
+}
+
+/**
+ * 410 from `GET /api/puzzles/:id` or `/api/campaigns/:id` for player-made work its Author retired, to a player who
+ * never started it. Signed-out clients with device progress pass `?started=1`, as on every puzzle request.
+ */
+export interface RetiredError extends ApiError {
+  retired: true
+  author: string
 }
 
 /** `POST /api/puzzles/:id/solve`; `cells` is row-major, marks sent as `'empty'`. */
@@ -321,4 +347,201 @@ export interface Profile {
   years: ProfileCampaign[]
   /** Puzzle ids the player picked, biggest first; empty when they haven't, and the album falls back. */
   showcase: string[]
+}
+
+/** A player-picked paper: `#rrggbb`. */
+export type HexPaper = `#${string}`
+
+/** `PUT /api/me/drafts/puzzles/:id` takes one without `id`; kept only if `updatedAt` is newer than the stored copy. */
+export interface DraftPuzzle {
+  id: string
+  title: string
+  width: number
+  height: number
+  /** Row-major hex colors, `null` for empty cells. */
+  cells: (string | null)[]
+  /** The color strip's order. */
+  colors: string[]
+  paper: HexPaper | null
+  updatedAt: string
+}
+
+export type DraftPuzzleSummary = Omit<DraftPuzzle, 'cells' | 'colors'>
+
+/** A crest as drawn: `rows` in `palette` keys, `regions` in 1-based province numbers, `.` in both for a hole. */
+export interface CrestDraft {
+  palette: Record<string, string>
+  rows: string[]
+  regions: string[]
+}
+
+export interface DraftProvince {
+  name: string
+  flavour: string
+  paper: HexPaper | null
+  /** The Author's draft or published puzzle ids, in play order. */
+  puzzleIds: string[]
+}
+
+export interface DraftCampaignDoc {
+  title: string
+  paper: HexPaper | null
+  provinces: DraftProvince[]
+  crest: CrestDraft | null
+}
+
+/** A draft campaign as the server last checked it: tier cuts and the publish rules, per province. */
+export interface CampaignPreview {
+  provinces: {
+    /** As `ProvinceDef.tiers`: 1-based slots where Medium and Hard start; `null` under 9 puzzles or with a stall. */
+    tiers: [number, number] | null
+    puzzles: PreviewPuzzle[]
+  }[]
+  /** Filled crest pixels against puzzles, and whether each province's region fits; `null` without a crest. */
+  crest: { pixels: number; puzzles: number; fits: boolean } | null
+}
+
+export interface PreviewPuzzle {
+  id: string
+  /** `missing`: no draft or published puzzle of yours; `taken`: in another published campaign; `fails`: breaks a publish rule. */
+  problem?: 'missing' | 'taken' | 'fails'
+  /** Line-logic sweeps, `null` where it stalls or the puzzle is missing. */
+  passes: number | null
+  width: number
+  height: number
+}
+
+/** `GET` and `PUT /api/me/drafts/campaigns/:id`; `PUT` takes `{ doc, updatedAt }`. */
+export interface DraftCampaign {
+  id: string
+  doc: DraftCampaignDoc
+  updatedAt: string
+  preview: CampaignPreview
+}
+
+export interface DraftCampaignSummary {
+  id: string
+  title: string
+  updatedAt: string
+}
+
+/** `GET /api/me/drafts`, newest first. Capped at 200 puzzles and 10 campaigns; a `PUT` past a cap answers 409. */
+export interface Drafts {
+  puzzles: DraftPuzzleSummary[]
+  campaigns: DraftCampaignSummary[]
+}
+
+export interface PutDraftPuzzleResponse {
+  applied: boolean
+}
+
+export interface PutDraftCampaignResponse {
+  applied: boolean
+  /** Of the stored doc, whether or not this one applied. */
+  preview: CampaignPreview
+}
+
+/** `POST /api/me/drafts/puzzles/:id/publish`; title and paper override the draft's. */
+export interface PublishPuzzleRequest {
+  title?: string
+  paper?: HexPaper | null
+}
+
+/**
+ * `POST .../publish` answers 201 with the new id, 403 to a banned Author, 429 past 20 puzzles or 3 campaigns a day, and
+ * 422 with `PublishRejection` when a rule fails.
+ */
+export interface PublishResponse {
+  id: string
+}
+
+export interface PublishRejection extends ApiError {
+  /** For a campaign, the preview showing which puzzles or provinces fail. */
+  preview?: CampaignPreview
+}
+
+/** A published province: `tiers` set for good at publish. */
+export interface MadeProvince {
+  name: string
+  flavour: string
+  paper: HexPaper | null
+  puzzleIds: string[]
+  tiers: [number, number] | null
+}
+
+/** One of the Author's published puzzles; they always see its picture. */
+export interface MadePuzzleSummary extends PuzzleSummary {
+  paper: HexPaper | null
+  palette: (string | null)[]
+  campaignId: string | null
+  createdAt: string
+  retired?: true
+  removed?: true
+}
+
+export interface MadeCampaignSummary {
+  id: string
+  title: string
+  paper: HexPaper
+  total: number
+  createdAt: string
+  retired?: true
+  removed?: true
+}
+
+/** `GET /api/me/made`: the Author's published work, newest first. */
+export interface Made {
+  puzzles: MadePuzzleSummary[]
+  campaigns: MadeCampaignSummary[]
+}
+
+/**
+ * `PATCH /api/me/made/puzzles/:id` and `.../campaigns/:id`: the parts that never touch progress. `provinces`, when
+ * sent, has one entry per province.
+ */
+export interface PatchMadePuzzle {
+  title?: string
+  paper?: HexPaper | null
+}
+
+export interface PatchMadeCampaign {
+  title?: string
+  paper?: HexPaper
+  provinces?: { name: string; flavour: string; paper: HexPaper | null }[]
+}
+
+/** `DELETE /api/me/made/...` answers 409 with this once another Account has started it; retire it instead. */
+export interface DeleteRejection extends ApiError {
+  retire: true
+}
+
+/** Player-made work an Account played by link, someone else's, most recently played first. */
+export interface PlayedPuzzle extends PuzzleSummary {
+  author: string
+  paper: HexPaper | null
+  solved: boolean
+  retired?: true
+}
+
+export interface PlayedCampaign {
+  id: string
+  title: string
+  author: string
+  paper: HexPaper
+  total: number
+  solved: number
+  retired?: true
+  removed?: true
+}
+
+/** `GET /api/me/played`: standalone puzzles, and campaigns any of whose puzzles were played. */
+export interface Played {
+  puzzles: PlayedPuzzle[]
+  campaigns: PlayedCampaign[]
+}
+
+/** `POST /api/reports`, signed in or out; 204, or 404 for no such player-made work. */
+export interface ReportRequest {
+  targetId: string
+  reason: string
 }
