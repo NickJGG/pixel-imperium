@@ -33,6 +33,8 @@ describe('transitionFor: the morphs', () => {
     expect(types('/learn/techniques', at('/', { open: 'learn' }))).toEqual(['to-home'])
     expect(types('/', '/c/main')).toEqual(['to-province'])
     expect(types('/c/main/', '/', { direction: 'back' })).toEqual(['to-home'])
+    expect(types(at('/', { open: 'workshop' }), at('/workshop', { open: 'd-1' }))).toEqual(['to-province'])
+    expect(types(at('/workshop', { tab: 'played' }), at('/', { open: 'workshop' }))).toEqual(['to-home'])
   })
 
   it('opens a province from Campaigns and comes back up, only within its campaign', () => {

@@ -548,7 +548,7 @@ export function NewCampaignSpine() {
     <Link
       to="/workshop/new-campaign"
       className={`${styles.world} ${styles.spine} ${styles.provinceSpine} ${styles.add}`}
-      style={{ viewTransitionClass: columnClass('spine', campaignSpineClass(false)) }}
+      style={{ ...workshopMorphName('new'), viewTransitionClass: columnClass('spine', campaignSpineClass(false)) }}
     >
       <span className={styles.stack}>
         <span className={styles.name}>+ New campaign</span>

@@ -45,7 +45,7 @@ export function WorkshopColumn({
   const playedCount = played.puzzles.length + playedCampaigns(played).length
 
   return (
-    <World paper="workshop" labelledBy="home-workshop" style={style} start={start}>
+    <World paper="workshop" labelledBy="home-workshop" style={style} start={start} pair>
       <div className={styles.column}>
         <div className={styles.stack}>
           <p className={styles.kicker}>Your puzzles</p>

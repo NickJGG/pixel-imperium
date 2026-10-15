@@ -1,6 +1,6 @@
 /**
  * Which view transition a navigation plays, if any, as a pure function of the two places and the moment's
- * conditions; `morph-nav.ts` starts whatever this names. Home ↔ an album page, Campaigns or a Learn track, Campaigns ↔
+ * conditions; `morph-nav.ts` starts whatever this names. Home ↔ an album page, Campaigns, a Learn track or the Workshop, Campaigns ↔
  * one of its campaign's provinces, a step between an album's pages, Campaigns' campaigns, Learn's tracks, Home's or
  * the Workshop's columns or a draft campaign's provinces, and a step into another Year each have a morph of their own, on desktop only. So does a province page ↔
  * one of its puzzles, where Play stands its Filmstrip, and a step between two puzzles of one province there. A door
@@ -98,9 +98,13 @@ const REDIRECT = /^\/(?:c|u\/[^/]+\/[^/]+\/[^/]+|learn)\/?$/
 /** A Campaign's id or a Year, the album a province or Month page belongs to. */
 const albumOf = (pathname: string) => pathname.split('/')[2]!
 
-/** Campaigns, a province page, a Month of Dailies' page or a Learn track: the pages Home's columns open onto. */
+/** Campaigns, a province page, a Month of Dailies' page, a Learn track or the Workshop: the pages Home's columns open onto. */
 const isAlbumPath = (pathname: string) =>
-  isCampaignsPath(pathname) || isProvincePath(pathname) || isMonthPath(pathname) || isTrackPath(pathname)
+  isCampaignsPath(pathname) ||
+  isProvincePath(pathname) ||
+  isMonthPath(pathname) ||
+  isTrackPath(pathname) ||
+  /^\/workshop\/?$/.test(pathname)
 
 /** `province` is one of the provinces of the campaign `campaigns` is open on. */
 const inCampaign = (province: Place, campaigns: Place) =>

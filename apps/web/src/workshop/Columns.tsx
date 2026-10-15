@@ -66,7 +66,7 @@ export function PuzzlesColumn({ entries, start }: { entries: readonly PuzzleEntr
   const counts = puzzleCounts(entries)
   const last = lastDraft(entries)
   return (
-    <World paper="workshop" labelledBy="workshop-puzzles" style={workshopMorphName(PUZZLES)} start={start}>
+    <World paper="workshop" labelledBy="workshop-puzzles" style={workshopMorphName(PUZZLES)} start={start} pair>
       <div className={styles.column}>
         <div className={styles.stack}>
           <p className={styles.kicker}>Your puzzles</p>
@@ -125,7 +125,7 @@ export function PlayedByLinkColumn({
   const solved = live.filter(p => storage.loadSolved(p.id) !== null).length
   const next = live.find(p => storage.loadSolved(p.id) === null)
   return (
-    <World paper="workshop" labelledBy="workshop-played" style={workshopMorphName(PUZZLES)} start={start}>
+    <World paper="workshop" labelledBy="workshop-played" style={workshopMorphName(PUZZLES)} start={start} pair>
       <div className={styles.column}>
         <div className={styles.stack}>
           <p className={styles.kicker}>Player-made puzzles</p>
@@ -203,7 +203,7 @@ export function OwnCampaignColumn({
     )
   const inIt = puzzles.filter(p => p.campaignId === campaign.id)
   return (
-    <World paper={campaign.paper} labelledBy={titleId} style={workshopMorphName(campaign.id)} start={start}>
+    <World paper={campaign.paper} labelledBy={titleId} style={workshopMorphName(campaign.id)} start={start} pair>
       <div className={styles.column}>
         <div className={styles.stack}>
           <p className={styles.kicker}>Your campaign · published {shortDate(new Date(campaign.createdAt), new Date())}</p>
@@ -285,7 +285,7 @@ export function PlayedCampaignColumn({
 /** On a phone, where there are no spines: the row's last column, starting a new campaign. */
 export function NewCampaignColumn({ start }: { start: boolean }) {
   return (
-    <World paper="workshop" labelledBy="workshop-new-campaign" start={start}>
+    <World paper="workshop" labelledBy="workshop-new-campaign" start={start} pair>
       <div className={styles.column}>
         <div className={styles.stack}>
           <p className={styles.kicker}>Campaigns</p>

@@ -14,6 +14,7 @@ import {
   useStep,
 } from '../campaign/worlds/Worlds.tsx'
 import { localDrafts } from '../make/draft-store.ts'
+import { sticker } from '../Trail.tsx'
 import type { StoredCampaign } from './campaign-store.ts'
 import {
   NewCampaignColumn,
@@ -165,7 +166,7 @@ export function WorkshopPage({
   useSpineReach(ref)
 
   const tabs = (
-    <nav className={`${styles.tabs} ${styles.seg}`} aria-label="Whose">
+    <nav className={`${styles.tabs} ${styles.seg}`} style={sticker('workshop-tabs', 2)} aria-label="Whose">
       <Link
         to="/workshop"
         search={{}}
