@@ -11,6 +11,9 @@ export const dailyDateOf = (id: string) => (id.startsWith(PREFIX) ? id.slice(PRE
 const MINUTE_MS = 60_000
 export const GRACE_MS = 60 * MINUTE_MS
 
+/** The date at UTC+14, the first zone into each day: no player's Dailies run ahead of it. */
+export const earliestDay = (now: Date) => new Date(now.getTime() + 14 * 60 * MINUTE_MS).toISOString().slice(0, 10)
+
 /** Local midnight at the start of `date`, a `YYYY-MM-DD`. */
 export function startOf(date: string): Date {
   const [y, m, d] = date.split('-').map(Number) as [number, number, number]

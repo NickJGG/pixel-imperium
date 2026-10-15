@@ -1,11 +1,11 @@
 import type { DailyYear } from '@pixel-imperium/protocol'
-import { fetchDailyYear } from '../api.ts'
+import { dailyYear } from '../content.ts'
 
 let last: DailyYear | null = null
 
-/** Fetches a Year of Dailies and keeps it, so a skeleton can lay out its Months before the next load lands. */
+/** Loads a Year of Dailies and keeps it, so a skeleton can lay out its Months before the next load lands. */
 export async function loadDailyYear(year: number): Promise<DailyYear | null> {
-  const data = await fetchDailyYear(year)
+  const data = await dailyYear(year)
   if (data) last = data
   return data
 }

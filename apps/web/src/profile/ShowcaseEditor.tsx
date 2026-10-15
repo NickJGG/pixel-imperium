@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { putShowcase } from '../api.ts'
+import { forgetOwnProfile } from '../content.ts'
 import { useAccount } from '../account.ts'
 import { SHOWCASE_SIZE, type StickerEntry } from '../campaign/stickers.ts'
 import { ProfileSticker } from './Showcase.tsx'
@@ -26,7 +27,7 @@ export function ShowcaseEditor({ stickers, picks, onChange, onClose }: Props) {
   async function save() {
     setStatus('saving')
     try {
-      const { puzzleIds } = await putShowcase(picks)
+      const { puzzleIds } = await putShowcase(picks).finally(forgetOwnProfile)
       storage.saveShowcase(puzzleIds)
       await router.invalidate()
       onClose()

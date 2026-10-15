@@ -5,6 +5,7 @@ import { Dymo } from '../album/Dymo.tsx'
 import { Slot } from '../album/Slot.tsx'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { LoopIcon } from '../play/ClearButton.tsx'
+import { prefetchOn } from '../play/prefetch.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import styles from './Campaign.module.css'
 
@@ -60,6 +61,7 @@ export function PuzzleSlot({ puzzle: p, number, storage, next = false, padDefaul
       to="/play/$id"
       params={{ id: p.id }}
       className={styles.slotLink}
+      {...prefetchOn(p.id)}
       data-pad-default={padDefault || undefined}
       aria-label={label}
       title={status.kind === 'solved' && status.unverified ? 'Imported: replay to verify' : undefined}

@@ -9,6 +9,7 @@ import { dailyId, solveTime, solveTimes } from '../daily/clock.ts'
 import { DayFace, MonthCalendar } from '../daily/MonthCalendar.tsx'
 import { MONTH_NAMES, dayParams, dayStatus, isSolvedWith, monthParams, summaryOf, tallyOf, weeksOf } from '../daily/month.ts'
 import { FinishCard, StartChip, metaOf, useDailyClock } from '../daily/Today.tsx'
+import { usePrefetch } from '../play/prefetch.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { streakOf } from '../profile/activity.ts'
 import styles from './Home.module.css'
@@ -44,6 +45,7 @@ export function DailyColumn({
   const tally = tallyOf(year, month, data.launch, today, isSolved)
   const todays = summaryOf(data, today)
   const solvedToday = isSolved(today)
+  usePrefetch(todays && dailyId(today))
 
   const streak = useMemo(() => {
     const times = profile

@@ -2,7 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react'
 import { useRouterState } from '@tanstack/react-router'
 import type { Campaign, CampaignSummary } from '@pixel-imperium/protocol'
 import { getAccount } from '../account.ts'
-import { fetchCampaign, fetchCampaigns } from '../api.ts'
+import { campaign as loadCampaign, campaigns as loadCampaigns } from '../content.ts'
 import { seedStarted } from './started-campaigns.ts'
 
 const KEY = 'pixel-imperium:last-campaign'
@@ -47,8 +47,8 @@ export const currentCampaigns = (): readonly CampaignSummary[] | null => summari
 
 async function fetchPicked(): Promise<void> {
   try {
-    const id = pickCampaign(await fetchCampaigns())
-    const campaign = id === null ? null : await fetchCampaign(id)
+    const id = pickCampaign(await loadCampaigns())
+    const campaign = id === null ? null : await loadCampaign(id)
     if (campaign && !current) rememberCampaign(campaign)
   } catch {
     fetching = null

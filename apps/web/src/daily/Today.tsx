@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
 import type { DailySummary, DailyYear } from '@pixel-imperium/protocol'
+import { prefetchOn } from '../play/prefetch.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { type DailyClock, GRACE_MS, dailyClock, dailyId, formatLeft, startOf } from './clock.ts'
 import { DayFace } from './MonthCalendar.tsx'
@@ -38,7 +39,7 @@ export function FinishCard({ clock, data, storage }: { clock: DailyClock; data: 
     ? progressPercent(storage.loadProgress(id, summary.width * summary.height) ?? [], summary.filledCount, false)
     : null
   return (
-    <Link to="/daily/$year/$month/$day" params={dayParams(date)} className={styles.finish}>
+    <Link to="/daily/$year/$month/$day" params={dayParams(date)} className={styles.finish} {...prefetchOn(id)}>
       <DayFace date={date} status="finishing" summary={summary} storage={storage} door />
       <div>
         <b>Finish {weekdayOf(date)}’s</b>

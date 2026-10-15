@@ -13,9 +13,9 @@ import {
   putLessonDone,
   putProgress,
   putSettings,
-  submitSolve,
 } from './api.ts'
 import { deleteUser, getSession, refreshSession, signOut } from './auth.ts'
+import { forgetOwnProfile, solve } from './content.ts'
 import { ProgressStorage, signedOutStorage } from './play/progress-storage.ts'
 import { assistsOf, getSettings, subscribeSettings, updateSettings } from './settings.ts'
 import { ProgressSync } from './sync.ts'
@@ -208,7 +208,7 @@ async function start(): Promise<void> {
   if (!account) return
 
   const storage = new ProgressStorage(account.userId)
-  const sync = new ProgressSync(storage, { fetchProgress: fetchMyProgress, putProgress, solve: submitSolve })
+  const sync = new ProgressSync(storage, { fetchProgress: fetchMyProgress, putProgress, solve })
   setState({ account, storage, sync })
   listen(sync)
   if (!sessionId || !(await refresh(sync))) return
@@ -242,7 +242,7 @@ export async function acceptImport(): Promise<void> {
       ...(bestMs !== null && { bestMs }),
     }
   })
-  await importProgress({ puzzles })
+  await importProgress({ puzzles }).finally(forgetOwnProfile)
   signedOutStorage.clear()
   setState({ importOffer: null })
   await refresh(sync)
@@ -261,7 +261,7 @@ export function discardImport(): void {
 
 /** Sets and confirms the account's handle; resolves to why the server refused it, if it did. */
 export async function saveHandle(handle: string): Promise<HandleProblem | null> {
-  const result = await putHandle(handle)
+  const result = await putHandle(handle).finally(forgetOwnProfile)
   if ('reason' in result) return result.reason
   const account = state.account && { ...state.account, handle: result.handle }
   cacheAccount(account)
@@ -277,6 +277,7 @@ function reset(): void {
   syncedAssists = ''
   syncedAsked = new Set()
   syncedDone = new Set()
+  forgetOwnProfile()
   setState({ ...SIGNED_OUT, generation: state.generation + 1 })
 }
 

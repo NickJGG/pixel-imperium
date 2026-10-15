@@ -7,6 +7,7 @@ import { paperFor } from '../album/paper.ts'
 import { startOf } from '../daily/clock.ts'
 import { Crest } from '../home/Crest.tsx'
 import { crestPixels } from '../home/crest.ts'
+import { usePrefetch } from '../play/prefetch.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { shortDate } from '../profile/activity.ts'
 import { Bar, Ghost } from '../skeleton/Skeleton.tsx'
@@ -42,6 +43,7 @@ export function CampaignStack({
 }) {
   const progress = campaignProgress(campaign, storage)
   const next = continueAt(campaign, progress, id => storage.loadSolved(id) !== null)
+  usePrefetch(next?.puzzle.id)
   const active = next ? campaign.provinces.indexOf(next.province) : campaign.provinces.length - 1
   const province = campaign.provinces[active]
   const here = progress.provinces[active]

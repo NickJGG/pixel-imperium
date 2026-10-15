@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import type { PuzzleSummary } from '@pixel-imperium/protocol'
+import { usePrefetch } from '../play/prefetch.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { SlotFace } from './PuzzleSlot.tsx'
 import styles from './Campaign.module.css'
@@ -16,6 +17,7 @@ interface Props {
 
 /** The puzzle due next: the foot of the active province's spread, and of Play's rail once solved. */
 export function NextUp({ puzzle: p, number, storage, children }: Props) {
+  usePrefetch(p.id)
   return (
     <div className={styles.nextUp}>
       <Link to="/play/$id" params={{ id: p.id }} className={styles.nextSlot} tabIndex={-1} aria-hidden="true">

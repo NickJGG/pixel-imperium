@@ -16,6 +16,7 @@ import {
   useStep,
 } from '../campaign/worlds/Worlds.tsx'
 import { doorSlot } from '../campaign/worlds/names.ts'
+import { usePrefetch } from '../play/prefetch.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { type DailyClock, dailyId, startOf } from './clock.ts'
 import { DayFace, MonthCalendar } from './MonthCalendar.tsx'
@@ -126,6 +127,7 @@ function OpenMonth({ data, month, tally, clock, current, storage }: MonthProps &
   const thisMonth = clock.today.slice(0, 7) === `${data.year}-${mm(month)}`
   const todays = thisMonth ? summaryOf(data, clock.today) : undefined
   const solvedToday = isSolvedWith(storage)(clock.today)
+  usePrefetch(todays && dailyId(clock.today))
 
   return (
     <World paper={seasonOf(month)} labelledBy={id} style={monthMorphName(month)} start={current} pair={current}>

@@ -1,7 +1,8 @@
 import { Outlet, createRootRoute, createRoute, createRouter, notFound, redirect, useRouterState } from '@tanstack/react-router'
 import type { CampaignSummary } from '@pixel-imperium/protocol'
 import { accountReady, getAccount, useAccount } from './account.ts'
-import { fetchCampaign, fetchCampaigns, fetchProfile, fetchPuzzle } from './api.ts'
+import { fetchProfile } from './api.ts'
+import * as content from './content.ts'
 import { LoadError, NotFound } from './EdgeStates.tsx'
 import { CampaignsPage } from './campaign/CampaignsPage.tsx'
 import { CampaignsSkeleton } from './campaign/CampaignsSkeleton.tsx'
@@ -73,7 +74,7 @@ const rootRoute = createRootRoute({
 })
 
 async function loadCampaign(id: string) {
-  const [campaign] = await Promise.all([fetchCampaign(id), accountReady])
+  const [campaign] = await Promise.all([content.campaign(id), accountReady])
   if (!campaign) throw notFound()
   rememberCampaign(campaign)
   return campaign
@@ -89,7 +90,7 @@ const unveilSearch = (search: Record<string, unknown>): { conquest?: string | tr
     : {}
 
 async function loadCampaigns() {
-  const campaigns = await fetchCampaigns()
+  const campaigns = await content.campaigns()
   rememberCampaigns(campaigns)
   return campaigns
 }
@@ -98,7 +99,7 @@ async function loadCampaigns() {
 const loadOwnProfile = () =>
   accountReady.then(() => {
     const handle = getAccount().account?.handle
-    return handle ? fetchProfile(handle).catch(() => null) : null
+    return handle ? content.ownProfile(handle).catch(() => null) : null
   })
 
 /**
@@ -110,7 +111,7 @@ const loadFeatured = (campaigns: readonly CampaignSummary[], picked: string | nu
     const { storage } = getAccount()
     const featured = newestFeatured(campaigns, startedCampaigns(storage), dayKey(new Date()))
     if (!featured || featured.id === picked) return null
-    const campaign = await fetchCampaign(featured.id).catch(() => null)
+    const campaign = await content.campaign(featured.id).catch(() => null)
     if (campaign) seedStarted(campaign, storage)
     return campaign
   })
@@ -208,7 +209,7 @@ const playRoute = createRoute({
   validateSearch: (search: Record<string, unknown>): { conquest?: true } =>
     import.meta.env.DEV && 'conquest' in search ? { conquest: true } : {},
   loader: async ({ params }) => {
-    const puzzle = await fetchPuzzle(params.id)
+    const puzzle = await content.puzzle(params.id)
     if (!puzzle || !('campaignId' in puzzle)) throw notFound()
     return { puzzle, campaign: await loadCampaign(puzzle.campaignId) }
   },
@@ -247,7 +248,7 @@ const dailyPlayRoute = createRoute({
   loader: async ({ params: { year, month, day } }) => {
     const date = `${year}-${month}-${day}`
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw notFound()
-    const [puzzle] = await Promise.all([fetchPuzzle(dailyId(date)), accountReady])
+    const [puzzle] = await Promise.all([content.puzzle(dailyId(date)), accountReady])
     if (!puzzle || !('daily' in puzzle)) throw notFound()
     return { puzzle, date }
   },
@@ -269,7 +270,10 @@ const profileRoute = createRoute({
   }),
   loaderDeps: ({ search }) => ({ c: search.c }),
   loader: async ({ params, deps }) => {
-    const [profile, campaigns] = await Promise.all([fetchProfile(params.handle), fetchCampaigns()])
+    const own = getAccount().account?.handle
+    const ownOrOther =
+      own?.toLowerCase() === params.handle.toLowerCase() ? content.ownProfile(own) : fetchProfile(params.handle)
+    const [profile, campaigns] = await Promise.all([ownOrOther, content.campaigns()])
     if (!profile) throw notFound()
     // The switcher offers the campaigns the player has started, then their Years; a newcomer gets the default campaign.
     const started = campaigns.filter(c => profile.campaigns.some(pc => pc.id === c.id))
@@ -279,7 +283,7 @@ const profileRoute = createRoute({
     const dailyYear = year !== null && years.includes(year) ? await loadDailyYear(year) : null
     if (dailyYear) return { profile, album: yearAlbum(dailyYear), tabs }
     const id = started.find(c => c.id === deps.c)?.id ?? profile.campaigns[0]?.id ?? campaigns[0]?.id
-    const campaign = id === undefined ? null : await fetchCampaign(id)
+    const campaign = id === undefined ? null : await content.campaign(id)
     return { profile, album: campaign && campaignAlbum(campaign), tabs }
   },
   component: ProfilePage,

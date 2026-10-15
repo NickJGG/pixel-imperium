@@ -6,6 +6,7 @@ import { AutoIcon, DayIcon, HomeIcon, NightIcon, PlayIcon, ProfileIcon, SoundIco
 import { useCurrentCampaign } from './campaign/last-campaign.ts'
 import { type ContinueAt, campaignProgress, continueAt } from './campaign/progress.ts'
 import { useEscapeUp } from './pad/PadProvider.tsx'
+import { usePrefetch } from './play/prefetch.ts'
 import { type Theme, updateSettings, useSettings } from './settings.ts'
 import { Trail, sticker } from './Trail.tsx'
 import app from './App.module.css'
@@ -135,6 +136,7 @@ export function Hud({ float }: { float?: boolean | undefined }) {
 export function ThumbBar() {
   const next = useContinue()
   const playing = useRouterState({ select: s => s.location.pathname.startsWith('/play/') })
+  usePrefetch(playing ? null : next?.puzzle.id)
   if (playing) return null
 
   return (

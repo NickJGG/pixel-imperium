@@ -4,6 +4,7 @@ import type { DailySummary, DailyYear } from '@pixel-imperium/protocol'
 import { Slot } from '../album/Slot.tsx'
 import { Sticker, StickerBack, tiltOf } from '../album/Sticker.tsx'
 import { doorSlot } from '../campaign/worlds/names.ts'
+import { prefetchOn } from '../play/prefetch.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { Ghost } from '../skeleton/Skeleton.tsx'
 import { type DailyClock, dailyId, startOf } from './clock.ts'
@@ -128,6 +129,7 @@ function DayCell({
       params={dayParams(date)}
       className={styles.dayLink}
       {...doorSlot(dailyId(date), true)}
+      {...prefetchOn(dailyId(date))}
       data-pad-default={padDefault || undefined}
       aria-label={label}
     >

@@ -17,7 +17,8 @@ import { ArrowIcon, CheckIcon } from '../album/icons.tsx'
 import { paperFor } from '../album/paper.ts'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { type AccountState, useAccount } from '../account.ts'
-import { requestHint, submitSolve } from '../api.ts'
+import { requestHint } from '../api.ts'
+import { solve } from '../content.ts'
 import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { NextUp } from '../campaign/NextUp.tsx'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
@@ -58,6 +59,7 @@ import { Filmstrip, PageHead, SlotRow } from './Filmstrip.tsx'
 import { type Pose, celebrate, popOnly } from './sticker-moment.ts'
 import { type PlayState, PlayStore, crosshairOf, freshCells } from './store.ts'
 import { RailStamps } from './RailStamps.tsx'
+import { usePrefetch } from './prefetch.ts'
 import { RailTools } from './RailTools.tsx'
 import { useRailFold } from './useRailFold.ts'
 import { useUndoKeys } from './useUndoKeys.ts'
@@ -179,6 +181,7 @@ export function Play({
   const conquest = previewConquest || (solved && !conqueredBefore && isConquered())
   const next =
     solved && album ? nextPuzzle(album.province.puzzles, puzzle.id, id => storage.loadSolved(id) !== null) : null
+  usePrefetch(next?.id)
   const replaying = useStoreValue(store, s => s.replaying)
   const unverified = !solved && storage.loadSolved(puzzle.id) === 'unverified'
   const [firstSolve] = useState(() => storage.loadSolved(puzzle.id) === null)
@@ -243,9 +246,9 @@ export function Play({
       ...(solveMs !== null && { ms: Math.round(solveMs), hinted: attemptHinted }),
     }
     // Only the best left to send: never aborted, and on failure it stays on this device.
-    if (palette) return void submitSolve(puzzle.id, body).catch(() => {})
+    if (palette) return void solve(puzzle.id, body).catch(() => {})
     const abort = new AbortController()
-    submitSolve(puzzle.id, body, abort.signal).then(
+    solve(puzzle.id, body, abort.signal).then(
       res => (res.solved ? store.setPalette(res.palette, res.foil, res.crest, res.stamps) : setRevealFailed(true)),
       () => !abort.signal.aborted && setRevealFailed(true),
     )

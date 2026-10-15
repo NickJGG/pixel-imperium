@@ -5,7 +5,7 @@
  */
 import type { Campaign } from '@pixel-imperium/protocol'
 import { accountReady, getAccount } from '../account.ts'
-import { fetchCampaign, fetchCampaigns, fetchPuzzle } from '../api.ts'
+import { campaign as fetchCampaign, campaigns as fetchCampaigns, puzzle as fetchPuzzle } from '../content.ts'
 import { pickCampaign } from '../campaign/last-campaign.ts'
 import { campaignProgress, continueAt } from '../campaign/progress.ts'
 
