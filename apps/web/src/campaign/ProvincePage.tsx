@@ -4,7 +4,7 @@ import type { Campaign, Province, Tier } from '@pixel-imperium/protocol'
 import { CountPill, UNVEIL_LANDS_MS } from '../album/CountPill.tsx'
 import { Lock } from '../album/Lock.tsx'
 import { useAccount } from '../account.ts'
-import { campaignSpineName } from '../home/columns.ts'
+import { provinceTrail } from '../home/columns.ts'
 import { reducedMotion } from '../motion.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { play } from '../sound.ts'
@@ -87,10 +87,7 @@ function Album({
     void navigate({ to: '/c/$campaignId/$provinceId', params: { campaignId: campaign.id, provinceId: to.id }, replace: true })
   }
   useStep(dir => goTo(campaign.provinces[index + dir]))
-  useHudTrail([
-    { to: '/', label: 'Home' },
-    { to: `/c/${campaign.id}`, label: campaignSpineName(campaign), paper: campaign.paper },
-  ])
+  useHudTrail(provinceTrail(campaign))
 
   const conquered = (p: Province) =>
     progress.provinces[campaign.provinces.indexOf(p)]!.state === 'conquered' || unveil.has(p.id)

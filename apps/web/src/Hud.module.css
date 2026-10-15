@@ -14,6 +14,116 @@
   z-index: 10;
 }
 
+/*
+ * The stickers, the logo and each Trail pill (`sticker` in Trail.tsx), are their own groups. One on both sides of a
+ * move holds still; one on only one side slaps on, or pops off as the slap reversed, staggered by slot. Its duration
+ * is the playing transition's, set on every `(*)`.
+ */
+::view-transition-group(.sticker) {
+  z-index: 10;
+}
+
+.holder {
+  flex: none;
+  display: flex;
+}
+
+/* Over Worlds.module.css's clip on every pair, which would crop the slap's scaled-up image to the sticker's box. */
+:root::view-transition-image-pair(.sticker) {
+  overflow: visible;
+}
+
+/* `:root:root:root` beats the transitions' own rules on `(*)`, which reverse, ease or fade every lone image. */
+:root:root:root::view-transition-old(.sticker):only-child,
+:root:root:root::view-transition-new(.sticker):only-child {
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-direction: normal;
+  mix-blend-mode: normal;
+}
+
+:root:root:root::view-transition-old(.sticker):only-child {
+  animation-direction: reverse;
+}
+
+:root:root:root::view-transition-old(.slot0):only-child,
+:root:root:root::view-transition-new(.slot0):only-child {
+  animation-name: sticker-on-0;
+}
+
+:root:root:root::view-transition-old(.slot1):only-child,
+:root:root:root::view-transition-new(.slot1):only-child {
+  animation-name: sticker-on-1;
+}
+
+:root:root:root::view-transition-old(.slot2):only-child,
+:root:root:root::view-transition-new(.slot2):only-child {
+  animation-name: sticker-on-2;
+}
+
+@keyframes sticker-on-0 {
+  0%,
+  33% {
+    opacity: 0;
+    transform: scale(1.3) rotate(14deg);
+    animation-timing-function: ease-out;
+  }
+
+  55.4% {
+    opacity: 1;
+    transform: scale(0.92) rotate(-2deg);
+    animation-timing-function: ease-out;
+  }
+
+  65%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sticker-on-1 {
+  0%,
+  45% {
+    opacity: 0;
+    transform: scale(1.3) rotate(14deg);
+    animation-timing-function: ease-out;
+  }
+
+  67.4% {
+    opacity: 1;
+    transform: scale(0.92) rotate(-2deg);
+    animation-timing-function: ease-out;
+  }
+
+  77%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sticker-on-2 {
+  0%,
+  57% {
+    opacity: 0;
+    transform: scale(1.3) rotate(14deg);
+    animation-timing-function: ease-out;
+  }
+
+  79.4% {
+    opacity: 1;
+    transform: scale(0.92) rotate(-2deg);
+    animation-timing-function: ease-out;
+  }
+
+  89%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @media (min-width: 721px) {
   .hud[data-float] {
     position: absolute;

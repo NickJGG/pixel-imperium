@@ -2,6 +2,8 @@ import { useParams } from '@tanstack/react-router'
 import { type CSSProperties, type ReactNode, useRef } from 'react'
 import type { PaperId, Province, Tier } from '@pixel-imperium/protocol'
 import { getAccount } from '../account.ts'
+import { provinceTrail } from '../home/columns.ts'
+import { useHudTrail } from '../Trail.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { currentCampaign } from './last-campaign.ts'
 import { type ProvinceState, campaignProgress, isOpen, tierGroups } from './progress.ts'
@@ -31,6 +33,7 @@ export function ProvinceSkeleton() {
   const index = campaign?.provinces.findIndex(p => p.id === provinceId) ?? -1
   const province = campaign?.provinces[index]
   const states = campaign && campaignProgress(campaign, getAccount().storage).provinces.map(p => p.state)
+  useHudTrail(campaign ? provinceTrail(campaign) : [])
 
   const column = <Column key="page" id={provinceId} province={province} state={states?.[index]} />
   if (!campaign || !province) {

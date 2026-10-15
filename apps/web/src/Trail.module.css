@@ -11,7 +11,7 @@
   rotate: -2deg;
 }
 
-.step:nth-child(even) {
+.trail > :nth-child(even) > .step {
   rotate: 1.5deg;
 }
 

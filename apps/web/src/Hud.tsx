@@ -7,7 +7,7 @@ import { useCurrentCampaign } from './campaign/last-campaign.ts'
 import { type ContinueAt, campaignProgress, continueAt } from './campaign/progress.ts'
 import { useEscapeUp } from './pad/PadProvider.tsx'
 import { type Theme, updateSettings, useSettings } from './settings.ts'
-import { Trail } from './Trail.tsx'
+import { Trail, sticker } from './Trail.tsx'
 import app from './App.module.css'
 import styles from './Hud.module.css'
 
@@ -114,12 +114,14 @@ export function Hud({ float }: { float?: boolean | undefined }) {
   useEscapeUp()
   return (
     <header className={styles.hud} data-float={(float ?? floats(pathname)) || undefined}>
-      <Link to="/" className={styles.logo}>
-        <CrownMark className={styles.mark} />
-        <span className={styles.wordmark}>
-          <span>Pixel</span> Imperium
-        </span>
-      </Link>
+      <span className={styles.holder} style={sticker('hud-logo', 0)}>
+        <Link to="/" className={styles.logo}>
+          <CrownMark className={styles.mark} />
+          <span className={styles.wordmark}>
+            <span>Pixel</span> Imperium
+          </span>
+        </Link>
+      </span>
       <Trail />
       <HudPills className={styles.pagePills} />
     </header>
