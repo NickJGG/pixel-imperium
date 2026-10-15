@@ -1,4 +1,4 @@
-import { type RefObject, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { type RefObject, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { PadGlyph } from '../../pad/PadGlyph.tsx'
 import { usePadMode } from '../../pad/mode.ts'
 import styles from './StepKeys.module.css'
@@ -28,6 +28,8 @@ const subscribe = (listener: () => void) => {
 interface Key {
   dir: Dir
   name: string
+  /** Its spine's view-transition name. */
+  column: string
   x: number
   y: number
 }
@@ -37,6 +39,44 @@ const MARGIN = 8
 /** A key's height, in rem, so it scales with the browser's text size. */
 const KEY_REM = 1.6875
 
+const keyName = (dir: Dir) => (dir === -1 ? 'step-key-prev' : 'step-key-next')
+
+const followed = new WeakSet<ViewTransition>()
+
+/**
+ * A key on only one side of a step, beside an end column as it folds or opens, has no partner to glide from or to,
+ * so it rides along with its column's group instead of appearing or vanishing where it rests.
+ */
+function follow(row: HTMLElement, before: readonly Key[], after: readonly Key[]): void {
+  const transition = document.activeViewTransition
+  if (!transition?.types.has('step') || followed.has(transition)) return
+  const lone = ([-1, 1] as const).flatMap(dir => {
+    const old = before.find(k => k.dir === dir)
+    const now = after.find(k => k.dir === dir)
+    return old && now ? [] : now ? [{ key: now, entering: true }] : old ? [{ key: old, entering: false }] : []
+  })
+  if (lone.length === 0) return
+  followed.add(transition)
+  transition.ready.then(() => {
+    const animations = document.getAnimations()
+    for (const { key, entering } of lone) {
+      const effect = animations
+        .map(a => a.effect)
+        .find(e => e instanceof KeyframeEffect && e.pseudoElement === `::view-transition-group(${key.column})`) as KeyframeEffect | undefined
+      const from = effect?.getKeyframes()[0]
+      const column = [...row.children].find(c => (c as HTMLElement).style.viewTransitionName === key.column)
+      if (!effect || !from?.transform || !from.width || !column) continue
+      const r = column.getBoundingClientRect()
+      const dx = new DOMMatrix(String(from.transform)).e + parseFloat(String(from.width)) / 2 - (r.left + r.width / 2)
+      document.documentElement.animate(
+        { translate: entering ? [`${dx}px 0`, '0 0'] : ['0 0', `${-dx}px 0`] },
+        // A CSS animation's timing function is its keyframes', not its effect's.
+        { ...effect.getTiming(), easing: from.easing ?? 'ease', pseudoElement: `::view-transition-group(${keyName(key.dir)})` },
+      )
+    }
+  }, () => {})
+}
+
 /**
  * A key under each spine beside the open column, saying ← or → (LB or RB on a pad) steps there. Placed on the
  * stack's lean line rather than the strip's centre, in a layer of its own so the clipped spines render unchanged.
@@ -45,10 +85,14 @@ export function StepKeys({ row }: { row: RefObject<HTMLDivElement | null> }) {
   const step = useSyncExternalStore(subscribe, () => stepper)
   const pad = usePadMode()
   const [keys, setKeys] = useState<readonly Key[]>([])
+  const shown = useRef<readonly Key[]>([])
 
   useLayoutEffect(() => {
     const el = row.current
-    if (!el || !step) return setKeys(keys => (keys.length === 0 ? keys : []))
+    if (!el || !step) {
+      shown.current = []
+      return setKeys(keys => (keys.length === 0 ? keys : []))
+    }
     const open = [...el.children].find(c => c.classList.contains(worlds.world!) && !c.classList.contains(worlds.spine!))
     const neighbours = ([-1, 1] as const).flatMap(dir => {
       const spine = dir === -1 ? open?.previousElementSibling : open?.nextElementSibling
@@ -68,10 +112,13 @@ export function StepKeys({ row }: { row: RefObject<HTMLDivElement | null> }) {
         return {
           dir,
           name: spine.querySelector(`.${worlds.name}`)?.textContent ?? spine.getAttribute('aria-label') ?? '',
+          column: (spine as HTMLElement).style.viewTransitionName,
           x: Math.round(r.left + r.width / 2 - (y - cy) * tan),
           y: Math.round(y),
         }
       })
+      follow(el, shown.current, next)
+      shown.current = next
       setKeys(keys => (JSON.stringify(keys) === JSON.stringify(next) ? keys : next))
     }
 
@@ -97,7 +144,7 @@ export function StepKeys({ row }: { row: RefObject<HTMLDivElement | null> }) {
           style={{
             left: key.x,
             top: key.y,
-            viewTransitionName: key.dir === -1 ? 'step-key-prev' : 'step-key-next',
+            viewTransitionName: keyName(key.dir),
             viewTransitionClass: styles.key,
           }}
           tabIndex={-1}
