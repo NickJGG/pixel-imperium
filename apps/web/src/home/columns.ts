@@ -3,7 +3,7 @@ import type { Paper, PaperId, Season } from '../album/paper.ts'
 import type { TrailStep } from '../Trail.tsx'
 import { TRACKS, nextTrack } from '../tutorial/tracks.ts'
 
-export type Column = 'campaign' | 'featured' | 'daily' | 'learn' | 'profile' | 'settings' | 'signin'
+export type Column = 'campaign' | 'featured' | 'daily' | 'learn' | 'workshop' | 'profile' | 'settings' | 'signin'
 
 export type OpenColumn = Exclude<Column, 'campaign'>
 
@@ -16,6 +16,7 @@ export interface HomeSearch {
 export const COLUMN_NAME: Record<Exclude<Column, 'campaign' | 'featured'>, string> = {
   daily: 'Daily',
   learn: 'Learn',
+  workshop: 'Workshop',
   profile: 'Profile',
   settings: 'Settings',
   signin: 'Sign in',
@@ -29,7 +30,7 @@ export const provinceTrail = (campaign: { id: string; name: string; paper: Paper
   { to: `/c/${campaign.id}`, label: campaignSpineName(campaign), paper: campaign.paper },
 ]
 
-const SIGNED_IN: readonly Column[] = ['campaign', 'daily', 'learn', 'profile', 'settings']
+const SIGNED_IN: readonly Column[] = ['campaign', 'daily', 'learn', 'workshop', 'profile', 'settings']
 const SIGNED_OUT: readonly Column[] = ['campaign', 'daily', 'learn', 'signin']
 
 /**
@@ -41,7 +42,7 @@ export const columnsFor = (signedIn: boolean, daily: boolean, featured = false):
   return featured ? ['campaign', 'featured', ...columns.slice(1)] : columns
 }
 
-const OPENABLE: readonly string[] = ['featured', 'daily', 'learn', 'profile', 'settings', 'signin'] satisfies OpenColumn[]
+const OPENABLE: readonly string[] = ['featured', 'daily', 'learn', 'workshop', 'profile', 'settings', 'signin'] satisfies OpenColumn[]
 
 export const homeSearch = (search: Record<string, unknown>): HomeSearch =>
   typeof search.open === 'string' && OPENABLE.includes(search.open) ? { open: search.open as OpenColumn } : {}
@@ -67,7 +68,7 @@ export type ColumnPaper = Paper | 'cover'
 
 /**
  * Each column wears where it leads: Campaign and Featured their campaigns' papers, Daily this Month's season's, Learn
- * its next Lesson's track's, Profile the cobalt cover, Settings the Capital's and Sign in the Throne's. Learn takes
+ * its next Lesson's track's, Workshop its own, Profile the cobalt cover, Settings the Capital's and Sign in the Throne's. Learn takes
  * its other track's rather than match Campaign; Settings or Sign in takes the Forge's rather than match Campaign,
  * Featured or Learn.
  */
@@ -85,6 +86,7 @@ export function papers(
     featured,
     daily: season,
     learn: learnPaper,
+    workshop: 'workshop',
     profile: 'cover',
     settings: clear('capital'),
     signin: clear('throne'),

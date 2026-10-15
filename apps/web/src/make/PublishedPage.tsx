@@ -9,6 +9,7 @@ import { cluesFromSolution } from '@pixel-imperium/nonogram'
 import { getAccount } from '../account.ts'
 import { deleteMadePuzzle, patchMadePuzzle, retireMadePuzzle } from '../api.ts'
 import { paperFor } from '../album/paper.ts'
+import { forgetWorkshop } from '../content.ts'
 import { FloatingPills } from '../Hud.tsx'
 import { RAIL_WIDTH } from '../play/layout.ts'
 import { usePadContain } from '../pad/PadProvider.tsx'
@@ -61,6 +62,7 @@ export function PublishedPage({ puzzle }: { puzzle: MadePuzzleSummary }) {
   const retire = async () => {
     try {
       await retireMadePuzzle(puzzle.id)
+      forgetWorkshop()
       setRetired(true)
       setNotice(null)
     } catch {
@@ -74,7 +76,8 @@ export function PublishedPage({ puzzle }: { puzzle: MadePuzzleSummary }) {
         setNotice('Other players have started it, so it can only be retired.')
         return
       }
-      void navigate({ to: '/', replace: true })
+      forgetWorkshop()
+      void navigate({ to: '/workshop', replace: true })
     } catch {
       setNotice('Couldn’t delete it. Try again in a moment.')
     }
@@ -194,6 +197,7 @@ function PublishedTitle({ id, title, onChange }: { id: string; title: string; on
     onChange(next)
     try {
       await patchMadePuzzle(id, { title: next })
+      forgetWorkshop()
       setFailed(false)
     } catch {
       onChange(title)

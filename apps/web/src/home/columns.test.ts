@@ -7,17 +7,17 @@ const finished = (...tracks: (typeof TRACKS)[keyof typeof TRACKS][]) =>
 
 describe('columnsFor', () => {
   it('offers Profile and Settings signed in, Sign in signed out', () => {
-    expect(columnsFor(true, true)).toEqual(['campaign', 'daily', 'learn', 'profile', 'settings'])
+    expect(columnsFor(true, true)).toEqual(['campaign', 'daily', 'learn', 'workshop', 'profile', 'settings'])
     expect(columnsFor(false, true)).toEqual(['campaign', 'daily', 'learn', 'signin'])
   })
 
   it('leaves Daily out until it has launched', () => {
-    expect(columnsFor(true, false)).toEqual(['campaign', 'learn', 'profile', 'settings'])
+    expect(columnsFor(true, false)).toEqual(['campaign', 'learn', 'workshop', 'profile', 'settings'])
     expect(columnsFor(false, false)).toEqual(['campaign', 'learn', 'signin'])
   })
 
   it('puts a Featured campaign right after Campaign', () => {
-    expect(columnsFor(true, true, true)).toEqual(['campaign', 'featured', 'daily', 'learn', 'profile', 'settings'])
+    expect(columnsFor(true, true, true)).toEqual(['campaign', 'featured', 'daily', 'learn', 'workshop', 'profile', 'settings'])
     expect(columnsFor(false, false, true)).toEqual(['campaign', 'featured', 'learn', 'signin'])
   })
 })
@@ -27,6 +27,7 @@ describe('homeSearch', () => {
     expect(homeSearch({ open: 'learn' })).toEqual({ open: 'learn' })
     expect(homeSearch({ open: 'daily' })).toEqual({ open: 'daily' })
     expect(homeSearch({ open: 'featured' })).toEqual({ open: 'featured' })
+    expect(homeSearch({ open: 'workshop' })).toEqual({ open: 'workshop' })
     expect(homeSearch({ open: 'campaign' })).toEqual({})
     expect(homeSearch({ open: 'shop' })).toEqual({})
     expect(homeSearch({ open: 3 })).toEqual({})
@@ -38,6 +39,7 @@ describe('openColumn', () => {
     expect(openColumn(columnsFor(true, true), { open: 'settings' })).toBe('settings')
     expect(openColumn(columnsFor(false, true), { open: 'settings' })).toBe('campaign')
     expect(openColumn(columnsFor(true, true), {})).toBe('campaign')
+    expect(openColumn(columnsFor(false, true), { open: 'workshop' })).toBe('campaign')
   })
 
   it('falls back to Campaign once the Featured column has gone', () => {
@@ -53,7 +55,8 @@ describe('openColumn', () => {
 describe('stepColumn', () => {
   it('steps to a neighbour and stops at the ends', () => {
     const columns = columnsFor(true, true)
-    expect(stepColumn(columns, 'learn', 1)).toBe('profile')
+    expect(stepColumn(columns, 'learn', 1)).toBe('workshop')
+    expect(stepColumn(columns, 'workshop', 1)).toBe('profile')
     expect(stepColumn(columns, 'learn', -1)).toBe('daily')
     expect(stepColumn(columns, 'campaign', 1)).toBe('daily')
     expect(stepColumn(columns, 'campaign', -1)).toBeUndefined()
@@ -86,6 +89,7 @@ describe('papers', () => {
       featured: 'wildwood',
       daily: 'autumn',
       learn: 'coast',
+      workshop: 'workshop',
       profile: 'cover',
       settings: 'capital',
       signin: 'throne',

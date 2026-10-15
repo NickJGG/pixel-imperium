@@ -1,7 +1,7 @@
 /**
  * Content the server reads once at startup and serves alike to every player (campaigns, puzzle clues, Years of
  * Dailies), kept for the tab's life so a navigation lands from memory instead of behind a skeleton; and the
- * signed-in player's own profile, kept until something changes it. Concurrent loads share one request, and a
+ * signed-in player's own profile and Workshop, kept until something changes them. Concurrent loads share one request, and a
  * failed one is dropped so the next load retries.
  */
 import type {
@@ -13,8 +13,20 @@ import type {
   RetiredError,
   SolveRequest,
 } from '@pixel-imperium/protocol'
-import { fetchCampaign, fetchCampaigns, fetchDailyYear, fetchProfile, fetchPuzzle, isRetired, submitSolve } from './api.ts'
+import {
+  fetchCampaign,
+  fetchCampaigns,
+  fetchDailyYear,
+  fetchDrafts,
+  fetchMade,
+  fetchPlayed,
+  fetchProfile,
+  fetchPuzzle,
+  isRetired,
+  submitSolve,
+} from './api.ts'
 import { earliestDay } from './daily/clock.ts'
+import type { Workshop } from './workshop/workshop.ts'
 
 function memo<T>(load: (key: string) => Promise<T>) {
   const entries = new Map<string, Promise<T>>()
@@ -75,12 +87,27 @@ export const ownProfile = (handle: string): Promise<Profile | null> => profileMe
 /** Drops the own profile, for anything that changes it; the next load fetches it again. */
 export const forgetOwnProfile = (): void => profileMemo.clear()
 
-/** Submits a solve, which changes the player's profile. */
+// Keyed by the account's user id.
+const workshopMemo = memo(async (): Promise<Workshop> => {
+  const [drafts, made, played] = await Promise.all([fetchDrafts(), fetchMade(), fetchPlayed()])
+  return { drafts, made, played }
+})
+
+/** The signed-in player's Workshop, by their `userId`. */
+export const workshop = (userId: string): Promise<Workshop> => workshopMemo(userId)
+
+/** Drops the Workshop, for anything that changes it: publishing, a draft campaign, playing someone's link. */
+export const forgetWorkshop = (): void => workshopMemo.clear()
+
+/** Submits a solve, which changes the player's profile, and their Workshop's Played when it's player-made. */
 export const solve = (id: string, body: SolveRequest, signal: AbortSignal | null = null) =>
-  submitSolve(id, body, signal).finally(forgetOwnProfile)
+  submitSolve(id, body, signal).finally(() => {
+    forgetOwnProfile()
+    forgetWorkshop()
+  })
 
 /** Drops everything, for tests. */
 export function resetContent(): void {
-  for (const m of [campaignsMemo, campaignMemo, puzzleMemo, yearMemo, profileMemo]) m.clear()
+  for (const m of [campaignsMemo, campaignMemo, puzzleMemo, yearMemo, profileMemo, workshopMemo]) m.clear()
   yearDays.clear()
 }

@@ -31,7 +31,7 @@ import { PadGlyph, PanelTag } from '../pad/PadGlyph.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
 import { firstFocusable, focusDefault } from '../pad/spatial.ts'
-import { Retired, WORKSHOP } from '../EdgeStates.tsx'
+import { Retired } from '../EdgeStates.tsx'
 import { FloatingPills, Hud, SoundButton, ThemeButton } from '../Hud.tsx'
 import { getSettings, useSettings } from '../settings.ts'
 import { reducedMotion } from '../motion.ts'
@@ -169,7 +169,7 @@ function MadePlay({
         ...shared,
         place: own ? 'Workshop' : signedIn ? 'Played by link' : 'Home',
         paper: paperFor(made.paper ?? 'workshop'),
-        back: own ? WORKSHOP : signedIn ? `${WORKSHOP}?tab=played` : '/',
+        back: own ? '/workshop' : signedIn ? '/workshop?tab=played' : '/',
         here: `/play/${puzzle.id}`,
         meta: `${puzzle.width}×${puzzle.height}`,
         ...(own

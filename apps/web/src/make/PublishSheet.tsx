@@ -5,6 +5,7 @@ import { type Checks, MAX_COLORS, MAX_SIZE, MIN_SIZE, meetsRules } from '@pixel-
 import { publishPuzzle } from '../api.ts'
 import { CheckIcon, CrossIcon } from '../album/icons.tsx'
 import { derivePaper } from '../album/paper.ts'
+import { forgetWorkshop } from '../content.ts'
 import { usePadContain } from '../pad/PadProvider.tsx'
 import { type Draft, MAX_TITLE } from './draft.ts'
 import { commit, flushDraft, forgetDraft, getDraft, getDraftKey, getPaper, setPaper } from './draft-store.ts'
@@ -86,6 +87,7 @@ function PublishSheet({
       return
     }
     forgetDraft(key)
+    forgetWorkshop()
     void navigate({ to: '/workshop/p/$id', params: { id: res.id }, replace: true })
   }
 

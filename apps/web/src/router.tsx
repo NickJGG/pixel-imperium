@@ -11,7 +11,7 @@ import {
 } from '@tanstack/react-router'
 import type { Campaign, CampaignSummary, MadePuzzleSummary, PuzzleClues, RetiredError } from '@pixel-imperium/protocol'
 import { accountReady, getAccount, useAccount } from './account.ts'
-import { fetchMade, fetchProfile, isRetired } from './api.ts'
+import { fetchMade, fetchProfile, isRetired, putDraftCampaign } from './api.ts'
 import * as content from './content.ts'
 import { LoadError, NotFound, Retired } from './EdgeStates.tsx'
 import { CampaignsPage } from './campaign/CampaignsPage.tsx'
@@ -32,7 +32,7 @@ import { HomePage } from './home/HomePage.tsx'
 import { HomeSkeleton } from './home/HomeSkeleton.tsx'
 import { ImportPrompt } from './ImportPrompt.tsx'
 import { Hud, ThumbBar } from './Hud.tsx'
-import { type DraftKey, type StoredDraft, openingCopy } from './make/draft-store.ts'
+import { type DraftKey, type StoredDraft, newDraftId, openingCopy } from './make/draft-store.ts'
 import { HandlePicker } from './me/HandlePicker.tsx'
 import { SettingsPage } from './me/SettingsPage.tsx'
 import { SettingsSkeleton } from './me/SettingsSkeleton.tsx'
@@ -52,6 +52,9 @@ import { LearnSkeleton } from './tutorial/LearnSkeleton.tsx'
 import { LessonPage } from './tutorial/LessonPage.tsx'
 import { LessonSkeleton } from './tutorial/LessonSkeleton.tsx'
 import { nextTrack, trackOf } from './tutorial/tracks.ts'
+import { AllPuzzlesPage } from './workshop/AllPuzzlesPage.tsx'
+import { WorkshopPage } from './workshop/WorkshopPage.tsx'
+import { blankCampaignDoc, workshopSearch } from './workshop/workshop.ts'
 import styles from './App.module.css'
 
 function Root() {
@@ -134,6 +137,13 @@ const loadOwnProfile = () =>
     return handle ? content.ownProfile(handle).catch(() => null) : null
   })
 
+/** The signed-in player's Workshop, `null` signed out or if it fails to load. */
+const loadOwnWorkshop = () =>
+  accountReady.then(() => {
+    const userId = getAccount().account?.userId
+    return userId ? content.workshop(userId).catch(() => null) : null
+  })
+
 /**
  * The newest Featured campaign, for Home's column for it, unless the player has started it or it's the campaign Home
  * already holds. Not remembered: Home's Campaign column stays the last played.
@@ -153,24 +163,25 @@ const homeRoute = createRoute({
   path: '/',
   validateSearch: homeSearch,
   /**
-   * The profile is the signed-in player's, for the Profile and Settings columns, and this Year's Dailies are for the
-   * Daily column; Home stands without either, or without a Featured campaign.
+   * The profile and Workshop are the signed-in player's, for the Profile, Settings and Workshop columns, and this
+   * Year's Dailies are for the Daily column; Home stands without any of them, or without a Featured campaign.
    */
   loader: async () => {
     const campaigns = await loadCampaigns()
     const id = pickCampaign(campaigns)
-    const [campaign, featured, dailyYear, profile] = await Promise.all([
+    const [campaign, featured, dailyYear, profile, workshop] = await Promise.all([
       id === null ? null : loadCampaign(id),
       loadFeatured(campaigns, id),
       loadDailyYear(new Date().getFullYear()).catch(() => null),
       loadOwnProfile(),
+      loadOwnWorkshop(),
     ])
-    return { campaign, featured, dailyYear, profile }
+    return { campaign, featured, dailyYear, profile, workshop }
   },
   component: () => {
-    const { campaign, featured, dailyYear, profile } = homeRoute.useLoaderData()
+    const { campaign, featured, dailyYear, profile, workshop } = homeRoute.useLoaderData()
     return campaign ? (
-      <HomePage campaign={campaign} featured={featured} dailyYear={dailyYear} profile={profile} />
+      <HomePage campaign={campaign} featured={featured} dailyYear={dailyYear} profile={profile} workshop={workshop} />
     ) : (
       <main className={styles.message}>No campaigns yet.</main>
     )
@@ -265,6 +276,7 @@ const playRoute = createRoute({
     if (isRetired(puzzle)) return { kind: 'retired', author: puzzle.author }
     if ('campaignId' in puzzle) return { kind: 'official', puzzle, campaign: await loadCampaign(puzzle.campaignId) }
     // Its album, if it has one and the player may see it; standalone otherwise.
+    content.forgetWorkshop()
     const home = puzzle.made.campaign
     const campaign =
       home &&
@@ -446,6 +458,49 @@ const lessonRoute = createRoute({
   notFoundComponent: () => <NotFound>There’s no lesson by that name.</NotFound>,
 })
 
+const signedInOnly = async () => {
+  await accountReady
+  if (!getAccount().account) throw redirect({ to: '/', replace: true })
+}
+
+/** The signed-in player's Workshop, with the Played campaign it opens on loaded for its column. */
+const workshopRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workshop',
+  validateSearch: workshopSearch,
+  beforeLoad: signedInOnly,
+  loaderDeps: ({ search }) => ({ tab: search.tab, open: search.open }),
+  loader: async ({ deps }) => {
+    const workshop = await content.workshop(getAccount().account!.userId)
+    const played = deps.tab === 'played' ? workshop.played.campaigns.find(c => c.id === deps.open && !c.removed) : undefined
+    const campaign = played ? await content.anyCampaign(played.id, false).catch(() => null) : null
+    return { workshop, campaign: campaign && !isRetired(campaign) ? campaign : null }
+  },
+  component: () => <WorkshopPage {...workshopRoute.useLoaderData()} />,
+})
+
+const workshopPuzzlesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workshop/puzzles',
+  beforeLoad: signedInOnly,
+  loader: async () => ({ workshop: await content.workshop(getAccount().account!.userId) }),
+  component: () => <AllPuzzlesPage {...workshopPuzzlesRoute.useLoaderData()} />,
+})
+
+/** Starts a draft campaign and opens the Workshop on it. Never on a preload, which would leave a stray draft. */
+const newCampaignRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workshop/new-campaign',
+  beforeLoad: async ({ preload }) => {
+    await signedInOnly()
+    if (preload) return
+    const id = newDraftId()
+    await putDraftCampaign(id, { doc: blankCampaignDoc(), updatedAt: new Date().toISOString() })
+    content.forgetWorkshop()
+    throw redirect({ to: '/workshop', search: { open: id }, replace: true })
+  },
+})
+
 /** Published ids are 10 of a–z 0–9 with a digit; draft ids have a `-`. */
 const MADE_ID = /^(?=.*\d)[a-z0-9]{10}$/
 
@@ -460,10 +515,7 @@ type WorkshopPuzzleData =
 const workshopPuzzleRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/workshop/p/$id',
-  beforeLoad: async () => {
-    await accountReady
-    if (!getAccount().account) throw redirect({ to: '/', replace: true })
-  },
+  beforeLoad: signedInOnly,
   loader: async ({ params }): Promise<WorkshopPuzzleData> => {
     const userId = getAccount().account!.userId
     if (!MADE_ID.test(params.id)) {
@@ -505,6 +557,9 @@ export const router = createRouter({
     learnRoute,
     trackRoute,
     lessonRoute,
+    workshopRoute,
+    workshopPuzzlesRoute,
+    newCampaignRoute,
     workshopPuzzleRoute,
     ...devRoutes,
   ]),

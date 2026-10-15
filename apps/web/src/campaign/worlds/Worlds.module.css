@@ -138,6 +138,16 @@
   background: var(--cover-dk);
 }
 
+/* A way to make something new rather than a place: hatched, no paper of its own. */
+.add {
+  color: var(--ink-soft);
+  background: repeating-linear-gradient(135deg, transparent 0 10px, color-mix(in srgb, var(--ink) 7%, transparent) 10px 20px);
+}
+
+.add::before {
+  background: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
 /* Campaigns hidden past the window's edge: a fan of thin fogged spines. */
 .stub {
   --spine-w: 44px;

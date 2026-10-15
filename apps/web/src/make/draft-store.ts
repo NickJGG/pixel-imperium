@@ -10,6 +10,7 @@ import { useSyncExternalStore } from 'react'
 import type { HexPaper } from '@pixel-imperium/protocol'
 import { MAX_COLORS } from '@pixel-imperium/nonogram'
 import { fetchDraftPuzzle, putDraftPuzzle } from '../api.ts'
+import { forgetWorkshop } from '../content.ts'
 import { type Draft, blankDraft, slugify } from './draft.ts'
 
 /** A draft as this device keeps it; the dev /make draft predates every field past the Draft's own. */
@@ -72,6 +73,22 @@ export function localDraft(key: DraftKey): StoredDraft | null {
   } catch {
     return null
   }
+}
+
+/** Every draft of `userId`'s this device keeps, by id. */
+export function localDrafts(userId: string): Map<string, StoredDraft> {
+  const prefix = storageKey({ userId, id: '' })
+  const found = new Map<string, StoredDraft>()
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (!k?.startsWith(prefix)) continue
+      const id = k.slice(prefix.length)
+      const s = localDraft({ userId, id })
+      if (s) found.set(id, s)
+    }
+  } catch {}
+  return found
 }
 
 function store(key: DraftKey, s: StoredDraft) {
@@ -188,6 +205,8 @@ async function send(sent: DraftKey, s: StoredDraft, keepalive: boolean): Promise
     if (isOpen(sent)) setSaveState('local')
     return false
   }
+  // The Workshop's list of drafts may predate this one reaching the server.
+  forgetWorkshop()
   if (isOpen(sent)) {
     // Edited again while the request was out: that newer copy still has to go.
     if (meta.updatedAt === s.updatedAt) {

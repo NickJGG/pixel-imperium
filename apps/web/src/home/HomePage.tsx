@@ -14,6 +14,8 @@ import { LearnColumn } from './LearnColumn.tsx'
 import { ProfileColumn } from './ProfileColumn.tsx'
 import { SettingsColumn } from './SettingsColumn.tsx'
 import { SignInColumn } from './SignInColumn.tsx'
+import { WorkshopColumn } from './WorkshopColumn.tsx'
+import type { Workshop } from '../workshop/workshop.ts'
 import { COLUMN_NAME, type Column, campaignSpineName, type ColumnPaper, columnsFor, learnPapers, openColumn, papers, searchFor, stepColumn } from './columns.ts'
 import styles from './Home.module.css'
 
@@ -37,6 +39,7 @@ export function HomePage({
   featured,
   profile,
   dailyYear,
+  workshop,
 }: {
   campaign: Campaign
   /** The newest Featured campaign, if there is one this device hasn't started. */
@@ -44,6 +47,8 @@ export function HomePage({
   profile: Profile | null
   /** This Year's Dailies, `null` before launch. */
   dailyYear: DailyYear | null
+  /** The signed-in player's, `null` signed out or if it failed to load. */
+  workshop: Workshop | null
 }) {
   const { account, storage } = useAccount()
   const search = useSearch({ from: '/' })
@@ -95,6 +100,12 @@ export function HomePage({
         )
       case 'learn':
         return <LearnColumn key={column} {...common} done={done} paper={worn} />
+      case 'workshop':
+        return (
+          account && (
+            <WorkshopColumn key={column} {...common} userId={account.userId} workshop={workshop} storage={storage} />
+          )
+        )
       case 'profile':
         return (
           account && (

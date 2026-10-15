@@ -15,6 +15,7 @@ export function SignInColumn({ paper, start, style }: { paper: Paper; start: boo
             Sign in
           </h2>
           <p className={styles.line}>Sign in to earn foil and keep your stickers on any device.</p>
+          <p className={styles.line}>Then draw your own puzzles in the Workshop and share them by link.</p>
           <div className={styles.actions}>
             {PROVIDERS.map((p, i) => (
               <button

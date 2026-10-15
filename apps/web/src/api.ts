@@ -4,7 +4,9 @@ import type {
   CampaignSummary,
   DailyYear,
   DeleteRejection,
+  DraftCampaignDoc,
   DraftPuzzle,
+  Drafts,
   HandleAvailability,
   HandleRejection,
   HintRequest,
@@ -14,12 +16,14 @@ import type {
   Made,
   MyProgress,
   PatchMadePuzzle,
+  Played,
   Profile,
   PublishPuzzleRequest,
   PublishResponse,
   PutHandleRequest,
   PutHandleResponse,
   PutSettingsRequest,
+  PutDraftCampaignResponse,
   PutDraftPuzzleResponse,
   PuzzleClues,
   ReportRequest,
@@ -166,7 +170,14 @@ export async function publishPuzzle(
   return { status: res.status, error: json.error ?? res.statusText }
 }
 
+export const fetchDrafts = () => getJson<Drafts>('/api/me/drafts')
+
+export const putDraftCampaign = (id: string, body: { doc: DraftCampaignDoc; updatedAt: string }) =>
+  getJson<PutDraftCampaignResponse>(`/api/me/drafts/campaigns/${encodeURIComponent(id)}`, jsonInit('PUT', body))
+
 export const fetchMade = () => getJson<Made>('/api/me/made')
+
+export const fetchPlayed = () => getJson<Played>('/api/me/played')
 
 export async function patchMadePuzzle(id: string, body: PatchMadePuzzle): Promise<void> {
   const res = await fetch(`/api/me/made/puzzles/${encodeURIComponent(id)}`, jsonInit('PATCH', body))

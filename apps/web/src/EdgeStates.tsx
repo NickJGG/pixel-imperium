@@ -84,9 +84,6 @@ export function LoadError({ error }: { error: unknown }) {
   )
 }
 
-/** The Workshop's page: a plain string, since its route isn't registered yet. */
-export const WORKSHOP: string = '/workshop'
-
 /** Player-made work its Author retired before this player started it. */
 export function Retired({ what, author }: { what: 'puzzle' | 'campaign'; author: string }) {
   const { account } = useAccount()
@@ -102,7 +99,7 @@ export function Retired({ what, author }: { what: 'puzzle' | 'campaign'; author:
             Back home
           </Link>
           {account && (
-            <Link to={WORKSHOP} data-variant="paper">
+            <Link to="/workshop" data-variant="paper">
               Open the Workshop
             </Link>
           )}

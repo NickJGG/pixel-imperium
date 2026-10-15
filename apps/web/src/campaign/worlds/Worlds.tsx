@@ -12,6 +12,7 @@ import { Lock } from '../../album/Lock.tsx'
 import { NewBadge } from '../../album/NewBadge.tsx'
 import { type Paper, paperFor, seasonOf } from '../../album/paper.ts'
 import type { HomeSearch } from '../../home/columns.ts'
+import type { WorkshopSearch } from '../../workshop/workshop.ts'
 import { reducedMotion } from '../../motion.ts'
 import type { PadPage } from '../../pad/dispatch.ts'
 import { usePadPage } from '../../pad/PadProvider.tsx'
@@ -488,6 +489,71 @@ export function SkeletonCampaignStub(stub: Stub) {
     <div {...stubProps(stub)} aria-hidden="true">
       <StubFace {...stub} />
     </div>
+  )
+}
+
+/** The edge of the Workshop's window, as a campaign stub on Campaigns. */
+export function WorkshopStub({ search, ...stub }: Stub & { search: WorkshopSearch }) {
+  return (
+    <Link
+      to="/workshop"
+      search={search}
+      replace
+      {...stubProps(stub)}
+      aria-label={`${stub.hidden} more column${stub.hidden === 1 ? '' : 's'} ${stub.side}`}
+    >
+      <StubFace {...stub} />
+    </Link>
+  )
+}
+
+/** Pairs a Workshop column with its spine across a step. */
+export const workshopMorphName = (key: string): CSSProperties => ({ viewTransitionName: `workshop-${key}` })
+
+/** A column's spine on the Workshop, built like a campaign's on Campaigns: its name in its paper. */
+export function WorkshopSpine({
+  name,
+  paper,
+  search,
+  morph,
+  before,
+}: {
+  name: string
+  paper: Paper
+  search: WorkshopSearch
+  /** Its `workshopMorphName` key. */
+  morph: string
+  before: boolean
+}) {
+  return (
+    <Link
+      to="/workshop"
+      search={search}
+      replace
+      className={`${styles.world} ${styles.spine} ${styles.provinceSpine}`}
+      style={{ ...paperFor(paper), ...workshopMorphName(morph), viewTransitionClass: columnClass('spine', campaignSpineClass(before)) }}
+      data-state="active"
+      aria-label={name}
+    >
+      <span className={styles.stack}>
+        <span className={styles.name}>{name}</span>
+      </span>
+    </Link>
+  )
+}
+
+/** The Workshop row's last spine, dashed: starts a new draft campaign. */
+export function NewCampaignSpine() {
+  return (
+    <Link
+      to="/workshop/new-campaign"
+      className={`${styles.world} ${styles.spine} ${styles.provinceSpine} ${styles.add}`}
+      style={{ viewTransitionClass: columnClass('spine', campaignSpineClass(false)) }}
+    >
+      <span className={styles.stack}>
+        <span className={styles.name}>+ New campaign</span>
+      </span>
+    </Link>
   )
 }
 

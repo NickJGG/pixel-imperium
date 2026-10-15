@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({
   fetchDraftPuzzle: vi.fn(async (_: string): Promise<DraftPuzzle | null> => null),
 }))
 vi.mock('../api.ts', () => api)
+vi.mock('../content.ts', () => ({ forgetWorkshop: () => {} }))
 
 const store = await import('./draft-store.ts')
 
@@ -95,5 +96,12 @@ describe('draft-store', () => {
 
   it('starts a draft no one has blank', async () => {
     expect((await store.openingCopy({ userId: 'u1', id: 'd-new' })).draft.cells.every(c => c === null)).toBe(true)
+  })
+
+  it('lists the drafts this device keeps for one account', () => {
+    store.createDraft('u1', { ...blankDraft(5, 5), title: 'Mine' }, null)
+    store.createDraft('u2', { ...blankDraft(5, 5), title: 'Theirs' }, null)
+    localStorage.setItem('pixel-imperium:draft:u1:d-broken', '{')
+    expect([...store.localDrafts('u1').values()].map(s => s.draft.title)).toEqual(['Mine'])
   })
 })
