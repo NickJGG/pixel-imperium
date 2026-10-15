@@ -9,7 +9,7 @@ import {
   redirect,
   useRouterState,
 } from '@tanstack/react-router'
-import type { Campaign, CampaignSummary, MadePuzzleSummary, PuzzleClues, RetiredError } from '@pixel-imperium/protocol'
+import type { Campaign, CampaignSummary, MadePuzzleSummary, Paper, PuzzleClues, RetiredError } from '@pixel-imperium/protocol'
 import { accountReady, getAccount, useAccount } from './account.ts'
 import { fetchMade, fetchProfile, isRetired, putDraftCampaign } from './api.ts'
 import * as content from './content.ts'
@@ -56,6 +56,7 @@ import { nextTrack, trackOf } from './tutorial/tracks.ts'
 import { AllPuzzlesPage } from './workshop/AllPuzzlesPage.tsx'
 import { BuilderPage } from './workshop/BuilderPage.tsx'
 import { PlaytestAlbum, PlaytestPuzzle } from './workshop/CampaignPlaytest.tsx'
+import { formatIn, parseIn } from './workshop/campaign-draft.ts'
 import { openingCampaign } from './workshop/campaign-store.ts'
 import { CrestPage } from './workshop/CrestPage.tsx'
 import { WorkshopPage } from './workshop/WorkshopPage.tsx'
@@ -593,8 +594,17 @@ const playtestPuzzleRoute = createRoute({
 const MADE_ID = /^(?=.*\d)[a-z0-9]{10}$/
 
 type WorkshopPuzzleData =
-  | { kind: 'draft'; draftKey: DraftKey; stored: StoredDraft }
+  | { kind: 'draft'; draftKey: DraftKey; stored: StoredDraft; paper: Paper; parent: string | undefined }
   | { kind: 'published'; puzzle: MadePuzzleSummary }
+
+/** The paper and way up of an editor opened from a draft campaign's province: its own paper, else the campaign's. */
+async function editorProvince(userId: string, at: string | undefined): Promise<{ paper: Paper; parent: string | undefined }> {
+  const within = parseIn(at)
+  const home = within && (await openingCampaign({ userId, id: within.id }))
+  const province = within && home?.doc.provinces[within.n - 1]
+  if (!within || !home || !province) return { paper: 'workshop', parent: undefined }
+  return { paper: province.paper ?? home.doc.paper ?? 'workshop', parent: `/workshop/c/${within.id}/${within.n}` }
+}
 
 /**
  * Signed in only, and its own chunk: the puzzle editor on a draft, which a new id starts blank, or one of the
@@ -603,12 +613,18 @@ type WorkshopPuzzleData =
 const workshopPuzzleRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/workshop/p/$id',
+  validateSearch: (search: Record<string, unknown>): { in?: string } => {
+    const within = parseIn(search.in)
+    return within ? { in: formatIn(within) } : {}
+  },
   beforeLoad: signedInOnly,
-  loader: async ({ params }): Promise<WorkshopPuzzleData> => {
+  loaderDeps: ({ search }) => ({ in: search.in }),
+  loader: async ({ params, deps }): Promise<WorkshopPuzzleData> => {
     const userId = getAccount().account!.userId
     if (!MADE_ID.test(params.id)) {
       const draftKey = { userId, id: params.id }
-      return { kind: 'draft', draftKey, stored: await openingCopy(draftKey) }
+      const [stored, province] = await Promise.all([openingCopy(draftKey), editorProvince(userId, deps.in)])
+      return { kind: 'draft', draftKey, stored, ...province }
     }
     const puzzle = (await fetchMade()).puzzles.find(p => p.id === params.id && !p.removed)
     if (!puzzle) throw notFound()

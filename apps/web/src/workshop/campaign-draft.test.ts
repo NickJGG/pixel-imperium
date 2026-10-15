@@ -9,10 +9,12 @@ import {
   campaignChecks,
   crestFit,
   draftAsCampaign,
+  formatIn,
   keyFor,
   movePuzzle,
   paintCrest,
   paintRegion,
+  parseIn,
   regionCounts,
   removeProvince,
   resizeCrest,
@@ -64,6 +66,13 @@ describe('provinces and puzzles', () => {
     const d = { ...doc(['a'], ['b'], ['c']), crest: { palette: { a: '#000000' }, rows: ['aaa'], regions: ['123'] } }
     expect(removeProvince(d, 1).crest!.regions).toEqual(['112'])
     expect(removeProvince(d, 0).crest!.regions).toEqual(['112'])
+  })
+
+  it('names the province a puzzle was opened from, and reads it back', () => {
+    const at = { id: 'd-0123456789abcdef', n: 3 }
+    expect(formatIn(at)).toBe('d-0123456789abcdef.3')
+    expect(parseIn(formatIn(at))).toEqual(at)
+    for (const junk of [undefined, 3, '', 'd-1', 'd-1.', '.2', 'd-1.0', 'd-1.x', 'd.1.2', 'd-1.-2']) expect(parseIn(junk)).toBeNull()
   })
 })
 

@@ -35,6 +35,7 @@ import {
   addProvince,
   appendPuzzles,
   draftAsCampaign,
+  formatIn,
   movePuzzle,
   problemOf,
   provinceName,
@@ -217,6 +218,7 @@ function BuilderColumn({
   )
   const name = provinceName(doc, k)
   const id = `draft-province-${k + 1}`
+  const within = formatIn({ id: draftId, n: k + 1 })
 
   const groups = tiers ? tierGroups(province) : [{ tier: null, slots: province.puzzles.map((puzzle, i) => ({ puzzle, number: i + 1 })) }]
   const plusSlot = !tiers && count < TIERED_FROM && room > 0
@@ -236,7 +238,7 @@ function BuilderColumn({
   const newPuzzle = () => {
     const ref = newDraftId()
     editCampaign(d => appendPuzzles(d, k, [ref]), { soon: true })
-    void navigate({ to: '/workshop/p/$id', params: { id: ref } })
+    void navigate({ to: '/workshop/p/$id', params: { id: ref }, search: { in: within } })
   }
   const deleteProvince = () => {
     if (count > 0 && !confirm(`Take ${name} and its ${count} puzzle${count === 1 ? '' : 's'} out of the campaign? The puzzles stay in your Workshop.`))
@@ -305,6 +307,7 @@ function BuilderColumn({
                         <Link
                           to="/workshop/p/$id"
                           params={{ id: puzzle.id }}
+                          search={{ in: within }}
                           className={campaignStyles.slotLink}
                           draggable={false}
                           aria-label={`${number}: ${puzzle.title}, ${info?.kind ?? 'draft'}${issue ? `, ${PROBLEM[issue].toLowerCase()}` : ''}. Alt and arrows move it.`}

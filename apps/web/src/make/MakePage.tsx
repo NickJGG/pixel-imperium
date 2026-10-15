@@ -16,7 +16,9 @@ import {
   toSeed,
 } from '@pixel-imperium/nonogram'
 import { CheckIcon, CrossIcon } from '../album/icons.tsx'
+import { type Paper, paperFor } from '../album/paper.ts'
 import { CrownMark, FloatingPills } from '../Hud.tsx'
+import { usePadPage } from '../pad/PadProvider.tsx'
 import { useCentredFilm } from '../play/Filmstrip.tsx'
 import { RAIL_WIDTH } from '../play/layout.ts'
 import { RailTools } from '../play/RailTools.tsx'
@@ -49,8 +51,6 @@ import { useChipDrag } from './useChipDrag.ts'
 import pillStyles from '../album/CountPill.module.css'
 import playStyles from '../play/Play.module.css'
 import styles from './Make.module.css'
-
-const PAPER = { '--paper': 'var(--p-workshop)', '--tab': 'var(--t-workshop)' } as CSSProperties
 
 const NO_STUCK: readonly number[] = []
 
@@ -119,8 +119,21 @@ export function DevMakePage() {
   return <MakePage workshop={false} />
 }
 
-/** A Workshop draft, opened from whichever copy is newer, this device's or the server's; key it by draft id. */
-export function WorkshopDraftPage({ draftKey, stored }: { draftKey: DraftKey; stored: StoredDraft }) {
+/**
+ * A Workshop draft, opened from whichever copy is newer, this device's or the server's; key it by draft id. Opened
+ * from a draft campaign's province, it wears that province's paper and `parent` is the way back up.
+ */
+export function WorkshopDraftPage({
+  draftKey,
+  stored,
+  paper,
+  parent,
+}: {
+  draftKey: DraftKey
+  stored: StoredDraft
+  paper: Paper
+  parent: string | undefined
+}) {
   useState(() => openDraft(draftKey, stored))
   useEffect(() => {
     const leave = () => void flushDraft({ keepalive: true })
@@ -133,12 +146,13 @@ export function WorkshopDraftPage({ draftKey, stored }: { draftKey: DraftKey; st
       leave()
     }
   }, [])
-  return <MakePage workshop />
+  return <MakePage workshop paper={paper} parent={parent} />
 }
 
 const SAVE_NOTE: Record<SaveState, string> = { saved: 'Saved', saving: 'Saving…', local: 'Saved on this device' }
 
-function MakePage({ workshop }: { workshop: boolean }) {
+function MakePage({ workshop, paper = 'workshop', parent }: { workshop: boolean; paper?: Paper; parent?: string | undefined }) {
+  usePadPage({ parent })
   const draft = useDraft()
   const saveState = useSaveState()
   const { canUndo, canRedo } = useHistory()
@@ -222,7 +236,7 @@ function MakePage({ workshop }: { workshop: boolean }) {
     )
 
   return (
-    <main className={`${playStyles.shell} ${styles.make}`} data-rail style={PAPER}>
+    <main className={`${playStyles.shell} ${styles.make}`} data-rail style={paperFor(paper)}>
       <FloatingPills />
       <div className={playStyles.shellBody}>
         {!test && <ColorStrip draft={draft} chosen={color} onChoose={setChosen} />}

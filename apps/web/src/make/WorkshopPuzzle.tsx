@@ -10,6 +10,6 @@ export function WorkshopPuzzlePage() {
   return data.kind === 'published' ? (
     <PublishedPage key={data.puzzle.id} puzzle={data.puzzle} />
   ) : (
-    <WorkshopDraftPage key={data.draftKey.id} draftKey={data.draftKey} stored={data.stored} />
+    <WorkshopDraftPage key={data.draftKey.id} draftKey={data.draftKey} stored={data.stored} paper={data.paper} parent={data.parent} />
   )
 }

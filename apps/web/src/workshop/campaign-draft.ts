@@ -39,6 +39,19 @@ const withProvince = (doc: DraftCampaignDoc, k: number, change: (p: DraftProvinc
 
 export const provinceName = (doc: DraftCampaignDoc, k: number) => doc.provinces[k]?.name.trim() || `Province ${k + 1}`
 
+/** The draft campaign and 1-based province a puzzle was opened from, the editor's `?in=<id>.<n>`. */
+export interface InProvince {
+  id: string
+  n: number
+}
+
+export const formatIn = ({ id, n }: InProvince) => `${id}.${n}`
+
+export function parseIn(value: unknown): InProvince | null {
+  const m = typeof value === 'string' ? /^([^.]+)\.([1-9]\d*)$/.exec(value) : null
+  return m ? { id: m[1]!, n: Number(m[2]) } : null
+}
+
 export function addProvince(doc: DraftCampaignDoc): DraftCampaignDoc {
   if (doc.provinces.length >= MAX_PROVINCES) return doc
   return { ...doc, provinces: [...doc.provinces, { name: '', flavour: '', paper: null, puzzleIds: [] }] }
