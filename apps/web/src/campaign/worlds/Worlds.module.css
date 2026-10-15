@@ -417,8 +417,8 @@
 }
 
 /*
- * Campaigns ↔ one of its campaign's provinces (`into-album`, `out-of-album`): the same again, a level down. The
- * campaign spines and stubs slide off as Home's do, and the province's spines grow out of the window's edges. Both
+ * Campaigns ↔ one of its campaign's provinces (`into-album`, `out-of-album`), or the Workshop ↔ one of a draft
+ * campaign's: the same again, a level down. The campaign spines and stubs slide off as Home's do, and the province's spines grow out of the window's edges. Both
  * are `.provinceSpine`, for the Home morph; `.campaignSpine` comes after, so it wins.
  */
 :root:active-view-transition-type(into-album, out-of-album) .backdrop {

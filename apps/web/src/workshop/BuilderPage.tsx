@@ -114,7 +114,7 @@ export function BuilderPage({
     return (
       <main ref={ref} className={provinceStyles.page}>
         <Worlds>
-          <World paper={doc.paper ?? 'workshop'} labelledBy="no-provinces" start>
+          <World paper={doc.paper ?? 'workshop'} labelledBy="no-provinces" start pair>
             <div className={`${provinceStyles.zoom} ${provinceStyles.locked}`}>
               <div className={provinceStyles.lockedMsg}>
                 <p className={provinceStyles.kicker}>{titleOf(doc.title)} · draft</p>
@@ -252,7 +252,7 @@ function BuilderColumn({
   )
 
   return (
-    <World paper={province.paper} labelledBy={id} style={draftProvinceMorph(k + 1)} start={start}>
+    <World paper={province.paper} labelledBy={id} style={draftProvinceMorph(k + 1)} start={start} pair={start}>
       <div className={provinceStyles.zoom}>
         <header className={provinceStyles.head}>
           <div className={provinceStyles.title}>
@@ -276,7 +276,9 @@ function BuilderColumn({
             none={{ label: 'Campaign’s', note: 'The campaign’s own paper.' }}
             onChange={paper => editCampaign(d => setProvince(d, k, { paper }))}
           />
-          <CountPill className={provinceStyles.count}>{count > 0 ? `${count} puzzles` : 'Empty'}</CountPill>
+          <CountPill className={provinceStyles.count}>
+            {count} / {MAX_PROVINCE_PUZZLES}
+          </CountPill>
         </header>
         <div
           className={provinceStyles.shelves}
@@ -344,6 +346,15 @@ function BuilderColumn({
           })}
         </div>
         <footer className={`${provinceStyles.foot} ${styles.foot}`}>
+          <button type="button" data-variant="paper" onClick={deleteProvince}>
+            Delete province
+          </button>
+          {onAddProvince && (
+            <button type="button" data-variant="paper" onClick={onAddProvince}>
+              + Province
+            </button>
+          )}
+          {!plusSlot && addButton}
           <div className={`${provinceStyles.caption} ${styles.flavour}`}>
             <EditableText
               value={draft.flavour}
@@ -354,15 +365,6 @@ function BuilderColumn({
               onSave={value => editCampaign(d => setProvince(d, k, { flavour: value }))}
             />
           </div>
-          <button type="button" data-variant="paper" onClick={deleteProvince}>
-            Delete province
-          </button>
-          {onAddProvince && (
-            <button type="button" data-variant="paper" onClick={onAddProvince}>
-              + Province
-            </button>
-          )}
-          {!plusSlot && addButton}
         </footer>
       </div>
       {/* On the body: a column clips whatever stands in it. */}

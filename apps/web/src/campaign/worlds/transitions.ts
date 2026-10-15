@@ -1,13 +1,14 @@
 /**
  * Which view transition a navigation plays, if any, as a pure function of the two places and the moment's
- * conditions; `morph-nav.ts` starts whatever this names. Home ↔ an album page, Campaigns, a Learn track or the Workshop, Campaigns ↔
- * one of its campaign's provinces, a step between an album's pages, Campaigns' campaigns, Learn's tracks, Home's or
- * the Workshop's columns or a draft campaign's provinces, and a step into another Year each have a morph of their own, on desktop only. So does a province page ↔
- * one of its puzzles, where Play stands its Filmstrip, and a step between two puzzles of one province there. A door
+ * conditions; `morph-nav.ts` starts whatever this names. Home ↔ an album page, Campaigns, a Learn track or the
+ * Workshop, Campaigns ↔ one of its campaign's provinces, the Workshop open on a draft campaign ↔ one of its provinces,
+ * a step between an album's pages, Campaigns' campaigns, Learn's tracks, Home's or the Workshop's columns or a draft
+ * campaign's provinces, and a step into another Year each have a morph of their own, on desktop only. So does a
+ * province page ↔ one of its puzzles, where Play stands its Filmstrip, and a step between two puzzles of one province there. A door
  * with no Filmstrip to fly into, Home's Next up or a Daily's slot on Home or its Month, grows its slot into the board
  * as its column widens into Play's paper; on a phone any slot opening its board just grows. Every other move between
  * two pages plays the slant wipe, on a phone too, boards and all, reversed on Back and on any move up: to Home, from a
- * puzzle to its page, from a province to Campaigns. A Lesson moves as a puzzle does, its track's page standing for a
+ * puzzle to its page, from a province to Campaigns or the Workshop. A Lesson moves as a puzzle does, its track's page standing for a
  * province's, with Home's Learn column and the offer of a track over a puzzle for doors.
  * Leaving a 404, a load error or a closed Daily always wipes: they stand at a page's address with nothing of it to morph.
  */
@@ -123,6 +124,10 @@ const DRAFT_PAGE = /^\/workshop\/c\/([^/]+\/(?:playtest\/)?)\d+\/?$/
 /** A draft campaign's province page, in its builder or its playtest: which draft, and which of the two. */
 const draftAlbumOf = (pathname: string) => DRAFT_PAGE.exec(pathname)?.[1]
 
+/** `province` is a province page of the draft campaign the Workshop `workshop` stands open on. */
+const inDraft = (province: Place, workshop: Place) =>
+  /^\/workshop\/?$/.test(workshop.pathname) && draftAlbumOf(province.pathname)?.split('/')[0] === openOf(workshop)
+
 /** `board` is a campaign puzzle and `page` the province page it sits on, or a Lesson and its track's page. */
 const onItsPage = (board: Place, page: Place, env: Env) => {
   const at = page.pathname.replace(/\/$/, '')
@@ -188,6 +193,8 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
     if (isHome(from) && isAlbumPath(to.pathname)) return typed('to-province')
     if (inCampaign(to, from)) return typed('into-album')
     if (inCampaign(from, to)) return typed('out-of-album')
+    if (inDraft(to, from)) return typed('into-album')
+    if (inDraft(from, to)) return typed('out-of-album')
     if (same(isMonthPath))
       return typed(albumOf(from.pathname) > albumOf(to.pathname) ? 'to-year-back' : 'to-year-forward')
   }
@@ -207,9 +214,9 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
 
 function wipe(from: Place, to: Place, env: Env): Transition | null {
   if (!env.typed) return null
-  // Every page lies over Home, a puzzle over its page and a province over Campaigns, so going up always wipes out,
-  // whichever way history went.
-  const up = isHome(to) || onItsPage(from, to, env) || inCampaign(from, to)
-  const back = up || (!isHome(from) && !inCampaign(to, from) && env.direction === 'back')
+  // Every page lies over Home, a puzzle over its page and a province over Campaigns or the Workshop, so going up
+  // always wipes out, whichever way history went.
+  const up = isHome(to) || onItsPage(from, to, env) || inCampaign(from, to) || inDraft(from, to)
+  const back = up || (!isHome(from) && !inCampaign(to, from) && !inDraft(to, from) && env.direction === 'back')
   return { types: back ? ['wipe', 'back'] : ['wipe'] }
 }

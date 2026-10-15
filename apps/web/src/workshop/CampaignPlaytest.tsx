@@ -170,7 +170,7 @@ function PlaytestProvince({
   const tiered = province.puzzles.some(p => p.tier)
   const id = `playtest-${k + 1}`
   return (
-    <World paper={province.paper} labelledBy={id} style={draftProvinceMorph(k + 1)} start={start}>
+    <World paper={province.paper} labelledBy={id} style={draftProvinceMorph(k + 1)} start={start} pair={start}>
       <div className={provinceStyles.zoom}>
         <header className={provinceStyles.head}>
           <div className={provinceStyles.title}>
@@ -211,7 +211,6 @@ function PlaytestProvince({
           ))}
         </div>
         <footer className={provinceStyles.foot}>
-          {state === 'conquered' && province.flavour && <p className={provinceStyles.caption}>{province.flavour}</p>}
           <button type="button" data-variant="paper" onClick={onStartOver}>
             Start over
           </button>
@@ -224,6 +223,7 @@ function PlaytestProvince({
               {progress.provinces.every(p => p.solved === 0) ? 'Start' : 'Continue'}
             </Link>
           )}
+          {state === 'conquered' && province.flavour && <p className={provinceStyles.caption}>{province.flavour}</p>}
         </footer>
       </div>
     </World>

@@ -44,6 +44,15 @@ describe('transitionFor: the morphs', () => {
     expect(types('/c/other', '/c/main/meadow')).toEqual(['wipe'])
   })
 
+  it('opens a draft campaign’s province from its Workshop column and comes back up', () => {
+    expect(types(at('/workshop', { open: 'd-1' }), '/workshop/c/d-1/1')).toEqual(['into-album'])
+    expect(types(at('/workshop', { open: 'd-1' }), '/workshop/c/d-1/playtest/1')).toEqual(['into-album'])
+    expect(types('/workshop/c/d-1/2', at('/workshop', { open: 'd-1' }))).toEqual(['out-of-album'])
+    expect(types('/workshop/c/d-1/1', at('/workshop', { open: 'd-1' }), { direction: 'back' })).toEqual(['out-of-album'])
+    expect(types(at('/workshop', { open: 'd-2' }), '/workshop/c/d-1/1')).toEqual(['wipe'])
+    expect(types('/workshop/c/d-1/1', at('/workshop', { open: 'd-1' }), { phone: true })).toEqual(['wipe', 'back'])
+  })
+
   it('steps between pages of one album, and between Home’s columns', () => {
     expect(types('/c/main/meadow', '/c/main/marsh')).toEqual(['step'])
     expect(types('/c/main', '/c/other', { direction: 'replace' })).toEqual(['step'])
