@@ -703,3 +703,102 @@ export function SkeletonSpine({
     </div>
   )
 }
+
+/** Pairs a draft campaign's province column with its spine, in its builder and its playtest. */
+export const draftProvinceMorph = (n: number): CSSProperties => ({ viewTransitionName: `draft-province-${n}` })
+
+/**
+ * A draft campaign's province as a spine in its builder, or its playtest: its name, then its count pill, a `!` while
+ * it has no puzzles, or the lock. In the builder a puzzle dragged onto it moves there.
+ */
+export function DraftProvinceSpine({
+  draftId,
+  n,
+  name,
+  paper,
+  count,
+  state = 'active',
+  playtest = false,
+  dropping = false,
+}: {
+  draftId: string
+  /** 1-based. */
+  n: number
+  name: string
+  paper: Paper
+  /** E.g. "4" in the builder, "2/4" in a playtest; empty, a `!`. */
+  count: string | null
+  state?: ProvinceState
+  playtest?: boolean
+  /** A dragged puzzle is over it. */
+  dropping?: boolean
+}) {
+  const open = state === 'active' || state === 'conquered'
+  const className = `${styles.world} ${styles.spine} ${styles.provinceSpine}`
+  const style = { ...paperFor(paper), ...draftProvinceMorph(n), viewTransitionClass: columnClass('spine', styles.provinceSpine) }
+  const face = (
+    <span className={styles.stack}>
+      <span className={styles.name}>{name}</span>
+      {open ? (
+        <CountPill conquered={state === 'conquered'} className={styles.countPill}>
+          {count ?? '!'}
+        </CountPill>
+      ) : (
+        <span className={styles.locked}>
+          <Lock className={styles.lock} />
+          {state === 'next' && <span className={styles.count}>Next</span>}
+        </span>
+      )}
+    </span>
+  )
+  const label = `${name}, ${count === null ? 'no puzzles yet' : playtest ? `${count} solved` : `${count} puzzles`}${open ? '' : `, ${stateLabel[state]}`}`
+  return playtest ? (
+    <Link
+      to="/workshop/c/$id/playtest/$n"
+      params={{ id: draftId, n: String(n) }}
+      replace
+      className={className}
+      style={style}
+      data-state={state}
+      data-thin
+      data-conquered={state === 'conquered' || undefined}
+      aria-label={label}
+    >
+      {face}
+    </Link>
+  ) : (
+    <Link
+      to="/workshop/c/$id/$n"
+      params={{ id: draftId, n: String(n) }}
+      replace
+      className={className}
+      style={style}
+      data-state="active"
+      data-thin
+      data-drop-province={n}
+      data-dropping={dropping || undefined}
+      aria-label={label}
+    >
+      {face}
+    </Link>
+  )
+}
+
+/** The builder's last spine, dashed, while there's room for another province: adds one and opens it. */
+export function AddProvinceSpine({ draftId, n, onAdd }: { draftId: string; /** The new one's number. */ n: number; onAdd: () => void }) {
+  return (
+    <Link
+      to="/workshop/c/$id/$n"
+      params={{ id: draftId, n: String(n) }}
+      replace
+      className={`${styles.world} ${styles.spine} ${styles.provinceSpine} ${styles.add}`}
+      style={{ viewTransitionClass: columnClass('spine', styles.provinceSpine) }}
+      data-thin
+      onClick={onAdd}
+    >
+      <span className={styles.stack}>
+        <span className={styles.name}>+ Province</span>
+      </span>
+    </Link>
+  )
+}

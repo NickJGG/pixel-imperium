@@ -3,7 +3,6 @@ import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import type {
   Campaign,
-  DraftCampaignSummary,
   MadeCampaignSummary,
   MadePuzzleSummary,
   PlayedCampaign,
@@ -14,7 +13,7 @@ import { CampaignStack } from '../campaign/CampaignColumn.tsx'
 import { World, workshopMorphName } from '../campaign/worlds/Worlds.tsx'
 import { newDraftId } from '../make/draft-store.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
-import { relativeDate, shortDate } from '../profile/activity.ts'
+import { shortDate } from '../profile/activity.ts'
 import { DraftFace, PlayedFace, PlayedShelf, YoursShelf } from './Shelf.tsx'
 import { type DraftEntry, PUZZLES, type PuzzleEntry, puzzleCounts, titleOf } from './workshop.ts'
 import styles from '../home/Home.module.css'
@@ -233,24 +232,6 @@ export function OwnCampaignColumn({
             </div>
           </div>
         )}
-      </div>
-    </World>
-  )
-}
-
-/** A draft campaign, still being put together. */
-export function DraftCampaignColumn({ campaign, start }: { campaign: DraftCampaignSummary; start: boolean }) {
-  const titleId = `workshop-${campaign.id}`
-  return (
-    <World paper="workshop" labelledBy={titleId} style={workshopMorphName(campaign.id)} start={start}>
-      <div className={styles.column}>
-        <div className={styles.stack}>
-          <p className={styles.kicker}>Your campaign · draft</p>
-          <h2 id={titleId} className={styles.hero}>
-            {titleOf(campaign.title)}
-          </h2>
-          <p className={styles.sub}>Last edited {relativeDate(new Date(campaign.updatedAt), new Date())}</p>
-        </div>
       </div>
     </World>
   )

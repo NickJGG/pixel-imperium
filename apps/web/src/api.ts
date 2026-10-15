@@ -4,6 +4,7 @@ import type {
   CampaignSummary,
   DailyYear,
   DeleteRejection,
+  DraftCampaign,
   DraftCampaignDoc,
   DraftPuzzle,
   Drafts,
@@ -19,6 +20,7 @@ import type {
   Played,
   Profile,
   PublishPuzzleRequest,
+  PublishRejection,
   PublishResponse,
   PutHandleRequest,
   PutHandleResponse,
@@ -172,8 +174,31 @@ export async function publishPuzzle(
 
 export const fetchDrafts = () => getJson<Drafts>('/api/me/drafts')
 
-export const putDraftCampaign = (id: string, body: { doc: DraftCampaignDoc; updatedAt: string }) =>
-  getJson<PutDraftCampaignResponse>(`/api/me/drafts/campaigns/${encodeURIComponent(id)}`, jsonInit('PUT', body))
+export const putDraftCampaign = (id: string, body: { doc: DraftCampaignDoc; updatedAt: string }, keepalive = false) =>
+  getJson<PutDraftCampaignResponse>(`/api/me/drafts/campaigns/${encodeURIComponent(id)}`, jsonInit('PUT', body, { keepalive }))
+
+/** `null` when the account has no draft campaign by that id. */
+export async function fetchDraftCampaign(id: string): Promise<DraftCampaign | null> {
+  const res = await fetch(`/api/me/drafts/campaigns/${encodeURIComponent(id)}`)
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  return (await res.json()) as DraftCampaign
+}
+
+export async function deleteDraftCampaign(id: string): Promise<void> {
+  const res = await fetch(`/api/me/drafts/campaigns/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+}
+
+/** The new id, or why the server refused: its status, message and, for a broken rule, the preview showing where. */
+export async function publishCampaign(
+  draftId: string,
+): Promise<PublishResponse | (PublishRejection & { status: number })> {
+  const res = await fetch(`/api/me/drafts/campaigns/${encodeURIComponent(draftId)}/publish`, { method: 'POST' })
+  const json = (await res.json().catch(() => ({}))) as Partial<PublishResponse & PublishRejection>
+  if (res.ok && json.id) return { id: json.id }
+  return { status: res.status, error: json.error ?? res.statusText, ...(json.preview && { preview: json.preview }) }
+}
 
 export const fetchMade = () => getJson<Made>('/api/me/made')
 

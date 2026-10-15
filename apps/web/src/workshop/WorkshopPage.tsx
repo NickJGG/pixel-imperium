@@ -14,14 +14,15 @@ import {
   useStep,
 } from '../campaign/worlds/Worlds.tsx'
 import { localDrafts } from '../make/draft-store.ts'
+import type { StoredCampaign } from './campaign-store.ts'
 import {
-  DraftCampaignColumn,
   NewCampaignColumn,
   OwnCampaignColumn,
   PlayedByLinkColumn,
   PlayedCampaignColumn,
   PuzzlesColumn,
 } from './Columns.tsx'
+import { DraftCampaignColumn } from './DraftCover.tsx'
 import {
   PUZZLES,
   type Workshop,
@@ -55,7 +56,17 @@ const searchOf = (tab: WorkshopTab, key: string): WorkshopSearch => ({
  * to start another; under Played, the puzzles opened by link then the campaigns played. Drawn like Campaigns, one
  * column open and the rest as spines, a carousel on a phone; moving along replaces `?open=` in the URL.
  */
-export function WorkshopPage({ workshop, campaign }: { workshop: Workshop; campaign: Campaign | null }) {
+export function WorkshopPage({
+  workshop,
+  campaign,
+  draft,
+}: {
+  workshop: Workshop
+  /** The Played campaign open, loaded for its column. */
+  campaign: Campaign | null
+  /** The draft campaign open, loaded for its cover. */
+  draft: StoredCampaign | null
+}) {
   const { account, storage } = useAccount()
   const search = route.useSearch()
   const navigate = useNavigate()
@@ -95,7 +106,15 @@ export function WorkshopPage({ workshop, campaign }: { workshop: Workshop; campa
                   key: e.campaign.id,
                   name: `${titleOf(e.campaign.title)} · draft`,
                   paper: 'workshop',
-                  render: start => <DraftCampaignColumn key={e.campaign.id} campaign={e.campaign} start={start} />,
+                  render: start => (
+                    <DraftCampaignColumn
+                      key={e.campaign.id}
+                      summary={e.campaign}
+                      draftKey={{ userId: account!.userId, id: e.campaign.id }}
+                      opening={search.open === e.campaign.id ? draft : null}
+                      start={start}
+                    />
+                  ),
                 },
           ),
         ]

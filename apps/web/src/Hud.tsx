@@ -18,7 +18,7 @@ const themeIcon: Record<Theme, ReactNode> = { dark: <NightIcon />, light: <DayIc
 
 /** Pages whose Worlds columns run under the HUD, edge to edge; everywhere else it takes its own row. */
 const floats = (pathname: string) =>
-  /^\/(?:c\/[^/]+(?:\/[^/]+)?\/?|daily\/[^/]+\/[^/]+\/?|learn(?:\/[^/]+)?\/?|settings\/?|u\/[^/]+\/?|workshop(?:\/puzzles)?\/?)?$/.test(pathname)
+  /^\/(?:c\/[^/]+(?:\/[^/]+)?\/?|daily\/[^/]+\/[^/]+\/?|learn(?:\/[^/]+)?\/?|settings\/?|u\/[^/]+\/?|workshop(?:\/puzzles|\/c\/[^/]+\/(?:playtest\/)?[^/]+)?\/?)?$/.test(pathname)
 
 /** The next puzzle in the campaign last shown, recomputed on every navigation since solves land between them. */
 function useContinue(): ContinueAt | null {

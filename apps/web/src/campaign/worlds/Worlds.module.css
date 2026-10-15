@@ -684,3 +684,9 @@
     transform: translateX(100%);
   }
 }
+
+/* A builder's province spine with a dragged puzzle over it. */
+.spine[data-dropping] {
+  outline: 4px solid var(--ink);
+  outline-offset: -8px;
+}

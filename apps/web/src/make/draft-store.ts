@@ -195,6 +195,13 @@ export async function flushDraft({ keepalive = false } = {}): Promise<boolean> {
   return send(key, { draft: current, ...meta }, keepalive)
 }
 
+/** Sends a draft this device has and the server hasn't, open or not; `false` if it couldn't. */
+export async function sendDraft(k: DraftKey): Promise<boolean> {
+  if (isOpen(k)) return flushDraft()
+  const s = localDraft(k)
+  return !s?.unsent || k.userId === null || send(k, s, false)
+}
+
 /** Only the open draft's sends show in its save state. */
 async function send(sent: DraftKey, s: StoredDraft, keepalive: boolean): Promise<boolean> {
   const { title, width, height, cells, colors } = s.draft

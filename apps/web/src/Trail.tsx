@@ -11,6 +11,7 @@ export interface TrailStep {
   label: string
   /** A place's paper, whose tab colors its pill. */
   paper?: Paper | undefined
+  search?: Record<string, string> | undefined
 }
 
 /**
@@ -63,6 +64,7 @@ export function Trail() {
         <span key={step.to} className={hud.holder} style={sticker(stepName(step.to), i === 0 ? 1 : 2)}>
           <Link
             to={step.to}
+            {...(step.search && { search: step.search })}
             className={styles.step}
             data-variant="paper"
             data-size="compact"

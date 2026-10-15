@@ -1,0 +1,494 @@
+/* In-place edits: the text itself, a ✎ after it. */
+.editable {
+  all: unset;
+  display: inline;
+  cursor: text;
+  overflow-wrap: anywhere;
+  border-radius: var(--r-xs);
+}
+
+.editable:hover,
+.editable:focus-visible {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  outline: none;
+}
+
+.placeholder {
+  opacity: 0.45;
+}
+
+.pencil {
+  margin-left: 0.3em;
+  font-size: 0.5em;
+  vertical-align: middle;
+  opacity: 0.55;
+}
+
+.editField {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 var(--space-2);
+  font: inherit;
+  letter-spacing: inherit;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  border: 2px solid var(--ink);
+  border-radius: var(--r-sm);
+  resize: none;
+}
+
+.paperChip {
+  border-left: var(--space-2) solid var(--chip);
+}
+
+/* The editable album's slots: a ghost while dragged, a bar on the side a drop would land. */
+.slot {
+  position: relative;
+  user-select: none;
+}
+
+.slot[data-ghost] {
+  opacity: 0.3;
+}
+
+.slot[data-drop]::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--ink);
+  border-radius: var(--r-pill);
+}
+
+.slot[data-drop='before']::after {
+  left: calc(-1 * var(--space-2));
+}
+
+.slot[data-drop='after']::after {
+  right: calc(-1 * var(--space-2));
+}
+
+.slot > a {
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.draftSlot {
+  border: 2px dashed var(--tab);
+}
+
+.remove {
+  position: absolute;
+  top: calc(-1 * var(--space-2));
+  right: calc(-1 * var(--space-2));
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font: var(--type-label);
+  line-height: 1;
+  color: var(--card);
+  background: var(--ink);
+  border: 0;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+
+.slot:hover > .remove,
+.slot:focus-within > .remove {
+  opacity: 1;
+}
+
+.problem {
+  position: absolute;
+  bottom: calc(-1 * var(--space-1));
+  left: 50%;
+  translate: -50% 0;
+  padding: 1px var(--space-2);
+  font: var(--type-micro);
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: var(--card);
+  background: var(--red);
+  border-radius: var(--r-pill);
+  pointer-events: none;
+}
+
+.plusSlot {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  font: var(--type-hero);
+  font-size: var(--fs-40);
+  color: var(--ink);
+  background: transparent;
+  border: 3px dashed color-mix(in srgb, var(--ink) 40%, transparent);
+  border-radius: var(--r-sm);
+  box-shadow: none;
+}
+
+.plusSlot:hover {
+  border-color: var(--ink);
+}
+
+.floater {
+  position: fixed;
+  z-index: 20;
+  width: 72px;
+  translate: -50% -50%;
+  pointer-events: none;
+  rotate: -4deg;
+  filter: drop-shadow(0 6px 8px var(--shade));
+}
+
+.foot {
+  justify-content: flex-start;
+}
+
+.flavour {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The cover: its checks, then a card per province. */
+.checks {
+  margin: 0;
+}
+
+.provinceCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-2);
+  align-self: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.provinceCard {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--card-2);
+  border-left: var(--space-1) solid var(--chip, var(--tab));
+  border-radius: var(--r-sm);
+  box-shadow: 0 3px 0 var(--line-soft);
+}
+
+.provinceCard small,
+.provinceCard span {
+  font: var(--type-micro);
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.provinceCard b {
+  overflow: hidden;
+  font: var(--type-label);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.provinceCard[data-empty] span {
+  color: var(--red);
+  opacity: 1;
+}
+
+.provinceCard:hover b {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.addCard {
+  place-content: center;
+  font: var(--type-label);
+  background: transparent;
+  border: 2px dashed color-mix(in srgb, var(--ink) 35%, transparent);
+  box-shadow: none;
+}
+
+.deleteDraft {
+  opacity: 0.7;
+}
+
+.crestWrap {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+  width: min(100%, 420px);
+  text-align: center;
+}
+
+/* The picker: wider than a dialog, its grid scrolling under a sticky foot. */
+.picker {
+  width: min(760px, calc(100% - 2 * var(--space-4)));
+  max-height: calc(100dvh - 2 * var(--space-6));
+  padding-bottom: 0;
+}
+
+.pickerGrid {
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  margin-top: var(--space-4);
+  padding-bottom: var(--space-4);
+}
+
+.pick {
+  position: relative;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+
+.pick:disabled {
+  opacity: 0.4;
+}
+
+.pick[aria-pressed='true'] > :first-child {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.pickNumber {
+  position: absolute;
+  top: calc(-1 * var(--space-2));
+  right: calc(-1 * var(--space-2));
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  font: var(--type-label);
+  color: var(--card);
+  background: var(--ink);
+  border-radius: 50%;
+}
+
+.newTile {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  font: var(--type-hero);
+  font-size: var(--fs-40);
+  border: 2px dashed color-mix(in srgb, var(--ink) 40%, transparent);
+  border-radius: var(--r-sm);
+}
+
+.pickerFoot {
+  position: sticky;
+  bottom: 0;
+  align-items: center;
+  padding: var(--space-3) 0 var(--space-5);
+  background: var(--card);
+}
+
+.pickerNote {
+  margin: 0 !important;
+  font: var(--type-small);
+}
+
+/* The crest editor: the grid beside its rail. */
+.crestPage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  gap: var(--space-10);
+  height: 100%;
+  padding: calc(var(--space-14) + var(--space-10)) var(--space-3) var(--space-7);
+}
+
+.crestStage {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+.crestGrid {
+  display: grid;
+  grid-template-columns: repeat(var(--w), minmax(0, 1fr));
+  gap: 2px;
+  width: min(100%, calc(var(--w) * 28px), calc((100dvh - 200px) * var(--w) / var(--h)));
+  aspect-ratio: var(--w) / var(--h);
+  padding: var(--space-2);
+  background: var(--card-2);
+  border-radius: var(--r-md);
+  box-shadow: 0 4px 0 var(--shade);
+  touch-action: none;
+  cursor: crosshair;
+  user-select: none;
+}
+
+.crestGrid > i {
+  background: var(--c, color-mix(in srgb, var(--ink) 10%, transparent));
+  border-radius: var(--r-xs);
+}
+
+.crestGrid > i[data-hole] {
+  background: transparent;
+  outline: 1px dashed color-mix(in srgb, var(--ink) 18%, transparent);
+  outline-offset: -1px;
+}
+
+.crestRail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.fit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font: var(--type-label);
+}
+
+.fit svg {
+  width: 18px;
+  height: 18px;
+}
+
+.fit[data-ok='false'] {
+  color: var(--red);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font: var(--type-label);
+  color: var(--ink);
+  background: var(--c, transparent);
+  border: 2px solid color-mix(in srgb, var(--ink) 25%, transparent);
+  border-radius: var(--r-sm);
+  box-shadow: none;
+}
+
+.chip[data-hole] {
+  background: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--ink) 20%, transparent) 4px 6px);
+}
+
+.chip[aria-pressed='true'] {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.addChip {
+  cursor: pointer;
+  border-style: dashed;
+}
+
+.addChip input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.regions {
+  display: grid;
+  gap: var(--space-1);
+  align-self: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.regions button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  font: var(--type-small);
+  text-align: left;
+}
+
+.regions button i {
+  width: 16px;
+  height: 16px;
+  background: var(--c);
+  border-radius: var(--r-xs);
+}
+
+.regions button small {
+  margin-left: auto;
+  font: 700 var(--fs-14) var(--font-mono);
+}
+
+.regions button[data-ok='false'] small {
+  color: var(--red);
+}
+
+.regions button[aria-pressed='true'] {
+  outline: 3px solid var(--ink);
+  outline-offset: -3px;
+}
+
+.sizeRow {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--type-small);
+}
+
+.stepper b {
+  min-width: 2ch;
+  text-align: center;
+  font: 700 var(--fs-14) var(--font-mono);
+}
+
+.emptyPlaytest {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-4);
+  flex: 1;
+  padding: var(--space-6);
+}
+
+@media (max-width: 720px) {
+  .crestPage {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .picker {
+    width: 100%;
+    max-width: none;
+    max-height: 88dvh;
+    margin: auto 0 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .remove {
+    opacity: 1;
+  }
+}

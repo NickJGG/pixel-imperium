@@ -33,6 +33,7 @@ import { HomeSkeleton } from './home/HomeSkeleton.tsx'
 import { ImportPrompt } from './ImportPrompt.tsx'
 import { Hud, ThumbBar } from './Hud.tsx'
 import { type DraftKey, type StoredDraft, newDraftId, openingCopy } from './make/draft-store.ts'
+import type { Draft } from './make/draft.ts'
 import { HandlePicker } from './me/HandlePicker.tsx'
 import { SettingsPage } from './me/SettingsPage.tsx'
 import { SettingsSkeleton } from './me/SettingsSkeleton.tsx'
@@ -53,6 +54,10 @@ import { LessonPage } from './tutorial/LessonPage.tsx'
 import { LessonSkeleton } from './tutorial/LessonSkeleton.tsx'
 import { nextTrack, trackOf } from './tutorial/tracks.ts'
 import { AllPuzzlesPage } from './workshop/AllPuzzlesPage.tsx'
+import { BuilderPage } from './workshop/BuilderPage.tsx'
+import { PlaytestAlbum, PlaytestPuzzle } from './workshop/CampaignPlaytest.tsx'
+import { openingCampaign } from './workshop/campaign-store.ts'
+import { CrestPage } from './workshop/CrestPage.tsx'
 import { WorkshopPage } from './workshop/WorkshopPage.tsx'
 import { blankCampaignDoc, workshopSearch } from './workshop/workshop.ts'
 import styles from './App.module.css'
@@ -64,7 +69,7 @@ function Root() {
   // captures it, and its logo would hold still instead of slapping on.
   const playing = useRouterState({
     select: s =>
-      /^\/(?:play\/|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+|workshop\/p\/|make$)/.test(s.matches.at(-1)?.pathname ?? s.location.pathname),
+      /^\/(?:play\/|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+|workshop\/p\/|workshop\/c\/[^/]+\/playtest\/[^/]+\/[^/]+|make$)/.test(s.matches.at(-1)?.pathname ?? s.location.pathname),
   })
   // An edge state in their place wants the HUD back, floating like any Worlds page's.
   const edge = useRouterState({
@@ -471,10 +476,15 @@ const workshopRoute = createRoute({
   beforeLoad: signedInOnly,
   loaderDeps: ({ search }) => ({ tab: search.tab, open: search.open }),
   loader: async ({ deps }) => {
-    const workshop = await content.workshop(getAccount().account!.userId)
+    const userId = getAccount().account!.userId
+    const workshop = await content.workshop(userId)
     const played = deps.tab === 'played' ? workshop.played.campaigns.find(c => c.id === deps.open && !c.removed) : undefined
-    const campaign = played ? await content.anyCampaign(played.id, false).catch(() => null) : null
-    return { workshop, campaign: campaign && !isRetired(campaign) ? campaign : null }
+    const drafted = deps.tab === undefined ? workshop.drafts.campaigns.find(c => c.id === deps.open) : undefined
+    const [campaign, draft] = await Promise.all([
+      played ? content.anyCampaign(played.id, false).catch(() => null) : null,
+      drafted ? openingCampaign({ userId, id: drafted.id }) : null,
+    ])
+    return { workshop, campaign: campaign && !isRetired(campaign) ? campaign : null, draft }
   },
   component: () => <WorkshopPage {...workshopRoute.useLoaderData()} />,
 })
@@ -499,6 +509,84 @@ const newCampaignRoute = createRoute({
     content.forgetWorkshop()
     throw redirect({ to: '/workshop', search: { open: id }, replace: true })
   },
+})
+
+/** A draft campaign of the signed-in player's, and their Workshop for the puzzles in it. */
+async function loadDraftCampaign(id: string) {
+  const userId = getAccount().account!.userId
+  const draftKey = { userId, id }
+  const [opening, workshop] = await Promise.all([openingCampaign(draftKey), content.workshop(userId)])
+  if (!opening) throw notFound()
+  return { draftKey, opening, workshop }
+}
+
+const noDraftCampaign = () => <NotFound>You have no draft campaign by that name.</NotFound>
+
+const crestRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workshop/c/$id/crest',
+  beforeLoad: signedInOnly,
+  loader: ({ params }) => loadDraftCampaign(params.id),
+  component: () => {
+    const { draftKey, opening } = crestRoute.useLoaderData()
+    return <CrestPage key={draftKey.id} draftKey={draftKey} opening={opening} />
+  },
+  notFoundComponent: noDraftCampaign,
+})
+
+/** A draft campaign's provinces, `n` the one open, 1-based. */
+const builderRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workshop/c/$id/$n',
+  beforeLoad: signedInOnly,
+  loader: ({ params }) => loadDraftCampaign(params.id),
+  component: () => {
+    const data = builderRoute.useLoaderData()
+    return <BuilderPage key={data.draftKey.id} {...data} n={Number(builderRoute.useParams().n) || 1} />
+  },
+  notFoundComponent: noDraftCampaign,
+})
+
+const playtestRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workshop/c/$id/playtest/$n',
+  beforeLoad: signedInOnly,
+  loader: ({ params }) => loadDraftCampaign(params.id),
+  component: () => {
+    const data = playtestRoute.useLoaderData()
+    return <PlaytestAlbum key={data.draftKey.id} {...data} n={Number(playtestRoute.useParams().n) || 1} />
+  },
+  notFoundComponent: noDraftCampaign,
+})
+
+/** One puzzle of a campaign playtest, `slot` its 1-based place in province `n`. */
+const playtestPuzzleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workshop/c/$id/playtest/$n/$slot',
+  beforeLoad: signedInOnly,
+  loader: async ({ params }) => {
+    const data = await loadDraftCampaign(params.id)
+    const ref = data.opening.doc.provinces[Number(params.n) - 1]?.puzzleIds[Number(params.slot) - 1]
+    if (ref === undefined) throw notFound()
+    const made = data.workshop.made.puzzles.find(p => p.id === ref)
+    const picture: Draft | null = made
+      ? {
+          id: ref,
+          title: made.title,
+          width: made.width,
+          height: made.height,
+          cells: made.palette,
+          colors: [...new Set(made.palette.filter(c => c !== null))],
+        }
+      : (await openingCopy({ userId: data.draftKey.userId, id: ref })).draft
+    return { ...data, picture }
+  },
+  component: () => {
+    const { n, slot } = playtestPuzzleRoute.useParams()
+    return <PlaytestPuzzle key={`${n}:${slot}`} {...playtestPuzzleRoute.useLoaderData()} n={Number(n)} slot={Number(slot)} />
+  },
+  pendingComponent: PlaySkeleton,
+  notFoundComponent: () => <NotFound>There’s no puzzle in that slot.</NotFound>,
 })
 
 /** Published ids are 10 of a–z 0–9 with a digit; draft ids have a `-`. */
@@ -560,6 +648,10 @@ export const router = createRouter({
     workshopRoute,
     workshopPuzzlesRoute,
     newCampaignRoute,
+    crestRoute,
+    builderRoute,
+    playtestRoute,
+    playtestPuzzleRoute,
     workshopPuzzleRoute,
     ...devRoutes,
   ]),

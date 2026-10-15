@@ -13,7 +13,7 @@ import appStyles from '../App.module.css'
 import styles from './Make.module.css'
 
 /** The pick a fresh paper starts from: the workshop's own tan. */
-const FIRST_PICK = '#c8a46e'
+export const FIRST_PICK = '#c8a46e'
 
 /** Each theme's ink, as a swatch of the other theme has to show it whichever is on. */
 const NIGHT_INK = '#e6edff'
@@ -140,7 +140,7 @@ function PublishSheet({
 }
 
 /** `ok` undefined or null: the checks are still running. */
-function Rule({ ok, children }: { ok: boolean | null | undefined; children: ReactNode }) {
+export function Rule({ ok, children }: { ok: boolean | null | undefined; children: ReactNode }) {
   return (
     <li data-ok={ok ?? undefined}>
       {ok == null ? <span aria-hidden="true">…</span> : ok ? <CheckIcon /> : <CrossIcon />}
@@ -150,16 +150,29 @@ function Rule({ ok, children }: { ok: boolean | null | undefined; children: Reac
   )
 }
 
-/** The workshop's paper, or a pick of the player's, shown as it'll be in Night and in Day. */
-export function PaperField({ paper, onChange }: { paper: HexPaper | null; onChange: (paper: HexPaper | null) => void }) {
+/**
+ * The workshop's paper, or a pick of the player's, shown as it'll be in Night and in Day. `none` names what no pick
+ * means, or is `false` where a pick is required.
+ */
+export function PaperField({
+  paper,
+  onChange,
+  none = { label: 'Workshop', note: 'The Workshop’s own paper, in both themes.' },
+}: {
+  paper: HexPaper | null
+  onChange: (paper: HexPaper | null) => void
+  none?: { label: string; note: string } | false
+}) {
   const derived = paper && derivePaper(paper)
   return (
     <div className={styles.field} role="group" aria-labelledby="paper-label">
       <span id="paper-label">Paper</span>
       <div className={styles.paperRow}>
-        <button type="button" data-size="compact" aria-pressed={paper === null} onClick={() => onChange(null)}>
-          Workshop
-        </button>
+        {none && (
+          <button type="button" data-size="compact" aria-pressed={paper === null} onClick={() => onChange(null)}>
+            {none.label}
+          </button>
+        )}
         <label className={styles.paperPick} data-picked={paper !== null || undefined} style={{ '--c': paper ?? FIRST_PICK } as CSSProperties}>
           <input
             type="color"
@@ -176,7 +189,7 @@ export function PaperField({ paper, onChange }: { paper: HexPaper | null; onChan
           <Swatch name="Day" page={derived.day} tab={derived.tab} ink={DAY_INK} />
         </div>
       ) : (
-        <p className={styles.ruleNote}>The Workshop’s own paper, in both themes.</p>
+        none && <p className={styles.ruleNote}>{none.note}</p>
       )}
     </div>
   )
