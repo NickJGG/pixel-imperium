@@ -9,9 +9,9 @@ import {
   redirect,
   useRouterState,
 } from '@tanstack/react-router'
-import type { Campaign, CampaignSummary, PuzzleClues, RetiredError } from '@pixel-imperium/protocol'
+import type { Campaign, CampaignSummary, MadePuzzleSummary, PuzzleClues, RetiredError } from '@pixel-imperium/protocol'
 import { accountReady, getAccount, useAccount } from './account.ts'
-import { fetchProfile, isRetired } from './api.ts'
+import { fetchMade, fetchProfile, isRetired } from './api.ts'
 import * as content from './content.ts'
 import { LoadError, NotFound, Retired } from './EdgeStates.tsx'
 import { CampaignsPage } from './campaign/CampaignsPage.tsx'
@@ -32,6 +32,7 @@ import { HomePage } from './home/HomePage.tsx'
 import { HomeSkeleton } from './home/HomeSkeleton.tsx'
 import { ImportPrompt } from './ImportPrompt.tsx'
 import { Hud, ThumbBar } from './Hud.tsx'
+import { type DraftKey, type StoredDraft, openingCopy } from './make/draft-store.ts'
 import { HandlePicker } from './me/HandlePicker.tsx'
 import { SettingsPage } from './me/SettingsPage.tsx'
 import { SettingsSkeleton } from './me/SettingsSkeleton.tsx'
@@ -55,12 +56,12 @@ import styles from './App.module.css'
 
 function Root() {
   const { needsHandle } = useAccount()
-  // Play, a Lesson and Make carry the HUD's pills in their own rail or top line, or place the HUD themselves. Read from the
+  // Play, a Lesson and the puzzle editor carry the HUD's pills in their own rail or top line, or place the HUD themselves. Read from the
   // matches shown, not the address, which changes first: leaving Play, the HUD would mount over it before a morph
   // captures it, and its logo would hold still instead of slapping on.
   const playing = useRouterState({
     select: s =>
-      /^\/(?:play\/|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+|make$)/.test(s.matches.at(-1)?.pathname ?? s.location.pathname),
+      /^\/(?:play\/|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+|workshop\/p\/|make$)/.test(s.matches.at(-1)?.pathname ?? s.location.pathname),
   })
   // An edge state in their place wants the HUD back, floating like any Worlds page's.
   const edge = useRouterState({
@@ -445,13 +446,46 @@ const lessonRoute = createRoute({
   notFoundComponent: () => <NotFound>There’s no lesson by that name.</NotFound>,
 })
 
-/** Dev only, and its own chunk: the puzzle editor. A production build holds no trace of it. */
+/** Published ids are 10 of a–z 0–9 with a digit; draft ids have a `-`. */
+const MADE_ID = /^(?=.*\d)[a-z0-9]{10}$/
+
+type WorkshopPuzzleData =
+  | { kind: 'draft'; draftKey: DraftKey; stored: StoredDraft }
+  | { kind: 'published'; puzzle: MadePuzzleSummary }
+
+/**
+ * Signed in only, and its own chunk: the puzzle editor on a draft, which a new id starts blank, or one of the
+ * Author's published puzzles.
+ */
+const workshopPuzzleRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workshop/p/$id',
+  beforeLoad: async () => {
+    await accountReady
+    if (!getAccount().account) throw redirect({ to: '/', replace: true })
+  },
+  loader: async ({ params }): Promise<WorkshopPuzzleData> => {
+    const userId = getAccount().account!.userId
+    if (!MADE_ID.test(params.id)) {
+      const draftKey = { userId, id: params.id }
+      return { kind: 'draft', draftKey, stored: await openingCopy(draftKey) }
+    }
+    const puzzle = (await fetchMade()).puzzles.find(p => p.id === params.id && !p.removed)
+    if (!puzzle) throw notFound()
+    return { kind: 'published', puzzle }
+  },
+  component: lazyRouteComponent(() => import('./make/WorkshopPuzzle.tsx'), 'WorkshopPuzzlePage'),
+  pendingComponent: PlaySkeleton,
+  notFoundComponent: () => <NotFound>You have no puzzle by that name.</NotFound>,
+})
+
+/** Dev only: the editor on a draft that stays on this device, for a campaign's data file. */
 const devRoutes = import.meta.env.DEV
   ? [
       createRoute({
         getParentRoute: () => rootRoute,
         path: '/make',
-        component: lazyRouteComponent(() => import('./make/MakePage.tsx'), 'MakePage'),
+        component: lazyRouteComponent(() => import('./make/MakePage.tsx'), 'DevMakePage'),
       }),
     ]
   : []
@@ -471,6 +505,7 @@ export const router = createRouter({
     learnRoute,
     trackRoute,
     lessonRoute,
+    workshopPuzzleRoute,
     ...devRoutes,
   ]),
   defaultErrorComponent: LoadError,

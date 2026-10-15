@@ -3,17 +3,24 @@ import type {
   Campaign,
   CampaignSummary,
   DailyYear,
+  DeleteRejection,
+  DraftPuzzle,
   HandleAvailability,
   HandleRejection,
   HintRequest,
   HintResponse,
   ImportRequest,
   ImportResponse,
+  Made,
   MyProgress,
+  PatchMadePuzzle,
   Profile,
+  PublishPuzzleRequest,
+  PublishResponse,
   PutHandleRequest,
   PutHandleResponse,
   PutSettingsRequest,
+  PutDraftPuzzleResponse,
   PuzzleClues,
   ReportRequest,
   RetiredError,
@@ -135,4 +142,46 @@ export async function putHandle(handle: string): Promise<PutHandleResponse | Han
 export async function postReport(body: ReportRequest): Promise<void> {
   const res = await fetch('/api/reports', jsonInit('POST', body))
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+}
+
+/** `null` when the account has no draft by that id. */
+export async function fetchDraftPuzzle(id: string): Promise<DraftPuzzle | null> {
+  const res = await fetch(`/api/me/drafts/puzzles/${encodeURIComponent(id)}`)
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  return (await res.json()) as DraftPuzzle
+}
+
+export const putDraftPuzzle = (id: string, body: Omit<DraftPuzzle, 'id'>, keepalive: boolean) =>
+  getJson<PutDraftPuzzleResponse>(`/api/me/drafts/puzzles/${encodeURIComponent(id)}`, jsonInit('PUT', body, { keepalive }))
+
+/** The new id, or why the server refused: its status and message. */
+export async function publishPuzzle(
+  draftId: string,
+  body: PublishPuzzleRequest,
+): Promise<PublishResponse | { status: number; error: string }> {
+  const res = await fetch(`/api/me/drafts/puzzles/${encodeURIComponent(draftId)}/publish`, jsonInit('POST', body))
+  const json = (await res.json().catch(() => ({}))) as Partial<PublishResponse & { error: string }>
+  if (res.ok && json.id) return { id: json.id }
+  return { status: res.status, error: json.error ?? res.statusText }
+}
+
+export const fetchMade = () => getJson<Made>('/api/me/made')
+
+export async function patchMadePuzzle(id: string, body: PatchMadePuzzle): Promise<void> {
+  const res = await fetch(`/api/me/made/puzzles/${encodeURIComponent(id)}`, jsonInit('PATCH', body))
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+}
+
+export async function retireMadePuzzle(id: string): Promise<void> {
+  const res = await fetch(`/api/me/made/puzzles/${encodeURIComponent(id)}/retire`, { method: 'POST' })
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+}
+
+/** `'retire'` when others have started it, so it can only be retired. */
+export async function deleteMadePuzzle(id: string): Promise<'deleted' | 'retire'> {
+  const res = await fetch(`/api/me/made/puzzles/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  if (res.status === 409 && ((await res.json().catch(() => null)) as DeleteRejection | null)?.retire) return 'retire'
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  return 'deleted'
 }

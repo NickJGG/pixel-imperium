@@ -3,6 +3,9 @@ import { type Draft, MAX_COLORS, MAX_SIZE, MIN_SIZE } from '@pixel-imperium/nono
 
 export type { Draft }
 
+/** The server's limit on a title. */
+export const MAX_TITLE = 80
+
 export interface Pos {
   row: number
   col: number

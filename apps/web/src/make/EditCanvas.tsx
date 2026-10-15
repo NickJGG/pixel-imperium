@@ -16,6 +16,8 @@ interface Props {
   /** Cells to hatch, where the checks find the clues don't settle the picture. */
   stuck: readonly number[]
   onPick: (color: string | null) => void
+  /** Shown, never painted: a published picture. */
+  readOnly?: boolean
 }
 
 interface Drag {
@@ -26,7 +28,7 @@ interface Drag {
 }
 
 /** The draft's cells in their colors, painted with the left button and emptied with the right. */
-export function EditCanvas({ draft, cellSize, tool, color, mirror, stuck, onPick }: Props) {
+export function EditCanvas({ draft, cellSize, tool, color, mirror, stuck, onPick, readOnly = false }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const drag = useRef<Drag | null>(null)
   const hover = useRef<Pos | null>(null)
@@ -111,6 +113,17 @@ export function EditCanvas({ draft, cellSize, tool, color, mirror, stuck, onPick
     if (drag.current?.id !== e.pointerId) return
     drag.current = null
     endStroke()
+  }
+
+  if (readOnly) {
+    return (
+      <canvas
+        ref={canvasRef}
+        className={playStyles.canvas}
+        style={{ width: draft.width * cellSize, height: draft.height * cellSize }}
+        aria-label={`Picture, ${draft.width} by ${draft.height}`}
+      />
+    )
   }
 
   return (

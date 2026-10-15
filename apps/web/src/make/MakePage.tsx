@@ -1,9 +1,9 @@
 /**
- * Dev only: /make, for drawing a puzzle and taking its JSON to a campaign's data file. Play's anatomy on the
- * workshop's paper: the colors down the strip, the drawing with its live clues, and the tools in the rail. The
- * draft lives on this device (draft-store.ts); nothing here reaches the server.
+ * The puzzle editor: a Workshop draft at /workshop/p/<draft>, and in dev /make, for drawing a puzzle and taking its
+ * JSON to a campaign's data file. Play's anatomy on the workshop's paper: the colors down the strip, the drawing
+ * with its live clues, and the tools in the rail. draft-store.ts keeps the draft and says when it reaches the server.
  */
-import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
   type Checks,
@@ -17,17 +17,33 @@ import {
 } from '@pixel-imperium/nonogram'
 import { CheckIcon, CrossIcon } from '../album/icons.tsx'
 import { CrownMark, FloatingPills } from '../Hud.tsx'
-import { ColClues, RowClues } from '../play/Clues.tsx'
 import { useCentredFilm } from '../play/Filmstrip.tsx'
-import { RAIL_WIDTH, boardTracks, fitCellSize } from '../play/layout.ts'
-import type { LineHint } from '../play/line-hints.ts'
+import { RAIL_WIDTH } from '../play/layout.ts'
 import { RailTools } from '../play/RailTools.tsx'
 import type { PlayStore } from '../play/store.ts'
-import { type Draft, flipH, flipV, moveColor, nudge, resize, slugify, stepSize } from './draft.ts'
-import { commit, getDraft, redo, strokeStart, undo, useDraft, useHistory } from './draft-store.ts'
+import { type Draft, MAX_TITLE, flipH, flipV, moveColor, nudge, resize, slugify, stepSize } from './draft.ts'
+import {
+  type DraftKey,
+  type SaveState,
+  type StoredDraft,
+  blankStored,
+  commit,
+  flushDraft,
+  getDraft,
+  localDraft,
+  openDraft,
+  redo,
+  strokeStart,
+  undo,
+  useDraft,
+  useHistory,
+  useSaveState,
+} from './draft-store.ts'
 import { ColorSheet } from './ColorSheet.tsx'
 import { EditCanvas, type Tool } from './EditCanvas.tsx'
 import { PlaytestBoard, playtestStore, useStoreValue } from './Playtest.tsx'
+import { PublishButton } from './PublishSheet.tsx'
+import { Drawing, Stage } from './Stage.tsx'
 import { useChecks } from './useChecks.ts'
 import { useChipDrag } from './useChipDrag.ts'
 import pillStyles from '../album/CountPill.module.css'
@@ -37,8 +53,6 @@ import styles from './Make.module.css'
 const PAPER = { '--paper': 'var(--p-workshop)', '--tab': 'var(--t-workshop)' } as CSSProperties
 
 const NO_STUCK: readonly number[] = []
-const NO_HINTS: readonly LineHint[] = []
-const NO_ASSISTS = { fade: false, impossible: false }
 
 const TOOLS: { tool: Tool; name: string; key: string; icon: ReactNode }[] = [
   {
@@ -97,8 +111,36 @@ const LEGEND = [
   ['Move color', 'Alt + ↑/↓'],
 ] as const
 
-export function MakePage() {
+const DEV_KEY: DraftKey = { userId: null, id: 'make' }
+
+/** Dev only: /make, the draft on this device, for a campaign's data file. */
+export function DevMakePage() {
+  useState(() => openDraft(DEV_KEY, localDraft(DEV_KEY) ?? blankStored()))
+  return <MakePage workshop={false} />
+}
+
+/** A Workshop draft, opened from whichever copy is newer, this device's or the server's; key it by draft id. */
+export function WorkshopDraftPage({ draftKey, stored }: { draftKey: DraftKey; stored: StoredDraft }) {
+  useState(() => openDraft(draftKey, stored))
+  useEffect(() => {
+    const leave = () => void flushDraft({ keepalive: true })
+    const onVisibility = () => document.visibilityState === 'hidden' && leave()
+    window.addEventListener('pagehide', leave)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('pagehide', leave)
+      document.removeEventListener('visibilitychange', onVisibility)
+      leave()
+    }
+  }, [])
+  return <MakePage workshop />
+}
+
+const SAVE_NOTE: Record<SaveState, string> = { saved: 'Saved', saving: 'Saving…', local: 'Saved on this device' }
+
+function MakePage({ workshop }: { workshop: boolean }) {
   const draft = useDraft()
+  const saveState = useSaveState()
   const { canUndo, canRedo } = useHistory()
   const [tool, setTool] = useState<Tool>('pencil')
   const [mirror, setMirror] = useState(false)
@@ -114,18 +156,6 @@ export function MakePage() {
   const puzzle = { width: draft.width, height: draft.height, clues }
   const latest = useChecks(draft)
   const checks = latest?.width === draft.width && latest.height === draft.height ? latest : null
-
-  const stageRef = useRef<HTMLDivElement>(null)
-  const [stage, setStage] = useState({ width: 0, height: 0 })
-  useLayoutEffect(() => {
-    const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry!.contentRect
-      setStage({ width, height })
-    })
-    observer.observe(stageRef.current!)
-    return () => observer.disconnect()
-  }, [])
-  const cellSize = stage.width > 0 ? fitCellSize(stage, puzzle) : 0
 
   useEffect(() => {
     if (test) return
@@ -196,24 +226,12 @@ export function MakePage() {
       <FloatingPills />
       <div className={playStyles.shellBody}>
         {!test && <ColorStrip draft={draft} chosen={color} onChoose={setChosen} />}
-        <div className={playStyles.surface}>
-          <div ref={stageRef} className={playStyles.stage}>
-            {cellSize > 0 && test && <PlaytestBoard store={test} draft={draft} cellSize={cellSize} />}
-            {cellSize > 0 && !test && (
-              <div
-                className={playStyles.board}
-                style={
-                  {
-                    ...boardTracks(puzzle, cellSize),
-                    '--cell': `${cellSize}px`,
-                    '--pan-x': '0px',
-                    '--pan-y': '0px',
-                  } as CSSProperties
-                }
-              >
-                <div />
-                <ColClues lines={clues.cols} hints={NO_HINTS} active={null} assists={NO_ASSISTS} />
-                <RowClues lines={clues.rows} hints={NO_HINTS} active={null} assists={NO_ASSISTS} />
+        <Stage puzzle={puzzle}>
+          {cellSize =>
+            test ? (
+              <PlaytestBoard store={test} draft={draft} cellSize={cellSize} />
+            ) : (
+              <Drawing puzzle={puzzle} cellSize={cellSize}>
                 <EditCanvas
                   draft={draft}
                   cellSize={cellSize}
@@ -223,14 +241,16 @@ export function MakePage() {
                   stuck={checks?.stuck ?? NO_STUCK}
                   onPick={setChosen}
                 />
-              </div>
-            )}
-          </div>
-        </div>
+              </Drawing>
+            )
+          }
+        </Stage>
         <div className={`${playStyles.rail} ${playStyles.underPills} ${styles.rail}`} style={{ width: RAIL_WIDTH }}>
           <div className={playStyles.railHead}>
-            <p className={playStyles.railKicker}>Make · draft on this device</p>
-            <Title draft={draft} />
+            <p className={playStyles.railKicker} role="status">
+              {workshop ? `Draft · ${SAVE_NOTE[saveState]}` : 'Make · draft on this device'}
+            </p>
+            <Title draft={draft} withId={!workshop} />
             {!test && <CheckBadges draft={draft} checks={checks} />}
           </div>
           <div className={playStyles.railBody}>
@@ -346,18 +366,24 @@ export function MakePage() {
                     data-variant="primary"
                     className={styles.playtest}
                     disabled={draft.cells.every(c => c === null)}
-                    onClick={() => setTest(playtestStore(getDraft()))}
+                    onClick={() => {
+                      void flushDraft()
+                      setTest(playtestStore(getDraft()))
+                    }}
                   >
                     Playtest
                   </button>
-                  <div className={playStyles.railFolds}>
-                    <button type="button" data-size="compact" onClick={() => void paste()}>
-                      Paste JSON
-                    </button>
-                    <button type="button" data-size="compact" onClick={() => void copy()}>
-                      Copy JSON
-                    </button>
-                  </div>
+                  {workshop && <PublishButton draft={draft} checks={checks} />}
+                  {import.meta.env.DEV && (
+                    <div className={playStyles.railFolds}>
+                      <button type="button" data-size="compact" onClick={() => void paste()}>
+                        Paste JSON
+                      </button>
+                      <button type="button" data-size="compact" onClick={() => void copy()}>
+                        Copy JSON
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -523,8 +549,11 @@ function PlaytestFoot({ store, draft, onBack }: { store: PlayStore; draft: Draft
   )
 }
 
-/** The hero title; clicked, it opens fields for the title and the id, which follows the title until edited. */
-function Title({ draft }: { draft: Draft }) {
+/**
+ * The hero title; clicked, it opens a field for it and, `withId`, for the id a data file gives it, which follows
+ * the title until edited.
+ */
+function Title({ draft, withId }: { draft: Draft; withId: boolean }) {
   const [edit, setEdit] = useState<{ title: string; id: string } | null>(null)
   if (!edit) {
     return (
@@ -556,6 +585,7 @@ function Title({ draft }: { draft: Draft }) {
         Title
         <input
           autoFocus
+          maxLength={MAX_TITLE}
           value={edit.title}
           onChange={e => {
             const title = e.target.value
@@ -563,10 +593,12 @@ function Title({ draft }: { draft: Draft }) {
           }}
         />
       </label>
-      <label>
-        Id
-        <input value={edit.id} spellCheck={false} onChange={e => setEdit({ ...edit, id: e.target.value })} />
-      </label>
+      {withId && (
+        <label>
+          Id
+          <input value={edit.id} spellCheck={false} onChange={e => setEdit({ ...edit, id: e.target.value })} />
+        </label>
+      )}
       <button type="submit" data-size="compact">
         Done
       </button>
