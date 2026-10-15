@@ -6,11 +6,15 @@
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { cluesFromSolution } from '@pixel-imperium/nonogram'
+import { CheckIcon, CrossIcon } from '../album/icons.tsx'
 import { CrownMark, FloatingPills } from '../Hud.tsx'
 import { ColClues, RowClues } from '../play/Clues.tsx'
 import { useCentredFilm } from '../play/Filmstrip.tsx'
 import { RAIL_WIDTH, boardTracks, fitCellSize } from '../play/layout.ts'
 import type { LineHint } from '../play/line-hints.ts'
+import { RailTools } from '../play/RailTools.tsx'
+import type { PlayStore } from '../play/store.ts'
+import type { Checks } from './checks.ts'
 import {
   type Draft,
   MAX_COLORS,
@@ -30,12 +34,16 @@ import {
 import { commit, getDraft, redo, strokeStart, undo, useDraft, useHistory } from './draft-store.ts'
 import { ColorSheet } from './ColorSheet.tsx'
 import { EditCanvas, type Tool } from './EditCanvas.tsx'
+import { PlaytestBoard, playtestStore, useStoreValue } from './Playtest.tsx'
+import { useChecks } from './useChecks.ts'
 import { useChipDrag } from './useChipDrag.ts'
+import pillStyles from '../album/CountPill.module.css'
 import playStyles from '../play/Play.module.css'
 import styles from './Make.module.css'
 
 const PAPER = { '--paper': 'var(--p-workshop)', '--tab': 'var(--t-workshop)' } as CSSProperties
 
+const NO_STUCK: readonly number[] = []
 const NO_HINTS: readonly LineHint[] = []
 const NO_ASSISTS = { fade: false, impossible: false }
 
@@ -103,6 +111,7 @@ export function MakePage() {
   const [mirror, setMirror] = useState(false)
   const [chosen, setChosen] = useState<string | null>(() => getDraft().colors[0] ?? null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [test, setTest] = useState<PlayStore | null>(null)
   const color = chosen === null || draft.colors.includes(chosen) ? chosen : (draft.colors[0] ?? null)
 
   const clues = useMemo(
@@ -110,6 +119,8 @@ export function MakePage() {
     [draft.width, draft.height, draft.cells],
   )
   const puzzle = { width: draft.width, height: draft.height, clues }
+  const latest = useChecks(draft)
+  const checks = latest?.width === draft.width && latest.height === draft.height ? latest : null
 
   const stageRef = useRef<HTMLDivElement>(null)
   const [stage, setStage] = useState({ width: 0, height: 0 })
@@ -124,6 +135,7 @@ export function MakePage() {
   const cellSize = stage.width > 0 ? fitCellSize(stage, puzzle) : 0
 
   useEffect(() => {
+    if (test) return
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return
       if (strokeStart()) return
@@ -158,7 +170,7 @@ export function MakePage() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [color])
+  }, [color, test])
 
   const paste = async () => {
     let text: string | null
@@ -190,10 +202,11 @@ export function MakePage() {
     <main className={`${playStyles.shell} ${styles.make}`} data-rail style={PAPER}>
       <FloatingPills />
       <div className={playStyles.shellBody}>
-        <ColorStrip draft={draft} chosen={color} onChoose={setChosen} />
+        {!test && <ColorStrip draft={draft} chosen={color} onChoose={setChosen} />}
         <div className={playStyles.surface}>
           <div ref={stageRef} className={playStyles.stage}>
-            {cellSize > 0 && (
+            {cellSize > 0 && test && <PlaytestBoard store={test} draft={draft} cellSize={cellSize} />}
+            {cellSize > 0 && !test && (
               <div
                 className={playStyles.board}
                 style={
@@ -208,7 +221,15 @@ export function MakePage() {
                 <div />
                 <ColClues lines={clues.cols} hints={NO_HINTS} active={null} assists={NO_ASSISTS} />
                 <RowClues lines={clues.rows} hints={NO_HINTS} active={null} assists={NO_ASSISTS} />
-                <EditCanvas draft={draft} cellSize={cellSize} tool={tool} color={color} mirror={mirror} onPick={setChosen} />
+                <EditCanvas
+                  draft={draft}
+                  cellSize={cellSize}
+                  tool={tool}
+                  color={color}
+                  mirror={mirror}
+                  stuck={checks?.stuck ?? NO_STUCK}
+                  onPick={setChosen}
+                />
               </div>
             )}
           </div>
@@ -217,117 +238,136 @@ export function MakePage() {
           <div className={playStyles.railHead}>
             <p className={playStyles.railKicker}>Make · draft on this device</p>
             <Title draft={draft} />
-            <div className={playStyles.railBadges} />
+            {!test && <CheckBadges draft={draft} checks={checks} />}
           </div>
           <div className={playStyles.railBody}>
-            <div className={`${playStyles.railTools} ${styles.roomy}`} role="toolbar" aria-label="Tools">
-              <div className={`${playStyles.joined} ${styles.tools}`} role="group" aria-label="Tool">
-                {TOOLS.map(t => (
-                  <button
-                    key={t.tool}
-                    type="button"
-                    data-variant="flat"
-                    data-size="compact"
-                    aria-label={t.name}
-                    title={t.name}
-                    aria-pressed={tool === t.tool}
-                    onClick={() => setTool(t.tool)}
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      {t.icon}
-                    </svg>
-                    <Keycap>{t.key}</Keycap>
-                  </button>
-                ))}
-              </div>
-              <div className={playStyles.railToolRow}>
-                <button
-                  type="button"
-                  className={playStyles.railLines}
-                  aria-pressed={mirror}
-                  title="Every stroke mirrors across the middle"
-                  onClick={() => setMirror(!mirror)}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 3v18" />
-                    <path d="M8 7 4 12l4 5z" />
-                    <path d="M16 7l4 5-4 5" />
-                  </svg>
-                  Mirror
-                  <Keycap>M</Keycap>
-                </button>
-                <button type="button" aria-label="Undo" title="Undo" disabled={!canUndo} onClick={undo}>
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M9 14 4 9l5-5" />
-                    <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
-                  </svg>
-                  <Keycap>Ctrl Z</Keycap>
-                </button>
-                <button type="button" aria-label="Redo" title="Redo" disabled={!canRedo} onClick={redo}>
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="m15 14 5-5-5-5" />
-                    <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
-                  </svg>
-                  <Keycap>Ctrl Y</Keycap>
-                </button>
-              </div>
-            </div>
-            <section className={playStyles.railSection} aria-labelledby="make-picture">
-              <h2 id="make-picture">Picture</h2>
-              <div className={styles.sizeRow}>
-                <Stepper label="W" value={draft.width} onStep={dir => commit(resize(draft, stepSize(draft.width, dir), draft.height))} />
-                <Stepper label="H" value={draft.height} onStep={dir => commit(resize(draft, draft.width, stepSize(draft.height, dir)))} />
-              </div>
-              <div className={playStyles.railFolds}>
-                <button type="button" data-size="compact" className={styles.flip} title="Flip left–right" onClick={() => commit(flipH(draft))}>
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M4 12h16" />
-                    <path d="M8 8l-4 4 4 4" />
-                    <path d="M16 8l4 4-4 4" />
-                  </svg>
-                  Flip
-                  <Keycap>H</Keycap>
-                </button>
-                <button type="button" data-size="compact" className={styles.flip} title="Flip top–bottom" onClick={() => commit(flipV(draft))}>
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 4v16" />
-                    <path d="M8 8l4-4 4 4" />
-                    <path d="M8 16l4 4 4-4" />
-                  </svg>
-                  Flip
-                  <Keycap>V</Keycap>
-                </button>
-              </div>
-            </section>
-            <section className={playStyles.railSection} aria-labelledby="make-controls">
-              <h2 id="make-controls">Controls</h2>
-              <dl className={playStyles.legend}>
-                {LEGEND.map(([action, input]) => (
-                  <div key={action}>
-                    <dt>{action}</dt>
-                    <dd>{input}</dd>
+            {test ? (
+              <>
+                <section className={playStyles.railSection} aria-labelledby="make-playtest">
+                  <h2 id="make-playtest">Playtest</h2>
+                  <p className={`${playStyles.railNote} ${styles.tight}`}>The real board and tools. Solve it to see the reveal.</p>
+                </section>
+                <RailTools store={test} />
+                <PlaytestFoot store={test} draft={draft} onBack={() => setTest(null)} />
+              </>
+            ) : (
+              <>
+                <div className={`${playStyles.railTools} ${styles.roomy}`} role="toolbar" aria-label="Tools">
+                  <div className={`${playStyles.joined} ${styles.tools}`} role="group" aria-label="Tool">
+                    {TOOLS.map(t => (
+                      <button
+                        key={t.tool}
+                        type="button"
+                        data-variant="flat"
+                        data-size="compact"
+                        aria-label={t.name}
+                        title={t.name}
+                        aria-pressed={tool === t.tool}
+                        onClick={() => setTool(t.tool)}
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          {t.icon}
+                        </svg>
+                        <Keycap>{t.key}</Keycap>
+                      </button>
+                    ))}
                   </div>
-                ))}
-              </dl>
-            </section>
-            <div className={playStyles.railFoot}>
-              {notice && (
-                <p className={styles.notice} role="status">
-                  {notice}
-                </p>
-              )}
-              <button type="button" data-variant="primary" className={styles.playtest} disabled>
-                Playtest
-              </button>
-              <div className={playStyles.railFolds}>
-                <button type="button" data-size="compact" onClick={() => void paste()}>
-                  Paste JSON
-                </button>
-                <button type="button" data-size="compact" onClick={() => void copy()}>
-                  Copy JSON
-                </button>
-              </div>
-            </div>
+                  <div className={playStyles.railToolRow}>
+                    <button
+                      type="button"
+                      className={playStyles.railLines}
+                      aria-pressed={mirror}
+                      title="Every stroke mirrors across the middle"
+                      onClick={() => setMirror(!mirror)}
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3v18" />
+                        <path d="M8 7 4 12l4 5z" />
+                        <path d="M16 7l4 5-4 5" />
+                      </svg>
+                      Mirror
+                      <Keycap>M</Keycap>
+                    </button>
+                    <button type="button" aria-label="Undo" title="Undo" disabled={!canUndo} onClick={undo}>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9 14 4 9l5-5" />
+                        <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+                      </svg>
+                      <Keycap>Ctrl Z</Keycap>
+                    </button>
+                    <button type="button" aria-label="Redo" title="Redo" disabled={!canRedo} onClick={redo}>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m15 14 5-5-5-5" />
+                        <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+                      </svg>
+                      <Keycap>Ctrl Y</Keycap>
+                    </button>
+                  </div>
+                </div>
+                <section className={playStyles.railSection} aria-labelledby="make-picture">
+                  <h2 id="make-picture">Picture</h2>
+                  <div className={styles.sizeRow}>
+                    <Stepper label="W" value={draft.width} onStep={dir => commit(resize(draft, stepSize(draft.width, dir), draft.height))} />
+                    <Stepper label="H" value={draft.height} onStep={dir => commit(resize(draft, draft.width, stepSize(draft.height, dir)))} />
+                  </div>
+                  <div className={playStyles.railFolds}>
+                    <button type="button" data-size="compact" className={styles.flip} title="Flip left–right" onClick={() => commit(flipH(draft))}>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 12h16" />
+                        <path d="M8 8l-4 4 4 4" />
+                        <path d="M16 8l4 4-4 4" />
+                      </svg>
+                      Flip
+                      <Keycap>H</Keycap>
+                    </button>
+                    <button type="button" data-size="compact" className={styles.flip} title="Flip top–bottom" onClick={() => commit(flipV(draft))}>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 4v16" />
+                        <path d="M8 8l4-4 4 4" />
+                        <path d="M8 16l4 4 4-4" />
+                      </svg>
+                      Flip
+                      <Keycap>V</Keycap>
+                    </button>
+                  </div>
+                </section>
+                <section className={playStyles.railSection} aria-labelledby="make-controls">
+                  <h2 id="make-controls">Controls</h2>
+                  <dl className={playStyles.legend}>
+                    {LEGEND.map(([action, input]) => (
+                      <div key={action}>
+                        <dt>{action}</dt>
+                        <dd>{input}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+                <div className={playStyles.railFoot}>
+                  {notice && (
+                    <p className={styles.notice} role="status">
+                      {notice}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    data-variant="primary"
+                    className={styles.playtest}
+                    disabled={draft.cells.every(c => c === null)}
+                    onClick={() => setTest(playtestStore(getDraft()))}
+                  >
+                    Playtest
+                  </button>
+                  <div className={playStyles.railFolds}>
+                    <button type="button" data-size="compact" onClick={() => void paste()}>
+                      Paste JSON
+                    </button>
+                    <button type="button" data-size="compact" onClick={() => void copy()}>
+                      Copy JSON
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -430,6 +470,70 @@ function ColorStrip({ draft, chosen, onChoose }: { draft: Draft; chosen: string 
         />
       )}
     </nav>
+  )
+}
+
+/** Size, the two campaign rules and the rating, under the title; the note says what the hatched cells mean. */
+function CheckBadges({ draft, checks }: { draft: Draft; checks: Checks | null }) {
+  const sized = draft.width % 5 === 0 && draft.height % 5 === 0
+  const stuck = checks?.stuck.length ?? 0
+  return (
+    <>
+      <div className={playStyles.railBadges}>
+        {sized ? (
+          <span className={`${pillStyles.pill} ${styles.badge}`}>
+            {draft.width}×{draft.height}
+          </span>
+        ) : (
+          <Badge ok={false}>
+            {draft.width}×{draft.height}
+          </Badge>
+        )}
+        {checks && (
+          <>
+            <Badge ok={checks.unique}>{checks.unique ? 'Unique' : '2 solutions'}</Badge>
+            <Badge ok={checks.passes !== null}>{checks.passes !== null ? `Logic · ${checks.passes}` : 'Stalls'}</Badge>
+            {checks.rating !== null && <span className={`${pillStyles.pill} ${styles.badge}`}>Rating {checks.rating}/5</span>}
+          </>
+        )}
+      </div>
+      {checks && stuck > 0 && (
+        <p className={playStyles.railNote}>
+          {checks.unique
+            ? `Line logic stalls on the ${stuck} hatched cells.`
+            : `The ${stuck} hatched cells can swap: a second picture fits these clues.`}
+        </p>
+      )}
+    </>
+  )
+}
+
+function Badge({ ok, children }: { ok: boolean; children: ReactNode }) {
+  return (
+    <span className={`${pillStyles.pill} ${styles.badge}`} data-ok={ok}>
+      {ok ? <CheckIcon /> : <CrossIcon />}
+      {children}
+    </span>
+  )
+}
+
+function PlaytestFoot({ store, draft, onBack }: { store: PlayStore; draft: Draft; onBack: () => void }) {
+  const revealed = useStoreValue(store, s => s.palette !== null)
+  return (
+    <div className={playStyles.railFoot}>
+      <button
+        type="button"
+        data-variant="primary"
+        className={styles.playtest}
+        disabled={revealed}
+        onClick={() => store.setPalette(draft.cells)}
+      >
+        Skip to reveal
+      </button>
+      <button type="button" onClick={onBack}>
+        Back to Draw
+      </button>
+    </div>
   )
 }
 

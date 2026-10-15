@@ -105,6 +105,12 @@ export const CheckIcon = () => (
   </Icon>
 )
 
+export const CrossIcon = () => (
+  <Icon>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </Icon>
+)
+
 export const StickerIcon = () => (
   <Icon>
     <rect x="4" y="4" width="16" height="16" rx="3" />

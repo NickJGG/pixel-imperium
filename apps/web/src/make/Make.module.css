@@ -203,6 +203,25 @@
   min-height: 48px;
 }
 
+.badge {
+  font-size: var(--fs-14);
+}
+
+/* Fixed meanings whatever the paper: pass green, fail red. */
+.badge[data-ok='true'] {
+  color: var(--on-ok);
+  background: var(--ok);
+}
+
+.badge[data-ok='false'] {
+  color: var(--on-red);
+  background: var(--red);
+}
+
+.tight {
+  margin: 0;
+}
+
 .notice {
   margin: 0;
   font: var(--type-small);

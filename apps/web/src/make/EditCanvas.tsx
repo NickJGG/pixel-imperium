@@ -13,6 +13,8 @@ interface Props {
   /** What a left drag paints; `null` is empty. */
   color: string | null
   mirror: boolean
+  /** Cells to hatch, where the checks find the clues don't settle the picture. */
+  stuck: readonly number[]
   onPick: (color: string | null) => void
 }
 
@@ -24,7 +26,7 @@ interface Drag {
 }
 
 /** The draft's cells in their colors, painted with the left button and emptied with the right. */
-export function EditCanvas({ draft, cellSize, tool, color, mirror, onPick }: Props) {
+export function EditCanvas({ draft, cellSize, tool, color, mirror, stuck, onPick }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const drag = useRef<Drag | null>(null)
   const hover = useRef<Pos | null>(null)
@@ -39,7 +41,7 @@ export function EditCanvas({ draft, cellSize, tool, color, mirror, onPick }: Pro
     const request = () => {
       frame ||= requestAnimationFrame(() => {
         frame = 0
-        paint(canvas, draft, cellSize, mirror, hover.current)
+        paint(canvas, draft, cellSize, mirror, stuck, hover.current)
       })
     }
     request()
@@ -53,7 +55,7 @@ export function EditCanvas({ draft, cellSize, tool, color, mirror, onPick }: Pro
       darkScheme.removeEventListener('change', request)
       window.removeEventListener('resize', request)
     }
-  }, [draft, cellSize, mirror])
+  }, [draft, cellSize, mirror, stuck])
 
   const posAt = (e: PointerEvent): Pos => {
     const r = canvasRef.current!.getBoundingClientRect()
@@ -148,7 +150,7 @@ function blockNextContextMenu() {
   window.addEventListener('pointerdown', disarm, true)
 }
 
-function paint(canvas: HTMLCanvasElement, draft: Draft, cell: number, mirror: boolean, hover: Pos | null) {
+function paint(canvas: HTMLCanvasElement, draft: Draft, cell: number, mirror: boolean, stuck: readonly number[], hover: Pos | null) {
   const { width, height, cells } = draft
   const dpr = window.devicePixelRatio || 1
   const w = width * cell
@@ -187,6 +189,27 @@ function paint(canvas: HTMLCanvasElement, draft: Draft, cell: number, mirror: bo
   ctx.strokeStyle = color('--board-border')
   ctx.lineWidth = 3
   ctx.strokeRect(1.5, 1.5, w - 3, h - 3)
+
+  if (stuck.length > 0) {
+    const pink = color('--pink')
+    ctx.save()
+    ctx.beginPath()
+    for (const i of stuck) ctx.rect((i % width) * cell, Math.floor(i / width) * cell, cell, cell)
+    ctx.clip()
+    ctx.strokeStyle = pink
+    ctx.lineWidth = 1.5
+    ctx.beginPath()
+    for (let d = -h; d < w; d += 6) {
+      ctx.moveTo(d, h)
+      ctx.lineTo(d + h, 0)
+    }
+    ctx.stroke()
+    ctx.restore()
+    ctx.lineWidth = 2
+    ctx.setLineDash([3, 2])
+    for (const i of stuck) ctx.strokeRect((i % width) * cell + 2, Math.floor(i / width) * cell + 2, cell - 4, cell - 4)
+    ctx.setLineDash([])
+  }
 
   if (mirror) {
     ctx.strokeStyle = color('--board-target')
