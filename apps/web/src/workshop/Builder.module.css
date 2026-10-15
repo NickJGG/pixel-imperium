@@ -165,9 +165,13 @@
 }
 
 .flavour {
-  flex: 1;
   min-width: 0;
   margin-inline-start: auto;
+}
+
+/* `.pencil` is halved for titles; at the caption's size that leaves it tiny. */
+.flavour .pencil {
+  font-size: 1em;
 }
 
 /* The cover: its checks, then a card per province. */
