@@ -27,8 +27,10 @@ export function provinceStates(
 ): CampaignProgress {
   let reached: 'active' | 'next' | null = null
   const provinces = campaign.provinces.map(({ puzzles }): ProvinceProgress => {
-    const solved = puzzles.filter(p => isSolved(p.id)).length
-    const total = puzzles.length
+    // A taken-down puzzle's blank slot can't be solved, so it doesn't count.
+    const live = puzzles.filter(p => !p.removed)
+    const solved = live.filter(p => isSolved(p.id)).length
+    const total = live.length
     // An empty province (a draft) is never conquered, or the whole skeleton would read as won.
     if (!reached && total > 0 && solved === total) return { state: 'conquered', solved, total }
     if (unlockAll) return { state: 'active', solved, total }
@@ -50,14 +52,14 @@ export function campaignProgress(campaign: Pick<Campaign, 'provinces'>, storage:
  * The puzzle to offer after `currentId`: the next unsolved one in province order, wrapping
  * around, or the following one when everything is solved; `null` past the last solved puzzle.
  */
-export function nextPuzzle<P extends { id: string }>(
+export function nextPuzzle<P extends { id: string; removed?: true }>(
   puzzles: readonly P[],
   currentId: string,
   isSolved: (puzzleId: string) => boolean,
 ): P | null {
   const i = puzzles.findIndex(p => p.id === currentId)
-  const rest = [...puzzles.slice(i + 1), ...puzzles.slice(0, i)]
-  return rest.find(p => !isSolved(p.id)) ?? puzzles[i + 1] ?? null
+  const rest = [...puzzles.slice(i + 1), ...puzzles.slice(0, i)].filter(p => !p.removed)
+  return rest.find(p => !isSolved(p.id)) ?? puzzles.slice(i + 1).find(p => !p.removed) ?? null
 }
 
 export interface ContinueAt {
@@ -77,7 +79,7 @@ export function continueAt(
 ): ContinueAt | null {
   const index = progress.provinces.findIndex(p => p.state === 'active')
   const province = campaign.provinces[index]
-  const number = province ? province.puzzles.findIndex(p => !isSolved(p.id)) + 1 : 0
+  const number = province ? province.puzzles.findIndex(p => !p.removed && !isSolved(p.id)) + 1 : 0
   if (!province || number === 0) return null
   const fresh = progress.provinces.every(p => p.solved === 0)
   return { province, puzzle: province.puzzles[number - 1]!, number, fresh }

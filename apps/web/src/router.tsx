@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import {
   Outlet,
   createRootRoute,
@@ -8,16 +9,16 @@ import {
   redirect,
   useRouterState,
 } from '@tanstack/react-router'
-import type { CampaignSummary } from '@pixel-imperium/protocol'
+import type { Campaign, CampaignSummary, PuzzleClues, RetiredError } from '@pixel-imperium/protocol'
 import { accountReady, getAccount, useAccount } from './account.ts'
-import { fetchProfile } from './api.ts'
+import { fetchProfile, isRetired } from './api.ts'
 import * as content from './content.ts'
-import { LoadError, NotFound } from './EdgeStates.tsx'
+import { LoadError, NotFound, Retired } from './EdgeStates.tsx'
 import { CampaignsPage } from './campaign/CampaignsPage.tsx'
 import { CampaignsSkeleton } from './campaign/CampaignsSkeleton.tsx'
 import { newestFeatured } from './campaign/campaigns.ts'
 import { pickCampaign, rememberCampaign, rememberCampaigns } from './campaign/last-campaign.ts'
-import { seedStarted, startedCampaigns } from './campaign/started-campaigns.ts'
+import { markStarted, seedStarted, startedCampaigns } from './campaign/started-campaigns.ts'
 import { DailyPlayPage } from './daily/DailyPlayPage.tsx'
 import { dailyId } from './daily/clock.ts'
 import { MonthPage } from './daily/MonthPage.tsx'
@@ -37,6 +38,7 @@ import { SettingsSkeleton } from './me/SettingsSkeleton.tsx'
 import { PadProvider } from './pad/PadProvider.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
 import { PlaySkeleton } from './play/PlaySkeleton.tsx'
+import { signedOutStorage } from './play/progress-storage.ts'
 import { campaignAlbum, yearAlbum, yearAlbumId, yearAlbumName, yearOfAlbum } from './profile/album.ts'
 import { ProfilePage } from './profile/ProfilePage.tsx'
 import { ProfileSkeleton } from './profile/ProfileSkeleton.tsx'
@@ -86,6 +88,26 @@ async function loadCampaign(id: string) {
   const [campaign] = await Promise.all([content.campaign(id), accountReady])
   if (!campaign) throw notFound()
   rememberCampaign(campaign)
+  return campaign
+}
+
+/*
+ * Retired player-made work stays open to players who started it. A signed-in account's own progress decides that
+ * on the server; a signed-out device says so with `started`, from what it holds.
+ */
+const deviceStartedPuzzle = (id: string) => signedOutStorage.loadSolved(id) !== null || signedOutStorage.loadCells(id) !== null
+const deviceStartedCampaign = (id: string) => startedCampaigns(signedOutStorage).has(id)
+
+/**
+ * The campaign a `/c` address names, official or player-made. A player-made one is never remembered for Home, but
+ * opening it counts it started, so its puzzles open in its album from here on.
+ */
+async function loadAnyCampaign(id: string): Promise<Campaign | RetiredError> {
+  const [campaign] = await Promise.all([content.anyCampaign(id, deviceStartedCampaign(id)), accountReady])
+  if (!campaign) throw notFound()
+  if (isRetired(campaign)) return campaign
+  if (campaign.author === undefined) rememberCampaign(campaign)
+  else markStarted(getAccount().storage, campaign.id)
   return campaign
 }
 
@@ -169,19 +191,26 @@ const campaignsRoute = createRoute({
   },
 })
 
-/** Every campaign in a row, this one open; the signed-in profile's campaigns count as started too. */
+/**
+ * Every campaign in a row, this one open; the signed-in profile's campaigns count as started too. A player-made
+ * campaign never joins the row: it stands alone.
+ */
 const campaignRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/c/$campaignId',
   loader: async ({ params }) => {
     const [campaigns, campaign, profile] = await Promise.all([
       loadCampaigns(),
-      loadCampaign(params.campaignId),
+      loadAnyCampaign(params.campaignId),
       loadOwnProfile(),
     ])
-    return { campaigns, campaign, profile }
+    if (isRetired(campaign)) return { retired: campaign }
+    return { campaigns: campaign.author === undefined ? campaigns : [], campaign, profile }
   },
-  component: () => <CampaignsPage {...campaignRoute.useLoaderData()} />,
+  component: (): ReactNode => {
+    const data = campaignRoute.useLoaderData()
+    return 'retired' in data ? <Retired what="campaign" author={data.retired.author} /> : <CampaignsPage {...data} />
+  },
   pendingComponent: CampaignsSkeleton,
   get pendingMs() {
     return morphPendingMs()
@@ -194,14 +223,21 @@ const provinceRoute = createRoute({
   path: '/c/$campaignId/$provinceId',
   validateSearch: unveilSearch,
   loader: async ({ params }) => {
-    const campaign = await loadCampaign(params.campaignId)
+    const campaign = await loadAnyCampaign(params.campaignId)
+    if (isRetired(campaign)) return { retired: campaign }
     const province = campaign.provinces.find(p => p.id === params.provinceId)
     if (!province) throw notFound()
     return { campaign, province }
   },
-  component: () => (
-    <ProvincePage {...provinceRoute.useLoaderData()} previewConquest={provinceRoute.useSearch().conquest} />
-  ),
+  component: (): ReactNode => {
+    const data = provinceRoute.useLoaderData()
+    const conquest = provinceRoute.useSearch().conquest
+    return 'retired' in data ? (
+      <Retired what="campaign" author={data.retired.author} />
+    ) : (
+      <ProvincePage {...data} previewConquest={conquest} />
+    )
+  },
   pendingComponent: ProvinceSkeleton,
   get pendingMs() {
     return morphPendingMs()
@@ -211,16 +247,30 @@ const provinceRoute = createRoute({
   ),
 })
 
+type PlayData =
+  | { kind: 'official'; puzzle: Extract<PuzzleClues, { campaignId: string }>; campaign: Campaign }
+  | { kind: 'made'; puzzle: Extract<PuzzleClues, { made: unknown }>; campaign: Campaign | null }
+  | { kind: 'retired'; author: string }
+
 const playRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/play/$id',
   /** Dev only: `?conquest` shows the after panel as if this solve had just conquered the province. */
   validateSearch: (search: Record<string, unknown>): { conquest?: true } =>
     import.meta.env.DEV && 'conquest' in search ? { conquest: true } : {},
-  loader: async ({ params }) => {
-    const puzzle = await content.puzzle(params.id)
-    if (!puzzle || !('campaignId' in puzzle)) throw notFound()
-    return { puzzle, campaign: await loadCampaign(puzzle.campaignId) }
+  loader: async ({ params }): Promise<PlayData> => {
+    const [puzzle] = await Promise.all([content.anyPuzzle(params.id, deviceStartedPuzzle(params.id)), accountReady])
+    if (!puzzle || 'daily' in puzzle) throw notFound()
+    if (isRetired(puzzle)) return { kind: 'retired', author: puzzle.author }
+    if ('campaignId' in puzzle) return { kind: 'official', puzzle, campaign: await loadCampaign(puzzle.campaignId) }
+    // Its album, if it has one and the player may see it; standalone otherwise.
+    const home = puzzle.made.campaign
+    const campaign =
+      home &&
+      (await content
+        .anyCampaign(home.id, deviceStartedCampaign(home.id) || deviceStartedPuzzle(params.id))
+        .catch(() => null))
+    return { kind: 'made', puzzle, campaign: campaign && !isRetired(campaign) ? campaign : null }
   },
   component: PlayPage,
   pendingComponent: PlaySkeleton,

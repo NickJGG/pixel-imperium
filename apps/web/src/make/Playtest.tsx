@@ -7,57 +7,12 @@ import { ColClues, RowClues } from '../play/Clues.tsx'
 import { useBoardGestures } from '../play/gestures.ts'
 import { boardTracks } from '../play/layout.ts'
 import { createLineHints } from '../play/line-hints.ts'
-import { ProgressStorage } from '../play/progress-storage.ts'
+import { PlaytestStorage } from '../play/playtest-storage.ts'
 import { type PlayState, PlayStore, crosshairOf } from '../play/store.ts'
 import { useUndoKeys } from '../play/useUndoKeys.ts'
 import { BoardView } from '../play/viewport.ts'
 import type { Draft } from './draft.ts'
 import playStyles from '../play/Play.module.css'
-
-/** Starts empty and keeps nothing: a playtest leaves no trace in the player's own progress. */
-class PlaytestStorage extends ProgressStorage {
-  constructor() {
-    super(null)
-  }
-
-  override loadProgress(): null {
-    return null
-  }
-  override loadSolved(): null {
-    return null
-  }
-  override loadReplay(): boolean {
-    return false
-  }
-  override loadPalette(): null {
-    return null
-  }
-  override loadHinted(): boolean {
-    return false
-  }
-  override loadElapsed(): number {
-    return 0
-  }
-  override loadAttemptHinted(): boolean {
-    return false
-  }
-  override loadBest(): null {
-    return null
-  }
-  override saveProgress(): void {}
-  override saveCells(): void {}
-  override saveSolved(): void {}
-  override saveSolvedAt(): void {}
-  override saveReplay(): void {}
-  override clearReplay(): void {}
-  override savePalette(): void {}
-  override saveCrest(): void {}
-  override saveFoil(): void {}
-  override saveHinted(): void {}
-  override saveElapsed(): void {}
-  override saveAttemptHinted(): void {}
-  override saveBest(): void {}
-}
 
 export function playtestStore(draft: Draft): PlayStore {
   const { width, height } = draft

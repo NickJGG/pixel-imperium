@@ -52,8 +52,8 @@ export interface DailyYear {
 }
 
 /**
- * The named papers in tokens.css: one per campaign province, one per season. Campaigns and provinces each name
- * one; a new one needs its `--p-` in every theme and its `--t-` in Night.
+ * The named papers in tokens.css: one per campaign province, one per season, and the Workshop's. Campaigns and
+ * provinces each name one; a new one needs its `--p-` in every theme and its `--t-` in Night.
  */
 export const PAPER_NAMES = [
   'marches',
@@ -72,6 +72,7 @@ export const PAPER_NAMES = [
   'spring',
   'summer',
   'autumn',
+  'workshop',
 ] as const
 
 export type PaperId = (typeof PAPER_NAMES)[number]

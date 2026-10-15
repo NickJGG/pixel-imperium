@@ -4,8 +4,16 @@
  * signed-in player's own profile, kept until something changes it. Concurrent loads share one request, and a
  * failed one is dropped so the next load retries.
  */
-import type { Campaign, CampaignSummary, DailyYear, Profile, PuzzleClues, SolveRequest } from '@pixel-imperium/protocol'
-import { fetchCampaign, fetchCampaigns, fetchDailyYear, fetchProfile, fetchPuzzle, submitSolve } from './api.ts'
+import type {
+  Campaign,
+  CampaignSummary,
+  DailyYear,
+  Profile,
+  PuzzleClues,
+  RetiredError,
+  SolveRequest,
+} from '@pixel-imperium/protocol'
+import { fetchCampaign, fetchCampaigns, fetchDailyYear, fetchProfile, fetchPuzzle, isRetired, submitSolve } from './api.ts'
 import { earliestDay } from './daily/clock.ts'
 
 function memo<T>(load: (key: string) => Promise<T>) {
@@ -22,12 +30,26 @@ function memo<T>(load: (key: string) => Promise<T>) {
 }
 
 const campaignsMemo = memo(() => fetchCampaigns())
-const campaignMemo = memo(fetchCampaign)
-const puzzleMemo = memo(fetchPuzzle)
+// Keyed `<id>` or `<id>?started`: a retired one's answer depends on the flag.
+const campaignMemo = memo(key => fetchCampaign(...unkey(key)))
+const puzzleMemo = memo(key => fetchPuzzle(...unkey(key)))
+const keyOf = (id: string, started: boolean) => (started ? `${id}?started` : id)
+const unkey = (key: string): [string, boolean] => [key.replace(/\?started$/, ''), key.endsWith('?started')]
+
+const unlessRetired = <T extends object>(found: T | RetiredError | null): T | null =>
+  found && !isRetired(found) ? found : null
 
 export const campaigns = (): Promise<CampaignSummary[]> => campaignsMemo('')
-export const campaign = (id: string): Promise<Campaign | null> => campaignMemo(id)
-export const puzzle = (id: string): Promise<PuzzleClues | null> => puzzleMemo(id)
+export const campaign = (id: string): Promise<Campaign | null> => campaignMemo(id).then(unlessRetired)
+export const puzzle = (id: string): Promise<PuzzleClues | null> => puzzleMemo(id).then(unlessRetired)
+
+/** A campaign that may be player-made: `started` is a signed-out device's word that it has progress in it. */
+export const anyCampaign = (id: string, started: boolean): Promise<Campaign | RetiredError | null> =>
+  campaignMemo(keyOf(id, started))
+
+/** A puzzle that may be player-made, `started` as for `anyCampaign`. */
+export const anyPuzzle = (id: string, started: boolean): Promise<PuzzleClues | RetiredError | null> =>
+  puzzleMemo(keyOf(id, started))
 
 /** Loads a puzzle's clues ahead of opening it. */
 export const prefetchPuzzle = (id: string): void => void puzzle(id).catch(() => {})

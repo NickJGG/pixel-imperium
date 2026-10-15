@@ -168,7 +168,7 @@
   --p-spring: #173a2b;
   --p-summer: #3b3112;
   --p-autumn: #3f2016;
-  /* /make's warm grey, a workshop rather than a province: not one of PAPER_NAMES. */
+  /* The Workshop's warm grey, for player-made work rather than a province. */
   --p-workshop: #2b2a2e;
   --t-marches: #ffd34a;
   --t-coast: #5bc8ff;

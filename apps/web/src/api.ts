@@ -15,6 +15,8 @@ import type {
   PutHandleResponse,
   PutSettingsRequest,
   PuzzleClues,
+  ReportRequest,
+  RetiredError,
   SavedProgress,
   Showcase,
   SolveRequest,
@@ -36,12 +38,20 @@ const jsonInit = (method: string, body: unknown, init?: RequestInit): RequestIni
 
 export const fetchCampaigns = () => getJson<CampaignSummary[]>('/api/campaigns')
 
-/** `null` when no campaign has the id. */
-export async function fetchCampaign(id: string): Promise<Campaign | null> {
-  const res = await fetch(`/api/campaigns/${encodeURIComponent(id)}`)
+/**
+ * A signed-out device telling the server it has progress in player-made work, which keeps serving it once retired.
+ * A signed-in request is judged by the account's own progress instead.
+ */
+const startedQuery = (started: boolean) => (started ? '?started=1' : '')
+
+export const isRetired = (found: object): found is RetiredError => 'retired' in found && 'error' in found
+
+/** `null` when no campaign has the id; the 410's body when its Author retired it before this player started it. */
+export async function fetchCampaign(id: string, started = false): Promise<Campaign | RetiredError | null> {
+  const res = await fetch(`/api/campaigns/${encodeURIComponent(id)}${startedQuery(started)}`)
   if (res.status === 404) return null
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
-  return (await res.json()) as Campaign
+  if (!res.ok && res.status !== 410) throw new Error(`${res.status} ${res.statusText}`)
+  return (await res.json()) as Campaign | RetiredError
 }
 
 /** `null` when the Year has no Dailies: before launch, or still to come. */
@@ -52,20 +62,21 @@ export async function fetchDailyYear(year: number): Promise<DailyYear | null> {
   return (await res.json()) as DailyYear
 }
 
-/** `null` when no puzzle has the id. */
-export async function fetchPuzzle(id: string): Promise<PuzzleClues | null> {
-  const res = await fetch(`/api/puzzles/${encodeURIComponent(id)}`)
+/** `null` when no puzzle has the id; the 410's body when its Author retired it before this player started it. */
+export async function fetchPuzzle(id: string, started = false): Promise<PuzzleClues | RetiredError | null> {
+  const res = await fetch(`/api/puzzles/${encodeURIComponent(id)}${startedQuery(started)}`)
   if (res.status === 404) return null
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
-  return (await res.json()) as PuzzleClues
+  if (!res.ok && res.status !== 410) throw new Error(`${res.status} ${res.statusText}`)
+  return (await res.json()) as PuzzleClues | RetiredError
 }
 
+// A board being played was served to this device, so a retired puzzle's solve and hints are its to finish.
 export const submitSolve = (id: string, body: SolveRequest, signal: AbortSignal | null = null) =>
-  getJson<SolveResponse>(`/api/puzzles/${encodeURIComponent(id)}/solve`, jsonInit('POST', body, { signal }))
+  getJson<SolveResponse>(`/api/puzzles/${encodeURIComponent(id)}/solve${startedQuery(true)}`, jsonInit('POST', body, { signal }))
 
 /** `null` when the grid has nothing left to hint. */
 export async function requestHint(id: string, body: HintRequest): Promise<HintResponse | null> {
-  const res = await fetch(`/api/puzzles/${encodeURIComponent(id)}/hint`, jsonInit('POST', body))
+  const res = await fetch(`/api/puzzles/${encodeURIComponent(id)}/hint${startedQuery(true)}`, jsonInit('POST', body))
   if (res.status === 409) return null
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
   return (await res.json()) as HintResponse
@@ -118,4 +129,10 @@ export async function putHandle(handle: string): Promise<PutHandleResponse | Han
   const res = await fetch('/api/me/handle', jsonInit('PUT', { handle } satisfies PutHandleRequest))
   if (!res.ok && res.status !== 400 && res.status !== 409) throw new Error(`${res.status} ${res.statusText}`)
   return (await res.json()) as PutHandleResponse | HandleRejection
+}
+
+/** Reports player-made work, signed in or out. */
+export async function postReport(body: ReportRequest): Promise<void> {
+  const res = await fetch('/api/reports', jsonInit('POST', body))
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
 }

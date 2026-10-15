@@ -1,6 +1,7 @@
 import { type ReactNode, useId } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
 import type { Paper } from './album/paper.ts'
+import { useAccount } from './account.ts'
 import { World, Worlds } from './campaign/worlds/Worlds.tsx'
 import styles from './EdgeStates.module.css'
 
@@ -79,6 +80,36 @@ export function LoadError({ error }: { error: unknown }) {
     >
       <p>We couldn’t load this page. Your stickers are safe on this device.</p>
       <p className={styles.detail}>{error instanceof Error ? error.message : String(error)}</p>
+    </EdgeState>
+  )
+}
+
+/** The Workshop's page: a plain string, since its route isn't registered yet. */
+export const WORKSHOP: string = '/workshop'
+
+/** Player-made work its Author retired before this player started it. */
+export function Retired({ what, author }: { what: 'puzzle' | 'campaign'; author: string }) {
+  const { account } = useAccount()
+  return (
+    <EdgeState
+      paper="workshop"
+      kicker="Retired"
+      title={`@${author} retired this ${what}`}
+      mark="✕"
+      actions={
+        <>
+          <Link to="/" data-variant="primary" data-pad-default>
+            Back home
+          </Link>
+          {account && (
+            <Link to={WORKSHOP} data-variant="paper">
+              Open the Workshop
+            </Link>
+          )}
+        </>
+      }
+    >
+      <p>Only players who started it can still play it.</p>
     </EdgeState>
   )
 }

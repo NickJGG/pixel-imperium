@@ -51,6 +51,13 @@ describe('provinceStates', () => {
     expect(conquered).toBe(false)
   })
 
+  it('leaves taken-down puzzles out of the count, so they never hold a province back', () => {
+    const removed: Pick<Campaign, 'provinces'> = {
+      provinces: [{ ...campaign.provinces[0]!, puzzles: [puzzle('a1'), { ...puzzle('a2'), removed: true }] }],
+    }
+    expect(provinceStates(removed, id => id === 'a1').provinces[0]).toEqual({ state: 'conquered', solved: 1, total: 1 })
+  })
+
   it('opens every unconquered province when unlocking all', () => {
     expect(statesOf(['b1'], { unlockAll: true })).toEqual(['active', 'conquered', 'active', 'active'])
   })
@@ -85,6 +92,12 @@ describe('nextPuzzle', () => {
   it('skips solved puzzles and wraps around', () => {
     expect(next('p2', ['p2', 'p3'])).toBe('p4')
     expect(next('p3', ['p2', 'p3', 'p4'])).toBe('p1')
+  })
+
+  it('skips taken-down puzzles', () => {
+    const gappy = [puzzle('p1'), { ...puzzle('p2'), removed: true as const }, puzzle('p3')]
+    expect(nextPuzzle(gappy, 'p1', id => id === 'p1')?.id).toBe('p3')
+    expect(nextPuzzle(gappy, 'p1', () => true)?.id).toBe('p3')
   })
 
   it('offers the following puzzle once everything is solved, and none after the last', () => {

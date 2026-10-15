@@ -207,7 +207,7 @@ function OpenProvince({
 }) {
   const index = campaign.provinces.indexOf(province)
   const { state, solved, total } = progress.provinces[index]!
-  const next = state === 'active' ? province.puzzles.find(p => storage.loadSolved(p.id) === null) : undefined
+  const next = state === 'active' ? province.puzzles.find(p => !p.removed && storage.loadSolved(p.id) === null) : undefined
   const groups = tierGroups(province)
   const rows = shelfRows(groups.map(g => g.slots.length))
   const columns = groups.map(g => Math.ceil(g.slots.length / rows))
@@ -221,6 +221,7 @@ function OpenProvince({
             <p className={styles.kicker}>
               Province {index + 1}
               {province.theme && ` · ${province.theme}`}
+              {campaign.author !== undefined && ` · by @${campaign.author}`}
             </p>
             <h1 id={id} className={styles.name}>
               {province.name}

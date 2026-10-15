@@ -10,7 +10,7 @@ import {
 } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
-import type { Campaign, Province, PuzzleClues, SolveRequest, Tier } from '@pixel-imperium/protocol'
+import type { Campaign, MadeContext, Province, PuzzleClues, SolveRequest, Tier } from '@pixel-imperium/protocol'
 import { CountPill } from '../album/CountPill.tsx'
 import { Dymo } from '../album/Dymo.tsx'
 import { ArrowIcon, CheckIcon } from '../album/icons.tsx'
@@ -23,7 +23,7 @@ import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { NextUp } from '../campaign/NextUp.tsx'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
-import { markStarted } from '../campaign/started-campaigns.ts'
+import { hasProgress, markStarted, startedCampaigns } from '../campaign/started-campaigns.ts'
 import { boardMorph, columnPaper, slotName } from '../campaign/worlds/names.ts'
 import { getPadMode } from '../pad/mode.ts'
 import { PadControls } from '../pad/PadControls.tsx'
@@ -31,6 +31,7 @@ import { PadGlyph, PanelTag } from '../pad/PadGlyph.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
 import { firstFocusable, focusDefault } from '../pad/spatial.ts'
+import { Retired, WORKSHOP } from '../EdgeStates.tsx'
 import { FloatingPills, Hud, SoundButton, ThemeButton } from '../Hud.tsx'
 import { getSettings, useSettings } from '../settings.ts'
 import { reducedMotion } from '../motion.ts'
@@ -38,6 +39,7 @@ import { play } from '../sound.ts'
 import { useShouldOffer, useShouldOfferTechniques } from '../tutorial/asked.ts'
 import { ChoiceCard, TUTORIAL_OFFER, techniquesOffer } from '../tutorial/ChoiceCard.tsx'
 import { useLessonsDone } from '../tutorial/done.ts'
+import { backLink as backTo } from '../tutorial/handoff.ts'
 import { HowToPlay } from '../tutorial/HowToPlay.tsx'
 import { TRACKS } from '../tutorial/tracks.ts'
 import { AssistsDisclosure, ControlsDisclosure } from './AssistsDisclosure.tsx'
@@ -54,6 +56,7 @@ import { HintTag } from './HintTag.tsx'
 import { RAIL_WIDTH, boardTracks, fitCellSize, useRail } from './layout.ts'
 import { createLineHints } from './line-hints.ts'
 import { Minimap } from './Minimap.tsx'
+import { PlaytestStorage } from './playtest-storage.ts'
 import { encodeCells } from './progress-storage.ts'
 import { Filmstrip, PageHead, SlotRow } from './Filmstrip.tsx'
 import { type Pose, celebrate, popOnly } from './sticker-moment.ts'
@@ -64,14 +67,45 @@ import { RailTools } from './RailTools.tsx'
 import { useRailFold } from './useRailFold.ts'
 import { useUndoKeys } from './useUndoKeys.ts'
 import { BoardView, fitView } from './viewport.ts'
+import { ReportButton } from '../workshop/Report.tsx'
 import styles from './Play.module.css'
 
 const route = getRouteApi('/play/$id')
 
 export function PlayPage() {
-  const { puzzle, campaign } = route.useLoaderData()
+  const data = route.useLoaderData()
   const previewConquest = route.useSearch().conquest === true
   const account = useAccount()
+  if (data.kind === 'retired') {
+    return (
+      <>
+        <Hud float />
+        <Retired what="puzzle" author={data.author} />
+      </>
+    )
+  }
+  if (data.kind === 'made') {
+    const { puzzle, campaign } = data
+    const own = account.account?.handle.toLowerCase() === puzzle.made.author.toLowerCase()
+    const province = campaign?.provinces.find(p => p.id === puzzle.made.campaign?.provinceId)
+    // In its album only once the player has started the campaign and reached its province; standalone otherwise.
+    const inAlbum =
+      !own &&
+      campaign &&
+      province &&
+      isOpen(campaignProgress(campaign, account.storage).provinces[campaign.provinces.indexOf(province)]!.state) &&
+      (startedCampaigns(account.storage).has(campaign.id) || hasProgress(campaign, account.storage))
+    return (
+      <MadePlay
+        key={`${account.generation}:${puzzle.id}`}
+        puzzle={puzzle}
+        account={account}
+        own={own}
+        album={inAlbum ? albumContext(puzzle, campaign, province, previewConquest) : null}
+      />
+    )
+  }
+  const { puzzle, campaign } = data
   const province = campaign.provinces.find(p => p.id === puzzle.provinceId)!
   const progress = campaignProgress(campaign, account.storage)
   if (!isOpen(progress.provinces[campaign.provinces.indexOf(province)]!.state)) {
@@ -82,22 +116,84 @@ export function PlayPage() {
       </>
     )
   }
-  const index = campaign.provinces.indexOf(province)
-  const number = province.puzzles.findIndex(p => p.id === puzzle.id) + 1
   return (
     <Play
       key={`${account.generation}:${puzzle.id}`}
       puzzle={puzzle}
       account={account}
-      context={{
-        place: province.name,
-        paper: paperFor(province.paper),
-        back: `/c/${campaign.id}/${province.id}`,
+      context={albumContext(puzzle, campaign, province, previewConquest)}
+    />
+  )
+}
+
+/** A campaign puzzle at home in its open Province. */
+function albumContext(puzzle: PuzzleClues, campaign: Campaign, province: Province, previewConquest: boolean): PlayContext {
+  const index = campaign.provinces.indexOf(province)
+  const number = province.puzzles.findIndex(p => p.id === puzzle.id) + 1
+  return {
+    place: province.name,
+    paper: paperFor(province.paper),
+    back: `/c/${campaign.id}/${province.id}`,
+    here: `/play/${puzzle.id}`,
+    meta: [puzzle.tier && TIER_NAME[puzzle.tier], `${puzzle.width}×${puzzle.height}`].filter(Boolean).join(' · '),
+    campaign,
+    album: { campaign, province, index, number, previewConquest },
+  }
+}
+
+/**
+ * A player-made puzzle: in its album when `album` is given, else on its own in its Author's paper (or the Workshop's),
+ * belonging to the Workshop's Played by link, or to Home signed out. Its Author plays it as a playtest, saving nothing.
+ */
+function MadePlay({
+  puzzle,
+  account,
+  own,
+  album,
+}: {
+  puzzle: PuzzleClues & { made: MadeContext }
+  account: AccountState
+  own: boolean
+  album: PlayContext | null
+}) {
+  const { made } = puzzle
+  const [playtest] = useState(() => (own ? new PlaytestStorage() : null))
+  const signedIn = account.account !== null
+  const retiredNote = made.retired && (
+    <p className={styles.railNote}>@{made.author} retired this puzzle. You can still finish it.</p>
+  )
+  const shared = { byline: made.author, ...(!own && { report: puzzle.id }), note: retiredNote }
+  const context: PlayContext = album
+    ? { ...album, ...shared }
+    : {
+        ...shared,
+        place: own ? 'Workshop' : signedIn ? 'Played by link' : 'Home',
+        paper: paperFor(made.paper ?? 'workshop'),
+        back: own ? WORKSHOP : signedIn ? `${WORKSHOP}?tab=played` : '/',
         here: `/play/${puzzle.id}`,
-        meta: [puzzle.tier && TIER_NAME[puzzle.tier], `${puzzle.width}×${puzzle.height}`].filter(Boolean).join(' · '),
-        campaign,
-        album: { campaign, province, index, number, previewConquest },
-      }}
+        meta: `${puzzle.width}×${puzzle.height}`,
+        ...(own
+          ? {
+              note: <p className={styles.railNote}>Your puzzle: a playtest. Nothing is saved.</p>,
+              landing: `${puzzle.title} solved. Nothing was saved.`,
+            }
+          : !signedIn && {
+              landing: `${puzzle.title} is solved.`,
+              solvedNote: (
+                <>
+                  <p className={styles.railNote}>Saved on this device. Sign in to keep it in your Workshop.</p>
+                  <Link to="/" search={{ open: 'signin' }} data-variant="paper">
+                    Make your own
+                  </Link>
+                </>
+              ),
+            }),
+      }
+  return (
+    <Play
+      puzzle={puzzle}
+      account={playtest ? { ...account, storage: playtest, sync: null } : account}
+      context={context}
     />
   )
 }
@@ -120,6 +216,16 @@ export interface PlayContext {
   /** For How to play's New tag. */
   campaign?: Campaign
   album?: AlbumPlace
+  /** A player-made puzzle's Author's handle, linked before the meta. */
+  byline?: string
+  /** A player-made puzzle's id, for the Report link at the rail's foot. */
+  report?: string
+  /** Under the rail's head while it's unsolved, and in the page sheet. */
+  note?: ReactNode
+  /** Under the rail's head once solved, and in the after sheet. */
+  solvedNote?: ReactNode
+  /** Said as the sticker lands, in place of where it went. */
+  landing?: string
 }
 
 interface AlbumPlace {
@@ -395,7 +501,7 @@ export function Play({
     const active = document.activeElement
     if (active === document.body || stageRef.current?.contains(active)) focusDefault()
   }, [done])
-  const left = album?.province.puzzles.filter(p => storage.loadSolved(p.id) === null).length ?? 0
+  const left = album?.province.puzzles.filter(p => !p.removed && storage.loadSolved(p.id) === null).length ?? 0
   const title = album ? `#${album.number} ${puzzle.title}` : puzzle.title
   const art = palette ?? Array<null>(puzzle.width * puzzle.height).fill(null)
   const sticker = (tilt = 0) => (
@@ -470,7 +576,7 @@ export function Play({
     ) : (
       <p role="status">
         {moment === 'landed'
-          ? `${puzzle.title} is in ${context.place}.${tally}`
+          ? (context.landing ?? `${puzzle.title} is in ${context.place}.${tally}`)
           : moment === 'kept'
             ? `Solved again. ${puzzle.title} stays where it is.`
             : `${puzzle.title} is in the album.`}
@@ -519,7 +625,7 @@ export function Play({
   )
   const onwardless = !album || (!conquest && !next)
   const backToPage = (
-    <Link to={context.back} data-variant="paper" data-pad-default={onwardless || undefined}>
+    <Link {...backTo(context.back)} data-variant="paper" data-pad-default={onwardless || undefined}>
       {context.place}
       <PadGlyph button="B" />
     </Link>
@@ -543,6 +649,7 @@ export function Play({
     )
   )
   const slotRow = album && { province: album.province, number: album.number, storage, hideSticker }
+  const report = context.report && <ReportButton targetId={context.report} what="puzzle" />
 
   const afterBody = (
     <>
@@ -560,6 +667,7 @@ export function Play({
         tag
       )}
       {message}
+      {!conquest && context.solvedNote}
       <TimeCard store={store} />
       {closing}
       {onward(true)}
@@ -567,6 +675,7 @@ export function Play({
         {replay}
         {backToPage}
       </div>
+      {report}
     </>
   )
 
@@ -589,13 +698,25 @@ export function Play({
         {closing}
       </>
     ) : (
-      moment === 'kept' && <p className={styles.railNote}>Solved again. Replays never change the sticker.</p>
+      <>
+        {moment === 'kept' && <p className={styles.railNote}>Solved again. Replays never change the sticker.</p>}
+        {context.solvedNote}
+      </>
     )
 
   const { meta } = context
+  const byline = context.byline && (
+    <>
+      by{' '}
+      <Link to="/u/$handle" params={{ handle: context.byline }}>
+        @{context.byline}
+      </Link>{' '}
+      ·{' '}
+    </>
+  )
   const chip = !solved && context.chip
   const backLink = (className: string | undefined) => (
-    <Link to={context.back} className={className} aria-label={`Back to ${context.place}`}>
+    <Link {...backTo(context.back)} className={className} aria-label={`Back to ${context.place}`}>
       ← <span>{context.place}</span>
     </Link>
   )
@@ -625,7 +746,10 @@ export function Play({
         <header className={styles.topLine}>
           {backLink(styles.topBack)}
           <h1 className={styles.topTitle}>{title}</h1>
-          <span className={styles.topMeta}>{meta}</span>
+          <span className={styles.topMeta}>
+            {byline}
+            {meta}
+          </span>
           {chip}
           {!solved && <span className={styles.topPercent}>{percent}%</span>}
           {!done && tag}
@@ -675,7 +799,7 @@ export function Play({
           >
             <div className={styles.railHead}>
               <Link
-                to={context.back}
+                {...backTo(context.back)}
                 className={styles.railBack}
                 data-variant="paper"
                 data-pad-default={(done && onwardless) || undefined}
@@ -684,7 +808,10 @@ export function Play({
                 ← {context.place}
                 {solved && <PadGlyph button="B" />}
               </Link>
-              <p className={styles.railKicker}>{meta}</p>
+              <p className={styles.railKicker}>
+                {byline}
+                {meta}
+              </p>
               <h1 className={styles.railName}>{puzzle.title}</h1>
               <div className={styles.railBadges} role={done ? 'status' : undefined}>
                 {done ? (
@@ -698,6 +825,7 @@ export function Play({
                   </>
                 )}
               </div>
+              {!done && context.note}
               {done && solvedNote}
               {done && <TimeCard store={store} />}
             </div>
@@ -710,6 +838,7 @@ export function Play({
                   )}
                   {onward(false)}
                   {replay}
+                  {report}
                 </div>
               </div>
             ) : (
@@ -736,6 +865,7 @@ export function Play({
                     </div>
                   )}
                   {actions}
+                  {report}
                 </div>
               </div>
             )}
@@ -752,6 +882,7 @@ export function Play({
           paper={paper}
           page={
             <>
+              {context.note}
               {slotRow && (
                 <>
                   <PageHead {...slotRow} />
@@ -763,6 +894,7 @@ export function Play({
               <h2 className={styles.sheetHead}>Assists</h2>
               <AssistSwitches />
               <PadControls owner="board" solved={false} {...controls} />
+              {report}
             </>
           }
           note={hintFailed && <Dymo tone="pink">Couldn't reach the album</Dymo>}
@@ -795,7 +927,7 @@ export function Play({
                     {album.index + 1}
                   </>
                 ) : (
-                  [album ? 'Stage clear' : 'Daily clear', foil && 'Foil', gold && 'Gold'].filter(Boolean).join(' · ')
+                  ['daily' in puzzle ? 'Daily clear' : 'Stage clear', foil && 'Foil', gold && 'Gold'].filter(Boolean).join(' · ')
                 )}
               </span>
               <span className={styles.bandTitle}>{conquest && album ? `${album.province.name} is yours` : title}</span>

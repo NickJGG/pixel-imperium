@@ -4,6 +4,7 @@ import type { Campaign } from '@pixel-imperium/protocol'
 import { CountPill } from '../album/CountPill.tsx'
 import { NewBadge } from '../album/NewBadge.tsx'
 import { paperFor } from '../album/paper.ts'
+import { useAccount } from '../account.ts'
 import { startOf } from '../daily/clock.ts'
 import { Crest } from '../home/Crest.tsx'
 import { crestPixels } from '../home/crest.ts'
@@ -14,6 +15,7 @@ import { Bar, Ghost } from '../skeleton/Skeleton.tsx'
 import { featuredUntil } from './campaigns.ts'
 import { campaignProgress, continueAt } from './progress.ts'
 import { SlotFace } from './PuzzleSlot.tsx'
+import { ReportButton } from '../workshop/Report.tsx'
 import { doorSlot } from './worlds/names.ts'
 import styles from '../home/Home.module.css'
 
@@ -51,6 +53,9 @@ export function CampaignStack({
   const total = progress.provinces.reduce((n, p) => n + p.total, 0)
   const conquered = progress.provinces.filter(p => p.state === 'conquered').length
   const pixels = crestPixels(campaign, storage)
+  const { account } = useAccount()
+  const { author } = campaign
+  const own = author !== undefined && account?.handle.toLowerCase() === author.toLowerCase()
 
   return (
     <div className={styles.column}>
@@ -63,6 +68,15 @@ export function CampaignStack({
           ) : (
             <>
               Campaign · {featured && <><NewBadge /> · </>}
+              {author !== undefined && (
+                <>
+                  by{' '}
+                  <Link to="/u/$handle" params={{ handle: author }}>
+                    @{author}
+                  </Link>{' '}
+                  ·{' '}
+                </>
+              )}
               {conquered} of {campaign.provinces.length} conquered
             </>
           )}
@@ -136,6 +150,7 @@ export function CampaignStack({
             )
           )}
         </div>
+        {author !== undefined && !own && <ReportButton targetId={campaign.id} what="campaign" />}
       </div>
       {pixels && campaign.crest && (
         <div className={styles.picture}>

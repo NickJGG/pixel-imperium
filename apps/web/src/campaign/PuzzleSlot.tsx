@@ -47,8 +47,15 @@ interface Props {
   padDefault?: boolean
 }
 
-/** A puzzle's slot on its province's spread: its sticker once solved, else an empty slot. Opens the puzzle. */
+/** A puzzle's slot on its province's spread: its sticker once solved, else an empty slot. Opens the puzzle, unless it was taken down. */
 export function PuzzleSlot({ puzzle: p, number, storage, next = false, padDefault = false }: Props) {
+  if (p.removed) {
+    return (
+      <span className={styles.slotLink} aria-label={`${number}: removed`}>
+        <Slot number={number} width={p.width} height={p.height} />
+      </span>
+    )
+  }
   const status = statusOf(p, storage)
   const size = `${p.width}×${p.height}`
   const label =
