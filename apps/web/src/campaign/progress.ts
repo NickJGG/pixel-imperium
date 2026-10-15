@@ -99,6 +99,13 @@ export function tierGroups(province: Pick<Province, 'puzzles'>): TierGroup[] {
   )
 }
 
+/**
+ * How many deep slots stand on a province's shelves, given each tier's count: 4 at most, sized to share the
+ * column's height, but shallower when its biggest tier is small, so a few slots read left to right.
+ */
+export const shelfRows = (counts: readonly number[]): number =>
+  Math.min(4, Math.max(1, Math.ceil(Math.max(0, ...counts) / 3)))
+
 /** The province flagged to offer the Techniques has started. */
 export const techniquesRecommended = (campaign: Pick<Campaign, 'provinces'>, progress: CampaignProgress) =>
   campaign.provinces.some((p, i) => p.techniques && isOpen(progress.provinces[i]?.state ?? 'locked'))

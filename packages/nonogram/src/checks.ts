@@ -1,11 +1,10 @@
-import { type Clues, type SolverCell, cluesFromSolution, logicPassCount, propagate, rateDifficulty } from '@pixel-imperium/nonogram'
+import { cluesFromSolution } from './clues.ts'
+import type { Clues } from './grid.ts'
+import { type SolverCell, logicPassCount, propagate, rateDifficulty } from './solver.ts'
 
-export interface CheckRequest {
-  seq: number
-  width: number
-  height: number
-  filled: boolean[]
-}
+export const MIN_SIZE = 5
+export const MAX_SIZE = 30
+export const MAX_COLORS = 10
 
 export interface Checks {
   width: number
@@ -29,6 +28,12 @@ export function check(width: number, height: number, filled: readonly boolean[])
     ? indicesWhere(other, (c, i) => (c === 'filled') !== filled[i])
     : indicesWhere(propagate(clues, unknowns(width * height)) ?? [], c => c === 'unknown')
   return { width, height, unique: other === null, passes: null, rating: null, stuck }
+}
+
+/** Whether a picture with these checks and `colors` palette entries may be published: the rules every puzzle meets. */
+export function meetsRules(checks: Checks, colors: number): boolean {
+  const sized = (n: number) => n >= MIN_SIZE && n <= MAX_SIZE
+  return sized(checks.width) && sized(checks.height) && colors >= 1 && colors <= MAX_COLORS && checks.unique && checks.passes !== null
 }
 
 /** A solution of `clues` other than `drawn`, branching against the drawing first so a difference turns up early. */

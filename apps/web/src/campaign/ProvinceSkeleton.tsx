@@ -1,13 +1,13 @@
 import { useParams } from '@tanstack/react-router'
 import { type CSSProperties, type ReactNode, useRef } from 'react'
-import type { PaperId, Province, Tier } from '@pixel-imperium/protocol'
+import type { Paper, Province, Tier } from '@pixel-imperium/protocol'
 import { getAccount } from '../account.ts'
 import { provinceTrail } from '../home/columns.ts'
 import { useHudTrail } from '../Trail.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { currentCampaign } from './last-campaign.ts'
-import { type ProvinceState, campaignProgress, isOpen, tierGroups } from './progress.ts'
-import { ROWS, TIER_NAME } from './ProvincePage.tsx'
+import { type ProvinceState, campaignProgress, isOpen, shelfRows, tierGroups } from './progress.ts'
+import { TIER_NAME } from './ProvincePage.tsx'
 import { useAnnounceSkeleton } from './worlds/morph-nav.ts'
 import { Backdrop, SkeletonSpine, World, Worlds, morphName, usePhone, useSpineReach } from './worlds/Worlds.tsx'
 import styles from './Province.module.css'
@@ -78,7 +78,7 @@ export function ProvinceSkeleton() {
 }
 
 /** `paper` is the page column's, for the backdrop the Home morph plays over. */
-function Page({ paper, children }: { paper: PaperId; children: ReactNode }) {
+function Page({ paper, children }: { paper: Paper; children: ReactNode }) {
   const ref = useRef<HTMLElement>(null)
   useSpineReach(ref)
   useAnnounceSkeleton()
@@ -102,7 +102,8 @@ function Column({
   state: ProvinceState | undefined
 }) {
   const shelves = province ? tierGroups(province).map(g => ({ tier: g.tier, count: g.slots.length })) : SHELVES
-  const columns = shelves.map(s => Math.ceil(s.count / ROWS))
+  const rows = shelfRows(shelves.map(s => s.count))
+  const columns = shelves.map(s => Math.ceil(s.count / rows))
   return (
     <World paper={province?.paper ?? 'marches'} fog={!state || !isOpen(state)} style={morphName({ id })} start pair>
       <div className={styles.zoom}>
@@ -123,7 +124,7 @@ function Column({
                 {TIER_NAME[tier]}
                 <Bar w={34} h={12} />
               </h2>
-              <ol className={styles.slots} style={{ '--cols': columns[g], '--rows': ROWS } as CSSProperties}>
+              <ol className={styles.slots} style={{ '--cols': columns[g], '--rows': rows } as CSSProperties}>
                 {Array.from({ length: count }, (_, i) => (
                   <li key={i}>
                     <Ghost style={{ width: '100%', aspectRatio: 1 }} />

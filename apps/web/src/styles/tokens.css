@@ -146,6 +146,8 @@
   --card-2: #22306a;
   /* Play's board card: this much of the province's paper, the rest its tab color (Night) or the card (Day). */
   --surface-paper: 85%;
+  /* 0 in Night, 1 in Day: a hex paper's `--paper` mixes its two pages by it (album/paper.ts). */
+  --day: 0;
   --line-soft: #36477f;
   --shade: rgba(0, 0, 0, 0.5);
   --tape: rgba(214, 224, 255, 0.5);
@@ -220,6 +222,7 @@
     --card: #ffffff;
     --card-2: #eef1ff;
     --surface-paper: 45%;
+    --day: 1;
     --surface-lift: var(--card);
     --line-soft: #c9d3f0;
     --shade: rgba(10, 20, 60, 0.32);
@@ -270,6 +273,7 @@
   --card: #ffffff;
   --card-2: #eef1ff;
   --surface-paper: 45%;
+  --day: 1;
   --surface-lift: var(--card);
   --line-soft: #c9d3f0;
   --shade: rgba(10, 20, 60, 0.32);

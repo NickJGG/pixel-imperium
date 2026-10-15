@@ -1,5 +1,5 @@
 /** Home's columns: which the menu offers, which one is open, and the paper each wears. */
-import type { PaperId, Season } from '../album/paper.ts'
+import type { Paper, PaperId, Season } from '../album/paper.ts'
 import type { TrailStep } from '../Trail.tsx'
 import { TRACKS, nextTrack } from '../tutorial/tracks.ts'
 
@@ -24,7 +24,7 @@ export const COLUMN_NAME: Record<Exclude<Column, 'campaign' | 'featured'>, strin
 export const campaignSpineName = (campaign: { name: string }): string => campaign.name.replace(/^The /, '')
 
 /** A province page's HUD Trail, for the page and its skeleton alike. */
-export const provinceTrail = (campaign: { id: string; name: string; paper: PaperId }): TrailStep[] => [
+export const provinceTrail = (campaign: { id: string; name: string; paper: Paper }): TrailStep[] => [
   { to: '/', label: 'Home' },
   { to: `/c/${campaign.id}`, label: campaignSpineName(campaign), paper: campaign.paper },
 ]
@@ -62,8 +62,8 @@ export function learnPapers(done: ReadonlySet<string>): [PaperId, PaperId] {
   return [next.paper, (next === TRACKS.tutorial ? TRACKS.techniques : TRACKS.tutorial).paper]
 }
 
-/** A named paper, or the album's cobalt cover. */
-export type Paper = PaperId | 'cover'
+/** A paper, or the album's cobalt cover. */
+export type ColumnPaper = Paper | 'cover'
 
 /**
  * Each column wears where it leads: Campaign and Featured their campaigns' papers, Daily this Month's season's, Learn
@@ -72,13 +72,13 @@ export type Paper = PaperId | 'cover'
  * Featured or Learn.
  */
 export function papers(
-  campaign: PaperId,
+  campaign: Paper,
   [learn, otherLearn]: readonly [PaperId, PaperId],
   season: Season,
-  featured: PaperId = campaign,
-): Record<Column, Paper> {
+  featured: Paper = campaign,
+): Record<Column, ColumnPaper> {
   const learnPaper = learn === campaign ? otherLearn : learn
-  const taken = [campaign, featured, learnPaper]
+  const taken: Paper[] = [campaign, featured, learnPaper]
   const clear = (paper: PaperId): PaperId => (taken.includes(paper) ? 'forge' : paper)
   return {
     campaign,

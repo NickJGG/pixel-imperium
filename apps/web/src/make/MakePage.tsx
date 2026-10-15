@@ -5,7 +5,16 @@
  */
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { cluesFromSolution } from '@pixel-imperium/nonogram'
+import {
+  type Checks,
+  MAX_COLORS,
+  cluesFromSolution,
+  formatSeed,
+  fromSeed,
+  paletteLetters,
+  parsePaste,
+  toSeed,
+} from '@pixel-imperium/nonogram'
 import { CheckIcon, CrossIcon } from '../album/icons.tsx'
 import { CrownMark, FloatingPills } from '../Hud.tsx'
 import { ColClues, RowClues } from '../play/Clues.tsx'
@@ -14,23 +23,7 @@ import { RAIL_WIDTH, boardTracks, fitCellSize } from '../play/layout.ts'
 import type { LineHint } from '../play/line-hints.ts'
 import { RailTools } from '../play/RailTools.tsx'
 import type { PlayStore } from '../play/store.ts'
-import type { Checks } from './checks.ts'
-import {
-  type Draft,
-  MAX_COLORS,
-  flipH,
-  flipV,
-  formatSeed,
-  fromSeed,
-  moveColor,
-  nudge,
-  paletteLetters,
-  parsePaste,
-  resize,
-  slugify,
-  stepSize,
-  toSeed,
-} from './draft.ts'
+import { type Draft, flipH, flipV, moveColor, nudge, resize, slugify, stepSize } from './draft.ts'
 import { commit, getDraft, redo, strokeStart, undo, useDraft, useHistory } from './draft-store.ts'
 import { ColorSheet } from './ColorSheet.tsx'
 import { EditCanvas, type Tool } from './EditCanvas.tsx'
@@ -473,22 +466,15 @@ function ColorStrip({ draft, chosen, onChoose }: { draft: Draft; chosen: string 
   )
 }
 
-/** Size, the two campaign rules and the rating, under the title; the note says what the hatched cells mean. */
+/** Size, the two puzzle rules and the rating, under the title; the note says what the hatched cells mean. */
 function CheckBadges({ draft, checks }: { draft: Draft; checks: Checks | null }) {
-  const sized = draft.width % 5 === 0 && draft.height % 5 === 0
   const stuck = checks?.stuck.length ?? 0
   return (
     <>
       <div className={playStyles.railBadges}>
-        {sized ? (
-          <span className={`${pillStyles.pill} ${styles.badge}`}>
-            {draft.width}×{draft.height}
-          </span>
-        ) : (
-          <Badge ok={false}>
-            {draft.width}×{draft.height}
-          </Badge>
-        )}
+        <span className={`${pillStyles.pill} ${styles.badge}`}>
+          {draft.width}×{draft.height}
+        </span>
         {checks && (
           <>
             <Badge ok={checks.unique}>{checks.unique ? 'Unique' : '2 solutions'}</Badge>

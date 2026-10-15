@@ -35,6 +35,12 @@ describe('crestPixels', () => {
     expect(crestPixels(campaign, { loadSolved: () => null, loadCrest: () => '#111111' })).toEqual([null, null, null, null])
   })
 
+  it('marks the holes in a shaped Crest', () => {
+    const shaped = { ...campaign, crest: { width: 3, height: 2, holes: [1, 4] } }
+    const pixels = crestPixels(shaped, storage({ a1: '#111111' }))
+    expect(pixels).toEqual([null, undefined, null, '#111111', undefined, null])
+  })
+
   it('is null without a Crest', () => {
     expect(crestPixels({ provinces: campaign.provinces }, storage({}))).toBeNull()
   })

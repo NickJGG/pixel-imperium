@@ -1,7 +1,7 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { type CSSProperties, useRef } from 'react'
 import type { Campaign, DailyYear, Profile } from '@pixel-imperium/protocol'
-import { type PaperId, paperFor, seasonOf } from '../album/paper.ts'
+import { type Paper, paperFor, seasonOf } from '../album/paper.ts'
 import { useAccount } from '../account.ts'
 import { isFeatured } from '../campaign/campaigns.ts'
 import { useStartedCampaigns } from '../campaign/started-campaigns.ts'
@@ -14,17 +14,17 @@ import { LearnColumn } from './LearnColumn.tsx'
 import { ProfileColumn } from './ProfileColumn.tsx'
 import { SettingsColumn } from './SettingsColumn.tsx'
 import { SignInColumn } from './SignInColumn.tsx'
-import { COLUMN_NAME, type Column, campaignSpineName, type Paper, columnsFor, learnPapers, openColumn, papers, searchFor, stepColumn } from './columns.ts'
+import { COLUMN_NAME, type Column, campaignSpineName, type ColumnPaper, columnsFor, learnPapers, openColumn, papers, searchFor, stepColumn } from './columns.ts'
 import styles from './Home.module.css'
 
 /** Pairs a column across a morph, wide when it's open and a spine when it isn't. */
 export const columnName = (column: Column): CSSProperties => ({ viewTransitionName: `home-${column}` })
 
-export const paperOf = (paper: Paper): { paper: PaperId; className: string | undefined } =>
+export const paperOf = (paper: ColumnPaper): { paper: Paper; className: string | undefined } =>
   paper === 'cover' ? { paper: 'marches', className: styles.cover } : { paper, className: undefined }
 
 /** Home's backdrop: the open column's paper where it has one of its own, else the campaign's. */
-export const backdropPaper = (open: Column, paper: Record<Column, Paper>): PaperId =>
+export const backdropPaper = (open: Column, paper: Record<Column, ColumnPaper>): Paper =>
   paperOf(paper[open === 'daily' || open === 'learn' || open === 'featured' ? open : 'campaign']).paper
 
 /**

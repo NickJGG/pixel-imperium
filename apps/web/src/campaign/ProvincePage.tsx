@@ -11,7 +11,7 @@ import { play } from '../sound.ts'
 import { useHudTrail } from '../Trail.tsx'
 import { markConquestsSeen, unseenConquests } from './conquests-seen.ts'
 import { NextUp } from './NextUp.tsx'
-import { type CampaignProgress, campaignProgress, isOpen, tierGroups } from './progress.ts'
+import { type CampaignProgress, campaignProgress, isOpen, shelfRows, tierGroups } from './progress.ts'
 import { PuzzleSlot } from './PuzzleSlot.tsx'
 import { slotMorph } from './worlds/names.ts'
 import { Backdrop, Curtain, Spine, World, Worlds, morphName, usePhone, useSpineReach, useStep } from './worlds/Worlds.tsx'
@@ -174,9 +174,6 @@ function Zoomed({
   )
 }
 
-/** Slots stand this many deep on each tier's shelf, sized to share the column's height. */
-export const ROWS = 4
-
 export const TIER_NAME: Record<Tier, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
 
 /**
@@ -212,7 +209,8 @@ function OpenProvince({
   const { state, solved, total } = progress.provinces[index]!
   const next = state === 'active' ? province.puzzles.find(p => storage.loadSolved(p.id) === null) : undefined
   const groups = tierGroups(province)
-  const columns = groups.map(g => Math.ceil(g.slots.length / ROWS))
+  const rows = shelfRows(groups.map(g => g.slots.length))
+  const columns = groups.map(g => Math.ceil(g.slots.length / rows))
   const id = `province-${province.id}`
 
   return (
@@ -245,7 +243,7 @@ function OpenProvince({
                   {TIER_NAME[tier]}
                   <small>{first === last ? first : `${first}–${last}`}</small>
                 </h2>
-                <ol className={styles.slots} style={{ '--cols': columns[g], '--rows': ROWS } as CSSProperties}>
+                <ol className={styles.slots} style={{ '--cols': columns[g], '--rows': rows } as CSSProperties}>
                   {slots.map(({ puzzle, number }) => (
                     <li key={puzzle.id} {...slotMorph(puzzle.id)}>
                       <PuzzleSlot

@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { type CSSProperties, useMemo } from 'react'
 import { CountPill } from '../album/CountPill.tsx'
-import { type PaperId, paperFor } from '../album/paper.ts'
+import { type Paper, paperFor } from '../album/paper.ts'
 import { World } from '../campaign/worlds/Worlds.tsx'
 import { doorSlot } from '../campaign/worlds/names.ts'
 import { lessonId } from '../campaign/worlds/transitions.ts'
@@ -25,7 +25,7 @@ export function LearnColumn({
   style,
 }: {
   done: ReadonlySet<string>
-  paper: PaperId
+  paper: Paper
   start: boolean
   style: CSSProperties
 }) {

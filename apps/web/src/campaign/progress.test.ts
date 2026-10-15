@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Campaign, Province, Tier } from '@pixel-imperium/protocol'
 import { ProgressStorage } from '../play/progress-storage.ts'
 import { stubStorage } from '../test-storage.ts'
-import { campaignProgress, continueAt, nextPuzzle, provinceStates, techniquesRecommended, tierGroups } from './progress.ts'
+import { campaignProgress, continueAt, nextPuzzle, provinceStates, shelfRows, techniquesRecommended, tierGroups } from './progress.ts'
 
 const puzzle = (id: string) => ({ id, title: id, width: 5, height: 5, filledCount: 1 })
 
@@ -131,6 +131,20 @@ describe('techniquesRecommended', () => {
 
   it('never recommends them with no flagged province', () => {
     expect(techniquesRecommended(campaign, provinceStates(campaign, () => true))).toBe(false)
+  })
+})
+
+describe('shelfRows', () => {
+  it('stands slots 4 deep once the biggest tier reaches 10, as in an official province', () => {
+    expect(shelfRows([10, 10, 10])).toBe(4)
+    expect(shelfRows([12, 9, 9])).toBe(4)
+  })
+
+  it('stands them shallower for small tiers, one deep for 3 or fewer', () => {
+    expect(shelfRows([3])).toBe(1)
+    expect(shelfRows([4, 3, 2])).toBe(2)
+    expect(shelfRows([9])).toBe(3)
+    expect(shelfRows([])).toBe(1)
   })
 })
 

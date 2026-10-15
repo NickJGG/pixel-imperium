@@ -26,7 +26,7 @@ export function Crest({
   width: number
   height: number
   /** From `crestPixels`. */
-  pixels: readonly (string | null)[]
+  pixels: readonly (string | null | undefined)[]
   /** The pixel the sticker hovers over, `null` once the campaign is conquered. */
   marker: number | null
 }) {
@@ -43,18 +43,19 @@ export function Crest({
     width: CELL,
     height: CELL,
   })
-  const revealed = pixels.filter(p => p !== null).length
+  const revealed = pixels.filter(p => p != null).length
+  const total = pixels.filter(p => p !== undefined).length
 
   return (
     <svg
       className={styles.crest}
       viewBox={`0 ${-HEADROOM} ${w} ${h + HEADROOM}`}
       role="img"
-      aria-label={`The Crest, ${revealed} of ${pixels.length} pixels revealed`}
+      aria-label={`The Crest, ${revealed} of ${total} pixels revealed`}
     >
       <rect className={styles.crestBack} width={w} height={h} rx={6} />
       {pixels.map((color, i) =>
-        color === null ? (
+        color === undefined ? null : color === null ? (
           <rect key={i} {...cell(i)} rx={1} className={styles.blank} />
         ) : (
           <rect key={i} {...cell(i)} rx={1} fill={color} />

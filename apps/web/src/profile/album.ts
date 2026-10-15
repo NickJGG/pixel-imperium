@@ -1,5 +1,5 @@
 import type { Campaign, DailyYear, PuzzleSummary } from '@pixel-imperium/protocol'
-import { type PaperId, seasonOf } from '../album/paper.ts'
+import { type Paper, seasonOf } from '../album/paper.ts'
 import { provinceStates } from '../campaign/progress.ts'
 import { dailyId } from '../daily/clock.ts'
 import { MONTH_NAMES, datesOf, mm } from '../daily/month.ts'
@@ -36,7 +36,7 @@ export const albumProvinces = (album: ProfileAlbum): { puzzles: readonly PuzzleS
 export interface AlbumPage {
   id: string
   name: string
-  paper: PaperId
+  paper: Paper
   solved: number
   total: number
   complete: boolean

@@ -1,6 +1,6 @@
 import { type ReactNode, useId } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
-import type { PaperId } from './album/paper.ts'
+import type { Paper } from './album/paper.ts'
 import { World, Worlds } from './campaign/worlds/Worlds.tsx'
 import styles from './EdgeStates.module.css'
 
@@ -13,7 +13,7 @@ export function EdgeState({
   children,
   actions,
 }: {
-  paper: PaperId
+  paper: Paper
   kicker: string
   title: string
   mark: ReactNode

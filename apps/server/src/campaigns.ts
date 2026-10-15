@@ -40,9 +40,11 @@ export interface CampaignDef {
   provinces: ProvinceDef[]
 }
 
+const HOLE = '.'
+
 /**
  * The Crest: one pixel per puzzle. `regions` gives each pixel's province as its 1-based index; puzzle #k of
- * a province owns the k-th pixel of its region in reading order.
+ * a province owns the k-th pixel of its region in reading order. `.` in both layers is a hole, no pixel at all.
  */
 export interface CrestDef {
   palette: Record<string, string>
@@ -57,6 +59,8 @@ export interface Crest extends CrestDef {
   at: Map<string, number>
   /** Puzzle id → its pixel's hex color; secret until the puzzle is solved. */
   color: Map<string, string>
+  /** Row-major indices of its holes. */
+  holes: number[]
 }
 
 export interface CampaignSource {
@@ -111,8 +115,13 @@ export function buildCampaign({ campaign, provinces, crest }: CampaignSource): C
 function buildCrest(def: CrestDef, provinces: readonly { puzzles: readonly { id: string }[] }[]): Crest {
   const width = def.rows[0]?.length ?? 0
   const regions = new Map<string, number[]>()
+  const holes: number[] = []
   def.regions.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
+      if (def.rows[y]?.[x] === HOLE || row[x] === HOLE) {
+        holes.push(y * width + x)
+        continue
+      }
       const pixels = regions.get(row[x]!) ?? []
       pixels.push(y * width + x)
       regions.set(row[x]!, pixels)
@@ -130,7 +139,7 @@ function buildCrest(def: CrestDef, provinces: readonly { puzzles: readonly { id:
       if (hex) color.set(puzzle.id, hex)
     })
   })
-  return { ...def, width, height: def.rows.length, at, color }
+  return { ...def, width, height: def.rows.length, at, color, holes }
 }
 
 function crestProblems(c: Campaign, crest: Crest): string[] {
@@ -144,16 +153,20 @@ function crestProblems(c: Campaign, crest: Crest): string[] {
     })
   }
   const total = c.provinces.reduce((n, p) => n + p.puzzles.length, 0)
-  if (!c.draft && width * height !== total) problems.push(`${where}: has ${width * height} pixels, expected ${total}`)
+  const pixels = width * height - crest.holes.length
+  if (!c.draft && pixels !== total) problems.push(`${where}: has ${pixels} pixels, expected ${total}`)
 
-  const unknown = [...new Set(crest.rows.join(''))].filter(ch => !(ch in crest.palette))
+  const [rows, regions] = [crest.rows.join(''), crest.regions.join('')]
+  const halfHoles = [...rows].filter((ch, i) => (ch === HOLE) !== (regions[i] === HOLE)).length
+  if (halfHoles > 0) problems.push(`${where}: ${halfHoles} pixels are '${HOLE}' in only one of rows and regions`)
+  const unknown = [...new Set(rows)].filter(ch => ch !== HOLE && !(ch in crest.palette))
   if (unknown.length > 0) problems.push(`${where}: '${unknown.join('')}' not in its palette`)
   const provinceKeys = new Set(c.provinces.map((_, k) => String(k + 1)))
-  const strays = [...new Set(crest.regions.join(''))].filter(ch => !provinceKeys.has(ch))
+  const strays = [...new Set(regions)].filter(ch => ch !== HOLE && !provinceKeys.has(ch))
   if (strays.length > 0) problems.push(`${where}: regions '${strays.join('')}' name no province`)
 
   const sizes = new Map<string, number>()
-  for (const ch of crest.regions.join('')) sizes.set(ch, (sizes.get(ch) ?? 0) + 1)
+  for (const ch of regions) sizes.set(ch, (sizes.get(ch) ?? 0) + 1)
   c.provinces.forEach((p, k) => {
     const size = sizes.get(String(k + 1)) ?? 0
     if (c.draft ? size < p.puzzles.length : size !== p.puzzles.length) {

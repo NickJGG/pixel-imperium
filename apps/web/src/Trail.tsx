@@ -1,7 +1,7 @@
 import { type CSSProperties, useEffect, useSyncExternalStore } from 'react'
 import { Link } from '@tanstack/react-router'
 import { KeyCap } from './album/KeyCap.tsx'
-import { type PaperId, paperFor } from './album/paper.ts'
+import { type Paper, paperFor } from './album/paper.ts'
 import { PadGlyph } from './pad/PadGlyph.tsx'
 import hud from './Hud.module.css'
 import styles from './Trail.module.css'
@@ -10,7 +10,7 @@ export interface TrailStep {
   to: string
   label: string
   /** A place's paper, whose tab colors its pill. */
-  paper?: PaperId | undefined
+  paper?: Paper | undefined
 }
 
 /**

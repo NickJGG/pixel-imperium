@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Checks } from './checks.ts'
+import type { Checks } from '@pixel-imperium/nonogram'
 import type { Draft } from './draft.ts'
 
 const DEBOUNCE_MS = 150

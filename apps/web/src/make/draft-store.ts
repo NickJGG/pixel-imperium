@@ -3,7 +3,8 @@
  * operation or reorder. A stroke shows its progress with `strokeTo` and lands as one step on `endStroke`.
  */
 import { useSyncExternalStore } from 'react'
-import { type Draft, MAX_COLORS, blankDraft } from './draft.ts'
+import { MAX_COLORS } from '@pixel-imperium/nonogram'
+import { type Draft, blankDraft } from './draft.ts'
 
 const KEY = 'pixel-imperium:make-draft'
 const HISTORY = 200

@@ -137,7 +137,9 @@ export function createApp(
         ...(released && { released }),
         paper,
         closingLine,
-        ...(crest && { crest: { width: crest.width, height: crest.height } }),
+        ...(crest && {
+          crest: { width: crest.width, height: crest.height, ...(crest.holes.length > 0 && { holes: crest.holes }) },
+        }),
         provinces: provinces.map(({ id, name, theme, flavour, paper, maxSize, techniques, puzzles }) => ({
           id,
           name,

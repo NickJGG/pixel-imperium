@@ -1,15 +1,6 @@
-import { type Clues, cluesFromSolution } from '@pixel-imperium/nonogram'
+import { type Clues, type SeedPuzzle, cluesFromSolution } from '@pixel-imperium/nonogram'
 
-/**
- * Authored format: `rows` is the picture, `.` = empty and any other char a `palette` key.
- * The solution is every non-`.` cell.
- */
-export interface SeedPuzzle {
-  id: string
-  title: string
-  palette: Record<string, string>
-  rows: string[]
-}
+export type { SeedPuzzle }
 
 export interface Puzzle {
   id: string

@@ -1,11 +1,11 @@
 import type { CSSProperties } from 'react'
-import type { PaperId } from '../album/paper.ts'
+import type { Paper } from '../album/paper.ts'
 import { PROVIDERS, signIn } from '../auth.ts'
 import { World } from '../campaign/worlds/Worlds.tsx'
 import styles from './Home.module.css'
 
 /** Home's Sign in, for a signed-out player in place of Profile and Settings: the account menu's pitch and providers. */
-export function SignInColumn({ paper, start, style }: { paper: PaperId; start: boolean; style: CSSProperties }) {
+export function SignInColumn({ paper, start, style }: { paper: Paper; start: boolean; style: CSSProperties }) {
   return (
     <World paper={paper} labelledBy="home-signin" style={style} start={start}>
       <div className={styles.column}>

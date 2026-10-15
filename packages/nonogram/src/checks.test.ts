@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { check } from './checks.ts'
+import { check, meetsRules } from './checks.ts'
 
 function checkRows(rows: string[]) {
   return check(rows[0]!.length, rows.length, [...rows.join('')].map(ch => ch === '#'))
@@ -23,5 +23,24 @@ describe('check', () => {
     expect(checks.passes).toBeNull()
     expect(checks.rating).toBeNull()
     expect(checks.stuck.length).toBeGreaterThan(0)
+  })
+})
+
+describe('meetsRules', () => {
+  const heart = checkRows(['.#.#.', '#####', '#####', '.###.', '..#..'])
+
+  it('passes a unique, logic-solvable picture of any size from 5 to 30', () => {
+    expect(meetsRules(heart, 1)).toBe(true)
+    expect(meetsRules({ ...heart, width: 7, height: 30 }, 10)).toBe(true)
+  })
+
+  it.each([
+    ['too small', { width: 4 }, 1],
+    ['too big', { height: 31 }, 1],
+    ['two solutions', { unique: false }, 1],
+    ['stalling', { passes: null }, 1],
+    ['too many colors', {}, 11],
+  ])('refuses one %s', (_, change, colors) => {
+    expect(meetsRules({ ...heart, ...change }, colors)).toBe(false)
   })
 })

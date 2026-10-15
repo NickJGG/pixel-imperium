@@ -1,5 +1,7 @@
 import type { Clues, Hint } from '@pixel-imperium/nonogram'
 
+export type { SeedPuzzle } from '@pixel-imperium/nonogram'
+
 export type Tier = 'easy' | 'medium' | 'hard'
 
 export interface PuzzleSummary {
@@ -61,13 +63,16 @@ export const PAPER_NAMES = [
 
 export type PaperId = (typeof PAPER_NAMES)[number]
 
+/** A named paper, or a player-made one: a hex the client derives a paper and tab from per theme. */
+export type Paper = PaperId | `#${string}`
+
 /** `GET /api/campaigns` returns `CampaignSummary[]`, in default-first order. */
 export interface CampaignSummary {
   id: string
   name: string
   /** `YYYY-MM-DD`; absent in a draft without one. */
   released?: string
-  paper: PaperId
+  paper: Paper
   /** Its puzzles across every province. */
   total: number
 }
@@ -79,7 +84,7 @@ export interface Province {
   theme: string
   /** Shown once the province is conquered. */
   flavour: string
-  paper: PaperId
+  paper: Paper
   /** The longest a puzzle's side gets here. */
   maxSize: number
   /** Offer the Techniques when this province starts. */
@@ -94,10 +99,13 @@ export interface Campaign {
   name: string
   /** As `CampaignSummary`'s. */
   released?: string
-  paper: PaperId
+  paper: Paper
   closingLine: string
-  /** Absent in a draft without one; colors come one per solve, beside the palette. */
-  crest?: { width: number; height: number }
+  /**
+   * Absent in a draft without one; colors come one per solve, beside the palette. `holes` are row-major indices with
+   * no pixel, absent when there are none.
+   */
+  crest?: { width: number; height: number; holes?: number[] }
   provinces: Province[]
 }
 

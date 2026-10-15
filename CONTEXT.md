@@ -52,7 +52,7 @@ The page at `/learn` listing every **Lesson** of the **Tutorial** (labelled "Bas
 _Avoid_: Academy, school, lessons page, hub (in product copy)
 
 **Home**:
-The page at `/`: the main menu, one column each for the **Campaign** last played (leading on to **Campaigns**), the **Daily**, **Learn**, the **Profile** and Settings (Sign in in place of the last two for **Signed-out play**), plus a temporary column for the newest **Featured** **Campaign**.
+The page at `/`: the main menu, one column each for the **Campaign** last played (leading on to **Campaigns**), the **Daily**, **Learn**, the **Workshop**, the **Profile** and Settings (Sign in in place of the last two for **Signed-out play**), plus a temporary column for the newest **Featured** **Campaign**.
 _Avoid_: Menu, dashboard, hub (in product copy)
 
 **Lesson**:
@@ -149,7 +149,7 @@ The final and hardest **Province** of the **Voyage**, where the maps run out.
 _Avoid_: Edge of the Map, finale, boss
 
 **Tier**:
-A **Puzzle**'s difficulty relative to the rest of its **Province**: Easy, Medium or Hard, set by the author as where each band starts in the province's order.
+A **Puzzle**'s difficulty relative to the rest of its **Province**: Easy, Medium or Hard, worked out from its puzzles' difficulty and order, never hand-set.
 _Avoid_: Difficulty, rating (the solver's campaign-wide score), level, rank
 
 **Crest**:
@@ -171,6 +171,20 @@ One calendar month of a **Year**'s **Dailies**, a page of date slots the way a *
 The run of consecutive days, in the **Player**'s own timezone, each with at least one solve of any **Puzzle**, a **Daily** included.
 _Avoid_: Daily streak, chain, combo
 
+### Workshop
+
+**Workshop**:
+Where a signed-in **Player** makes their own **Puzzles** and **Campaigns**: a column on **Home** and the page at `/workshop` listing their drafts and published work (Yours), and the player-made work they've opened by link (Played).
+_Avoid_: Make, studio, create (as the place's name)
+
+**Author**:
+The **Account** that made a player-made **Puzzle** or **Campaign**, shown as a byline ("by @handle"). Player-made work uses the same nouns as official work; "player-made" and "official" are the qualifiers.
+_Avoid_: Creator, maker, community, custom, user-generated
+
+**Retired**:
+A published player-made **Puzzle** or **Campaign** its **Author** has closed to newcomers; anyone who started it can still finish it. Distinct from removed (taken down by an admin, gone for everyone).
+_Avoid_: Unpublished, archived, deleted
+
 ## Relationships
 
 - An **Account** has exactly one **Handle** and one **Profile**
@@ -178,7 +192,7 @@ _Avoid_: Daily streak, chain, combo
 - An **Unverified solve** becomes a **Verified solve** when its owner solves the **Puzzle** again while signed in
 - A **Profile** counts a **Province** as conquered only if all its solves are **Verified**
 - A **Campaign** has an ordered list of **Provinces**; the **Imperium**'s is four outer **Provinces**, then the **Capital**, then the **Throne**
-- A **Province** has its **Campaign**'s number of **Puzzles** (30 in the **Imperium**), ordered from easiest to hardest
+- An official **Province** has its **Campaign**'s number of **Puzzles** (30 in the **Imperium**), ordered from easiest to hardest; a player-made **Campaign** has 1–6 **Provinces** of 1–30 **Puzzles** each, in the **Author**'s order
 - Each **Province** unlocks on the **Conquest** of the one before it
 - Every released **Campaign** is open from the start; **Campaigns** orders them started first, then **Featured**, then the rest, each group by release
 - At most one **Featured** **Campaign** has a column on **Home**: the newest; it leaves once the **Player** starts it
@@ -186,12 +200,16 @@ _Avoid_: Daily streak, chain, combo
 - A **Sticker** is **Foil** or not for good once its **Puzzle** is first solved; a **Replay** never changes it
 - Using one **Hint** on a **Puzzle** before its first solve rules out **Foil** for that **Puzzle**
 - A solve brought in by **Import** is never **Foil**, even once it becomes a **Verified solve**
-- A **Campaign** has one **Crest** with exactly as many pixels as it has **Puzzles**; each **Province**'s region holds as many pixels as the **Province** has **Puzzles**
+- A **Campaign** has one **Crest** with exactly as many pixels as it has **Puzzles**; each **Province**'s region holds as many pixels as the **Province** has **Puzzles**. A player-made **Campaign**'s **Crest** is optional and may leave pixels empty; its filled pixels are what must match
 - A **Crest** pixel's color is released with its **Puzzle**'s **Palette**, only after a server-verified solve
 - A generated **Daily** has a one-color **Palette** and earns a **Sticker** like a hand-authored one, with nothing marking it as generated
 - A **Daily** can only be started on its own date; a missed **Daily** is gone for good
 - A **Daily** started on its date can still be finished shortly after midnight, and its solve counts for its own date, **Streak** included
 - A **Year** always has twelve **Months**; a **Month** has one **Daily** per date
+- A **Puzzle** or **Campaign** is official or player-made; a player-made one has exactly one **Author** and is reached only by its link
+- A player-made **Puzzle** earns a **Sticker** and **Foil** and counts toward a **Streak**, but never a **Stamp** and never appears on a **Profile**
+- An **Author** solving their own **Puzzle** records nothing
+- A player-made **Puzzle** is in at most one **Campaign**, and keeps its own link once it is; a solve counts in both places
 
 ## Example dialogue
 

@@ -10,7 +10,7 @@ import type { CampaignSummary, Province } from '@pixel-imperium/protocol'
 import { CountPill } from '../../album/CountPill.tsx'
 import { Lock } from '../../album/Lock.tsx'
 import { NewBadge } from '../../album/NewBadge.tsx'
-import { type PaperId, paperFor, seasonOf } from '../../album/paper.ts'
+import { type Paper, paperFor, seasonOf } from '../../album/paper.ts'
 import type { HomeSearch } from '../../home/columns.ts'
 import { reducedMotion } from '../../motion.ts'
 import type { PadPage } from '../../pad/dispatch.ts'
@@ -158,7 +158,7 @@ export function World({
   start = false,
   pair = false,
 }: {
-  paper: PaperId
+  paper: Paper
   /** Still locked: opened in the fog instead of its paper. */
   fog?: boolean
   children?: ReactNode
@@ -191,7 +191,7 @@ export function World({
  * The page column's paper, dots and stripe across the whole window, shown only during the Home morph so they
  * hold still while the spines and content move over them.
  */
-export function Backdrop({ paper }: { paper: PaperId }) {
+export function Backdrop({ paper }: { paper: Paper }) {
   return <span className={styles.backdrop} style={paperFor(paper)} aria-hidden="true" />
 }
 
@@ -376,7 +376,7 @@ export function TrackSpine({
 }: {
   track: string
   name: string
-  paper: PaperId
+  paper: Paper
   done: number
   total: number
   back: string | undefined
@@ -600,7 +600,7 @@ export function SkeletonSpine({
   pairs?: 'province' | 'campaign' | 'menu' | undefined
   /** A Home column's or a campaign's spine left of the open column. */
   before?: boolean
-  paper: PaperId
+  paper: Paper
   /** A province spine's state, for its width and fog. */
   state?: ProvinceState | undefined
   fog?: boolean

@@ -62,6 +62,15 @@ describe('buildCampaign', () => {
     expect(crest).toMatchObject({ width: 3, height: 2 })
     expect([...crest!.at]).toEqual([['p1', 0], ['p2', 1], ['p3', 3], ['q1', 2], ['q2', 4], ['q3', 5]])
     expect([...crest!.color.values()]).toEqual(['#111', '#111', '#111', '#222', '#222', '#222'])
+    expect(crest!.holes).toEqual([])
+  })
+
+  it('skips the holes in a shaped crest', () => {
+    const shaped: CrestDef = { palette: { a: '#111', b: '#222' }, rows: ['aab.', '.abb'], regions: ['112.', '.122'] }
+    const { crest } = buildCampaign(source({}, undefined, shaped))
+    expect(crest!.holes).toEqual([3, 4])
+    expect([...crest!.at]).toEqual([['p1', 0], ['p2', 1], ['p3', 5], ['q1', 2], ['q2', 6], ['q3', 7]])
+    expect(campaignProblems([buildCampaign(source({}, undefined, shaped))])).toEqual([])
   })
 
   it('assigns tiers by slot from the cuts', () => {
@@ -118,6 +127,11 @@ describe('campaignProblems', () => {
       'an unknown province',
       { ...crest, regions: ['113', '122'] },
       ["c/crest: regions '3' name no province", "c/crest: q's region has 2 pixels, expected 3"],
+    ],
+    [
+      'a hole in one layer only',
+      { ...crest, rows: ['aa.', 'abb'] },
+      ['c/crest: has 5 pixels, expected 6', "c/crest: 1 pixels are '.' in only one of rows and regions"],
     ],
   ])('flags %s in the crest', (_, def, problems) => {
     expect(campaignProblems([buildCampaign(source({}, undefined, def))])).toEqual(problems)
