@@ -67,7 +67,7 @@ describe('ProgressStorage', () => {
     expect(account.loadSolvedAt('a')).toBeNull()
   })
 
-  it('round-trips a crest colour, per account, and clears it', () => {
+  it('round-trips a crest color, per account, and clears it', () => {
     expect(account.loadCrest('a')).toBeNull()
     account.saveCrest('a', '#123456')
     expect(account.loadCrest('a')).toBe('#123456')

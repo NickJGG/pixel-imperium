@@ -96,7 +96,7 @@ export interface Campaign {
   released?: string
   paper: PaperId
   closingLine: string
-  /** Absent in a draft without one; colours come one per solve, beside the palette. */
+  /** Absent in a draft without one; colors come one per solve, beside the palette. */
   crest?: { width: number; height: number }
   provinces: Province[]
 }
@@ -113,7 +113,7 @@ export interface SolveRequest {
 /**
  * On success, `palette` is row-major hex colors, `null` for empty cells. `foil` is the account's
  * sticker as recorded, `null` when signed out (the device decides). `crest` is the puzzle's Crest
- * pixel colour, absent when its campaign has no Crest. `stamps` is absent when signed out.
+ * pixel color, absent when its campaign has no Crest. `stamps` is absent when signed out.
  */
 export type SolveResponse =
   | { solved: true; palette: (string | null)[]; foil: boolean | null; crest?: string; stamps?: SolveStamps }
@@ -183,7 +183,7 @@ export interface PuzzleRecord {
   progress: SavedProgress | null
   /** Reveal colors, present only for a verified solve. */
   palette: (string | null)[] | null
-  /** Its Crest pixel colour, like `palette`. */
+  /** Its Crest pixel color, like `palette`. */
   crest: string | null
   foil: boolean
   /** A hint was given on the puzzle, so a first solve won't be foil. */

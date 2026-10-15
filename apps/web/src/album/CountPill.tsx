@@ -10,7 +10,7 @@ export const UNVEIL_LANDS_MS = 370
 
 interface Props {
   children: ReactNode
-  /** In the province's `--tab` colour with a check. */
+  /** In the province's `--tab` color with a check. */
   conquered?: boolean | undefined
   /** Gold foil with a check, e.g. "Album complete". */
   tone?: 'gold' | undefined
@@ -20,7 +20,7 @@ interface Props {
 }
 
 /**
- * A count in a pill, e.g. "17 / 30": `--ink` while in progress, the province's colour with a check once conquered.
+ * A count in a pill, e.g. "17 / 30": `--ink` while in progress, the province's color with a check once conquered.
  * Size it with `font-size`.
  */
 export function CountPill({ children, conquered, tone, unveil, className }: Props) {

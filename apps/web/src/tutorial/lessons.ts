@@ -113,7 +113,7 @@ export const LESSONS: readonly Lesson[] = [
         target: { filled: [...col(0, [1, 2, 3]), ...col(4, [1, 2, 3])] },
       },
     ],
-    done: "Every clue is satisfied, so the puzzle is solved and its colours are revealed. That's the whole game. The next lessons are about working out cells when it isn't this obvious.",
+    done: "Every clue is satisfied, so the puzzle is solved and its colors are revealed. That's the whole game. The next lessons are about working out cells when it isn't this obvious.",
   },
   {
     id: 'ruling-out',
@@ -292,13 +292,13 @@ export interface LessonPuzzle {
   width: number
   height: number
   clues: Clues
-  /** Row-major colours, `null` for empty cells, as a solve's reveal palette. */
+  /** Row-major colors, `null` for empty cells, as a solve's reveal palette. */
   palette: (string | null)[]
 }
 
 export function lessonPuzzle({ rows, palette }: Lesson): LessonPuzzle {
-  const colours = rows.flatMap(r => [...r].map(ch => (ch === '.' ? null : palette[ch]!)))
+  const colors = rows.flatMap(r => [...r].map(ch => (ch === '.' ? null : palette[ch]!)))
   const width = rows[0]!.length
   const height = rows.length
-  return { width, height, clues: cluesFromSolution(width, height, colours.map(c => c !== null)), palette: colours }
+  return { width, height, clues: cluesFromSolution(width, height, colors.map(c => c !== null)), palette: colors }
 }

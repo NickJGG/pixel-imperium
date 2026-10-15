@@ -9,7 +9,7 @@ import styles from './Trail.module.css'
 export interface TrailStep {
   to: string
   label: string
-  /** A place's paper, whose tab colours its pill. */
+  /** A place's paper, whose tab colors its pill. */
   paper?: PaperId | undefined
 }
 

@@ -155,9 +155,9 @@ export function createApp(
     ]),
   )
   const campaignsById = new Map(campaigns.map(c => [c.id, c]))
-  const crestColour = (puzzleId: string) => {
+  const crestColor = (puzzleId: string) => {
     const p = byId.get(puzzleId)
-    return p && campaignsById.get(p.campaignId)?.crest?.colour.get(puzzleId)
+    return p && campaignsById.get(p.campaignId)?.crest?.color.get(puzzleId)
   }
   const notFound = (id: string): ApiError =>
     dailyDate(id) === null ? { error: `no puzzle '${id}'` } : { error: `no Daily '${id}' to play today` }
@@ -288,7 +288,7 @@ export function createApp(
         if (isMs(ms) && attemptHinted !== true) await lowerBest(db, user.id, p.id, ms)
         stamps = await solveStamps(user.id, p, recorded.length > 0)
       }
-      const crest = crestColour(p.id)
+      const crest = crestColor(p.id)
       return c.json<SolveResponse>({ solved: true, palette: p.palette, foil, ...(crest && { crest }), ...(stamps && { stamps }) })
     })
     .post('/puzzles/:id/hint', async c => {
@@ -400,7 +400,7 @@ export function createApp(
         r.bestMs = s.bestMs
         if (s.verified) {
           r.palette = puzzleById(s.puzzleId)?.palette ?? null
-          r.crest = crestColour(s.puzzleId) ?? null
+          r.crest = crestColor(s.puzzleId) ?? null
           r.solvedAt = s.solvedAt.toISOString()
         }
       }

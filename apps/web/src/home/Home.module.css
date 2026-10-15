@@ -69,7 +69,7 @@
   font-size: var(--fs-16);
 }
 
-/* One segment per province in its tab colour, filled by its share solved. */
+/* One segment per province in its tab color, filled by its share solved. */
 .bar {
   display: flex;
   gap: var(--space-1);
@@ -176,7 +176,7 @@
     bob 1.4s ease-in-out 1.6s infinite alternate;
 }
 
-/* Last visit's sticker, its puzzle since solved: it drops flat onto its pixel and peels off to show the colour. */
+/* Last visit's sticker, its puzzle since solved: it drops flat onto its pixel and peels off to show the color. */
 .sticker[data-landing] {
   animation:
     land 0.5s cubic-bezier(0.5, 0, 0.8, 0.4) 0.4s both,

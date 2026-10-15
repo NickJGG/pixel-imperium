@@ -2,7 +2,7 @@ import type { Campaign } from '@pixel-imperium/protocol'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 
 /**
- * The Crest's pixels in reading order: each one's colour once its puzzle is solved and its colour has come back
+ * The Crest's pixels in reading order: each one's color once its puzzle is solved and its color has come back
  * with the palette, else `null`. `null` for a campaign without a Crest.
  */
 export function crestPixels(

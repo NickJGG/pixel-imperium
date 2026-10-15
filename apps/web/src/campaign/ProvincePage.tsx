@@ -22,7 +22,7 @@ import styles from './Province.module.css'
  * whole pages. Moving to another province (a spine, a swipe, ←/→, LB/RB) replaces this page in history, so Back
  * leaves the album in one step.
  * The first time it shows the province a Conquest opened, that Conquest is unveiled: the conquered province's
- * count pill fills with its colour and its check slams in, then the fog drops off the new one. On a phone that's
+ * count pill fills with its color and its check slams in, then the fog drops off the new one. On a phone that's
  * two beats: the pill on the conquered page, then a glide over to the new one as its fog drops.
  */
 export function ProvincePage(props: {
@@ -202,7 +202,7 @@ function OpenProvince({
   current: boolean
   /** Where a carousel rests. */
   start: boolean
-  /** Its count pill in its colour with a check; `unveil` plays that arriving. */
+  /** Its count pill in its color with a check; `unveil` plays that arriving. */
   conquered: boolean
   unveil: boolean
   /** The fog dropping off it, `late` to wait for a carousel's glide over. */

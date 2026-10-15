@@ -18,7 +18,7 @@ const storage = (solved: Record<string, string | null>) => ({
 })
 
 describe('crestPixels', () => {
-  it('colours each solved puzzle’s own pixel', () => {
+  it('colors each solved puzzle’s own pixel', () => {
     expect(crestPixels(campaign, storage({ a1: '#111111', b1: '#222222' }))).toEqual([
       null,
       '#222222',
@@ -27,11 +27,11 @@ describe('crestPixels', () => {
     ])
   })
 
-  it('leaves a solve blank until its colour has come back', () => {
+  it('leaves a solve blank until its color has come back', () => {
     expect(crestPixels(campaign, storage({ a2: null }))).toEqual([null, null, null, null])
   })
 
-  it('ignores a colour kept for an unsolved puzzle', () => {
+  it('ignores a color kept for an unsolved puzzle', () => {
     expect(crestPixels(campaign, { loadSolved: () => null, loadCrest: () => '#111111' })).toEqual([null, null, null, null])
   })
 

@@ -263,7 +263,7 @@ describe('PlayStore persistence', () => {
 
   const palette = Array.from({ length: 12 }, (_, i) => (solution[i] ? '#f0f' : null))
 
-  it('persists the palette and crest colour', () => {
+  it('persists the palette and crest color', () => {
     const s = makeStore()
     solve(s)
     s.setPalette(palette, null, '#abc')

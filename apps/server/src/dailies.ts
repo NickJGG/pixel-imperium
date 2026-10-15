@@ -59,7 +59,7 @@ export const WEEKDAY_BANDS: readonly WeekdayBand[] = [
 
 export type Season = 'winter' | 'spring' | 'summer' | 'autumn'
 
-/** Each season's Night tab colour, the one tint of a generated Daily. */
+/** Each season's Night tab color, the one tint of a generated Daily. */
 export const SEASON_TINT: Record<Season, string> = {
   winter: '#a9d8ff',
   spring: '#8fe3a6',

@@ -71,7 +71,7 @@ export function Slot({ number, width, height, started, cells, next, gold, tier, 
   )
 }
 
-/** The filled cells of a board in progress, one image pixel per cell in the board's own colours. */
+/** The filled cells of a board in progress, one image pixel per cell in the board's own colors. */
 function Board({ cells, width, height }: { cells: string; width: number; height: number }) {
   const ref = useRef<HTMLImageElement>(null)
   const { theme } = useSettings()

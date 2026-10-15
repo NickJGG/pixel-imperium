@@ -61,7 +61,7 @@ describe('buildCampaign', () => {
     const { crest } = buildCampaign(source())
     expect(crest).toMatchObject({ width: 3, height: 2 })
     expect([...crest!.at]).toEqual([['p1', 0], ['p2', 1], ['p3', 3], ['q1', 2], ['q2', 4], ['q3', 5]])
-    expect([...crest!.colour.values()]).toEqual(['#111', '#111', '#111', '#222', '#222', '#222'])
+    expect([...crest!.color.values()]).toEqual(['#111', '#111', '#111', '#222', '#222', '#222'])
   })
 
   it('assigns tiers by slot from the cuts', () => {
@@ -113,7 +113,7 @@ describe('campaignProblems', () => {
       { ...crest, rows: ['aa', 'ab'], regions: ['11', '22'] },
       ['c/crest: has 4 pixels, expected 6', "c/crest: p's region has 2 pixels, expected 3", "c/crest: q's region has 2 pixels, expected 3"],
     ],
-    ['an unknown colour', { ...crest, rows: ['aaz', 'abb'] }, ["c/crest: 'z' not in its palette"]],
+    ['an unknown color', { ...crest, rows: ['aaz', 'abb'] }, ["c/crest: 'z' not in its palette"]],
     [
       'an unknown province',
       { ...crest, regions: ['113', '122'] },
@@ -243,10 +243,10 @@ describe('authored campaigns', () => {
       expect(solverReport(campaign).problems).toEqual([])
     })
 
-    it('has a crest pixel and colour for every puzzle', () => {
+    it('has a crest pixel and color for every puzzle', () => {
       const ids = campaign.provinces.flatMap(p => p.puzzles.map(z => z.id))
       if (!campaign.crest) return
-      expect(ids.filter(id => !campaign.crest!.at.has(id) || !campaign.crest!.colour.has(id))).toEqual([])
+      expect(ids.filter(id => !campaign.crest!.at.has(id) || !campaign.crest!.color.has(id))).toEqual([])
     })
 
     it('has tier cuts matching the suggested ones', () => {

@@ -44,10 +44,10 @@ a {
  * Selected states, by meaning:
  *   chosen  one of a set, or an open disclosure: aria-pressed / aria-expanded="true" inverts to ink.
  *   on      a standalone on/off chip: data-variant="chip" with aria-pressed="true" turns blue.
- * Coloured variants keep their colour when pressed or expanded.
+ * Colored variants keep their color when pressed or expanded.
  * Inside data-surface="cobalt", paper becomes a white sticker and flat a white tint, until a
  * data-surface="paper" (a menu sheet opened from the spine) sets them back.
- * Variants only set the three --btn-* colours, so a module can recolour a button without restating the press.
+ * Variants only set the three --btn-* colors, so a module can recolor a button without restating the press.
  */
 button,
 a:where([data-variant]) {
@@ -103,7 +103,7 @@ a:where([data-variant]) {
   --btn-bg: var(--card-2);
 }
 
-/* Before the coloured variants, so they outrank it. */
+/* Before the colored variants, so they outrank it. */
 button:is([aria-pressed='true'], [aria-expanded='true']) {
   --btn-bg: var(--ink);
   --btn-ink: var(--card);

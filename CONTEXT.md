@@ -1,8 +1,10 @@
 # Pixel Imperium
 
-A nonogram site whose puzzles are hand-authored pixel art, played in monochrome and revealed in colour once solved.
+A nonogram site whose puzzles are hand-authored pixel art, played in monochrome and revealed in color once solved.
 
 ## Language
+
+American spelling throughout: product copy, docs, comments and identifiers, e.g. color.
 
 ### Puzzles
 
@@ -11,11 +13,11 @@ A pixel-art picture presented as a nonogram, identified by a string id.
 _Avoid_: Level, board
 
 **Palette**:
-The puzzle's per-cell reveal colours, released only after a server-verified solve.
-_Avoid_: Solution, colours
+The puzzle's per-cell reveal colors, released only after a server-verified solve.
+_Avoid_: Solution, colors
 
 **Reveal**:
-Showing a solved puzzle in its palette colours.
+Showing a solved puzzle in its palette colors.
 
 **Replay**:
 Clearing an already-solved puzzle to play it again; the puzzle stays solved.
@@ -185,8 +187,8 @@ _Avoid_: Daily streak, chain, combo
 - Using one **Hint** on a **Puzzle** before its first solve rules out **Foil** for that **Puzzle**
 - A solve brought in by **Import** is never **Foil**, even once it becomes a **Verified solve**
 - A **Campaign** has one **Crest** with exactly as many pixels as it has **Puzzles**; each **Province**'s region holds as many pixels as the **Province** has **Puzzles**
-- A **Crest** pixel's colour is released with its **Puzzle**'s **Palette**, only after a server-verified solve
-- A generated **Daily** has a one-colour **Palette** and earns a **Sticker** like a hand-authored one, with nothing marking it as generated
+- A **Crest** pixel's color is released with its **Puzzle**'s **Palette**, only after a server-verified solve
+- A generated **Daily** has a one-color **Palette** and earns a **Sticker** like a hand-authored one, with nothing marking it as generated
 - A **Daily** can only be started on its own date; a missed **Daily** is gone for good
 - A **Daily** started on its date can still be finished shortly after midnight, and its solve counts for its own date, **Streak** included
 - A **Year** always has twelve **Months**; a **Month** has one **Daily** per date

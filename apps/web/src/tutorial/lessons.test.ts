@@ -85,7 +85,7 @@ describe.each(Object.values(TRACKS).map(t => [t.id, t] as const))('%s track', (_
 describe.each([...LESSONS, ...TECHNIQUES].map(l => [l.picture, l] as const))('%s', (_, lesson) => {
   const { width, height, clues, palette } = lessonPuzzle(lesson)
 
-  it('has every dimension a multiple of 5 and every colour in the palette', () => {
+  it('has every dimension a multiple of 5 and every color in the palette', () => {
     expect(width % 5).toBe(0)
     expect(height % 5).toBe(0)
     expect(lesson.rows.every(r => r.length === width)).toBe(true)

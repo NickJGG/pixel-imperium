@@ -55,8 +55,8 @@ export interface Crest extends CrestDef {
   height: number
   /** Puzzle id → its row-major pixel index. */
   at: Map<string, number>
-  /** Puzzle id → its pixel's hex colour; secret until the puzzle is solved. */
-  colour: Map<string, string>
+  /** Puzzle id → its pixel's hex color; secret until the puzzle is solved. */
+  color: Map<string, string>
 }
 
 export interface CampaignSource {
@@ -119,7 +119,7 @@ function buildCrest(def: CrestDef, provinces: readonly { puzzles: readonly { id:
     }
   })
   const at = new Map<string, number>()
-  const colour = new Map<string, string>()
+  const color = new Map<string, string>()
   provinces.forEach((p, k) => {
     const pixels = regions.get(String(k + 1)) ?? []
     p.puzzles.forEach((puzzle, i) => {
@@ -127,10 +127,10 @@ function buildCrest(def: CrestDef, provinces: readonly { puzzles: readonly { id:
       if (index === undefined) return
       at.set(puzzle.id, index)
       const hex = def.palette[def.rows[Math.floor(index / width)]?.[index % width] ?? '']
-      if (hex) colour.set(puzzle.id, hex)
+      if (hex) color.set(puzzle.id, hex)
     })
   })
-  return { ...def, width, height: def.rows.length, at, colour }
+  return { ...def, width, height: def.rows.length, at, color }
 }
 
 function crestProblems(c: Campaign, crest: Crest): string[] {

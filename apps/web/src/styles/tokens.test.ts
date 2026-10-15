@@ -3,7 +3,7 @@ import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * Guards the token system: stylesheets reach colours, type, radii and spacing
+ * Guards the token system: stylesheets reach colors, type, radii and spacing
  * through `styles/tokens.css`, never raw literals. A line ending in
  * `/* token-exempt: <why> *\/` is allowed through.
  */
@@ -21,7 +21,7 @@ const stylesheets = (dir: string): string[] =>
 const px = (value: string) => [...value.matchAll(/(-?\d*\.?\d+)px/g)].map((m) => Math.abs(Number(m[1])))
 
 const rules: { name: string; test: (property: string, value: string) => boolean }[] = [
-  { name: 'raw colour', test: (_, value) => /#[0-9a-f]{3,8}\b|\brgba?\(/i.test(value) },
+  { name: 'raw color', test: (_, value) => /#[0-9a-f]{3,8}\b|\brgba?\(/i.test(value) },
   { name: 'px font size', test: (property, value) => /^font(-size)?$/.test(property) && px(value).length > 0 },
   { name: 'px radius', test: (property, value) => /radius$/.test(property) && px(value).some((n) => n > 0) },
   {
@@ -58,7 +58,7 @@ const violations = (file: string) => {
 }
 
 describe('design tokens', () => {
-  it('keeps raw colours, px type, px radii and off-token spacing out of stylesheets', () => {
+  it('keeps raw colors, px type, px radii and off-token spacing out of stylesheets', () => {
     const files = [join(src, 'global.css'), ...stylesheets(src)]
     expect(files.flatMap(violations)).toEqual([])
   })

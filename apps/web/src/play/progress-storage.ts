@@ -143,7 +143,7 @@ export class ProgressStorage {
     write(this.key('palette', puzzleId), JSON.stringify(palette))
   }
 
-  /** The puzzle's Crest pixel colour, released with its palette. */
+  /** The puzzle's Crest pixel color, released with its palette. */
   loadCrest(puzzleId: string): string | null {
     return read(this.key('crest', puzzleId))
   }

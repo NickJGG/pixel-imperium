@@ -406,7 +406,7 @@ describe('crest', () => {
   )
   const solution = ['filled', 'empty', 'empty', 'filled']
 
-  it("serves its size and each puzzle's pixel, never a colour", async () => {
+  it("serves its size and each puzzle's pixel, never a color", async () => {
     const body = await (await crested.request('/api/campaigns/c')).text()
     const campaign = JSON.parse(body) as Campaign
     expect(campaign.crest).toEqual({ width: 2, height: 1 })
@@ -414,7 +414,7 @@ describe('crest', () => {
     expect(body).not.toMatch(/#123456|#abcdef/)
   })
 
-  it("releases a pixel's colour with a solve", async () => {
+  it("releases a pixel's color with a solve", async () => {
     const res = await crested.request('/api/puzzles/diag/solve', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -423,7 +423,7 @@ describe('crest', () => {
     expect(await res.json()).toMatchObject({ solved: true, crest: '#abcdef' })
   })
 
-  it('syncs colours for verified solves only', async () => {
+  it('syncs colors for verified solves only', async () => {
     const { id, cookie } = await signedInUser(db, auth)
     await db.insert(solveTable).values([
       { userId: id, puzzleId: 'diag', verified: true },

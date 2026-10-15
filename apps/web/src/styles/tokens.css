@@ -13,7 +13,7 @@
  * in all three theme blocks and its --t- in Night.
  */
 
-/* Registered so the canvas, which reads these at draw time, gets a resolved colour even where Play mixes them. */
+/* Registered so the canvas, which reads these at draw time, gets a resolved color even where Play mixes them. */
 @property --board-bg {
   syntax: '<color>';
   inherits: true;
@@ -144,7 +144,7 @@
   --sticker: #f6f7ff;
   --card: #17224f;
   --card-2: #22306a;
-  /* Play's board card: this much of the province's paper, the rest its tab colour (Night) or the card (Day). */
+  /* Play's board card: this much of the province's paper, the rest its tab color (Night) or the card (Day). */
   --surface-paper: 85%;
   --line-soft: #36477f;
   --shade: rgba(0, 0, 0, 0.5);

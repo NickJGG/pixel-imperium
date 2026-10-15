@@ -17,7 +17,7 @@
   margin-inline-end: 0.35em;
 }
 
-/* The same raised edge as Play's tab-coloured buttons, so a pastel tab still stands off its own paper by day. */
+/* The same raised edge as Play's tab-colored buttons, so a pastel tab still stands off its own paper by day. */
 .pill[data-conquered] {
   color: var(--on-tab);
   background: var(--tab);

@@ -32,7 +32,7 @@ const FACE: Record<GlyphButton, ReactNode> = {
 }
 
 /**
- * A controller button's badge, in Xbox colours, shown only in pad mode. `corner` pins it to the corner
+ * A controller button's badge, in Xbox colors, shown only in pad mode. `corner` pins it to the corner
  * of an icon button; `children` labels it, as a tag.
  */
 export function PadGlyph({ button, corner = false, children }: { button: GlyphButton; corner?: boolean; children?: ReactNode }) {

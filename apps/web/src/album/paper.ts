@@ -5,7 +5,7 @@ export type { PaperId }
 
 export type Season = 'winter' | 'spring' | 'summer' | 'autumn'
 
-/** Sets `--paper` and `--tab` to a named paper's colours, for its pages, tabs and seals. */
+/** Sets `--paper` and `--tab` to a named paper's colors, for its pages, tabs and seals. */
 export const paperFor = (name: PaperId): CSSProperties =>
   ({ '--paper': `var(--p-${name})`, '--tab': `var(--t-${name})` }) as CSSProperties
 

@@ -147,7 +147,7 @@ export function Worlds({
 const columnClass = (kind: 'page' | 'spine', more?: string | false | undefined) =>
   ['column', kind, 'var(--column-edge,)', more].filter(Boolean).join(' ')
 
-/** An opened column in a province's paper, with its colour stripe across the top. */
+/** An opened column in a province's paper, with its color stripe across the top. */
 export function World({
   paper,
   fog = false,
@@ -327,7 +327,7 @@ export function MonthSpine({
   name: string
   /** E.g. "10/31", shown unless `dim`. */
   count: string
-  /** Every date solved: the pill in its colour with a check. */
+  /** Every date solved: the pill in its color with a check. */
   conquered?: boolean
   dim?: boolean
 }) {

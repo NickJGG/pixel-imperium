@@ -25,7 +25,7 @@
   flex-direction: column;
   --focus: var(--blue);
   --paper-dk: color-mix(in srgb, var(--paper) 80%, black);
-  /* The province's tab colour darkened: Play's stand-in for the pink cursor and targets. */
+  /* The province's tab color darkened: Play's stand-in for the pink cursor and targets. */
   --tab-dk: color-mix(in srgb, var(--tab) 25%, black);
   color: var(--ink);
   background: var(--paper) radial-gradient(color-mix(in srgb, var(--ink) 9%, transparent) 1.5px, transparent 1.6px) 0 0 / 18px 18px;
@@ -1460,7 +1460,7 @@
   font-size: var(--fs-16);
 }
 
-/* "Into the <next>", in the next province's colour. */
+/* "Into the <next>", in the next province's color. */
 :is(.panelAfter, .railFoot) > a.into {
   --btn-bg: var(--tab);
   --btn-ink: var(--on-tab);

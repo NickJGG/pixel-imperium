@@ -53,11 +53,11 @@ export function Crest({
       aria-label={`The Crest, ${revealed} of ${pixels.length} pixels revealed`}
     >
       <rect className={styles.crestBack} width={w} height={h} rx={6} />
-      {pixels.map((colour, i) =>
-        colour === null ? (
+      {pixels.map((color, i) =>
+        color === null ? (
           <rect key={i} {...cell(i)} rx={1} className={styles.blank} />
         ) : (
-          <rect key={i} {...cell(i)} rx={1} fill={colour} />
+          <rect key={i} {...cell(i)} rx={1} fill={color} />
         ),
       )}
       {landed !== null && <rect {...cell(landed)} rx={1.5} className={styles.sticker} data-landing />}

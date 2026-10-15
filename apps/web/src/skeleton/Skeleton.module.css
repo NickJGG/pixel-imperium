@@ -6,7 +6,7 @@
 
 /*
  * One band across the whole window, leaning with the Worlds cut: fixed, so every bar shows its own slice of it.
- * In the text's colour, so it reads on the cobalt cover too.
+ * In the text's color, so it reads on the cobalt cover too.
  */
 .bar {
   --sk-tint: color-mix(in srgb, currentColor 11%, transparent);

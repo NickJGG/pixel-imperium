@@ -1,6 +1,6 @@
 import styles from './Nameplate.module.css'
 
-/** The label on the album's cover naming its owner. Always printed in Day colours: it's a white sticker. */
+/** The label on the album's cover naming its owner. Always printed in Day colors: it's a white sticker. */
 export function Nameplate({ handle, className }: { handle: string; className?: string | undefined }) {
   return (
     <span className={[styles.nameplate, className].filter(Boolean).join(' ')}>
