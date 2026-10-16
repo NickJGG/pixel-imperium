@@ -18,6 +18,7 @@ export function EditableText({
   maxLength,
   multiline = false,
   onSave,
+  onEnter,
 }: {
   value: string
   placeholder: string
@@ -26,6 +27,8 @@ export function EditableText({
   maxLength: number
   multiline?: boolean
   onSave: (value: string) => void
+  /** After saving on Enter, as distinct from leaving the field. */
+  onEnter?: (value: string) => void
 }) {
   const [draft, setDraft] = useState<string | null>(null)
   if (draft === null) {
@@ -71,6 +74,7 @@ export function EditableText({
       } else if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault()
         done()
+        onEnter?.(draft.trim())
       }
     },
   }

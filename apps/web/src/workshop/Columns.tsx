@@ -1,22 +1,39 @@
 /** The Workshop row's columns, and the parts Home's Workshop column shares with them. */
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import type {
-  Campaign,
-  MadeCampaignSummary,
-  MadePuzzleSummary,
-  PlayedCampaign,
-  PlayedPuzzle,
+import {
+  type Campaign,
+  DRAFT_CAMPAIGN_CAP,
+  type MadeCampaignSummary,
+  type MadePuzzleSummary,
+  type PlayedCampaign,
+  type PlayedPuzzle,
 } from '@pixel-imperium/protocol'
+import { useAccount } from '../account.ts'
 import { CountPill } from '../album/CountPill.tsx'
+import { startDraftCampaign } from '../api.ts'
 import { CampaignStack } from '../campaign/CampaignColumn.tsx'
 import { World, workshopMorphName } from '../campaign/worlds/Worlds.tsx'
+import { addDraftCampaign } from '../content.ts'
+import { BlankCrest } from '../home/Crest.tsx'
+import { MAX_TITLE } from '../make/draft.ts'
 import { newDraftId } from '../make/draft-store.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { shortDate } from '../profile/activity.ts'
+import { openCampaign } from './campaign-store.ts'
+import { EditableText } from './fields.tsx'
 import { DraftFace, PlayedFace, PlayedShelf, YoursShelf } from './Shelf.tsx'
-import { type DraftEntry, PUZZLES, type PuzzleEntry, puzzleCounts, titleOf } from './workshop.ts'
+import {
+  type DraftEntry,
+  NEW_CAMPAIGN,
+  PUZZLES,
+  type PuzzleEntry,
+  blankCampaignDoc,
+  puzzleCounts,
+  titleOf,
+} from './workshop.ts'
 import styles from '../home/Home.module.css'
+import builder from './Builder.module.css'
 import own from './Workshop.module.css'
 
 /** A fresh draft's editor; the id is picked once, so the link holds still across renders. */
@@ -282,21 +299,85 @@ export function PlayedCampaignColumn({
   )
 }
 
-/** On a phone, where there are no spines: the row's last column, starting a new campaign. */
-export function NewCampaignColumn({ start }: { start: boolean }) {
+/**
+ * Yours' last column, a blank draft cover: a campaign starts only once it's named, then this column becomes its cover.
+ * A typed name lasts until the column is left; at the cap of draft campaigns, none can be typed.
+ */
+export function NewCampaignColumn({ full, start }: { full: boolean; start: boolean }) {
+  const { account } = useAccount()
+  const navigate = useNavigate()
+  const [id] = useState(newDraftId)
+  const [title, setTitle] = useState('')
+  const [state, setState] = useState<{ sending: boolean; refused: 'full' | 'offline' | null }>({ sending: false, refused: null })
+  const [wasStart, setWasStart] = useState(start)
+  if (start !== wasStart) {
+    setWasStart(start)
+    if (!start) setTitle('')
+  }
+  const capped = full || state.refused === 'full'
+
+  const begin = async (name: string) => {
+    if (!name || capped || state.sending) return
+    setState({ sending: true, refused: null })
+    const updatedAt = new Date().toISOString()
+    const doc = { ...blankCampaignDoc(), title: name }
+    const res = await startDraftCampaign(id, { doc, updatedAt }).catch(() => 'offline' as const)
+    if (!res || res === 'offline') {
+      setState({ sending: false, refused: res ?? 'full' })
+      return
+    }
+    const userId = account!.userId
+    openCampaign({ userId, id }, { doc, updatedAt, unsent: false, preview: res.preview })
+    addDraftCampaign(userId, { id, title: name, paper: null, createdAt: updatedAt, updatedAt })
+    void navigate({ to: '/workshop', search: { open: id }, replace: true })
+  }
+
   return (
-    <World paper="workshop" labelledBy="workshop-new-campaign" start={start} pair>
+    <World paper="workshop" labelledBy="workshop-new" style={workshopMorphName(NEW_CAMPAIGN)} start={start} pair>
       <div className={styles.column}>
         <div className={styles.stack}>
-          <p className={styles.kicker}>Campaigns</p>
-          <h2 id="workshop-new-campaign" className={styles.hero}>
-            New campaign
-          </h2>
-          <p className={styles.line}>Gather your puzzles into provinces that unlock as they’re conquered.</p>
+          <p className={styles.kicker}>New campaign</p>
+          <div className={`${styles.hero} ${builder.nameRow}`}>
+            <h2 id="workshop-new">
+              {capped ? (
+                <span className={builder.placeholder}>Campaign name</span>
+              ) : (
+                <EditableText
+                  value={title}
+                  placeholder="Campaign name"
+                  label="Campaign title"
+                  maxLength={MAX_TITLE}
+                  onSave={setTitle}
+                  onEnter={name => void begin(name)}
+                />
+              )}
+            </h2>
+          </div>
           <div className={styles.actions}>
-            <Link to="/workshop/new-campaign" data-variant="primary" data-pad-default>
-              New campaign
-            </Link>
+            <button
+              type="button"
+              data-variant="primary"
+              data-pad-default
+              disabled={!title.trim() || capped || state.sending}
+              onClick={() => void begin(title.trim())}
+            >
+              Start campaign
+            </button>
+          </div>
+          {capped && (
+            <p className={styles.line}>
+              You have {DRAFT_CAMPAIGN_CAP} draft campaigns, the most at once. Publish or delete one to start another.
+            </p>
+          )}
+          {state.refused === 'offline' && (
+            <p className={styles.sub} role="alert">
+              Couldn’t reach the server. Try again in a moment.
+            </p>
+          )}
+        </div>
+        <div className={styles.picture}>
+          <div className={builder.crestWrap}>
+            <BlankCrest />
           </div>
         </div>
       </div>

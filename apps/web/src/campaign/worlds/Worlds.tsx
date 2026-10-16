@@ -542,25 +542,6 @@ export function WorkshopSpine({
   )
 }
 
-const newCampaignProps = () => ({
-  className: `${styles.world} ${styles.spine} ${styles.provinceSpine} ${styles.add}`,
-  style: { ...workshopMorphName('new'), viewTransitionClass: columnClass('spine', campaignSpineClass(false)) },
-  children: (
-    <span className={styles.stack}>
-      <span className={styles.name}>+ New campaign</span>
-    </span>
-  ),
-})
-
-/** The Workshop row's last spine, dashed: starts a new draft campaign. */
-export function NewCampaignSpine() {
-  return <Link to="/workshop/new-campaign" {...newCampaignProps()} />
-}
-
-export function SkeletonNewCampaignSpine() {
-  return <div {...newCampaignProps()} aria-hidden="true" />
-}
-
 /** Another Year: the one before January's, or after December's. */
 interface Bookend {
   year: number

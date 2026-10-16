@@ -11,7 +11,7 @@ import { paperFor } from '../album/paper.ts'
 import { deleteDraftCampaign, publishCampaign } from '../api.ts'
 import { World, workshopMorphName } from '../campaign/worlds/Worlds.tsx'
 import { forgetWorkshop } from '../content.ts'
-import { Crest } from '../home/Crest.tsx'
+import { BlankCrest, Crest } from '../home/Crest.tsx'
 import { MAX_TITLE } from '../make/draft.ts'
 import { type SaveState, forgetDraft } from '../make/draft-store.ts'
 import { Badge, FIRST_PICK } from '../make/PublishSheet.tsx'
@@ -90,6 +90,8 @@ function DraftCover({ draftKey, opening, start }: { draftKey: CampaignKey; openi
   const titleId = `workshop-${id}`
   const total = puzzleTotal(doc)
   const counts = doc.provinces.map(p => p.puzzleIds.length)
+
+  const addCrest = () => editCampaign(d => ({ ...d, crest: blankCrest(counts, d.paper ?? FIRST_PICK) }))
 
   const remove = async () => {
     if (!confirm(`Delete the draft “${titleOf(doc.title)}”? Its puzzles stay in your Workshop.`)) return
@@ -194,14 +196,17 @@ function DraftCover({ draftKey, opening, start }: { draftKey: CampaignKey; openi
               </>
             ) : (
               <>
-                <p className={home.line}>A Crest is optional: one pixel per puzzle, each revealed as its puzzle is solved.</p>
                 <Link
                   to="/workshop/c/$id/crest"
                   params={{ id }}
-                  data-variant="paper"
-                  data-size="compact"
-                  onClick={() => editCampaign(d => ({ ...d, crest: blankCrest(counts, d.paper ?? FIRST_PICK) }))}
+                  className={styles.crestLink}
+                  onClick={addCrest}
+                  tabIndex={-1}
+                  aria-hidden="true"
                 >
+                  <BlankCrest />
+                </Link>
+                <Link to="/workshop/c/$id/crest" params={{ id }} data-variant="paper" data-size="compact" onClick={addCrest}>
                   Add a crest
                 </Link>
               </>

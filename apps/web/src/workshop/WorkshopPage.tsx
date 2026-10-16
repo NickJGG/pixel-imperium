@@ -1,18 +1,9 @@
 import { Link, getRouteApi, useNavigate } from '@tanstack/react-router'
 import { type ReactNode, useMemo, useRef, useState } from 'react'
-import type { Campaign } from '@pixel-imperium/protocol'
+import { type Campaign, DRAFT_CAMPAIGN_CAP } from '@pixel-imperium/protocol'
 import { useAccount } from '../account.ts'
-import { jump, windowOf } from '../campaign/campaigns.ts'
-import {
-  Backdrop,
-  NewCampaignSpine,
-  WorkshopSpine,
-  WorkshopStub,
-  Worlds,
-  usePhone,
-  useSpineReach,
-  useStep,
-} from '../campaign/worlds/Worlds.tsx'
+import { jump } from '../campaign/campaigns.ts'
+import { Backdrop, WorkshopSpine, WorkshopStub, Worlds, usePhone, useSpineReach, useStep } from '../campaign/worlds/Worlds.tsx'
 import { localDrafts } from '../make/draft-store.ts'
 import { sticker } from '../Trail.tsx'
 import type { StoredCampaign } from './campaign-store.ts'
@@ -32,6 +23,7 @@ import {
   type WorkshopTab,
   mergeDrafts,
   openIndex,
+  rowWindow,
   workshopRow,
   yourPuzzles,
 } from './workshop.ts'
@@ -46,8 +38,8 @@ const searchOf = (tab: WorkshopTab, key: string): WorkshopSearch => ({
 })
 
 /**
- * The Workshop: under Yours, a Puzzles column then the Author's campaigns, published and draft, with a dashed spine
- * to start another; under Played, the puzzles opened by link then the campaigns played. Drawn like Campaigns, one
+ * The Workshop: under Yours, a Puzzles column then the Author's campaigns, published and draft, and last a column to
+ * name and start another; under Played, the puzzles opened by link then the campaigns played. Drawn like Campaigns, one
  * column open and the rest as spines, a carousel on a phone; moving along replaces `?open=` in the URL.
  */
 export function WorkshopPage({
@@ -72,7 +64,7 @@ export function WorkshopPage({
     [workshop, local],
   )
 
-  const columns = workshopRow(workshop, tab, { phone })
+  const columns = workshopRow(workshop, tab)
   const at = openIndex(columns, search.open)
   const render = (c: RowColumn, start: boolean): ReactNode => {
     switch (c.kind) {
@@ -105,13 +97,15 @@ export function WorkshopPage({
           />
         )
       case 'new':
-        return <NewCampaignColumn key={c.key} start={start} />
+        return (
+          <NewCampaignColumn key={c.key} full={workshop.drafts.campaigns.length >= DRAFT_CAMPAIGN_CAP} start={start} />
+        )
     }
   }
 
   const goTo = (i: number) => {
     const to = columns[i]
-    if (!to || i === at || to.kind === 'new') return
+    if (!to || i === at) return
     void navigate({ to: '/workshop', search: searchOf(tab, to.key), replace: true })
   }
   useStep(dir => goTo(at + dir))
@@ -132,38 +126,22 @@ export function WorkshopPage({
       </main>
     )
   }
-  const { lo, hi } = windowOf(columns.length, at)
+  const { lo, hi, count, tail } = rowWindow(columns, at)
+  const spine = (c: RowColumn, i: number) => (
+    <WorkshopSpine key={c.key} name={c.name} paper={c.paper} search={searchOf(tab, c.key)} morph={c.key} before={i < at} />
+  )
   return (
     <main ref={ref} className={styles.page}>
       <h1 className={homeStyles.srOnly}>Workshop</h1>
       <Backdrop paper={columns[at]!.paper} />
       {tabs}
       <Worlds>
-        {lo > 0 && (
-          <WorkshopStub search={searchOf(tab, columns[jump(at, -1, columns.length)]!.key)} hidden={lo} side="before" />
+        {lo > 0 && <WorkshopStub search={searchOf(tab, columns[jump(at, -1, count)]!.key)} hidden={lo} side="before" />}
+        {columns.slice(lo, hi).map((c, i) => (lo + i === at ? render(c, true) : spine(c, lo + i)))}
+        {hi < count && (
+          <WorkshopStub search={searchOf(tab, columns[jump(at, 1, count)]!.key)} hidden={count - hi} side="after" />
         )}
-        {columns.slice(lo, hi).map((c, i) =>
-          lo + i === at ? (
-            render(c, true)
-          ) : (
-            <WorkshopSpine
-              key={c.key}
-              name={c.name}
-              paper={c.paper}
-              search={searchOf(tab, c.key)}
-              morph={c.key}
-              before={lo + i < at}
-            />
-          ),
-        )}
-        {hi < columns.length && (
-          <WorkshopStub
-            search={searchOf(tab, columns[jump(at, 1, columns.length)]!.key)}
-            hidden={columns.length - hi}
-            side="after"
-          />
-        )}
-        {tab === 'yours' && <NewCampaignSpine />}
+        {tail && (at === count ? render(tail, true) : spine(tail, count))}
       </Worlds>
     </main>
   )

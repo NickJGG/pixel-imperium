@@ -8,6 +8,7 @@ import type {
   Campaign,
   CampaignSummary,
   DailyYear,
+  DraftCampaignSummary,
   Profile,
   PuzzleClues,
   RetiredError,
@@ -30,15 +31,18 @@ import type { Workshop } from './workshop/workshop.ts'
 
 function memo<T>(load: (key: string) => Promise<T>) {
   const entries = new Map<string, Promise<T>>()
-  const get = (key: string): Promise<T> => {
-    const cached = entries.get(key)
-    if (cached) return cached
-    const promise = load(key)
+  const keep = (key: string, promise: Promise<T>): Promise<T> => {
     entries.set(key, promise)
     promise.catch(() => entries.get(key) === promise && entries.delete(key))
     return promise
   }
-  return Object.assign(get, { forget: (key: string) => entries.delete(key), clear: () => entries.clear() })
+  const get = (key: string): Promise<T> => entries.get(key) ?? keep(key, load(key))
+  /** Changes a loaded or loading entry in place; one not cached is left to load fresh. */
+  const patch = (key: string, change: (value: T) => T) => {
+    const cached = entries.get(key)
+    if (cached) keep(key, cached.then(change))
+  }
+  return Object.assign(get, { forget: (key: string) => entries.delete(key), clear: () => entries.clear(), patch })
 }
 
 const campaignsMemo = memo(() => fetchCampaigns())
@@ -107,6 +111,15 @@ export const currentWorkshop = (userId: string | undefined): Workshop | null =>
 
 /** Drops the Workshop, for anything that changes it: publishing, a draft campaign, playing someone's link. */
 export const forgetWorkshop = (): void => workshopMemo.clear()
+
+/** Adds a just-started draft campaign to `userId`'s Workshop, so opening it needn't load the Workshop again. */
+export function addDraftCampaign(userId: string, summary: DraftCampaignSummary): void {
+  workshopMemo.patch(userId, w => {
+    const workshop = { ...w, drafts: { ...w.drafts, campaigns: [...w.drafts.campaigns, summary] } }
+    lastWorkshop = { userId, workshop }
+    return workshop
+  })
+}
 
 /** Submits a solve, which changes the player's profile, and their Workshop's Played when it's player-made. */
 export const solve = (id: string, body: SolveRequest, signal: AbortSignal | null = null) =>

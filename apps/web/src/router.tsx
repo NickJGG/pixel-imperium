@@ -11,7 +11,7 @@ import {
 } from '@tanstack/react-router'
 import type { Campaign, CampaignSummary, MadePuzzleSummary, Paper, PuzzleClues, RetiredError } from '@pixel-imperium/protocol'
 import { accountReady, getAccount, useAccount } from './account.ts'
-import { fetchMade, fetchProfile, isRetired, putDraftCampaign } from './api.ts'
+import { fetchMade, fetchProfile, isRetired } from './api.ts'
 import * as content from './content.ts'
 import { LoadError, NotFound, Retired } from './EdgeStates.tsx'
 import { CampaignsPage } from './campaign/CampaignsPage.tsx'
@@ -32,7 +32,7 @@ import { HomePage } from './home/HomePage.tsx'
 import { HomeSkeleton } from './home/HomeSkeleton.tsx'
 import { ImportPrompt } from './ImportPrompt.tsx'
 import { Hud, ThumbBar } from './Hud.tsx'
-import { type DraftKey, type StoredDraft, newDraftId, openingCopy } from './make/draft-store.ts'
+import { type DraftKey, type StoredDraft, openingCopy } from './make/draft-store.ts'
 import type { Draft } from './make/draft.ts'
 import { HandlePicker } from './me/HandlePicker.tsx'
 import { SettingsPage } from './me/SettingsPage.tsx'
@@ -64,7 +64,7 @@ import { CrestSkeleton } from './workshop/CrestSkeleton.tsx'
 import { DraftProvinceSkeleton } from './workshop/DraftProvinceSkeleton.tsx'
 import { WorkshopPage } from './workshop/WorkshopPage.tsx'
 import { WorkshopSkeleton } from './workshop/WorkshopSkeleton.tsx'
-import { blankCampaignDoc, workshopSearch } from './workshop/workshop.ts'
+import { workshopSearch } from './workshop/workshop.ts'
 import styles from './App.module.css'
 
 function Root() {
@@ -510,20 +510,6 @@ const workshopPuzzlesRoute = createRoute({
   },
 })
 
-/** Starts a draft campaign and opens the Workshop on it. Never on a preload, which would leave a stray draft. */
-const newCampaignRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/workshop/new-campaign',
-  beforeLoad: async ({ preload }) => {
-    await signedInOnly()
-    if (preload) return
-    const id = newDraftId()
-    await putDraftCampaign(id, { doc: blankCampaignDoc(), updatedAt: new Date().toISOString() })
-    content.forgetWorkshop()
-    throw redirect({ to: '/workshop', search: { open: id }, replace: true })
-  },
-})
-
 /** A draft campaign of the signed-in player's, and their Workshop for the puzzles in it. */
 async function loadDraftCampaign(id: string) {
   const userId = getAccount().account!.userId
@@ -693,7 +679,6 @@ export const router = createRouter({
     lessonRoute,
     workshopRoute,
     workshopPuzzlesRoute,
-    newCampaignRoute,
     crestRoute,
     builderRoute,
     playtestRoute,

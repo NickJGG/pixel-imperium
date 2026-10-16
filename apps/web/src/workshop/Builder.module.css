@@ -313,6 +313,12 @@
   text-align: center;
 }
 
+.crestLink {
+  justify-self: stretch;
+  display: grid;
+  justify-items: center;
+}
+
 /* The picker: wider than a dialog, its grid scrolling under a sticky foot. */
 .picker {
   width: min(760px, calc(100% - 2 * var(--space-4)));

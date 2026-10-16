@@ -15,6 +15,7 @@ import type {
   Played,
   PlayedCampaign,
 } from '@pixel-imperium/protocol'
+import { windowOf } from '../campaign/campaigns.ts'
 import type { StoredDraft } from '../make/draft-store.ts'
 
 export type WorkshopTab = 'yours' | 'played'
@@ -130,7 +131,7 @@ export type CampaignEntry =
   | { kind: 'published'; campaign: MadeCampaignSummary }
   | { kind: 'draft'; campaign: DraftCampaignSummary }
 
-/** Yours' campaigns: published ones newest first, then drafts, the last edited first. */
+/** Yours' campaigns: published ones newest first, then drafts, the first started first. */
 export const yourCampaigns = (workshop: Pick<Workshop, 'drafts' | 'made'>): CampaignEntry[] => [
   ...workshop.made.campaigns
     .filter(c => !c.retired && !c.removed)
@@ -143,7 +144,7 @@ export const playedCampaigns = (played: Played) => played.campaigns.filter(c => 
 
 export const NEW_CAMPAIGN = 'new'
 
-/** One of the Workshop row's columns, by what it holds; `new` is a phone's last, where there are no spines. */
+/** One of the Workshop row's columns, by what it holds; `new`, always Yours' last, names and starts a campaign. */
 export type RowColumn = { key: string; name: string; paper: Paper } & (
   | { kind: 'puzzles' }
   | { kind: 'published'; campaign: MadeCampaignSummary }
@@ -153,7 +154,7 @@ export type RowColumn = { key: string; name: string; paper: Paper } & (
 )
 
 /** The row a tab of the Workshop draws, Puzzles or Played by link first. */
-export function workshopRow(workshop: Workshop, tab: WorkshopTab, { phone }: { phone: boolean }): RowColumn[] {
+export function workshopRow(workshop: Workshop, tab: WorkshopTab): RowColumn[] {
   if (tab === 'played') {
     return [
       { kind: 'puzzles', key: PUZZLES, name: 'Played by link', paper: 'workshop' },
@@ -176,13 +177,22 @@ export function workshopRow(workshop: Workshop, tab: WorkshopTab, { phone }: { p
               campaign: e.campaign,
             },
     ),
-    ...(phone ? [{ kind: 'new', key: NEW_CAMPAIGN, name: 'New campaign', paper: 'workshop' } as const] : []),
+    { kind: 'new', key: NEW_CAMPAIGN, name: '+ New campaign', paper: 'workshop' },
   ]
 }
 
 /** The open column's place in `row`, the first when `open` names none. */
 export const openIndex = (row: readonly RowColumn[], open: string | undefined) =>
   Math.max(0, row.findIndex(c => c.key === (open ?? PUZZLES)))
+
+/**
+ * What a desktop shows of `row` around column `at`: the window `[lo, hi)` as on Campaigns over the first `count`
+ * columns, and `tail`, Yours' `new`, which stays in view after it.
+ */
+export function rowWindow(row: readonly RowColumn[], at: number) {
+  const count = row.at(-1)?.kind === 'new' ? row.length - 1 : row.length
+  return { ...windowOf(count, Math.min(at, count - 1)), count, tail: row[count] }
+}
 
 /** A title as the Workshop shows it, a draft's possibly still blank. */
 export const titleOf = (title: string) => title.trim() || 'Untitled'

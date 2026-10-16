@@ -424,10 +424,16 @@ export interface DraftCampaignSummary {
   id: string
   title: string
   paper: HexPaper | null
+  createdAt: string
   updatedAt: string
 }
 
-/** `GET /api/me/drafts`, newest first. Capped at 200 puzzles and 10 campaigns; a `PUT` past a cap answers 409. */
+export const DRAFT_CAMPAIGN_CAP = 10
+
+/**
+ * `GET /api/me/drafts`: puzzles newest-edited first, campaigns oldest-started first. Capped at 200 puzzles and
+ * `DRAFT_CAMPAIGN_CAP` campaigns; a `PUT` past a cap answers 409.
+ */
 export interface Drafts {
   puzzles: DraftPuzzleSummary[]
   campaigns: DraftCampaignSummary[]

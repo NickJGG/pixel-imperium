@@ -191,6 +191,7 @@ export const draftCampaign = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     id: text('id').notNull(),
     doc: jsonb('doc').$type<DraftCampaignDoc>().notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull(),
   },
   t => [primaryKey({ columns: [t.userId, t.id] })],

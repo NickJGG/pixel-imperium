@@ -250,6 +250,19 @@ describe('draft campaigns', () => {
     expect(got.preview).toEqual(preview)
   })
 
+  it('lists them oldest-started first, however recently edited', async () => {
+    const { cookie } = await signedInUser(db, auth)
+    const put = (id: string, updatedAt: string) => call('PUT', `/me/drafts/campaigns/${id}`, cookie, { doc: campaignDoc([]), updatedAt })
+    await put('first', '2026-10-01T00:00:00Z')
+    await put('second', '2026-10-02T00:00:00Z')
+    const before = ((await (await call('GET', '/me/drafts', cookie)).json()) as Drafts).campaigns
+    await put('first', '2026-10-03T00:00:00Z')
+    const after = ((await (await call('GET', '/me/drafts', cookie)).json()) as Drafts).campaigns
+    expect(after.map(c => c.id)).toEqual(['first', 'second'])
+    expect(after[0]!.createdAt).toBe(before[0]!.createdAt)
+    expect(after[0]!.updatedAt).toBe('2026-10-03T00:00:00.000Z')
+  })
+
   it('caps them at 10', async () => {
     const { cookie } = await signedInUser(db, auth)
     for (let i = 0; i < 10; i++) {

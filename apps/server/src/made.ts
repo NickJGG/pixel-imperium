@@ -21,7 +21,6 @@ import { draftPuzzle, madeCampaign, madePuzzle, progress, solve, user } from './
 import { type Puzzle, parseSeedPuzzle } from './puzzles.ts'
 
 export const DRAFT_PUZZLE_CAP = 200
-export const DRAFT_CAMPAIGN_CAP = 10
 export const DAILY_PUZZLE_PUBLISHES = 20
 export const DAILY_CAMPAIGN_PUBLISHES = 3
 export const MAX_PROVINCES = 6

@@ -177,6 +177,14 @@ export const fetchDrafts = () => getJson<Drafts>('/api/me/drafts')
 export const putDraftCampaign = (id: string, body: { doc: DraftCampaignDoc; updatedAt: string }, keepalive = false) =>
   getJson<PutDraftCampaignResponse>(`/api/me/drafts/campaigns/${encodeURIComponent(id)}`, jsonInit('PUT', body, { keepalive }))
 
+/** Saves a draft campaign by a new id; `null` when the account already has as many as it may. */
+export async function startDraftCampaign(id: string, body: { doc: DraftCampaignDoc; updatedAt: string }) {
+  const res = await fetch(`/api/me/drafts/campaigns/${encodeURIComponent(id)}`, jsonInit('PUT', body))
+  if (res.status === 409) return null
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  return (await res.json()) as PutDraftCampaignResponse
+}
+
 /** `null` when the account has no draft campaign by that id. */
 export async function fetchDraftCampaign(id: string): Promise<DraftCampaign | null> {
   const res = await fetch(`/api/me/drafts/campaigns/${encodeURIComponent(id)}`)

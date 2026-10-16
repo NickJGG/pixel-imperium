@@ -1,32 +1,32 @@
 /** The Workshop's API: drafts, publishing, the Author's published work, what a player played by link, and reports. */
 import { Hono } from 'hono'
-import type {
-  ApiError,
-  DeleteRejection,
-  DraftCampaign,
-  DraftPuzzle,
-  Drafts,
-  HexPaper,
-  Made,
-  MadeCampaignSummary,
-  MadeProvince,
-  MadePuzzleSummary,
-  Played,
-  PlayedCampaign,
-  PlayedPuzzle,
-  PublishRejection,
-  PublishResponse,
-  PutDraftCampaignResponse,
-  PutDraftPuzzleResponse,
+import {
+  type ApiError,
+  DRAFT_CAMPAIGN_CAP,
+  type DeleteRejection,
+  type DraftCampaign,
+  type DraftPuzzle,
+  type Drafts,
+  type HexPaper,
+  type Made,
+  type MadeCampaignSummary,
+  type MadeProvince,
+  type MadePuzzleSummary,
+  type Played,
+  type PlayedCampaign,
+  type PlayedPuzzle,
+  type PublishRejection,
+  type PublishResponse,
+  type PutDraftCampaignResponse,
+  type PutDraftPuzzleResponse,
 } from '@pixel-imperium/protocol'
-import { and, desc, eq, gt, inArray, isNull, lt, ne, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, inArray, isNull, lt, ne, sql } from 'drizzle-orm'
 import type { AppEnv } from './app.ts'
 import type { Db } from './db/index.ts'
 import { draftCampaign, draftPuzzle, madeCampaign, madePuzzle, progress, report, solve, user } from './db/schema.ts'
 import {
   DAILY_CAMPAIGN_PUBLISHES,
   DAILY_PUZZLE_PUBLISHES,
-  DRAFT_CAMPAIGN_CAP,
   DRAFT_ID,
   DRAFT_PUZZLE_CAP,
   type MadeCampaignRow,
@@ -118,11 +118,17 @@ export function workshopRoutes({ db, isOfficialId }: { db: Db; isOfficialId: (id
           .from(draftPuzzle)
           .where(eq(draftPuzzle.userId, userId))
           .orderBy(desc(draftPuzzle.updatedAt)),
-        db.select().from(draftCampaign).where(eq(draftCampaign.userId, userId)).orderBy(desc(draftCampaign.updatedAt)),
+        db.select().from(draftCampaign).where(eq(draftCampaign.userId, userId)).orderBy(asc(draftCampaign.createdAt)),
       ])
       return c.json<Drafts>({
         puzzles: puzzles.map(p => ({ ...p, paper: p.paper as HexPaper | null, updatedAt: p.updatedAt.toISOString() })),
-        campaigns: campaigns.map(d => ({ id: d.id, title: d.doc.title, paper: d.doc.paper, updatedAt: d.updatedAt.toISOString() })),
+        campaigns: campaigns.map(d => ({
+          id: d.id,
+          title: d.doc.title,
+          paper: d.doc.paper,
+          createdAt: d.createdAt.toISOString(),
+          updatedAt: d.updatedAt.toISOString(),
+        })),
       })
     })
     .get('/me/drafts/puzzles/:id', async c => {

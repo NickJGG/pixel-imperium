@@ -15,7 +15,7 @@ const SHELF = 10
 /**
  * Home's way into the Workshop, signed in only, mirroring the Campaign column: the draft last edited as Next up, a way
  * back into it or to a new one, and a shelf of your puzzles, or of what you've played by link. A first-timer gets a
- * line on what it's for and ways to start either kind. Shown empty when the Workshop couldn't load.
+ * line on what it's for. Shown empty when the Workshop couldn't load.
  */
 export function WorkshopColumn({
   userId,
@@ -71,15 +71,9 @@ export function WorkshopColumn({
               </Link>
             )}
             <NewPuzzleLink primary={!last} />
-            {some ? (
-              <Link to="/workshop" data-variant="paper">
-                Open the Workshop
-              </Link>
-            ) : (
-              <Link to="/workshop/new-campaign" data-variant="paper">
-                New campaign
-              </Link>
-            )}
+            <Link to="/workshop" data-variant="paper">
+              Open the Workshop
+            </Link>
           </div>
         </div>
         <div className={styles.picture}>

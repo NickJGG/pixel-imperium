@@ -2,7 +2,18 @@ import { describe, expect, it } from 'vitest'
 import type { Made, MadePuzzleSummary } from '@pixel-imperium/protocol'
 import type { StoredDraft } from '../make/draft-store.ts'
 import { blankDraft } from '../make/draft.ts'
-import { allPuzzles, findPuzzles, mergeDrafts, workshopSearch, yourCampaigns, yourPuzzles } from './workshop.ts'
+import {
+  type Workshop,
+  allPuzzles,
+  findPuzzles,
+  mergeDrafts,
+  openIndex,
+  rowWindow,
+  workshopRow,
+  workshopSearch,
+  yourCampaigns,
+  yourPuzzles,
+} from './workshop.ts'
 
 const server = (id: string, title: string, updatedAt: string) => ({ id, title, width: 5, height: 5, paper: null, updatedAt })
 
@@ -99,12 +110,38 @@ describe('yourCampaigns', () => {
     const campaign = (id: string, more = {}) => ({ id, title: id, paper: '#ff0000' as const, total: 3, createdAt: '2026-01-01T00:00:00Z', ...more })
     const entries = yourCampaigns({
       made: { puzzles: [], campaigns: [campaign('live'), campaign('retired', { retired: true })] },
-      drafts: { puzzles: [], campaigns: [{ id: 'd-x', title: '', paper: null, updatedAt: '2026-01-02T00:00:00Z' }] },
+      drafts: { puzzles: [], campaigns: [{ id: 'd-x', title: '', paper: null, createdAt: '2026-01-02T00:00:00Z', updatedAt: '2026-01-02T00:00:00Z' }] },
     })
     expect(entries.map(e => [e.kind, e.campaign.id])).toEqual([
       ['published', 'live'],
       ['draft', 'd-x'],
     ])
+  })
+})
+
+describe('workshopRow', () => {
+  const draftCampaign = (id: string) => ({ id, title: id, paper: null, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' })
+  const workshop = (drafts: number): Workshop => ({
+    drafts: { puzzles: [], campaigns: Array.from({ length: drafts }, (_, i) => draftCampaign(`d${i}`)) },
+    made: { puzzles: [], campaigns: [] },
+    played: { puzzles: [], campaigns: [] },
+  })
+
+  it('ends Yours with New campaign, which the open column can name', () => {
+    const row = workshopRow(workshop(2), 'yours')
+    expect(row.map(c => c.kind)).toEqual(['puzzles', 'draft', 'draft', 'new'])
+    expect(openIndex(row, 'new')).toBe(3)
+  })
+
+  it('leaves New campaign off Played', () => {
+    expect(workshopRow(workshop(2), 'played').map(c => c.kind)).toEqual(['puzzles'])
+  })
+
+  it('windows a desktop row without New campaign, which stays after it', () => {
+    const row = workshopRow(workshop(10), 'yours')
+    expect(rowWindow(row, 0)).toMatchObject({ lo: 0, hi: 7, count: 11, tail: { kind: 'new' } })
+    expect(rowWindow(row, 11)).toMatchObject({ lo: 4, hi: 11, count: 11 })
+    expect(rowWindow(workshopRow(workshop(2), 'played'), 0)).toMatchObject({ lo: 0, hi: 1, count: 1, tail: undefined })
   })
 })
 
