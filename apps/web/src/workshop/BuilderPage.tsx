@@ -8,6 +8,7 @@ import { type CSSProperties, Fragment, type KeyboardEvent, useEffect, useMemo, u
 import { createPortal } from 'react-dom'
 import type { DraftCampaignDoc, Province } from '@pixel-imperium/protocol'
 import { CountPill } from '../album/CountPill.tsx'
+import { TrashIcon } from '../album/icons.tsx'
 import { Slot } from '../album/Slot.tsx'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { useAccount } from '../account.ts'
@@ -262,23 +263,24 @@ function BuilderColumn({
               Province {k + 1}
               {tiers && ' · Tier preview, set for good when you publish'}
             </p>
-            <h1 id={id} className={provinceStyles.name}>
-              <EditableText
-                value={draft.name}
-                placeholder={`Province ${k + 1}`}
-                label="Province name"
-                maxLength={MAX_TITLE}
-                onSave={value => editCampaign(d => setProvince(d, k, { name: value }))}
+            <div className={`${provinceStyles.name} ${styles.nameRow}`}>
+              <h1 id={id}>
+                <EditableText
+                  value={draft.name}
+                  placeholder={`Province ${k + 1}`}
+                  label="Province name"
+                  maxLength={MAX_TITLE}
+                  onSave={value => editCampaign(d => setProvince(d, k, { name: value }))}
+                />
+              </h1>
+              <PaperChip
+                paper={draft.paper}
+                fallback="the campaign’s"
+                none={{ label: 'Campaign’s', note: 'The campaign’s own paper.' }}
+                onChange={paper => editCampaign(d => setProvince(d, k, { paper }))}
               />
-            </h1>
+            </div>
           </div>
-          <PaperChip
-            paper={draft.paper}
-            fallback="the campaign’s"
-            none={{ label: 'Campaign’s', note: 'The campaign’s own paper.' }}
-            swatch
-            onChange={paper => editCampaign(d => setProvince(d, k, { paper }))}
-          />
           <CountPill className={provinceStyles.count}>
             {count} / {MAX_PROVINCE_PUZZLES}
           </CountPill>
@@ -350,15 +352,22 @@ function BuilderColumn({
           })}
         </div>
         <footer className={`${provinceStyles.foot} ${styles.foot}`}>
-          <button type="button" data-variant="paper" onClick={deleteProvince}>
-            Delete province
-          </button>
           {onAddProvince && (
             <button type="button" data-variant="paper" onClick={onAddProvince}>
               + Province
             </button>
           )}
           {!plusSlot && addButton}
+          <button
+            type="button"
+            data-variant="danger"
+            data-size="compact"
+            className={styles.deleteProvince}
+            onClick={deleteProvince}
+          >
+            <TrashIcon />
+            Delete province
+          </button>
           <div className={`${provinceStyles.caption} ${styles.flavour}`}>
             <EditableText
               value={draft.flavour}

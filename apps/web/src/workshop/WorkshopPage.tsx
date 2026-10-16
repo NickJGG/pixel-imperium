@@ -166,7 +166,7 @@ export function WorkshopPage({
   useSpineReach(ref)
 
   const tabs = (
-    <nav className={`${styles.tabs} ${styles.seg}`} style={sticker('workshop-tabs', 2)} aria-label="Whose">
+    <nav className={`${styles.tabs} ${styles.tabsPill}`} style={sticker('workshop-tabs', 2)} aria-label="Whose">
       <Link
         to="/workshop"
         search={{}}

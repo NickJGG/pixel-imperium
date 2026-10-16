@@ -15,6 +15,7 @@ import {
   paintCrest,
   paintRegion,
   parseIn,
+  ready,
   regionCounts,
   removeProvince,
   resizeCrest,
@@ -89,6 +90,23 @@ describe('checks', () => {
     expect(campaignChecks(d, preview(doc(['a']))).pass).toBeNull()
     expect(campaignChecks(d, preview(d)).pass).toBe(true)
     expect(campaignChecks(d, preview(d, null, 'fails')).pass).toBe(false)
+  })
+
+  it('wants a title and a paper', () => {
+    const d = doc(['a'])
+    expect(campaignChecks(d, null)).toMatchObject({ titled: false, paper: false })
+    expect(campaignChecks({ ...d, title: '  ' }, null).titled).toBe(false)
+    expect(campaignChecks({ ...d, title: 'Reef', paper: '#3366aa' }, null)).toMatchObject({ titled: true, paper: true })
+  })
+
+  it('is ready once everything holds, a pass still being checked aside', () => {
+    const d = { ...doc(['a']), title: 'Reef', paper: '#3366aa' as const }
+    expect(ready(campaignChecks(d, null))).toBe(true)
+    expect(ready(campaignChecks(d, preview(d)))).toBe(true)
+    expect(ready(campaignChecks(d, preview(d, null, 'fails')))).toBe(false)
+    expect(ready(campaignChecks({ ...d, title: '' }, null))).toBe(false)
+    expect(ready(campaignChecks({ ...d, paper: null }, null))).toBe(false)
+    expect(ready(campaignChecks({ ...d, provinces: [...d.provinces, ...doc([]).provinces] }, null))).toBe(false)
   })
 })
 

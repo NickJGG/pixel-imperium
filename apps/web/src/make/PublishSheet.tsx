@@ -10,6 +10,7 @@ import { usePadContain } from '../pad/PadProvider.tsx'
 import { type Draft, MAX_TITLE } from './draft.ts'
 import { commit, flushDraft, forgetDraft, getDraft, getDraftKey, getPaper, setPaper } from './draft-store.ts'
 import appStyles from '../App.module.css'
+import pillStyles from '../album/CountPill.module.css'
 import styles from './Make.module.css'
 
 /** The pick a fresh paper starts from: the workshop's own tan. */
@@ -147,6 +148,16 @@ export function Rule({ ok, children }: { ok: boolean | null | undefined; childre
       {children}
       {ok == null && <span className={styles.ruleNote}>checking</span>}
     </li>
+  )
+}
+
+/** A pill, green with a check or red with a cross; `ok` null, neither yet. */
+export function Badge({ ok, children }: { ok: boolean | null; children: ReactNode }) {
+  return (
+    <span className={`${pillStyles.pill} ${styles.badge}`} data-ok={ok ?? undefined}>
+      {ok !== null && (ok ? <CheckIcon /> : <CrossIcon />)}
+      {children}
+    </span>
   )
 }
 

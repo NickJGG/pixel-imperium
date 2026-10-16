@@ -15,6 +15,26 @@
   translate: -50% 0;
 }
 
+/* Yours / Played, as Play's joined toggle. */
+.tabsPill {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--line-soft);
+  border-radius: var(--r-pill);
+  box-shadow: 0 var(--press) 0 var(--shade);
+}
+
+.tabsPill > a {
+  min-height: 36px;
+  font-size: var(--fs-14);
+}
+
+.tabsPill > [aria-current] {
+  --btn-bg: var(--ink);
+  --btn-ink: var(--card);
+}
+
 /* A segmented control of links or buttons; the current one inked. */
 .seg {
   display: inline-flex;

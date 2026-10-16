@@ -4,16 +4,17 @@
  * final from then on.
  */
 import { Link, useNavigate } from '@tanstack/react-router'
-import { type CSSProperties, type RefObject, useEffect, useRef, useState } from 'react'
-import type { DraftCampaignDoc, DraftCampaignSummary, HexPaper } from '@pixel-imperium/protocol'
-import { derivePaper } from '../album/paper.ts'
+import { type RefObject, useEffect, useRef, useState } from 'react'
+import type { DraftCampaignDoc, DraftCampaignSummary } from '@pixel-imperium/protocol'
+import { TrashIcon } from '../album/icons.tsx'
+import { paperFor } from '../album/paper.ts'
 import { deleteDraftCampaign, publishCampaign } from '../api.ts'
 import { World, workshopMorphName } from '../campaign/worlds/Worlds.tsx'
 import { forgetWorkshop } from '../content.ts'
 import { Crest } from '../home/Crest.tsx'
 import { MAX_TITLE } from '../make/draft.ts'
 import { type SaveState, forgetDraft } from '../make/draft-store.ts'
-import { FIRST_PICK, PaperField, Rule } from '../make/PublishSheet.tsx'
+import { Badge, FIRST_PICK } from '../make/PublishSheet.tsx'
 import { relativeDate } from '../profile/activity.ts'
 import { usePadContain } from '../pad/PadProvider.tsx'
 import {
@@ -26,6 +27,7 @@ import {
   crestWidth,
   provinceName,
   puzzleTotal,
+  ready,
 } from './campaign-draft.ts'
 import {
   type CampaignKey,
@@ -104,48 +106,50 @@ function DraftCover({ draftKey, opening, start }: { draftKey: CampaignKey; openi
           <p className={home.kicker} role="status">
             Your campaign · draft · {SAVE_NOTE[save]}
           </p>
-          <h2 id={titleId} className={home.hero}>
-            <EditableText
-              value={doc.title}
-              placeholder="Untitled campaign"
-              label="Campaign title"
-              maxLength={MAX_TITLE}
-              onSave={title => editCampaign(d => ({ ...d, title }))}
+          <div className={`${home.hero} ${styles.nameRow}`}>
+            <h2 id={titleId}>
+              <EditableText
+                value={doc.title}
+                placeholder="Untitled campaign"
+                label="Campaign title"
+                maxLength={MAX_TITLE}
+                onSave={title => editCampaign(d => ({ ...d, title }))}
+              />
+            </h2>
+            <PaperChip
+              paper={doc.paper}
+              fallback="pick one to publish"
+              none={false}
+              onChange={paper => editCampaign(d => ({ ...d, paper }))}
             />
-          </h2>
-          <PaperChip
-            paper={doc.paper}
-            fallback="pick one to publish"
-            none={false}
-            onChange={paper => editCampaign(d => ({ ...d, paper }))}
-          />
-          <ChecksList checks={checks} />
-          <ol className={styles.provinceCards} aria-label="Provinces">
-            {doc.provinces.map((p, k) => (
-              <li key={k}>
-                <Link
-                  to="/workshop/c/$id/$n"
-                  params={{ id, n: String(k + 1) }}
-                  className={styles.provinceCard}
-                  style={{ '--chip': p.paper ? derivePaper(p.paper).tab : 'var(--tab)' } as CSSProperties}
-                  data-empty={p.puzzleIds.length === 0 || undefined}
-                >
-                  <small>Province {k + 1}</small>
-                  <b>{provinceName(doc, k)}</b>
-                  <span>{p.puzzleIds.length > 0 ? `${p.puzzleIds.length} puzzles` : 'Empty !'}</span>
-                </Link>
-              </li>
-            ))}
+          </div>
+          <ChecksPills checks={checks} />
+          <ol className={styles.lines} aria-label="Provinces">
+            {doc.provinces.map((p, k) => {
+              const n = p.puzzleIds.length
+              const label = `${provinceName(doc, k)} · ${n > 0 ? `${n} puzzles` : 'empty'}`
+              return (
+                <li key={k}>
+                  <Link
+                    to="/workshop/c/$id/$n"
+                    params={{ id, n: String(k + 1) }}
+                    style={paperFor(p.paper ?? doc.paper ?? 'workshop')}
+                    data-empty={n === 0 || undefined}
+                    aria-label={label}
+                    title={label}
+                  />
+                </li>
+              )
+            })}
             {doc.provinces.length < MAX_PROVINCES && (
-              <li>
+              <li className={styles.addLine}>
                 <Link
                   to="/workshop/c/$id/$n"
                   params={{ id, n: String(doc.provinces.length + 1) }}
-                  className={`${styles.provinceCard} ${styles.addCard}`}
+                  aria-label="+ Province"
+                  title="+ Province"
                   onClick={() => editCampaign(addProvince)}
-                >
-                  + Province
-                </Link>
+                />
               </li>
             )}
           </ol>
@@ -160,11 +164,14 @@ function DraftCover({ draftKey, opening, start }: { draftKey: CampaignKey; openi
                 ▶ Playtest
               </Link>
             )}
-            <PublishCampaignButton draftKey={draftKey} doc={doc} checks={checks} />
+            <div className={styles.publishRow}>
+              <PublishCampaignButton draftKey={draftKey} doc={doc} checks={checks} />
+              <button type="button" data-variant="danger" onClick={() => void remove()}>
+                <TrashIcon />
+                Delete
+              </button>
+            </div>
           </div>
-          <button type="button" data-variant="flat" data-size="compact" className={styles.deleteDraft} onClick={() => void remove()}>
-            Delete draft
-          </button>
         </div>
         <div className={home.picture}>
           <div className={styles.crestWrap}>
@@ -202,19 +209,33 @@ function DraftCover({ draftKey, opening, start }: { draftKey: CampaignKey; openi
   )
 }
 
-function ChecksList({ checks }: { checks: CampaignChecks }) {
+/** Every requirement's pill, then the crest's; dashed while a check is pending, or for no crest. */
+function ChecksPills({ checks }: { checks: CampaignChecks }) {
+  const { crest } = checks
   return (
-    <ul className={`${makeStyles.rules} ${styles.checks}`} aria-label="Ready to publish">
-      <Rule ok={checks.filled}>Every province has puzzles</Rule>
-      <Rule ok={checks.pass}>Every puzzle passes</Rule>
-      {checks.crest ? (
-        <Rule ok={checks.crest.fits}>
-          Crest {checks.crest.pixels} / {checks.crest.puzzles}
-          {!checks.crest.fits && <span className={makeStyles.ruleNote}>left off unless it fits</span>}
-        </Rule>
-      ) : (
-        <li>No crest</li>
-      )}
+    <ul className={styles.pills} aria-label="Ready to publish">
+      <li>
+        <Badge ok={checks.titled}>{checks.titled ? 'Titled' : 'No title'}</Badge>
+      </li>
+      <li>
+        <Badge ok={checks.paper}>{checks.paper ? 'Paper picked' : 'No paper picked'}</Badge>
+      </li>
+      <li>
+        <Badge ok={checks.filled}>Every province has puzzles</Badge>
+      </li>
+      <li>
+        <Badge ok={checks.pass}>{checks.pass === null ? 'Checking…' : 'Every puzzle passes'}</Badge>
+      </li>
+      <li>
+        {crest ? (
+          <Badge ok={crest.fits}>
+            Crest {crest.pixels} / {crest.puzzles}
+            {!crest.fits && ' · left off unless it fits'}
+          </Badge>
+        ) : (
+          <Badge ok={null}>No crest</Badge>
+        )}
+      </li>
     </ul>
   )
 }
@@ -231,11 +252,11 @@ function PublishCampaignButton({ draftKey, doc, checks }: { draftKey: CampaignKe
   const triggerRef = useRef<HTMLButtonElement>(null)
   return (
     <>
-      <button ref={triggerRef} type="button" data-variant="paper" disabled={!checks.filled} onClick={() => setOpen(true)}>
+      <button ref={triggerRef} type="button" data-variant="paper" disabled={!ready(checks)} onClick={() => setOpen(true)}>
         Publish…
       </button>
       {open && (
-        <PublishCampaignSheet draftKey={draftKey} doc={doc} checks={checks} restore={triggerRef} onClose={() => setOpen(false)} />
+        <PublishCampaignSheet draftKey={draftKey} doc={doc} restore={triggerRef} onClose={() => setOpen(false)} />
       )}
     </>
   )
@@ -244,30 +265,22 @@ function PublishCampaignButton({ draftKey, doc, checks }: { draftKey: CampaignKe
 function PublishCampaignSheet({
   draftKey,
   doc,
-  checks,
   restore,
   onClose,
 }: {
   draftKey: CampaignKey
   doc: DraftCampaignDoc
-  checks: CampaignChecks
   restore: RefObject<HTMLButtonElement | null>
   onClose: () => void
 }) {
   const navigate = useNavigate()
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const [title, setTitle] = useState(doc.title)
-  const [paper, setPaper] = useState<HexPaper>(doc.paper ?? FIRST_PICK)
   const [state, setState] = useState<{ sending: boolean; error: string | null }>({ sending: false, error: null })
   useEffect(() => dialogRef.current?.showModal(), [])
   usePadContain(dialogRef, true, onClose, restore)
 
-  // A pass still being checked is left to the server.
-  const ok = checks.filled && checks.pass !== false && title.trim() !== ''
-
   const publish = async () => {
     setState({ sending: true, error: null })
-    editCampaign(d => ({ ...d, title: title.trim(), paper }))
     if (!(await flushCampaign())) {
       setState({ sending: false, error: 'Couldn’t reach the server. Your draft is safe on this device.' })
       return
@@ -302,14 +315,6 @@ function PublishCampaignSheet({
         }}
       >
         <h2 id="publish-campaign-title">Publish this campaign</h2>
-        <fieldset disabled={state.sending}>
-          <label className={makeStyles.field}>
-            Title
-            <input value={title} maxLength={MAX_TITLE} required onChange={e => setTitle(e.target.value)} />
-          </label>
-          <PaperField paper={paper} onChange={p => p && setPaper(p)} none={false} />
-        </fieldset>
-        <ChecksList checks={checks} />
         <p>
           Its puzzles and their order can’t change after publishing; names, flavour lines and papers can. Drafts in it are
           published with it. Anyone with the link can play it.
@@ -319,7 +324,7 @@ function PublishCampaignSheet({
           <button type="button" onClick={onClose}>
             Cancel
           </button>
-          <button type="submit" data-variant="primary" disabled={!ok || state.sending}>
+          <button type="submit" data-variant="primary" disabled={state.sending}>
             {state.sending ? 'Publishing…' : 'Publish'}
           </button>
         </div>

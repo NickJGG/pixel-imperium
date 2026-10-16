@@ -37,10 +37,6 @@
   resize: none;
 }
 
-.paperChip {
-  border-left: var(--space-2) solid var(--chip);
-}
-
 /* The province's count pill's height: its line plus its padding, at its font size. */
 .paperSwatch {
   width: 1.7em;
@@ -52,6 +48,31 @@
   border: 2px solid color-mix(in srgb, var(--ink) 25%, transparent);
   border-radius: var(--r-sm);
   box-shadow: none;
+}
+
+.paperSwatch[data-unset] {
+  background: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--ink) 20%, transparent) 4px 6px);
+  border-style: dashed;
+  border-color: var(--red);
+}
+
+/* A province's name or the cover's title, its paper swatch flowing after it as the ✎ does, so a wrapped title keeps
+   it on the last line. The title's type is on the row, so both take their middle from the same line. The row's nowrap
+   governs only the break between the title and the swatch, gluing it to the last word. */
+.nameRow {
+  white-space: nowrap;
+}
+
+.nameRow > :is(h1, h2) {
+  display: inline;
+  margin: 0;
+  font: inherit;
+  white-space: normal;
+}
+
+.nameRow > button {
+  margin-inline-start: var(--space-3);
+  vertical-align: middle;
 }
 
 /* The editable album's slots: a ghost while dragged, a bar on the side a drop would land. */
@@ -164,9 +185,12 @@
   justify-content: flex-start;
 }
 
+.deleteProvince {
+  margin-inline-start: auto;
+}
+
 .flavour {
   min-width: 0;
-  margin-inline-start: auto;
 }
 
 /* `.pencil` is halved for titles; at the caption's size that leaves it tiny. */
@@ -174,67 +198,111 @@
   font-size: 1em;
 }
 
-/* The cover: its checks, then a card per province. */
-.checks {
+/* The cover: its checks' pills, a line per province as Home's bar. */
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The editor's badges, in body type and with a raised edge, as house pills rather than the rail's mono readouts. */
+.pills span {
+  gap: var(--space-1);
+  padding: 3px var(--space-3);
+  font: var(--type-small);
+  font-weight: 600;
+}
+
+.pills span > svg {
+  width: 14px;
+  height: 14px;
   margin: 0;
 }
 
-.provinceCards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: var(--space-2);
+.pills span[data-ok='true'] {
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--ok) 55%, black);
+}
+
+.pills span[data-ok='false'] {
+  box-shadow: 0 3px 0 var(--red-dk);
+}
+
+.pills span:not([data-ok]) {
+  padding: 1px calc(var(--space-3) - 2px);
+  font-weight: 400;
+  color: var(--ink);
+  background: transparent;
+  border: 2px dashed color-mix(in srgb, var(--ink) 25%, transparent);
+  opacity: 0.7;
+}
+
+.lines {
+  display: flex;
+  gap: var(--space-1);
   align-self: stretch;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.provinceCard {
+.lines > li {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.lines > .addLine {
+  flex: 0 0 44px;
+}
+
+/* The line is 8px; the link around it stands taller to be hit. */
+.lines a {
+  flex: 1;
+  padding: var(--space-2) 0;
+}
+
+.lines a::before {
+  content: '';
+  display: block;
+  height: 8px;
+  background: var(--tab);
+  border-radius: var(--r-xs);
+  transition: transform 120ms;
+}
+
+.lines a:hover::before {
+  transform: scaleY(1.5);
+}
+
+.lines a[data-empty]::before {
+  background: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--red) 55%, transparent) 4px 7px);
+  outline: 2px dashed var(--red);
+  outline-offset: -2px;
+}
+
+.addLine a::before {
+  background: none;
+  outline: 2px dashed color-mix(in srgb, var(--ink) 35%, transparent);
+  outline-offset: -2px;
+}
+
+.addLine a:hover::before {
+  outline-color: var(--ink);
+}
+
+/* Publish… and Delete share a row of the cover's actions, at their size. */
+.publishRow {
   display: grid;
-  gap: 2px;
-  padding: var(--space-2) var(--space-3);
-  color: var(--ink);
-  text-decoration: none;
-  background: var(--card-2);
-  border-left: var(--space-1) solid var(--chip, var(--tab));
-  border-radius: var(--r-sm);
-  box-shadow: 0 3px 0 var(--line-soft);
+  grid-template-columns: 1fr auto;
+  gap: var(--space-3);
 }
 
-.provinceCard small,
-.provinceCard span {
-  font: var(--type-micro);
-  text-transform: uppercase;
-  opacity: 0.7;
-}
-
-.provinceCard b {
-  overflow: hidden;
-  font: var(--type-label);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.provinceCard[data-empty] span {
-  color: var(--red);
-  opacity: 1;
-}
-
-.provinceCard:hover b {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.addCard {
-  place-content: center;
-  font: var(--type-label);
-  background: transparent;
-  border: 2px dashed color-mix(in srgb, var(--ink) 35%, transparent);
-  box-shadow: none;
-}
-
-.deleteDraft {
-  opacity: 0.7;
+.publishRow > * {
+  min-height: 52px;
+  font-size: var(--fs-18);
 }
 
 .crestWrap {

@@ -29,13 +29,26 @@ export function EditableText({
 }) {
   const [draft, setDraft] = useState<string | null>(null)
   if (draft === null) {
+    // Not a <button>: one is always an inline-block, so a wrapped title's box would stand as wide as its column and
+    // whatever follows it (a paper swatch) couldn't sit just after the ✎.
     return (
-      <button type="button" className={styles.editable} title={`Edit ${label.toLowerCase()}`} onClick={() => setDraft(value)}>
+      <span
+        role="button"
+        tabIndex={0}
+        className={styles.editable}
+        title={`Edit ${label.toLowerCase()}`}
+        onClick={() => setDraft(value)}
+        onKeyDown={e => {
+          if (e.key !== 'Enter' && e.key !== ' ') return
+          e.preventDefault()
+          setDraft(value)
+        }}
+      >
         {value.trim() ? value : <span className={styles.placeholder}>{placeholder}</span>}
         <span className={styles.pencil} aria-hidden="true">
           ✎
         </span>
-      </button>
+      </span>
     )
   }
   const done = () => {
@@ -68,51 +81,37 @@ export function EditableText({
   )
 }
 
-/** A chip in the paper's tab, opening a sheet to pick it; `none` as for `PaperField`. */
+/**
+ * A square of the paper's color, its label left to screen readers, opening a sheet to pick it; `none` as for
+ * `PaperField`. Unset where a pick is required, it's hatched and edged red.
+ */
 export function PaperChip({
   paper,
   fallback,
   none,
-  swatch = false,
   onChange,
 }: {
   paper: HexPaper | null
   /** Shown while `paper` is unset. */
   fallback: string
   none: { label: string; note: string } | false
-  /** Just a square of the paper's color, its label left to screen readers. */
-  swatch?: boolean
   onChange: (paper: HexPaper | null) => void
 }) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const label = `Paper · ${paper ? 'picked' : fallback}`
-  const chip = { '--chip': paper ? derivePaper(paper).tab : 'var(--tab)' } as CSSProperties
   return (
     <>
-      {swatch ? (
-        <button
-          ref={triggerRef}
-          type="button"
-          className={styles.paperSwatch}
-          style={chip}
-          aria-label={label}
-          title={label}
-          onClick={() => setOpen(true)}
-        />
-      ) : (
-        <button
-          ref={triggerRef}
-          type="button"
-          data-variant="paper"
-          data-size="compact"
-          className={styles.paperChip}
-          style={chip}
-          onClick={() => setOpen(true)}
-        >
-          {label}
-        </button>
-      )}
+      <button
+        ref={triggerRef}
+        type="button"
+        className={styles.paperSwatch}
+        style={{ '--chip': paper ? derivePaper(paper).tab : 'var(--tab)' } as CSSProperties}
+        data-unset={(!paper && none === false) || undefined}
+        aria-label={label}
+        title={label}
+        onClick={() => setOpen(true)}
+      />
       {open && (
         <Sheet title="Paper" restore={triggerRef} onClose={() => setOpen(false)}>
           <PaperField paper={paper} onChange={onChange} none={none} />

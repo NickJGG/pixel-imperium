@@ -15,7 +15,6 @@ import {
   parsePaste,
   toSeed,
 } from '@pixel-imperium/nonogram'
-import { CheckIcon, CrossIcon } from '../album/icons.tsx'
 import { type Paper, paperFor } from '../album/paper.ts'
 import { CrownMark, FloatingPills } from '../Hud.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
@@ -44,7 +43,7 @@ import {
 import { ColorSheet } from './ColorSheet.tsx'
 import { EditCanvas, type Tool } from './EditCanvas.tsx'
 import { PlaytestBoard, playtestStore, useStoreValue } from './Playtest.tsx'
-import { PublishButton } from './PublishSheet.tsx'
+import { Badge, PublishButton } from './PublishSheet.tsx'
 import { Drawing, Stage } from './Stage.tsx'
 import { useChecks } from './useChecks.ts'
 import { useChipDrag } from './useChipDrag.ts'
@@ -531,15 +530,6 @@ function CheckBadges({ draft, checks }: { draft: Draft; checks: Checks | null })
         </p>
       )}
     </>
-  )
-}
-
-function Badge({ ok, children }: { ok: boolean; children: ReactNode }) {
-  return (
-    <span className={`${pillStyles.pill} ${styles.badge}`} data-ok={ok}>
-      {ok ? <CheckIcon /> : <CrossIcon />}
-      {children}
-    </span>
   )
 }
 

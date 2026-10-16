@@ -121,6 +121,8 @@ export const previewMatches = (doc: DraftCampaignDoc, preview: CampaignPreview |
   })
 
 export interface CampaignChecks {
+  titled: boolean
+  paper: boolean
   /** At least one province, and none empty. */
   filled: boolean
   /** Every puzzle meets the publish rules; `null` until the server has checked these puzzles. */
@@ -131,11 +133,16 @@ export interface CampaignChecks {
 export function campaignChecks(doc: DraftCampaignDoc, preview: CampaignPreview | null): CampaignChecks {
   const counts = doc.provinces.map(p => p.puzzleIds.length)
   return {
+    titled: doc.title.trim() !== '',
+    paper: doc.paper !== null,
     filled: counts.length > 0 && counts.every(n => n > 0),
     pass: previewMatches(doc, preview) ? preview.provinces.every(p => p.puzzles.every(q => !q.problem)) : null,
     crest: doc.crest && { ...crestFit(doc.crest, counts), puzzles: puzzleTotal(doc) },
   }
 }
+
+/** Whether it can go to the server; a pass still being checked is left to it. */
+export const ready = (c: CampaignChecks) => c.titled && c.paper && c.filled && c.pass !== false
 
 /* The crest. Rows hold palette keys, regions 1-based province numbers; a hole is `.` in both. */
 

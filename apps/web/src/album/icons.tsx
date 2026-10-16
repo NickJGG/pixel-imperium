@@ -149,3 +149,9 @@ export const CrownIcon = () => (
     <path d="M4 21h16" />
   </Icon>
 )
+
+export const TrashIcon = () => (
+  <Icon>
+    <path d="M4 6.5h16M9.5 6.5V4h5v2.5M6.5 6.5l1 13.5h9l1-13.5M10 10.5v6M14 10.5v6" />
+  </Icon>
+)
