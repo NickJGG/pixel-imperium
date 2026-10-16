@@ -21,6 +21,7 @@ import { newDraftId } from '../make/draft-store.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { shortDate } from '../profile/activity.ts'
 import { openCampaign } from './campaign-store.ts'
+import { landCover } from './DraftCover.tsx'
 import { EditableText } from './fields.tsx'
 import { DraftFace, PlayedFace, PlayedShelf, YoursShelf } from './Shelf.tsx'
 import {
@@ -329,11 +330,19 @@ export function NewCampaignColumn({ full, start }: { full: boolean; start: boole
     const userId = account!.userId
     openCampaign({ userId, id }, { doc, updatedAt, unsent: false, preview: res.preview })
     addDraftCampaign(userId, { id, title: name, paper: null, createdAt: updatedAt, updatedAt })
-    void navigate({ to: '/workshop', search: { open: id }, replace: true })
+    landCover(id)
+    void navigate({ to: '/workshop', search: { open: id }, replace: true, state: s => ({ ...s, started: id }) })
   }
 
   return (
-    <World paper="workshop" labelledBy="workshop-new" style={workshopMorphName(NEW_CAMPAIGN)} start={start} pair>
+    // While it starts, it wears its draft's name, to become that cover in place as a fresh New spine grows in.
+    <World
+      paper="workshop"
+      labelledBy="workshop-new"
+      style={workshopMorphName(state.sending ? id : NEW_CAMPAIGN)}
+      start={start}
+      pair
+    >
       <div className={styles.column}>
         <div className={styles.stack}>
           <p className={styles.kicker}>New campaign</p>

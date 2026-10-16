@@ -15,6 +15,7 @@ import { BlankCrest, Crest } from '../home/Crest.tsx'
 import { MAX_TITLE } from '../make/draft.ts'
 import { type SaveState, forgetDraft } from '../make/draft-store.ts'
 import { Badge, FIRST_PICK } from '../make/PublishSheet.tsx'
+import { reducedMotion } from '../motion.ts'
 import { relativeDate } from '../profile/activity.ts'
 import { usePadContain } from '../pad/PadProvider.tsx'
 import {
@@ -50,6 +51,13 @@ import styles from './Builder.module.css'
 
 const SAVE_NOTE: Record<SaveState, string> = { saved: 'Saved', saving: 'Saving…', local: 'Saved on this device' }
 
+let started: string | null = null
+
+/** Has the cover of the draft Start campaign just made land its parts, the first time it mounts. */
+export const landCover = (id: string) => {
+  started = id
+}
+
 /** A draft campaign: its cover once its doc is loaded (the open column), else what the list knows. */
 export function DraftCampaignColumn({
   summary,
@@ -82,6 +90,11 @@ export function DraftCampaignColumn({
 function DraftCover({ draftKey, opening, start }: { draftKey: CampaignKey; opening: StoredCampaign; start: boolean }) {
   useState(() => openCampaign(draftKey, opening))
   useEffect(flushOnLeave, [])
+  const [landing] = useState(() => started === draftKey.id && !reducedMotion())
+  useEffect(() => {
+    if (started === draftKey.id) started = null
+  }, [draftKey.id])
+  const lands = landing ? styles.lands : undefined
   const { doc, preview } = useCampaign() ?? opening
   const save = useCampaignSave()
   const navigate = useNavigate()
@@ -105,7 +118,7 @@ function DraftCover({ draftKey, opening, start }: { draftKey: CampaignKey; openi
     <World paper={doc.paper ?? 'workshop'} labelledBy={titleId} style={workshopMorphName(id)} start={start} pair>
       <div className={home.column}>
         <div className={home.stack}>
-          <p className={home.kicker} role="status">
+          <p className={`${home.kicker} ${lands ?? ''}`} role="status">
             Your campaign · draft · {SAVE_NOTE[save]}
           </p>
           <div className={`${home.hero} ${styles.nameRow}`}>
@@ -122,11 +135,12 @@ function DraftCover({ draftKey, opening, start }: { draftKey: CampaignKey; openi
               paper={doc.paper}
               fallback="pick one to publish"
               none={false}
+              className={lands}
               onChange={paper => editCampaign(d => ({ ...d, paper }))}
             />
           </div>
-          <ChecksPills checks={checks} />
-          <ol className={styles.lines} aria-label="Provinces">
+          <ChecksPills checks={checks} className={lands} />
+          <ol className={`${styles.lines} ${lands ?? ''}`} aria-label="Provinces">
             {doc.provinces.map((p, k) => {
               const n = p.puzzleIds.length
               const label = `${provinceName(doc, k)} · ${n > 0 ? `${n} puzzles` : 'empty'}`
@@ -155,7 +169,7 @@ function DraftCover({ draftKey, opening, start }: { draftKey: CampaignKey; openi
               </li>
             )}
           </ol>
-          <div className={home.actions}>
+          <div className={`${home.actions} ${lands ?? ''}`}>
             <Link
               to="/workshop/c/$id/$n"
               params={{ id, n: '1' }}
@@ -206,7 +220,14 @@ function DraftCover({ draftKey, opening, start }: { draftKey: CampaignKey; openi
                 >
                   <BlankCrest />
                 </Link>
-                <Link to="/workshop/c/$id/crest" params={{ id }} data-variant="paper" data-size="compact" onClick={addCrest}>
+                <Link
+                  to="/workshop/c/$id/crest"
+                  params={{ id }}
+                  className={lands}
+                  data-variant="paper"
+                  data-size="compact"
+                  onClick={addCrest}
+                >
                   Add a crest
                 </Link>
               </>
@@ -219,10 +240,10 @@ function DraftCover({ draftKey, opening, start }: { draftKey: CampaignKey; openi
 }
 
 /** Every requirement's pill, then the crest's; dashed while a check is pending, or for no crest. */
-function ChecksPills({ checks }: { checks: CampaignChecks }) {
+function ChecksPills({ checks, className }: { checks: CampaignChecks; className?: string | undefined }) {
   const { crest } = checks
   return (
-    <ul className={styles.pills} aria-label="Ready to publish">
+    <ul className={`${styles.pills} ${className ?? ''}`} aria-label="Ready to publish">
       <li>
         <Badge ok={checks.titled}>{checks.titled ? 'Titled' : 'No title'}</Badge>
       </li>

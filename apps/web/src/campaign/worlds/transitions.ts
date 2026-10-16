@@ -3,7 +3,8 @@
  * conditions; `morph-nav.ts` starts whatever this names. Home ↔ an album page, Campaigns, a Learn track or the
  * Workshop, Campaigns ↔ one of its campaign's provinces, the Workshop open on a draft campaign ↔ one of its provinces,
  * a step between an album's pages, Campaigns' campaigns, Learn's tracks, Home's or the Workshop's columns or a draft
- * campaign's provinces, and a step into another Year each have a morph of their own, on desktop only. So does a
+ * campaign's provinces, and a step into another Year each have a morph of their own, on desktop only, as does the step
+ * Start campaign takes from the Workshop's New campaign column onto the draft it made. So does a
  * province page ↔ one of its puzzles, where Play stands its Filmstrip, and a step between two puzzles of one province there. A door
  * with no Filmstrip to fly into, Home's Next up or a Daily's slot on Home or its Month, grows its slot into the board
  * as its column widens into Play's paper; on a phone any slot opening its board just grows. Every other move between
@@ -13,10 +14,13 @@
  * Leaving a 404, a load error or a closed Daily always wipes: they stand at a page's address with nothing of it to morph.
  */
 import { dailyId } from '../../daily/clock.ts'
+import { NEW_CAMPAIGN } from '../../workshop/workshop.ts'
 
 export interface Place {
   pathname: string
   search: object
+  /** The history state a navigation carries: `started`, the draft campaign Start campaign just made. */
+  state?: object
 }
 
 /** A push or Forward, a Back, or a replace of the current entry. */
@@ -119,6 +123,8 @@ const openOf = (place: Place) => (place.search as { open?: unknown }).open
 
 const tabOf = (place: Place) => (place.search as { tab?: unknown }).tab
 
+const startedOf = (place: Place) => (place.state as { started?: unknown } | undefined)?.started
+
 const DRAFT_PAGE = /^\/workshop\/c\/([^/]+\/(?:playtest\/)?)\d+\/?$/
 
 /** A draft campaign's province page, in its builder or its playtest: which draft, and which of the two. */
@@ -168,13 +174,14 @@ export function transitionFor(from: Place, to: Place, env: Env): Transition | nu
   if (env.reducedMotion || env.uaAnimated) return null
   const typed = (...types: string[]) => (env.typed ? { types } : null)
   // A phone's carousel has already slid to the column it steps to.
-  const step = () => (env.phone ? null : (typed('step') ?? { types: [] }))
+  const step = (type = 'step') => (env.phone ? null : (typed(type) ?? { types: [] }))
 
   // The same page with another search: Home's or the Workshop's column steps; anything else, like Profile's `?c=` or
-  // the Workshop's other tab, cuts.
+  // the Workshop's other tab, cuts. Start campaign's step is told by its state, since a spine steps off New as well.
   if (from.pathname === to.pathname) {
     const columns = isHome(from) || (from.pathname === '/workshop' && tabOf(from) === tabOf(to))
-    return columns && openOf(from) !== openOf(to) ? step() : null
+    if (!columns || openOf(from) === openOf(to)) return null
+    return step(openOf(from) === NEW_CAMPAIGN && startedOf(to) === openOf(to) ? 'start-campaign' : 'step')
   }
 
   if (env.edge) return env.direction === 'replace' ? null : wipe(from, to, env)

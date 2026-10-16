@@ -4,9 +4,9 @@
  * which reaches a slant into each neighbour's, so columns meet along the slant as they do at rest. Under its
  * snapshots lies the column's own paper (`useSpineReach`), so as a page cross-fades with its spine, early, before
  * much of the move, nothing behind shows through and a folding page's content doesn't linger in the narrowing strip.
- * The classes are `columnClass`'s.
+ * The classes are `columnClass`'s. Start campaign's step (`start-campaign`) shapes its columns the same way.
  */
-:root:active-view-transition-type(step)::view-transition-group(.column) {
+:root:active-view-transition-type(step, start-campaign)::view-transition-group(.column) {
   clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
   background-color: var(--column-paper);
   background-image: linear-gradient(var(--column-tab), var(--column-tab)), var(--column-dots);
@@ -14,19 +14,62 @@
   background-repeat: no-repeat, repeat;
 }
 
-:root:active-view-transition-type(step)::view-transition-group(.first-column) {
+:root:active-view-transition-type(step, start-campaign)::view-transition-group(.first-column) {
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
 }
 
-:root:active-view-transition-type(step)::view-transition-group(.last-column) {
+:root:active-view-transition-type(step, start-campaign)::view-transition-group(.last-column) {
   clip-path: polygon(var(--slant) 0, 100% 0, 100% 100%, 0 100%);
 }
 
-:root:active-view-transition-type(step)::view-transition-group(.only-column) {
+:root:active-view-transition-type(step, start-campaign)::view-transition-group(.only-column) {
   clip-path: none;
 }
 
 :root:active-view-transition-type(step)::view-transition-old(.column),
 :root:active-view-transition-type(step)::view-transition-new(.column) {
   animation-duration: 0.25s;
+}
+
+/*
+ * Start campaign (`start-campaign`): the New campaign column, wearing its draft's name, becomes the draft's cover in
+ * place. Both snapshots stand from the left, so the title and Crest they share hold still as the old one fades off the
+ * new, taking Start and its kicker with it; the cover's own parts land meanwhile (Builder.module.css's `.lands`). The
+ * fresh New spine has nothing to pair with, so its group opens from the window's edge as the cover narrows for it.
+ */
+:root:active-view-transition-type(start-campaign)::view-transition-group(*) {
+  animation-duration: 1s;
+}
+
+:root:active-view-transition-type(start-campaign)::view-transition-old(.page),
+:root:active-view-transition-type(start-campaign)::view-transition-new(.page) {
+  left: 0;
+  translate: none;
+  mix-blend-mode: normal;
+}
+
+:root:active-view-transition-type(start-campaign)::view-transition-old(.page) {
+  z-index: 1;
+  animation: start-fade 0.4s ease both;
+}
+
+:root:active-view-transition-type(start-campaign)::view-transition-new(.page),
+:root:active-view-transition-type(start-campaign)::view-transition-new(workshop-new) {
+  animation: none;
+}
+
+:root:active-view-transition-type(start-campaign)::view-transition-group(workshop-new) {
+  animation-name: start-spine;
+}
+
+@keyframes start-fade {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes start-spine {
+  from {
+    clip-path: polygon(calc(100% + var(--slant)) 0, 100% 0, 100% 100%, 100% 100%);
+  }
 }

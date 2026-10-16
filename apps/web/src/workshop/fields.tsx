@@ -93,12 +93,14 @@ export function PaperChip({
   paper,
   fallback,
   none,
+  className,
   onChange,
 }: {
   paper: HexPaper | null
   /** Shown while `paper` is unset. */
   fallback: string
   none: { label: string; note: string } | false
+  className?: string | undefined
   onChange: (paper: HexPaper | null) => void
 }) {
   const [open, setOpen] = useState(false)
@@ -109,7 +111,7 @@ export function PaperChip({
       <button
         ref={triggerRef}
         type="button"
-        className={styles.paperSwatch}
+        className={`${styles.paperSwatch} ${className ?? ''}`}
         style={{ '--chip': paper ? derivePaper(paper).tab : 'var(--tab)' } as CSSProperties}
         data-unset={(!paper && none === false) || undefined}
         aria-label={label}

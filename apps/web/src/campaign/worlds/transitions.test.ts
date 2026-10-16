@@ -72,6 +72,17 @@ describe('transitionFor: the morphs', () => {
     expect(types('/workshop/c/d-1/1', '/workshop/c/d-1/playtest/1')).toEqual(['wipe'])
   })
 
+  it('turns the New campaign column into the draft Start made, and only then', () => {
+    const replace = { direction: 'replace' } as const
+    const started = { pathname: '/workshop', search: { open: 'd-9' }, state: { started: 'd-9' } }
+    expect(types(at('/workshop', { open: 'new' }), started, replace)).toEqual(['start-campaign'])
+    expect(types(at('/workshop', { open: 'new' }), at('/workshop', { open: 'd-9' }), replace)).toEqual(['step'])
+    expect(types(at('/workshop', { open: 'd-1' }), started, replace)).toEqual(['step'])
+    expect(types(at('/workshop', { open: 'new' }), started, { ...replace, typed: false })).toEqual([])
+    expect(types(at('/workshop', { open: 'new' }), started, { ...replace, phone: true })).toBeNull()
+    expect(types(at('/workshop', { open: 'new' }), started, { ...replace, reducedMotion: true })).toBeNull()
+  })
+
   it('slides into another Year', () => {
     expect(types('/daily/2026/01', '/daily/2025/12')).toEqual(['to-year-back'])
     expect(types('/daily/2025/12', '/daily/2026/01')).toEqual(['to-year-forward'])
