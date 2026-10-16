@@ -10,7 +10,7 @@ import { TrashIcon } from '../album/icons.tsx'
 import { paperFor } from '../album/paper.ts'
 import { deleteDraftCampaign, publishCampaign } from '../api.ts'
 import { World, workshopMorphName } from '../campaign/worlds/Worlds.tsx'
-import { forgetWorkshop } from '../content.ts'
+import { forgetWorkshop, removeDraftCampaign } from '../content.ts'
 import { BlankCrest, Crest } from '../home/Crest.tsx'
 import { MAX_TITLE } from '../make/draft.ts'
 import { type SaveState, forgetDraft } from '../make/draft-store.ts'
@@ -43,7 +43,7 @@ import {
   useCampaignSave,
 } from './campaign-store.ts'
 import { EditableText, PaperChip } from './fields.tsx'
-import { titleOf } from './workshop.ts'
+import { NEW_CAMPAIGN, titleOf } from './workshop.ts'
 import appStyles from '../App.module.css'
 import home from '../home/Home.module.css'
 import makeStyles from '../make/Make.module.css'
@@ -110,8 +110,8 @@ function DraftCover({ draftKey, opening, start }: { draftKey: CampaignKey; openi
     if (!confirm(`Delete the draft “${titleOf(doc.title)}”? Its puzzles stay in your Workshop.`)) return
     await deleteDraftCampaign(id).catch(() => {})
     forgetCampaign(draftKey)
-    forgetWorkshop()
-    void navigate({ to: '/workshop', search: {}, replace: true })
+    removeDraftCampaign(draftKey.userId, id)
+    void navigate({ to: '/workshop', search: { open: NEW_CAMPAIGN }, replace: true })
   }
 
   return (

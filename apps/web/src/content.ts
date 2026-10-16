@@ -114,8 +114,17 @@ export const forgetWorkshop = (): void => workshopMemo.clear()
 
 /** Adds a just-started draft campaign to `userId`'s Workshop, so opening it needn't load the Workshop again. */
 export function addDraftCampaign(userId: string, summary: DraftCampaignSummary): void {
+  patchDraftCampaigns(userId, campaigns => [...campaigns, summary])
+}
+
+/** Drops a deleted draft campaign from `userId`'s Workshop, so leaving it needn't load the Workshop again. */
+export function removeDraftCampaign(userId: string, id: string): void {
+  patchDraftCampaigns(userId, campaigns => campaigns.filter(c => c.id !== id))
+}
+
+function patchDraftCampaigns(userId: string, change: (campaigns: DraftCampaignSummary[]) => DraftCampaignSummary[]) {
   workshopMemo.patch(userId, w => {
-    const workshop = { ...w, drafts: { ...w.drafts, campaigns: [...w.drafts.campaigns, summary] } }
+    const workshop = { ...w, drafts: { ...w.drafts, campaigns: change(w.drafts.campaigns) } }
     lastWorkshop = { userId, workshop }
     return workshop
   })
