@@ -154,11 +154,15 @@ function DraftCover({ draftKey, opening, start }: { draftKey: CampaignKey; openi
             )}
           </ol>
           <div className={home.actions}>
-            {doc.provinces.length > 0 && (
-              <Link to="/workshop/c/$id/$n" params={{ id, n: '1' }} data-variant="primary" data-pad-default>
-                Edit provinces
-              </Link>
-            )}
+            <Link
+              to="/workshop/c/$id/$n"
+              params={{ id, n: '1' }}
+              data-variant="primary"
+              data-pad-default
+              onClick={() => doc.provinces.length === 0 && editCampaign(addProvince)}
+            >
+              Edit provinces
+            </Link>
             {total > 0 && (
               <Link to="/workshop/c/$id/playtest/$n" params={{ id, n: '1' }} data-variant="paper">
                 ▶ Playtest
