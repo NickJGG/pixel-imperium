@@ -39,6 +39,9 @@ const solvesOf = (id: string) => {
   return solves
 }
 
+/** Whether a puzzle of draft `id` is solved in its playtest, without starting one. */
+export const playtestSolved = (id: string) => (ref: string) => sessions.get(id)?.has(ref) ?? false
+
 /** The draft as the album sees it, the playtest's storage, and where it stands. */
 function usePlaytest(draftKey: CampaignKey, opening: StoredCampaign, workshop: Workshop) {
   useState(() => openCampaign(draftKey, opening))

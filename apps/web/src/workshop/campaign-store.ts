@@ -170,6 +170,9 @@ function subscribe(listener: () => void) {
 
 const getCurrent = () => current
 
+/** The draft as it stands here without fetching, open or stored, for a skeleton; `null` if this device has none. */
+export const peekCampaign = (k: CampaignKey): StoredCampaign | null => (isOpen(k) ? current : localCampaign(k))
+
 /** The open draft campaign; `null` before one opens. */
 export const useCampaign = (): StoredCampaign | null => useSyncExternalStore(subscribe, getCurrent)
 

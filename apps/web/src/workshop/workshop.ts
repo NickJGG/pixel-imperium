@@ -11,7 +11,9 @@ import type {
   Made,
   MadeCampaignSummary,
   MadePuzzleSummary,
+  Paper,
   Played,
+  PlayedCampaign,
 } from '@pixel-imperium/protocol'
 import type { StoredDraft } from '../make/draft-store.ts'
 
@@ -138,6 +140,49 @@ export const yourCampaigns = (workshop: Pick<Workshop, 'drafts' | 'made'>): Camp
 
 /** Played's campaigns, those taken down left out. */
 export const playedCampaigns = (played: Played) => played.campaigns.filter(c => !c.removed)
+
+export const NEW_CAMPAIGN = 'new'
+
+/** One of the Workshop row's columns, by what it holds; `new` is a phone's last, where there are no spines. */
+export type RowColumn = { key: string; name: string; paper: Paper } & (
+  | { kind: 'puzzles' }
+  | { kind: 'published'; campaign: MadeCampaignSummary }
+  | { kind: 'draft'; campaign: DraftCampaignSummary }
+  | { kind: 'played'; campaign: PlayedCampaign }
+  | { kind: 'new' }
+)
+
+/** The row a tab of the Workshop draws, Puzzles or Played by link first. */
+export function workshopRow(workshop: Workshop, tab: WorkshopTab, { phone }: { phone: boolean }): RowColumn[] {
+  if (tab === 'played') {
+    return [
+      { kind: 'puzzles', key: PUZZLES, name: 'Played by link', paper: 'workshop' },
+      ...playedCampaigns(workshop.played).map(
+        (campaign): RowColumn => ({ kind: 'played', key: campaign.id, name: campaign.title, paper: campaign.paper, campaign }),
+      ),
+    ]
+  }
+  return [
+    { kind: 'puzzles', key: PUZZLES, name: 'Puzzles', paper: 'workshop' },
+    ...yourCampaigns(workshop).map(
+      (e): RowColumn =>
+        e.kind === 'published'
+          ? { kind: 'published', key: e.campaign.id, name: e.campaign.title, paper: e.campaign.paper, campaign: e.campaign }
+          : {
+              kind: 'draft',
+              key: e.campaign.id,
+              name: `${titleOf(e.campaign.title)} · draft`,
+              paper: e.campaign.paper ?? 'workshop',
+              campaign: e.campaign,
+            },
+    ),
+    ...(phone ? [{ kind: 'new', key: NEW_CAMPAIGN, name: 'New campaign', paper: 'workshop' } as const] : []),
+  ]
+}
+
+/** The open column's place in `row`, the first when `open` names none. */
+export const openIndex = (row: readonly RowColumn[], open: string | undefined) =>
+  Math.max(0, row.findIndex(c => c.key === (open ?? PUZZLES)))
 
 /** A title as the Workshop shows it, a draft's possibly still blank. */
 export const titleOf = (title: string) => title.trim() || 'Untitled'

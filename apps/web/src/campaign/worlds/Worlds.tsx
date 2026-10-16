@@ -542,19 +542,23 @@ export function WorkshopSpine({
   )
 }
 
+const newCampaignProps = () => ({
+  className: `${styles.world} ${styles.spine} ${styles.provinceSpine} ${styles.add}`,
+  style: { ...workshopMorphName('new'), viewTransitionClass: columnClass('spine', campaignSpineClass(false)) },
+  children: (
+    <span className={styles.stack}>
+      <span className={styles.name}>+ New campaign</span>
+    </span>
+  ),
+})
+
 /** The Workshop row's last spine, dashed: starts a new draft campaign. */
 export function NewCampaignSpine() {
-  return (
-    <Link
-      to="/workshop/new-campaign"
-      className={`${styles.world} ${styles.spine} ${styles.provinceSpine} ${styles.add}`}
-      style={{ ...workshopMorphName('new'), viewTransitionClass: columnClass('spine', campaignSpineClass(false)) }}
-    >
-      <span className={styles.stack}>
-        <span className={styles.name}>+ New campaign</span>
-      </span>
-    </Link>
-  )
+  return <Link to="/workshop/new-campaign" {...newCampaignProps()} />
+}
+
+export function SkeletonNewCampaignSpine() {
+  return <div {...newCampaignProps()} aria-hidden="true" />
 }
 
 /** Another Year: the one before January's, or after December's. */
@@ -784,21 +788,22 @@ export function DraftProvinceSpine({
   )
 }
 
+const addProvinceProps = () => ({
+  className: `${styles.world} ${styles.spine} ${styles.provinceSpine} ${styles.add}`,
+  style: { viewTransitionClass: columnClass('spine', styles.provinceSpine) },
+  'data-thin': true,
+  children: (
+    <span className={styles.stack}>
+      <span className={styles.name}>+ Province</span>
+    </span>
+  ),
+})
+
 /** The builder's last spine, dashed, while there's room for another province: adds one and opens it. */
 export function AddProvinceSpine({ draftId, n, onAdd }: { draftId: string; /** The new one's number. */ n: number; onAdd: () => void }) {
-  return (
-    <Link
-      to="/workshop/c/$id/$n"
-      params={{ id: draftId, n: String(n) }}
-      replace
-      className={`${styles.world} ${styles.spine} ${styles.provinceSpine} ${styles.add}`}
-      style={{ viewTransitionClass: columnClass('spine', styles.provinceSpine) }}
-      data-thin
-      onClick={onAdd}
-    >
-      <span className={styles.stack}>
-        <span className={styles.name}>+ Province</span>
-      </span>
-    </Link>
-  )
+  return <Link to="/workshop/c/$id/$n" params={{ id: draftId, n: String(n) }} replace {...addProvinceProps()} onClick={onAdd} />
+}
+
+export function SkeletonAddProvinceSpine() {
+  return <div {...addProvinceProps()} aria-hidden="true" />
 }

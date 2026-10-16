@@ -1,6 +1,6 @@
 import { Link, getRouteApi, useNavigate } from '@tanstack/react-router'
 import { type ReactNode, useMemo, useRef, useState } from 'react'
-import type { Campaign, Paper } from '@pixel-imperium/protocol'
+import type { Campaign } from '@pixel-imperium/protocol'
 import { useAccount } from '../account.ts'
 import { jump, windowOf } from '../campaign/campaigns.ts'
 import {
@@ -26,26 +26,19 @@ import {
 import { DraftCampaignColumn } from './DraftCover.tsx'
 import {
   PUZZLES,
+  type RowColumn,
   type Workshop,
   type WorkshopSearch,
   type WorkshopTab,
   mergeDrafts,
-  playedCampaigns,
-  titleOf,
-  yourCampaigns,
+  openIndex,
+  workshopRow,
   yourPuzzles,
 } from './workshop.ts'
 import homeStyles from '../home/Home.module.css'
 import styles from './Workshop.module.css'
 
 const route = getRouteApi('/workshop')
-
-interface Column {
-  key: string
-  name: string
-  paper: Paper
-  render: (start: boolean) => ReactNode
-}
 
 const searchOf = (tab: WorkshopTab, key: string): WorkshopSearch => ({
   ...(tab === 'played' && { tab }),
@@ -79,116 +72,53 @@ export function WorkshopPage({
     [workshop, local],
   )
 
-  const columns: Column[] =
-    tab === 'yours'
-      ? [
-          {
-            key: PUZZLES,
-            name: 'Puzzles',
-            paper: 'workshop',
-            render: start => <PuzzlesColumn key={PUZZLES} entries={entries} start={start} />,
-          },
-          ...yourCampaigns(workshop).map((e): Column =>
-            e.kind === 'published'
-              ? {
-                  key: e.campaign.id,
-                  name: e.campaign.title,
-                  paper: e.campaign.paper,
-                  render: start => (
-                    <OwnCampaignColumn
-                      key={e.campaign.id}
-                      campaign={e.campaign}
-                      puzzles={workshop.made.puzzles}
-                      start={start}
-                    />
-                  ),
-                }
-              : {
-                  key: e.campaign.id,
-                  name: `${titleOf(e.campaign.title)} · draft`,
-                  paper: e.campaign.paper ?? 'workshop',
-                  render: start => (
-                    <DraftCampaignColumn
-                      key={e.campaign.id}
-                      summary={e.campaign}
-                      draftKey={{ userId: account!.userId, id: e.campaign.id }}
-                      opening={search.open === e.campaign.id ? draft : null}
-                      start={start}
-                    />
-                  ),
-                },
-          ),
-        ]
-      : [
-          {
-            key: PUZZLES,
-            name: 'Played by link',
-            paper: 'workshop',
-            render: start => (
-              <PlayedByLinkColumn key={PUZZLES} puzzles={workshop.played.puzzles} storage={storage} start={start} />
-            ),
-          },
-          ...playedCampaigns(workshop.played).map(
-            (c): Column => ({
-              key: c.id,
-              name: c.title,
-              paper: c.paper,
-              render: start => (
-                <PlayedCampaignColumn
-                  key={c.id}
-                  summary={c}
-                  campaign={campaign?.id === c.id ? campaign : null}
-                  storage={storage}
-                  start={start}
-                />
-              ),
-            }),
-          ),
-        ]
-  const NEW = 'new'
-  if (phone && tab === 'yours') {
-    columns.push({
-      key: NEW,
-      name: 'New campaign',
-      paper: 'workshop',
-      render: start => <NewCampaignColumn key={NEW} start={start} />,
-    })
+  const columns = workshopRow(workshop, tab, { phone })
+  const at = openIndex(columns, search.open)
+  const render = (c: RowColumn, start: boolean): ReactNode => {
+    switch (c.kind) {
+      case 'puzzles':
+        return tab === 'yours' ? (
+          <PuzzlesColumn key={c.key} entries={entries} start={start} />
+        ) : (
+          <PlayedByLinkColumn key={c.key} puzzles={workshop.played.puzzles} storage={storage} start={start} />
+        )
+      case 'published':
+        return <OwnCampaignColumn key={c.key} campaign={c.campaign} puzzles={workshop.made.puzzles} start={start} />
+      case 'draft':
+        return (
+          <DraftCampaignColumn
+            key={c.key}
+            summary={c.campaign}
+            draftKey={{ userId: account!.userId, id: c.key }}
+            opening={search.open === c.key ? draft : null}
+            start={start}
+          />
+        )
+      case 'played':
+        return (
+          <PlayedCampaignColumn
+            key={c.key}
+            summary={c.campaign}
+            campaign={campaign?.id === c.key ? campaign : null}
+            storage={storage}
+            start={start}
+          />
+        )
+      case 'new':
+        return <NewCampaignColumn key={c.key} start={start} />
+    }
   }
-  const at = Math.max(0, columns.findIndex(c => c.key === (search.open ?? PUZZLES)))
 
   const goTo = (i: number) => {
     const to = columns[i]
-    if (!to || i === at || to.key === NEW) return
+    if (!to || i === at || to.kind === 'new') return
     void navigate({ to: '/workshop', search: searchOf(tab, to.key), replace: true })
   }
   useStep(dir => goTo(at + dir))
   const ref = useRef<HTMLElement>(null)
   useSpineReach(ref)
 
-  const tabs = (
-    <nav className={`${styles.tabs} ${styles.tabsPill}`} style={sticker('workshop-tabs', 2)} aria-label="Whose">
-      <Link
-        to="/workshop"
-        search={{}}
-        replace
-        data-variant="flat"
-        data-size="compact"
-        aria-current={tab === 'yours' ? 'page' : undefined}
-      >
-        Yours
-      </Link>
-      <Link
-        to="/workshop"
-        search={{ tab: 'played' }}
-        replace
-        data-variant="flat"
-        data-size="compact"
-        aria-current={tab === 'played' ? 'page' : undefined}
-      >
-        Played
-      </Link>
-    </nav>
-  )
+  const tabs = <WorkshopTabs tab={tab} />
 
   if (phone) {
     return (
@@ -197,7 +127,7 @@ export function WorkshopPage({
         <Backdrop paper={columns[at]!.paper} />
         {tabs}
         <Worlds carousel onSnap={goTo}>
-          {columns.map((c, i) => c.render(i === at))}
+          {columns.map((c, i) => render(c, i === at))}
         </Worlds>
       </main>
     )
@@ -214,7 +144,7 @@ export function WorkshopPage({
         )}
         {columns.slice(lo, hi).map((c, i) =>
           lo + i === at ? (
-            c.render(true)
+            render(c, true)
           ) : (
             <WorkshopSpine
               key={c.key}
@@ -236,5 +166,33 @@ export function WorkshopPage({
         {tab === 'yours' && <NewCampaignSpine />}
       </Worlds>
     </main>
+  )
+}
+
+/** Yours and Played; `inert` stands it in a skeleton. */
+export function WorkshopTabs({ tab, inert = false }: { tab: WorkshopTab; inert?: boolean }) {
+  return (
+    <nav className={`${styles.tabs} ${styles.tabsPill}`} style={sticker('workshop-tabs', 2)} aria-label="Whose" inert={inert}>
+      <Link
+        to="/workshop"
+        search={{}}
+        replace
+        data-variant="flat"
+        data-size="compact"
+        aria-current={tab === 'yours' ? 'page' : undefined}
+      >
+        Yours
+      </Link>
+      <Link
+        to="/workshop"
+        search={{ tab: 'played' }}
+        replace
+        data-variant="flat"
+        data-size="compact"
+        aria-current={tab === 'played' ? 'page' : undefined}
+      >
+        Played
+      </Link>
+    </nav>
   )
 }

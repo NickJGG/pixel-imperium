@@ -87,14 +87,23 @@ export const ownProfile = (handle: string): Promise<Profile | null> => profileMe
 /** Drops the own profile, for anything that changes it; the next load fetches it again. */
 export const forgetOwnProfile = (): void => profileMemo.clear()
 
+/** The Workshop last loaded and whose, outliving `forgetWorkshop`: a skeleton's guess at the next. */
+let lastWorkshop: { userId: string; workshop: Workshop } | null = null
+
 // Keyed by the account's user id.
-const workshopMemo = memo(async (): Promise<Workshop> => {
+const workshopMemo = memo(async (userId): Promise<Workshop> => {
   const [drafts, made, played] = await Promise.all([fetchDrafts(), fetchMade(), fetchPlayed()])
-  return { drafts, made, played }
+  const workshop = { drafts, made, played }
+  lastWorkshop = { userId, workshop }
+  return workshop
 })
 
 /** The signed-in player's Workshop, by their `userId`. */
 export const workshop = (userId: string): Promise<Workshop> => workshopMemo(userId)
+
+/** `userId`'s Workshop as last loaded, if any, without fetching. */
+export const currentWorkshop = (userId: string | undefined): Workshop | null =>
+  lastWorkshop && lastWorkshop.userId === userId ? lastWorkshop.workshop : null
 
 /** Drops the Workshop, for anything that changes it: publishing, a draft campaign, playing someone's link. */
 export const forgetWorkshop = (): void => workshopMemo.clear()
@@ -110,4 +119,5 @@ export const solve = (id: string, body: SolveRequest, signal: AbortSignal | null
 export function resetContent(): void {
   for (const m of [campaignsMemo, campaignMemo, puzzleMemo, yearMemo, profileMemo, workshopMemo]) m.clear()
   yearDays.clear()
+  lastWorkshop = null
 }

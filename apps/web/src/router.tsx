@@ -54,12 +54,16 @@ import { LessonPage } from './tutorial/LessonPage.tsx'
 import { LessonSkeleton } from './tutorial/LessonSkeleton.tsx'
 import { nextTrack, trackOf } from './tutorial/tracks.ts'
 import { AllPuzzlesPage } from './workshop/AllPuzzlesPage.tsx'
+import { AllPuzzlesSkeleton } from './workshop/AllPuzzlesSkeleton.tsx'
 import { BuilderPage } from './workshop/BuilderPage.tsx'
 import { PlaytestAlbum, PlaytestPuzzle } from './workshop/CampaignPlaytest.tsx'
 import { formatIn, parseIn } from './workshop/campaign-draft.ts'
 import { openingCampaign } from './workshop/campaign-store.ts'
 import { CrestPage } from './workshop/CrestPage.tsx'
+import { CrestSkeleton } from './workshop/CrestSkeleton.tsx'
+import { DraftProvinceSkeleton } from './workshop/DraftProvinceSkeleton.tsx'
 import { WorkshopPage } from './workshop/WorkshopPage.tsx'
+import { WorkshopSkeleton } from './workshop/WorkshopSkeleton.tsx'
 import { blankCampaignDoc, workshopSearch } from './workshop/workshop.ts'
 import styles from './App.module.css'
 
@@ -488,6 +492,10 @@ const workshopRoute = createRoute({
     return { workshop, campaign: campaign && !isRetired(campaign) ? campaign : null, draft }
   },
   component: () => <WorkshopPage {...workshopRoute.useLoaderData()} />,
+  pendingComponent: WorkshopSkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
 })
 
 const workshopPuzzlesRoute = createRoute({
@@ -496,6 +504,10 @@ const workshopPuzzlesRoute = createRoute({
   beforeLoad: signedInOnly,
   loader: async () => ({ workshop: await content.workshop(getAccount().account!.userId) }),
   component: () => <AllPuzzlesPage {...workshopPuzzlesRoute.useLoaderData()} />,
+  pendingComponent: AllPuzzlesSkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
 })
 
 /** Starts a draft campaign and opens the Workshop on it. Never on a preload, which would leave a stray draft. */
@@ -532,6 +544,10 @@ const crestRoute = createRoute({
     const { draftKey, opening } = crestRoute.useLoaderData()
     return <CrestPage key={draftKey.id} draftKey={draftKey} opening={opening} />
   },
+  pendingComponent: CrestSkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
   notFoundComponent: noDraftCampaign,
 })
 
@@ -545,6 +561,10 @@ const builderRoute = createRoute({
     const data = builderRoute.useLoaderData()
     return <BuilderPage key={data.draftKey.id} {...data} n={Number(builderRoute.useParams().n) || 1} />
   },
+  pendingComponent: () => <DraftProvinceSkeleton />,
+  get pendingMs() {
+    return morphPendingMs()
+  },
   notFoundComponent: noDraftCampaign,
 })
 
@@ -556,6 +576,10 @@ const playtestRoute = createRoute({
   component: () => {
     const data = playtestRoute.useLoaderData()
     return <PlaytestAlbum key={data.draftKey.id} {...data} n={Number(playtestRoute.useParams().n) || 1} />
+  },
+  pendingComponent: () => <DraftProvinceSkeleton playtest />,
+  get pendingMs() {
+    return morphPendingMs()
   },
   notFoundComponent: noDraftCampaign,
 })
@@ -587,6 +611,9 @@ const playtestPuzzleRoute = createRoute({
     return <PlaytestPuzzle key={`${n}:${slot}`} {...playtestPuzzleRoute.useLoaderData()} n={Number(n)} slot={Number(slot)} />
   },
   pendingComponent: PlaySkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
   notFoundComponent: () => <NotFound>There’s no puzzle in that slot.</NotFound>,
 })
 
@@ -632,6 +659,9 @@ const workshopPuzzleRoute = createRoute({
   },
   component: lazyRouteComponent(() => import('./make/WorkshopPuzzle.tsx'), 'WorkshopPuzzlePage'),
   pendingComponent: PlaySkeleton,
+  get pendingMs() {
+    return morphPendingMs()
+  },
   notFoundComponent: () => <NotFound>You have no puzzle by that name.</NotFound>,
 })
 
