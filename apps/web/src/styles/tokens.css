@@ -168,8 +168,8 @@
   --p-spring: #173a2b;
   --p-summer: #3b3112;
   --p-autumn: #3f2016;
-  /* The Workshop's warm grey, for player-made work rather than a province. */
-  --p-workshop: #2b2a2e;
+  /* The Workshop's slate, leaning to the cover's cobalt: player-made work rather than a province. */
+  --p-workshop: #262839;
   --t-marches: #ffd34a;
   --t-coast: #5bc8ff;
   --t-wildwood: #5ec46f;
@@ -187,7 +187,7 @@
   --t-spring: #8fe3a6;
   --t-summer: #ffcf5c;
   --t-autumn: #ff8a5c;
-  --t-workshop: #c8c2b4;
+  --t-workshop: #afb3d8;
   --on-tab: #1b1b28;
   /* A key's badge, keyboard or controller, the same in every theme. */
   --key: #ffffff;
@@ -244,8 +244,8 @@
     --p-spring: #d4f5dc;
     --p-summer: #fff0bd;
     --p-autumn: #ffdccb;
-    --p-workshop: #ecebe6;
-    --t-workshop: #8f887a;
+    --p-workshop: #e8e8f3;
+    --t-workshop: #7c80aa;
 
     --board-bg: #ffffff;
     --board-fill: #13306b;
@@ -295,8 +295,8 @@
   --p-spring: #d4f5dc;
   --p-summer: #fff0bd;
   --p-autumn: #ffdccb;
-  --p-workshop: #ecebe6;
-  --t-workshop: #8f887a;
+  --p-workshop: #e8e8f3;
+  --t-workshop: #7c80aa;
 
   --board-bg: #ffffff;
   --board-fill: #13306b;
