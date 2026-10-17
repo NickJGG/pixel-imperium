@@ -117,6 +117,21 @@
   justify-self: end;
 }
 
+.thumbEnd {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* Just above the bar, beside the party sticker. */
+.thumbSlip {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--space-4));
+  max-width: calc(100vw - 2 * var(--space-4));
+}
+
 .thumbBar .thumbItem[aria-current='page'] {
   color: var(--pink);
 }

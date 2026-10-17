@@ -1,16 +1,20 @@
 import { useSyncExternalStore } from 'react'
 
+export type MenuColumn = 'menu' | 'friends' | 'party'
+
 export interface MenuState {
   open: boolean
-  /** The crown that opened it, where the panel pins its own crown and focus goes back to; null from M. */
+  /** The crown or party sticker that opened it, where focus goes back to; null from M. */
   opener: HTMLElement | null
+  /** The column open in it: Menu from a crown or M, Party from the party sticker. */
+  column: MenuColumn
 }
 
-let state: MenuState = { open: false, opener: null }
+let state: MenuState = { open: false, opener: null, column: 'menu' }
 const listeners = new Set<() => void>()
 
 function set(next: MenuState): void {
-  if (next.open === state.open && next.opener === state.opener) return
+  if (next.open === state.open && next.opener === state.opener && next.column === state.column) return
   state = next
   for (const listener of listeners) listener()
 }
@@ -22,9 +26,25 @@ export function subscribeMenu(listener: () => void): () => void {
   return () => listeners.delete(listener)
 }
 
-export const openMenu = (opener: HTMLElement | null = null): void => set({ open: true, opener })
-export const closeMenu = (): void => set({ open: false, opener: state.opener })
-export const toggleMenu = (opener: HTMLElement | null = null): void => (state.open ? closeMenu() : openMenu(opener))
+export const openMenu = (opener: HTMLElement | null = null, column: MenuColumn = 'menu'): void =>
+  set({ open: true, opener, column })
+export const closeMenu = (): void => set({ ...state, open: false })
+export const toggleMenu = (opener: HTMLElement | null = null, column: MenuColumn = 'menu'): void =>
+  state.open ? closeMenu() : openMenu(opener, column)
+
+let landing: { pathname: string; column: MenuColumn } | null = null
+
+/** Opens the menu on `column` once the page at `pathname` shows, past the close every navigation brings. */
+export function openMenuOn(pathname: string, column: MenuColumn): void {
+  landing = { pathname, column }
+}
+
+/** The column to open on arriving at `pathname`, if a navigation asked for one; any other arrival drops the ask. */
+export function takeLanding(pathname: string): MenuColumn | null {
+  const column = landing?.pathname === pathname ? landing.column : null
+  landing = null
+  return column
+}
 
 export const useMenu = (): MenuState => useSyncExternalStore(subscribeMenu, getMenu)
 

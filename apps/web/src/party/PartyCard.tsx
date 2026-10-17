@@ -2,7 +2,6 @@ import { type CSSProperties, useEffect, useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { PARTY_SEATS, type PartyInvite, type PartySeat } from '@pixel-imperium/protocol'
 import { useAccount } from '../account.ts'
-import { Menu } from '../AccountMenu.tsx'
 import { PROVIDERS, signIn } from '../auth.ts'
 import { party, usePartyView } from './party-store.ts'
 import { SEAT_NAMES, initialOf, seatColor, seatLabel } from './seats.ts'
@@ -80,42 +79,23 @@ export function PlayWithParty({ puzzleId, className, variant = 'primary', size }
   )
 }
 
-interface PillProps {
-  /** The puzzle page it's on, for the phone's Play with party inside the card. */
-  puzzleId?: string | undefined
-  triggerClassName: string | undefined
-  triggerVariant?: 'flat' | undefined
-  triggerSize?: 'compact' | undefined
-  /** The phone's: the card rises as a sheet above the dock instead of dropping under the pill. */
-  sheet?: boolean
-}
-
 /**
- * The people pill and its card: who's in the Party and the Host's tools, waiting invites, and a way back to the
- * Party's puzzle. Once in a Party the pill is the players' faces, so who's in stays in view.
+ * Until the menu's Party column: what the Party pill's card held, in the menu the party sticker opens. Who's in the
+ * Party and the Host's tools, waiting invites, and a way back to the Party's puzzle; `puzzleId` is the page's, for
+ * the Play with party a phone has nowhere else.
  */
-export function PartyPill({ puzzleId, triggerClassName, triggerVariant, triggerSize, sheet }: PillProps) {
+export function PartyDetails({ puzzleId }: { puzzleId: string | null }) {
   const view = usePartyView()
   const { party: current } = view
-  const waiting = view.invites.length > 0 || view.started !== null || view.notice !== null
-  const label = current ? `Party: ${current.seats.length} of ${PARTY_SEATS}` : 'Party'
   return (
-    <Menu
-      label={waiting ? `${label}, something waiting` : label}
-      dialog
-      trigger={current ? <Faces seats={current.seats} /> : <PeopleIcon />}
-      triggerClassName={current ? `${triggerClassName ?? ''} ${styles.facesPill}` : triggerClassName}
-      triggerVariant={triggerVariant}
-      triggerSize={triggerSize}
-      panelClassName={`${styles.card} ${sheet ? styles.sheet : ''}`}
-    >
+    <div className={`${styles.card} ${styles.details}`} data-surface="paper">
       {view.notice && <Notice notice={view.notice} />}
       {view.invites.map(invite => (
         <InviteRow key={invite.id} invite={invite} inParty={current !== null} />
       ))}
       {current ? <LiveCard view={view} /> : <StartCard />}
-      {sheet && puzzleId && <PlayWithParty puzzleId={puzzleId} size="compact" />}
-    </Menu>
+      {puzzleId && <PlayWithParty puzzleId={puzzleId} size="compact" />}
+    </div>
   )
 }
 
@@ -136,12 +116,17 @@ function Notice({ notice }: { notice: PartyNotice }) {
   )
 }
 
-function InviteRow({ invite, inParty }: { invite: PartyInvite; inParty: boolean }) {
+/** Takes the seat, and goes to the Party's puzzle when it's on one. */
+export function useAcceptInvite(): (invite: PartyInvite) => void {
   const navigate = useNavigate()
-  const accept = () => {
+  return invite => {
     party.respond(invite.id, true)
     if (invite.puzzle) void navigate({ to: '/play/$id', params: { id: invite.puzzle.id } })
   }
+}
+
+function InviteRow({ invite, inParty }: { invite: PartyInvite; inParty: boolean }) {
+  const accept = useAcceptInvite()
   return (
     <>
       <p>
@@ -150,7 +135,7 @@ function InviteRow({ invite, inParty }: { invite: PartyInvite; inParty: boolean 
         {inParty && ' You’ll leave your party.'}
       </p>
       <div className={styles.row}>
-        <button type="button" data-variant="primary" data-size="compact" onClick={accept}>
+        <button type="button" data-variant="primary" data-size="compact" onClick={() => accept(invite)}>
           Join
         </button>
         <button type="button" data-variant="paper" data-size="compact" onClick={() => party.respond(invite.id, false)}>

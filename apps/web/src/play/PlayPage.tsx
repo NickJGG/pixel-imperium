@@ -27,10 +27,11 @@ import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { type AccountState, refreshAccount, useAccount } from '../account.ts'
 import { requestHint } from '../api.ts'
 import { solve } from '../content.ts'
-import { PartyPill, PlayWithParty } from '../party/PartyCard.tsx'
+import { PlayWithParty } from '../party/PartyCard.tsx'
+import { InviteSlip, PartySticker } from '../party/PartySticker.tsx'
 import { PartyOnward, partyHintNote } from '../party/PartyRail.tsx'
 import { PartyStorage } from '../party/party-storage.ts'
-import { party as partySession, usePartyView } from '../party/party-store.ts'
+import { offerPlay, party as partySession, usePartyView } from '../party/party-store.ts'
 import type { PartySession } from '../party/session.ts'
 import { type CampaignProgress, campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { NextUp } from '../campaign/NextUp.tsx'
@@ -399,6 +400,9 @@ export function Play({
   )
   useEffect(() => party?.bind(store), [party, store])
   useEffect(() => showBoard(puzzle.id), [puzzle.id])
+  // A Daily is played solo, and a join card's page isn't the Party's yet.
+  const partyTools = !cover && !('daily' in puzzle)
+  useEffect(() => (partyTools ? offerPlay(puzzle.id) : undefined), [partyTools, puzzle.id])
   const [boardView] = useState(() => new BoardView(puzzle, true))
   const boardRef = useBoardGestures(store, boardView)
   const solved = useStoreValue(store, s => s.solved)
@@ -868,12 +872,12 @@ export function Play({
     album && <ChoiceCard track={TRACKS.techniques} copy={techniquesOffer(album.province)} back={context.here} />
   )
 
-  // A Daily is played solo, and a join card's page isn't the Party's yet. The phone's pill holds Play with party.
-  const partyTools = !cover && !('daily' in puzzle)
-  const corner = wide && partyTools && (
+  // The phone's Play with party is in the menu its sticker opens.
+  const corner = wide && !cover && (
     <>
-      <PlayWithParty puzzleId={puzzle.id} className={partyStyles.playPill} variant="flat" />
-      <PartyPill triggerClassName={partyStyles.hudPill} />
+      {partyTools && <PlayWithParty puzzleId={puzzle.id} className={partyStyles.playPill} variant="flat" />}
+      <InviteSlip />
+      <PartySticker />
     </>
   )
   const paperMorph = columnPaper(album ? `province-${album.province.id}` : undefined)
@@ -903,10 +907,9 @@ export function Play({
           {!solved && <span className={styles.topPercent}>{percent}%</span>}
           {!done && tag}
           <span className={styles.topTools}>
-            {partyTools && (
-              <PartyPill puzzleId={puzzle.id} triggerClassName={styles.round} triggerVariant="flat" triggerSize="compact" sheet />
-            )}
+            {!cover && <PartySticker small />}
             <MenuCrown />
+            {!cover && <InviteSlip className={styles.topSlip} />}
           </span>
         </header>
       )}

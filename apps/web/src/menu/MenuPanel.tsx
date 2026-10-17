@@ -7,10 +7,12 @@ import { useSession } from '../auth.ts'
 import { NextUpCard } from '../campaign/NextUpCard.tsx'
 import { CrownMark, SoundButton, themeIcon, themeLabel, useContinue } from '../Hud.tsx'
 import { usePadContain } from '../pad/PadProvider.tsx'
+import { PartyDetails } from '../party/PartyCard.tsx'
+import { usePlayOffer } from '../party/party-store.ts'
 import { usePrefetch } from '../play/prefetch.ts'
 import { type Theme, updateSettings, useSettings } from '../settings.ts'
 import { Trail } from '../Trail.tsx'
-import { closeMenu, toggleMenu, useBoard, useMenu } from './menu-store.ts'
+import { closeMenu, openMenu, takeLanding, toggleMenu, useBoard, useMenu } from './menu-store.ts'
 import app from '../App.module.css'
 import hud from '../Hud.module.css'
 import styles from './Menu.module.css'
@@ -23,7 +25,7 @@ const THEMES: readonly Theme[] = ['dark', 'light', 'auto']
  */
 function pinCrown(dialog: HTMLDialogElement, opener: HTMLElement | null): void {
   const crown =
-    (opener?.isConnected && opener) ||
+    (opener?.isConnected && opener.matches('[data-menu-crown]') && opener) ||
     [...document.querySelectorAll<HTMLElement>('[data-menu-crown]')].find(el => !dialog.contains(el) && el.checkVisibility())
   if (!crown) return
   const box = crown.getBoundingClientRect()
@@ -110,7 +112,11 @@ export function MenuPanel() {
     }
   }, [closing])
 
-  useEffect(() => closeNow(), [pathname])
+  useEffect(() => {
+    const landing = takeLanding(pathname)
+    if (landing) openMenu(null, landing)
+    else closeNow()
+  }, [pathname])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -153,6 +159,7 @@ export function MenuPanel() {
 }
 
 function Contents() {
+  const { column } = useMenu()
   return (
     <>
       <button type="button" className={`${hud.crown} ${styles.crown}`} aria-label="Close menu" onClick={closeMenu}>
@@ -162,8 +169,14 @@ function Contents() {
         <span>Pixel</span>&nbsp;Imperium
       </Link>
       <div className={styles.paper} data-surface="cobalt">
-        <Trail />
-        <NextUp />
+        {column === 'party' ? (
+          <Party />
+        ) : (
+          <>
+            <Trail />
+            <NextUp />
+          </>
+        )}
         <div className={styles.foot}>
           <Profile />
           <Link to="/settings" className={styles.round} data-variant="flat" aria-label="Settings" title="Settings">
@@ -190,6 +203,12 @@ function NextUp() {
       <NextUpCard next={next} storage={storage} menu />
     </div>
   )
+}
+
+/** Until the Party column: the party's details, in place of the trail and Next up. */
+function Party() {
+  const offer = usePlayOffer()
+  return <PartyDetails puzzleId={offer} />
 }
 
 /** The player's avatar to their album, or the sign-in sheet. */

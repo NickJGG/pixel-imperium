@@ -1,5 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { closeMenu, getBoard, getMenu, openMenu, showBoard, subscribeMenu, toggleMenu } from './menu-store.ts'
+import {
+  closeMenu,
+  getBoard,
+  getMenu,
+  openMenu,
+  openMenuOn,
+  showBoard,
+  subscribeMenu,
+  takeLanding,
+  toggleMenu,
+} from './menu-store.ts'
 
 const crown = { id: 'crown' } as unknown as HTMLElement
 
@@ -7,17 +17,26 @@ describe('menu store', () => {
   afterEach(closeMenu)
 
   it('starts closed', () => {
-    expect(getMenu()).toEqual({ open: false, opener: null })
+    expect(getMenu()).toEqual({ open: false, opener: null, column: 'menu' })
   })
 
   it('opens from a crown and remembers it', () => {
     openMenu(crown)
-    expect(getMenu()).toEqual({ open: true, opener: crown })
+    expect(getMenu()).toEqual({ open: true, opener: crown, column: 'menu' })
   })
 
   it('opens without a crown, from a key', () => {
     openMenu()
-    expect(getMenu()).toEqual({ open: true, opener: null })
+    expect(getMenu()).toEqual({ open: true, opener: null, column: 'menu' })
+  })
+
+  it('opens on a column, which a crown reopens on Menu', () => {
+    toggleMenu(crown, 'party')
+    expect(getMenu()).toEqual({ open: true, opener: crown, column: 'party' })
+    closeMenu()
+    expect(getMenu().column).toBe('party')
+    toggleMenu(crown)
+    expect(getMenu().column).toBe('menu')
   })
 
   it('toggles', () => {
@@ -37,6 +56,20 @@ describe('menu store', () => {
     stop()
     openMenu()
     expect(calls).toBe(2)
+  })
+})
+
+describe('opening on arrival', () => {
+  it('opens on the column asked for at that page only, once', () => {
+    openMenuOn('/', 'party')
+    expect(takeLanding('/')).toBe('party')
+    expect(takeLanding('/')).toBeNull()
+  })
+
+  it('drops the ask on arriving anywhere else', () => {
+    openMenuOn('/', 'party')
+    expect(takeLanding('/settings')).toBeNull()
+    expect(takeLanding('/')).toBeNull()
   })
 })
 

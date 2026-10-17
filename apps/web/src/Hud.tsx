@@ -7,6 +7,7 @@ import { useCurrentCampaign } from './campaign/last-campaign.ts'
 import { type ContinueAt, campaignProgress, continueAt } from './campaign/progress.ts'
 import { toggleMenu, useMenu } from './menu/menu-store.ts'
 import { PadGlyph } from './pad/PadGlyph.tsx'
+import { InviteSlip, PartySticker } from './party/PartySticker.tsx'
 import { useEscapeUp } from './pad/PadProvider.tsx'
 import { usePrefetch } from './play/prefetch.ts'
 import { type Theme, updateSettings, useSettings } from './settings.ts'
@@ -126,14 +127,14 @@ export function FloatingCrown() {
   )
 }
 
-/** A board's own pill, alone in the top-right corner where the HUD's pills stood. */
+/** A board's own pills in the top-right corner, where a puzzle page keeps its party sticker. */
 export function HudCorner({ children }: { children: ReactNode }) {
   return <div className={styles.corner}>{children}</div>
 }
 
 /**
- * The crown sticker top-left. `float` lays it over the page instead of in its own row; by default that follows the
- * route. Mounted wherever the HUD shows, it's where Esc goes up a level.
+ * The crown sticker top-left, then the party sticker and any invite slip. `float` lays it over the page instead of in
+ * its own row; by default that follows the route. Mounted wherever the HUD shows, it's where Esc goes up a level.
  */
 export function Hud({ float }: { float?: boolean | undefined }) {
   const pathname = useRouterState({ select: s => s.location.pathname })
@@ -141,13 +142,17 @@ export function Hud({ float }: { float?: boolean | undefined }) {
   return (
     <header className={styles.hud} data-float={(float ?? floats(pathname)) || undefined}>
       <CrownSticker />
+      <span className={styles.party} style={sticker('hud-party', 1)}>
+        <PartySticker />
+      </span>
+      <InviteSlip className={styles.slip} />
     </header>
   )
 }
 
 /**
- * The phone's bottom bar, in place of the crown up top: Home, a raised Continue, and the crown, whose menu rises
- * over it. Hidden while playing and on wider screens.
+ * The phone's bottom bar, in place of the crown up top: Home, a raised Continue, and the party sticker and the crown,
+ * whose menu rises over it. An invite slip rides above it. Hidden while playing and on wider screens.
  */
 export function ThumbBar() {
   const next = useContinue()
@@ -173,7 +178,11 @@ export function ThumbBar() {
       ) : (
         <span />
       )}
-      <MenuCrown className={`${app.thumbItem} ${app.thumbCrown}`}>Menu</MenuCrown>
+      <span className={app.thumbEnd}>
+        <PartySticker small />
+        <MenuCrown className={`${app.thumbItem} ${app.thumbCrown}`}>Menu</MenuCrown>
+        <InviteSlip className={app.thumbSlip} />
+      </span>
     </nav>
   )
 }

@@ -151,14 +151,20 @@
 }
 
 .topTools {
+  position: relative;
   display: flex;
+  align-items: center;
   gap: var(--space-2);
   margin-left: auto;
 }
 
-.round {
-  width: 36px;
-  padding: 0;
+/* Hung under the top line's stickers, over the stage's top edge rather than the board. */
+.topSlip {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  max-width: calc(100vw - 2 * var(--space-4));
 }
 
 /* The province's slots down the left, on its paper darkened like the rail. */

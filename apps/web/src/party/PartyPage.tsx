@@ -7,6 +7,7 @@ import { isRetired } from '../api.ts'
 import * as content from '../content.ts'
 import { EdgeState, Retired } from '../EdgeStates.tsx'
 import { Hud } from '../Hud.tsx'
+import { openMenuOn } from '../menu/menu-store.ts'
 import { type PlayContext, Play, TIER_NAME } from '../play/PlayPage.tsx'
 import { PlaySkeleton } from '../play/PlaySkeleton.tsx'
 import { PlaytestStorage } from '../play/playtest-storage.ts'
@@ -108,7 +109,7 @@ function JoinBare({ info, code, children }: { info: JoinInfo; code: string; chil
   )
 }
 
-/** Asks for the seat, then goes where the Party is. */
+/** Asks for the seat, then goes where the Party is: its puzzle, or Home with the menu open on Party. */
 function Joining({ code, started, puzzleId: linked }: { code: string; started: boolean; puzzleId: string | null }) {
   const view = usePartyView()
   const navigate = useNavigate()
@@ -121,7 +122,9 @@ function Joining({ code, started, puzzleId: linked }: { code: string; started: b
   const landed = asked.current && !view.joining && view.party !== null
   useEffect(() => {
     if (!landed) return
-    void navigate(puzzleId ? { to: '/play/$id', params: { id: puzzleId }, replace: true } : { to: '/', replace: true })
+    if (puzzleId) return void navigate({ to: '/play/$id', params: { id: puzzleId }, replace: true })
+    openMenuOn('/', 'party')
+    void navigate({ to: '/', replace: true })
   }, [landed, puzzleId, navigate])
 
   if (view.status === 'outdated') return <PartyOver status="outdated" puzzleId={null} />

@@ -172,8 +172,18 @@
   transition: opacity 0.15s;
 }
 
+.party {
+  flex: none;
+  display: flex;
+  transition: opacity 0.15s;
+}
+
+.slip {
+  transition: opacity 0.15s;
+}
+
 /* Out as the menu's edge passes, for its wordmark. */
-.hud:has([aria-expanded='true']) .cap,
+.hud:has([aria-expanded='true']) :is(.cap, .party, .slip),
 [aria-expanded='true'] ~ .cap {
   opacity: 0;
 }
@@ -196,21 +206,8 @@
   top: var(--space-4);
   right: var(--space-5);
   display: flex;
-  gap: var(--space-2);
-}
-
-.corner [data-pad-menu] {
-  --btn-bg: var(--line-soft);
-  --btn-ink: var(--ink);
-  --btn-edge: var(--shade);
-  min-height: 44px;
-  font-size: var(--fs-16);
-}
-
-.corner [data-pad-menu][aria-expanded='true'] {
-  --btn-bg: var(--ink);
-  --btn-ink: var(--card);
-  --btn-edge: transparent;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 @media (max-width: 720px) {

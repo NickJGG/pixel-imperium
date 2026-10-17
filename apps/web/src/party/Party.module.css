@@ -1,4 +1,4 @@
-/* The party's pill, its card, and the join card over the board. Seat colors are --seat-1..4 in tokens.css. */
+/* The party sticker and its slip, the party's details, and the join card over the board. Seat colors are --seat-1..4 in tokens.css. */
 .card {
   display: grid;
   /* Else the link's unbroken text widens the column past the card. */
@@ -25,16 +25,14 @@
   color: var(--ink);
 }
 
-/* The phone's: a sheet above the dock rather than a drop under the pill. */
-.sheet {
-  position: fixed;
-  top: auto;
-  right: auto;
-  left: 50%;
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-  width: min(420px, calc(100vw - 2 * var(--space-4)));
-  max-width: none;
-  transform: translateX(-50%);
+/* In the menu, a card on its paper as wide as it. */
+.details {
+  width: auto;
+  padding: var(--space-5);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: var(--r-lg);
+  box-shadow: 0 5px 0 var(--shade);
 }
 
 .dot {
@@ -67,16 +65,6 @@
   margin-left: calc(-1 * var(--space-2));
 }
 
-.hudPill {
-  width: 44px;
-  padding: 0;
-}
-
-.hudPill svg {
-  width: 20px;
-  height: 20px;
-}
-
 .playPill {
   min-height: 44px;
 }
@@ -86,11 +74,131 @@
   height: 20px;
 }
 
-/* Over the HUD's or the top line's round pill, whichever module that comes from. */
-[data-pad-menu].facesPill {
-  width: auto;
-  padding: 0 var(--space-2);
+/* `rotate`, not `transform`, as the crown's, so the house button's lift and press still apply. */
+.sticker,
+.sticker[aria-expanded] {
+  --btn-bg: var(--sticker);
+  --btn-ink: var(--cobalt-ink);
+  --btn-edge: var(--shade);
+  position: relative;
+  flex: none;
+  gap: var(--space-2);
+  height: 40px;
+  min-height: 0;
+  padding: 0 var(--space-3) 0 var(--space-2);
   border-radius: var(--r-pill);
+  rotate: 3deg;
+  font: 700 var(--fs-14) / 1 var(--font-ui);
+}
+
+.sticker[data-bare] {
+  width: 44px;
+  padding: 0;
+}
+
+.sticker svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sticker .faces > .dot {
+  width: 26px;
+  height: 26px;
+  box-shadow: 0 0 0 2px var(--sticker);
+}
+
+.count {
+  color: var(--cobalt-ink-soft);
+}
+
+.online {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.online::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ok);
+}
+
+.ping {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--pink);
+  box-shadow: 0 0 0 2px var(--sticker);
+}
+
+/* The phone's, in its top line and thumb bar. */
+.sticker.small {
+  height: 36px;
+  rotate: none;
+}
+
+.sticker.small[data-bare] {
+  width: 36px;
+}
+
+.sticker.small .faces > .dot {
+  width: 22px;
+  height: 22px;
+}
+
+/* Throne paper with its ink dots, at the stickers' height in their row. */
+.slip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 40px;
+  padding: 0 var(--space-1) 0 var(--space-4);
+  border-radius: var(--r-pill);
+  background: var(--p-throne) radial-gradient(color-mix(in srgb, var(--ink) 9%, transparent) 1.5px, transparent 1.6px) 0 0 / 18px 18px;
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--shade);
+  font-size: var(--fs-14);
+  white-space: nowrap;
+  rotate: -1.5deg;
+  pointer-events: auto;
+  animation: slip-on 0.25s ease-out;
+}
+
+.slipText {
+  min-width: 0;
+  overflow: hidden;
+  margin-right: var(--space-1);
+  text-overflow: ellipsis;
+}
+
+.slip :is(a, button) {
+  flex: none;
+  min-height: 32px;
+  height: 32px;
+}
+
+.slip [data-variant='primary'] {
+  --btn-bg: var(--t-throne);
+  --btn-edge: var(--pink-dk);
+}
+
+@keyframes slip-on {
+  from {
+    opacity: 0;
+    transform: scale(0.9) rotate(4deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slip {
+    animation: none;
+  }
 }
 
 .link {

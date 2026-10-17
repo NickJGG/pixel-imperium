@@ -65,3 +65,28 @@ export function installParty(router: AnyRouter): void {
     subscribeAccount(follow)
   })
 }
+
+let offer: string | null = null
+const offerListeners = new Set<() => void>()
+
+function setOffer(id: string | null): void {
+  offer = id
+  for (const listener of offerListeners) listener()
+}
+
+/** Marks the page's puzzle as one the Party may play, for the menu's own Play with party; returns the unmarking. */
+export function offerPlay(puzzleId: string): () => void {
+  setOffer(puzzleId)
+  return () => {
+    if (offer === puzzleId) setOffer(null)
+  }
+}
+
+export const usePlayOffer = (): string | null =>
+  useSyncExternalStore(
+    listener => {
+      offerListeners.add(listener)
+      return () => offerListeners.delete(listener)
+    },
+    () => offer,
+  )
