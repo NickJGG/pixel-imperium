@@ -3,6 +3,8 @@ import type {
   Campaign,
   CampaignSummary,
   CoopRoomInfo,
+  CreateCoopRequest,
+  CreateCoopResponse,
   DailyYear,
   DeleteRejection,
   DraftCampaign,
@@ -92,6 +94,9 @@ export async function fetchCoop(code: string, device: string | null, started = f
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
   return (await res.json()) as CoopRoomInfo
 }
+
+export const createCoop = (puzzleId: string) =>
+  getJson<CreateCoopResponse>('/api/coop', jsonInit('POST', { puzzleId } satisfies CreateCoopRequest))
 
 // A board being played was served to this device, so a retired puzzle's solve and hints are its to finish.
 export const submitSolve = (id: string, body: SolveRequest, signal: AbortSignal | null = null) =>

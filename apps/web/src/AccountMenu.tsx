@@ -118,10 +118,25 @@ interface MenuProps extends TriggerProps {
   label: string
   trigger: ReactNode
   up?: boolean | undefined
+  /** A card of its own rather than a list of items. */
+  dialog?: boolean | undefined
+  /** Placement in place of the sheet's own. */
+  panelClassName?: string | undefined
   children: ReactNode
 }
 
-function Menu({ label, trigger, triggerClassName, triggerVariant, triggerSize, up, children }: MenuProps) {
+/** A trigger and the sheet it opens, which a pointer outside, Escape or one of its menu items closes. */
+export function Menu({
+  label,
+  trigger,
+  triggerClassName,
+  triggerVariant,
+  triggerSize,
+  up,
+  dialog,
+  panelClassName,
+  children,
+}: MenuProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -154,7 +169,7 @@ function Menu({ label, trigger, triggerClassName, triggerVariant, triggerSize, u
         data-variant={triggerVariant}
         data-size={triggerSize}
         aria-label={label}
-        aria-haspopup="menu"
+        aria-haspopup={dialog ? 'dialog' : 'menu'}
         aria-expanded={open}
         onClick={() => setOpen(o => !o)}
       >
@@ -163,9 +178,10 @@ function Menu({ label, trigger, triggerClassName, triggerVariant, triggerSize, u
       {open && (
         <div
           ref={menuRef}
-          className={`${styles.menu} ${up ? styles.up : ''}`}
+          className={`${styles.menu} ${up ? styles.up : ''} ${panelClassName ?? ''}`}
           data-surface="paper"
-          role="menu"
+          role={dialog ? 'dialog' : 'menu'}
+          aria-label={dialog ? label : undefined}
           onClick={e => (e.target as Element).closest('[role="menuitem"]') && setOpen(false)}
         >
           {children}

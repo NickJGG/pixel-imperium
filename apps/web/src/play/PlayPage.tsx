@@ -10,7 +10,15 @@ import {
 } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import { progressPercent } from '@pixel-imperium/nonogram'
-import type { Campaign, MadeContext, Province, PuzzleClues, SolveRequest, Tier } from '@pixel-imperium/protocol'
+import type {
+  Campaign,
+  MadeContext,
+  Province,
+  PuzzleClues,
+  PuzzleSummary,
+  SolveRequest,
+  Tier,
+} from '@pixel-imperium/protocol'
 import { CountPill } from '../album/CountPill.tsx'
 import { Dymo } from '../album/Dymo.tsx'
 import { ArrowIcon, CheckIcon } from '../album/icons.tsx'
@@ -19,6 +27,8 @@ import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { type AccountState, useAccount } from '../account.ts'
 import { requestHint } from '../api.ts'
 import { solve } from '../content.ts'
+import { CoopPill, useCoopView } from '../coop/CoopCard.tsx'
+import { CoopOnward, coopHintNote } from '../coop/CoopRail.tsx'
 import type { CoopSession } from '../coop/session.ts'
 import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { NextUp } from '../campaign/NextUp.tsx'
@@ -69,6 +79,7 @@ import { useRailFold } from './useRailFold.ts'
 import { useUndoKeys } from './useUndoKeys.ts'
 import { BoardView, fitView } from './viewport.ts'
 import { ReportButton } from '../workshop/Report.tsx'
+import coopStyles from '../coop/Coop.module.css'
 import styles from './Play.module.css'
 
 const route = getRouteApi('/play/$id')
@@ -257,17 +268,32 @@ const centerOf = (el: Element) => {
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
 }
 
-/** With `coop`, the grid is the co-op's: the server owns it and records the solve, so none is sent from here. */
+/** Next up in the puzzle's Province, for a co-op's solved rail. */
+export interface NextPick {
+  puzzle: PuzzleSummary
+  /** 1-based on the Province's pages. */
+  number: number
+}
+
+/**
+ * With `coop`, the grid is the co-op's: the server owns it and records the solve, so none is sent from here, and
+ * `coopNext` is where Next together (or a guest's Next on my own) goes. `cover` lays a card over the board, with the
+ * rest of the page asleep under it.
+ */
 export function Play({
   puzzle,
   context,
   account: { storage, sync },
   coop,
+  coopNext = null,
+  cover,
 }: {
   puzzle: PuzzleClues
   context: PlayContext
   account: AccountState
   coop?: CoopSession | undefined
+  coopNext?: NextPick | null
+  cover?: ReactNode
 }) {
   const { album, paper } = context
   const isConquered = () =>
@@ -312,6 +338,10 @@ export function Play({
   const crossRow = useStoreValue(store, s => (settings.crosshair ? (crosshairOf(s)?.row ?? null) : null))
   const crossCol = useStoreValue(store, s => (settings.crosshair ? (crosshairOf(s)?.col ?? null) : null))
   const paused = useStoreValue(store, s => s.paused && !s.solved)
+  const coopView = useCoopView(coop)
+  const room = coopView?.room ?? null
+  // Clear and Replay are the Host's alone.
+  const mayClear = !coop || room?.you === 0
 
   const [lineHints] = useState(() => createLineHints(puzzle))
   const hints = useMemo(() => lineHints(cells), [lineHints, cells])
@@ -541,7 +571,11 @@ export function Play({
 
   const stakes = replaying ? (
     <Stakes title="Already in the album">Replays never change the sticker.</Stakes>
-  ) : !firstSolve ? null : hinted ? (
+  ) : !firstSolve ? null : coop ? (
+    <Stakes swatch="plain" title="Co-op sticker">
+      Solving together never earns foil.
+    </Stakes>
+  ) : hinted ? (
     <Stakes swatch="plain" title="Regular sticker">
       A hint was used on this one.
     </Stakes>
@@ -550,6 +584,7 @@ export function Play({
       A hint makes it a regular sticker.
     </Stakes>
   )
+  const hintNote = hint && room && coopHintNote(room, coopView?.hintBy ?? null, hint)
   const hintButton = (popover: boolean) => (
     <HintButton
       store={store}
@@ -558,11 +593,17 @@ export function Play({
       stakes={popover ? undefined : stakes}
       note={
         !popover &&
-        hintFailed && (
+        (hintFailed ? (
           <p className={styles.panelNote} role="status">
             {HINT_FAILED}
           </p>
-        )
+        ) : (
+          hintNote && (
+            <p className={styles.panelNote} role="status">
+              {hintNote}
+            </p>
+          )
+        ))
       }
       request={cells => (coop ? coop.requestHint() : requestHint(puzzle.id, { cells: encodeCells(cells) }))}
       onError={setHintFailed}
@@ -629,22 +670,28 @@ export function Play({
       <PadGlyph button="A" />
     </Link>
   )
-  const onwardless = !album || (!conquest && !next)
+  const coopOnward = (named: boolean) =>
+    coop && room ? (
+      <CoopOnward session={coop} room={room} next={coopNext} storage={storage} leaveTo={context.back} named={named} />
+    ) : null
+  const onwardless = !room && (!album || (!conquest && !next))
   const backToPage = (
     <Link {...backTo(context.back)} data-variant="paper" data-pad-default={onwardless || undefined}>
       {context.place}
       <PadGlyph button="B" />
     </Link>
   )
-  const replay = <ClearButton store={store} solved />
+  const replay = mayClear && <ClearButton store={store} solved />
   const actions = (
     <div className={styles.btnRow}>
       <HowToPlay back={context.here} campaign={context.campaign} className={styles.howTo} />
-      <ClearButton store={store} solved={false} disabled={!canClear} />
+      {mayClear && <ClearButton store={store} solved={false} disabled={!canClear} />}
     </div>
   )
   const foilChip = replaying ? (
     <p className={styles.panelNote}>Already in the album. Replays never change the sticker.</p>
+  ) : coop ? (
+    firstSolve && <p className={styles.panelNote}>Co-op sticker: solving together never earns foil.</p>
   ) : (
     firstSolve &&
     !hinted && (
@@ -676,7 +723,7 @@ export function Play({
       {!conquest && context.solvedNote}
       <TimeCard store={store} />
       {closing}
-      {onward(true)}
+      {coopOnward(true) ?? onward(true)}
       <div className={styles.panelActions}>
         {replay}
         {backToPage}
@@ -733,6 +780,20 @@ export function Play({
     album && <ChoiceCard track={TRACKS.techniques} copy={techniquesOffer(album.province)} back={context.here} />
   )
 
+  // A Daily is played solo, and a join card's page isn't the co-op yet.
+  const coopPill = (phone: boolean) =>
+    !cover &&
+    !('daily' in puzzle) && (
+      <CoopPill
+        puzzleId={puzzle.id}
+        title={puzzle.title}
+        session={coop}
+        leaveTo={context.back}
+        triggerClassName={phone ? styles.round : coopStyles.hudPill}
+        {...(phone && { triggerVariant: 'flat', triggerSize: 'compact', sheet: true })}
+      />
+    )
+
   const paperMorph = columnPaper(album ? `province-${album.province.id}` : undefined)
   const surfaceMorph = boardMorph('surface', 'surface')
   const railMorph = boardMorph('rail', 'rail')
@@ -760,12 +821,13 @@ export function Play({
           {!solved && <span className={styles.topPercent}>{percent}%</span>}
           {!done && tag}
           <span className={styles.topTools}>
+            {coopPill(true)}
             <SoundButton className={styles.round} variant="flat" size="compact" />
             <ThemeButton className={styles.round} variant="flat" size="compact" />
           </span>
         </header>
       )}
-      {wide && <FloatingPills />}
+      {wide && <FloatingPills lead={coopPill(false)} />}
       <div className={styles.shellBody}>
         {wide && slotRow && <Filmstrip {...slotRow} slotRef={setSlot} glow={solved && moment === 'landed'} />}
         <div className={styles.surface} data-paused={paused || undefined} {...surfaceMorph}>
@@ -792,7 +854,7 @@ export function Play({
               <ClockPill store={store} />
             </div>
           )}
-          {offer}
+          {cover ?? (!coop && offer)}
         </div>
         {wide && (
           <aside
@@ -842,19 +904,19 @@ export function Play({
                   {album && !conquest && next && (
                     <NextUp puzzle={next} number={album.province.puzzles.indexOf(next) + 1} storage={storage} />
                   )}
-                  {onward(false)}
+                  {coopOnward(false) ?? onward(false)}
                   {replay}
                   {report}
                 </div>
               </div>
             ) : (
-              <div ref={railBodyRef} className={styles.railBody} inert={solved}>
+              <div ref={railBodyRef} className={styles.railBody} inert={solved || !!cover}>
                 <RailTools store={store} />
                 {hintButton(false)}
                 {fold < 2 && (
                   <section className={styles.railSection} aria-labelledby="rail-controls">
                     <h2 id="rail-controls">Controls</h2>
-                    <ControlsLegend />
+                    <ControlsLegend ping={!!coop} />
                   </section>
                 )}
                 {fold < 1 && (
@@ -883,7 +945,7 @@ export function Play({
         <Dock
           ref={dockRef}
           store={store}
-          solved={solved}
+          solved={solved || !!cover}
           hint={hintButton(true)}
           paper={paper}
           page={
@@ -903,7 +965,7 @@ export function Play({
               {report}
             </>
           }
-          note={hintFailed && <Dymo tone="pink">Couldn't reach the album</Dymo>}
+          note={hintFailed ? <Dymo tone="pink">Couldn't reach the album</Dymo> : hintNote && <Dymo>{hintNote}</Dymo>}
         />
       )}
       {afterOpen && (

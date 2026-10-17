@@ -179,6 +179,7 @@ export class CoopRooms {
       puzzleId: puzzle.id,
       title: puzzle.title,
       seats: room.seatList(),
+      seated: seat >= 0,
       ...(you !== undefined && { you }),
       ...(access === 'retired-closed' && 'made' in puzzle && { author: puzzle.made.author }),
     }
@@ -420,13 +421,17 @@ export class CoopRooms {
   async end(live: Live, reason: CoopEndReason): Promise<void> {
     if (this.rooms.get(live.room.code) !== live) return
     this.forget(live)
-    this.broadcast(live, { type: 'ended', reason })
-    for (const c of live.conns) {
-      c.live = null
-      c.ws.close(COOP_CLOSE.ended, 'ended')
+    // Written before anyone hears, so the Host's next read of their progress already has the grid.
+    try {
+      await this.writeBack(live)
+    } finally {
+      this.broadcast(live, { type: 'ended', reason })
+      for (const c of live.conns) {
+        c.live = null
+        c.ws.close(COOP_CLOSE.ended, 'ended')
+      }
+      live.conns.clear()
     }
-    live.conns.clear()
-    await this.writeBack(live)
   }
 
   /** Ends co-ops nobody has been in for `IDLE_END_MS`, and writes back grids changed `AUTOSAVE_MS` ago or more. */

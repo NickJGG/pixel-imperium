@@ -197,6 +197,23 @@ export class CoopSession implements CoopLink {
     if (you !== undefined) this.addPing(you, index)
   }
 
+  /** Host only, as are the rest: Next together. */
+  next(puzzleId: string): void {
+    this.socket?.send({ type: 'next', puzzleId })
+  }
+
+  remove(seat: number): void {
+    this.socket?.send({ type: 'remove', seat })
+  }
+
+  newLink(): void {
+    this.socket?.send({ type: 'newLink' })
+  }
+
+  end(): void {
+    this.socket?.send({ type: 'end' })
+  }
+
   /** Asks for a hint for everyone; resolves with it, or `null` if none comes (solved, or asked too often). */
   requestHint(): Promise<Hint | null> {
     if (!this.socket?.send({ type: 'hint' })) return Promise.reject(new Error('not connected'))

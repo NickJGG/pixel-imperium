@@ -115,6 +115,8 @@ export type CoopRoomInfo =
       puzzleId: string
       title: string
       seats: CoopSeat[]
+      /** Already holds a seat, so opening the link goes straight back in. */
+      seated: boolean
       you?: string
       /** On `retired-closed`: the Author who retired it. */
       author?: string

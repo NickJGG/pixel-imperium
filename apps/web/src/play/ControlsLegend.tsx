@@ -23,13 +23,22 @@ const PAD = padControls('board', { lines: true, zoom: true, back: '' }).filter(
   ([buttons]) => !buttons.some(b => ON_BADGES.has(b)),
 )
 
-/** What the board does that no button in the rail says: for the mouse, touch, or in pad mode the controller. */
-export function ControlsLegend() {
+const PING = {
+  mouse: ['Alt + click', 'Ping'],
+  touch: ['Long-press', 'Ping'],
+  pad: [['RS'], 'Ping'],
+} as const
+
+/** What the board does that no button in the rail says: for the mouse, touch, or in pad mode the controller. `ping` in a co-op. */
+export function ControlsLegend({ ping = false }: { ping?: boolean }) {
   const pad = usePadMode()
+  const mouse = ping ? [...MOUSE, PING.mouse] : MOUSE
+  const touch = ping ? [...TOUCH, PING.touch] : TOUCH
+  const padRows = ping ? [...PAD, PING.pad] : PAD
   if (pad) {
     return (
       <dl className={styles.legend}>
-        {PAD.map(([buttons, action]) => (
+        {padRows.map(([buttons, action]) => (
           <div key={action}>
             <dt>
               {buttons.map(b => (
@@ -45,7 +54,7 @@ export function ControlsLegend() {
   return (
     <>
       <dl className={`${styles.legend} ${styles.mouseOnly}`}>
-        {MOUSE.map(([input, action]) => (
+        {mouse.map(([input, action]) => (
           <div key={action}>
             <dt>{input}</dt>
             <dd>{action}</dd>
@@ -53,7 +62,7 @@ export function ControlsLegend() {
         ))}
       </dl>
       <dl className={`${styles.legend} ${styles.fingerOnly}`}>
-        {TOUCH.map(([input, action]) => (
+        {touch.map(([input, action]) => (
           <div key={action}>
             <dt>{input}</dt>
             <dd>{action}</dd>

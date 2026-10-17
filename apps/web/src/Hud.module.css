@@ -184,7 +184,8 @@
 }
 
 .tools > :is(button, a),
-.account [data-pad-menu] {
+.account [data-pad-menu],
+.lead [data-pad-menu] {
   --btn-bg: var(--line-soft);
   --btn-ink: var(--ink);
   --btn-edge: var(--shade);
@@ -192,13 +193,15 @@
   font-size: var(--fs-16);
 }
 
-.account [data-pad-menu][aria-expanded='true'] {
+.account [data-pad-menu][aria-expanded='true'],
+.lead [data-pad-menu][aria-expanded='true'] {
   --btn-bg: var(--ink);
   --btn-ink: var(--card);
   --btn-edge: transparent;
 }
 
-.account {
+.account,
+.lead {
   display: flex;
 }
 

@@ -248,6 +248,11 @@ export async function acceptImport(): Promise<void> {
   await refresh(sync)
 }
 
+/** Re-reads the account from the server, which changed it behind this device's back: a co-op it hosted. */
+export async function refreshAccount(): Promise<void> {
+  if (state.sync) await refresh(state.sync)
+}
+
 /** Keeps signed-out play on the device and asks again at the next sign-in. */
 export function deferImport(): void {
   if (sessionId) state.storage.saveMeta('import-deferred', sessionId)

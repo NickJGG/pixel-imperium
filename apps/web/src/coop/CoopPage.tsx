@@ -1,16 +1,20 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { type ReactNode, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { Link, getRouteApi } from '@tanstack/react-router'
 import type { Campaign, CoopRoomInfo, PuzzleClues } from '@pixel-imperium/protocol'
-import { type AccountState, useAccount } from '../account.ts'
+import { type AccountState, refreshAccount, useAccount } from '../account.ts'
 import { paperFor } from '../album/paper.ts'
 import { isRetired } from '../api.ts'
+import { nextPuzzle } from '../campaign/progress.ts'
 import * as content from '../content.ts'
 import { EdgeState, Retired } from '../EdgeStates.tsx'
 import { Hud } from '../Hud.tsx'
-import { type PlayContext, Play, TIER_NAME } from '../play/PlayPage.tsx'
+import { type NextPick, type PlayContext, Play, TIER_NAME } from '../play/PlayPage.tsx'
 import { PlaySkeleton } from '../play/PlaySkeleton.tsx'
+import { PlaytestStorage } from '../play/playtest-storage.ts'
+import type { ProgressStorage } from '../play/progress-storage.ts'
 import { CoopStorage } from './coop-storage.ts'
 import { deviceToken } from './device.ts'
+import { JoinCard } from './JoinCard.tsx'
 import { type CoopStatus, CoopSession, isEnd } from './session.ts'
 
 const route = getRouteApi('/co/$code')
@@ -53,13 +57,40 @@ function coopContext({ puzzle, campaign }: CoopPuzzle, code: string): PlayContex
   }
 }
 
-/** A co-op by its link: joined at once when the link lets this player in, else why not. */
+/** The puzzle after `puzzle` in its Province that `storage` hasn't solved yet, if it's a campaign puzzle. */
+function nextIn({ puzzle, campaign }: CoopPuzzle, storage: ProgressStorage): NextPick | null {
+  const province = 'provinceId' in puzzle ? campaign?.provinces.find(p => p.id === puzzle.provinceId) : undefined
+  if (!province) return null
+  const next = nextPuzzle(province.puzzles, puzzle.id, id => storage.loadSolved(id) !== null)
+  return next && { puzzle: next, number: province.puzzles.indexOf(next) + 1 }
+}
+
+/**
+ * A co-op by its link. A player already seated goes straight back in; anyone else sees the join card over the
+ * puzzle first, or why the link won't let them in.
+ */
 export function CoopPage() {
   const { info, first, started } = route.useLoaderData()
   const { code } = route.useParams()
   const account = useAccount()
-  if (info.access !== 'join' || !first) return <CoopClosed info={info} />
+  const [joined, setJoined] = useState(false)
+  if (info.access === 'ended' || info.access === 'retired-closed' || !first) return <CoopClosed info={info} />
+  if (info.access !== 'join' || (!info.seated && !joined)) {
+    return (
+      <JoinPreview key={`${account.generation}:${first.puzzle.id}`} first={first} code={code} account={account}>
+        <JoinCard info={info} signedIn={account.account !== null} onJoin={() => setJoined(true)} />
+      </JoinPreview>
+    )
+  }
   return <CoopPlay key={`${account.generation}:${code}`} code={code} first={first} started={started} account={account} />
+}
+
+/** The co-op's puzzle, empty and asleep, under the join card. */
+function JoinPreview({ first, code, account, children }: { first: CoopPuzzle; code: string; account: AccountState; children: ReactNode }) {
+  const [storage] = useState(() => new PlaytestStorage())
+  return (
+    <Play puzzle={first.puzzle} context={coopContext(first, code)} account={{ ...account, storage, sync: null }} cover={children} />
+  )
 }
 
 function CoopPlay({
@@ -80,6 +111,12 @@ function CoopPlay({
   }, [session])
   const view = useSyncExternalStore(session.subscribe, session.getState)
   const puzzleId = view.room?.puzzleId
+  const hosting = view.room?.you === 0 && account.account !== null
+  // The server wrote the shared grid as the Host's progress, so this device's copy of it is stale.
+  useEffect(() => {
+    if (!hosting) return
+    return () => void refreshAccount()
+  }, [hosting])
   const [shown, setShown] = useState(first)
   useEffect(() => {
     if (puzzleId === undefined || puzzleId === shown.puzzle.id) return
@@ -107,6 +144,7 @@ function CoopPlay({
       context={coopContext(shown, code)}
       account={{ ...account, storage, sync: null }}
       coop={session}
+      coopNext={nextIn(shown, account.storage)}
     />
   )
 }

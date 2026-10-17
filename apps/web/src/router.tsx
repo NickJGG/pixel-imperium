@@ -319,7 +319,7 @@ const coopRoute = createRoute({
     if (!info) throw notFound()
     const started = device !== null && 'puzzleId' in info && deviceStartedPuzzle(info.puzzleId)
     if (started && info.access === 'retired-closed') info = (await fetchCoop(params.code, device, true)) ?? info
-    const first = info.access === 'join' ? await loadCoopPuzzle(info.puzzleId, started) : null
+    const first = info.access === 'ended' || info.access === 'retired-closed' ? null : await loadCoopPuzzle(info.puzzleId, started)
     return { info, first, started }
   },
   component: CoopPage,

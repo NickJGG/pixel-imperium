@@ -1,0 +1,218 @@
+/* The co-op's pill, its card, and the join card over the board. Seat colors are --seat-1..4 in tokens.css. */
+.card {
+  display: grid;
+  gap: var(--space-3);
+  width: 300px;
+  text-align: left;
+}
+
+.card h2 {
+  margin: 0;
+  font: var(--type-name);
+  letter-spacing: -0.03em;
+}
+
+.card p {
+  margin: 0;
+  font-size: var(--fs-14);
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.card p b {
+  color: var(--ink);
+}
+
+/* The phone's: a sheet above the dock rather than a drop under the pill. */
+.sheet {
+  position: fixed;
+  top: auto;
+  right: auto;
+  left: 50%;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  width: min(420px, calc(100vw - 2 * var(--space-4)));
+  max-width: none;
+  transform: translateX(-50%);
+}
+
+.dot {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--seat);
+  color: var(--board-bg);
+  font: 700 var(--fs-12) / 1 var(--font-ui);
+}
+
+.dot[data-away] {
+  opacity: 0.45;
+}
+
+.faces {
+  display: inline-flex;
+}
+
+.faces > .dot {
+  width: 28px;
+  height: 28px;
+  box-shadow: 0 0 0 2px var(--card);
+}
+
+.faces > .dot + .dot {
+  margin-left: calc(-1 * var(--space-2));
+}
+
+.hudPill {
+  width: 44px;
+  padding: 0;
+}
+
+.hudPill svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Over the HUD's or the top line's round pill, whichever module that comes from. */
+[data-pad-menu].facesPill {
+  width: auto;
+  padding: 0 var(--space-2);
+  border-radius: var(--r-pill);
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.link code {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  font: var(--fs-14) var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seats {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-14);
+}
+
+.seats li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 28px;
+}
+
+.seats small {
+  margin-left: auto;
+  font-size: var(--fs-12);
+  color: var(--ink-soft);
+}
+
+.you {
+  color: var(--ink-soft);
+}
+
+.empty {
+  color: var(--ink-soft);
+}
+
+.empty > .dot {
+  background: none;
+  border: 2px dashed var(--line-soft);
+}
+
+.card .remove {
+  width: 28px;
+  min-height: 28px;
+  padding: 0;
+  font-size: var(--fs-16);
+}
+
+.row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.row > * {
+  flex: 1;
+}
+
+/* Over the stage: the live board dimmed behind the join card. */
+.veil {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  backdrop-filter: blur(3px);
+  border-radius: inherit;
+}
+
+.joinCard {
+  width: min(360px, 100%);
+  padding: var(--space-5);
+  background: var(--card-2);
+  color: var(--ink);
+  border-radius: var(--r-lg);
+  box-shadow:
+    0 6px 0 var(--shade),
+    0 20px 50px var(--shade);
+}
+
+.joinCard > :is(a, button) {
+  justify-content: center;
+}
+
+.here {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-14);
+  color: var(--ink-soft);
+}
+
+/* The co-op's place in the solved rail, for a guest waiting on the Host. */
+.waiting {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  box-shadow: 0 0 0 1px var(--line-soft);
+}
+
+.waiting h2 {
+  margin: 0;
+  font: var(--type-label);
+}
+
+.waiting p {
+  margin: 0;
+  font-size: var(--fs-14);
+  color: var(--ink-soft);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
