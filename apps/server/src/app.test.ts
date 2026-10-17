@@ -745,6 +745,7 @@ describe('GET /api/users/:handle', () => {
     campaigns: [{ id: 'alpha', verifiedPuzzleIds: ['diag'], foilPuzzleIds: [], solvedAt: { diag: '2026-01-01T00:00:00.000Z' }, stamps: alphaStamps() }],
     years: [],
     showcase: [],
+    friendship: null,
   }
 
   it('shows verified solves of known puzzles by campaign, without private fields', async () => {
@@ -756,7 +757,7 @@ describe('GET /api/users/:handle', () => {
 
   it('shows the owner verified solves only too', async () => {
     const o = await owner()
-    expect(await profile('OWNER', o.cookie)).toEqual<Profile>(verifiedOnly)
+    expect(await profile('OWNER', o.cookie)).toEqual<Profile>({ ...verifiedOnly, friendship: 'self' })
   })
 
   it('orders campaigns by their most recent verified solve', async () => {

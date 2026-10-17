@@ -11,6 +11,10 @@ import type {
   DraftCampaignDoc,
   DraftPuzzle,
   Drafts,
+  FriendRequestBody,
+  FriendRequestOutcome,
+  FriendRequestResponse,
+  Friends,
   HandleAvailability,
   HandleRejection,
   HintRequest,
@@ -148,6 +152,31 @@ export async function fetchProfile(handle: string): Promise<Profile | null> {
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
   return (await res.json()) as Profile
 }
+
+export const fetchFriends = () => getJson<Friends>('/api/me/friends')
+
+/** How the request landed; rejects when there is no outcome, as on a rate limit or a server error. */
+export async function sendFriendRequest(handle: string): Promise<FriendRequestOutcome> {
+  const res = await fetch('/api/me/friends/requests', jsonInit('POST', { handle } satisfies FriendRequestBody))
+  const json = (await res.json().catch(() => null)) as Partial<FriendRequestResponse> | null
+  if (!json?.outcome) throw new Error(`${res.status} ${res.statusText}`)
+  return json.outcome
+}
+
+async function friendCall(method: string, path: string): Promise<void> {
+  const res = await fetch(`/api/me/friends/${path}`, { method })
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+}
+
+export const acceptFriendRequest = (handle: string) =>
+  friendCall('POST', `requests/${encodeURIComponent(handle)}/accept`)
+
+export const declineFriendRequest = (handle: string) =>
+  friendCall('POST', `requests/${encodeURIComponent(handle)}/decline`)
+
+export const cancelFriendRequest = (handle: string) => friendCall('DELETE', `requests/${encodeURIComponent(handle)}`)
+
+export const removeFriend = (handle: string) => friendCall('DELETE', encodeURIComponent(handle))
 
 export const checkHandle = (handle: string, signal: AbortSignal) =>
   getJson<HandleAvailability>(`/api/handles/${encodeURIComponent(handle)}/available`, { signal })

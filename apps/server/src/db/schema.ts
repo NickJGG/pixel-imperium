@@ -267,3 +267,33 @@ export const coopRoom = pgTable('coop_room', {
   replaying: boolean('replaying').notNull(),
   savedAt: timestamp('saved_at').defaultNow().notNull(),
 })
+
+/** A mutual Friend pair, stored once with `userA < userB`. */
+export const friendship = pgTable(
+  'friendship',
+  {
+    userA: text('user_a')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    userB: text('user_b')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  t => [primaryKey({ columns: [t.userA, t.userB] }), index('friendship_user_b_idx').on(t.userB)],
+)
+
+/** A friend request waiting on `toId`'s answer. */
+export const friendRequest = pgTable(
+  'friend_request',
+  {
+    fromId: text('from_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    toId: text('to_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  t => [primaryKey({ columns: [t.fromId, t.toId] }), index('friend_request_to_idx').on(t.toId)],
+)

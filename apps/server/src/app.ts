@@ -26,11 +26,11 @@ import type {
   SolveResponse,
   SolveStamps,
 } from '@pixel-imperium/protocol'
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull } from 'drizzle-orm'
 import type { Auth } from './auth.ts'
 import type { Db } from './db/index.ts'
 import { hint, lessonDone, madeCampaign, madePuzzle, progress, solve, user, userSettings } from './db/schema.ts'
-import { handleProblem } from './handles.ts'
+import { handleIs, handleProblem } from './handles.ts'
 import { rateLimiter } from './rate-limit.ts'
 import { parseCells, planImport } from './import.ts'
 import type { Campaign } from './campaigns.ts'
@@ -38,6 +38,7 @@ import { type Dailies, dailyFor, datesInMonth, latestPlayableDate, yearAlbum } f
 import { stampsFor } from './stamps.ts'
 import { type MadeCampaignRow, type MadePuzzle, isMadeId, madeCrest, madePuzzleFrom } from './made.ts'
 import { workshopRoutes } from './workshop.ts'
+import { friendsRoutes, friendshipOf } from './friends.ts'
 import { type Catalog, type Viewer, createCatalog, upsertProgress } from './catalog.ts'
 import { CoopRooms } from './coop/server.ts'
 import { coopRoutes } from './coop/routes.ts'
@@ -99,8 +100,6 @@ function parseShowcase(value: unknown): string[] | null {
   if (!Array.isArray(ids) || ids.length > SHOWCASE_SIZE || !ids.every(id => typeof id === 'string')) return null
   return new Set(ids).size === ids.length ? ids : null
 }
-
-const handleIs = (handle: string) => sql`lower(${user.handle}) = ${handle.toLowerCase()}`
 
 /** Postgres `unique_violation`, which drizzle wraps as the cause of its own error. */
 function isUniqueViolation(e: unknown): boolean {
@@ -372,6 +371,7 @@ export function createApi(catalog: Catalog, { db, auth, now = Date.now, coop }: 
         entry.stamps = stampsFor(album, solves, { year: true })
       }
       const verified = new Set(solves.map(s => s.puzzleId))
+      const viewer = c.get('user')
       return c.json<Profile>({
         handle: owner.handle,
         image: owner.image,
@@ -380,10 +380,12 @@ export function createApi(catalog: Catalog, { db, auth, now = Date.now, coop }: 
         campaigns: [...byCampaign.values()],
         years: [...byYear.values()],
         showcase: owner.showcase.filter(id => verified.has(id) && puzzleById(id)),
+        friendship: viewer ? await friendshipOf(db, viewer.id, owner.id) : null,
       })
     })
     .route('/', workshopRoutes({ db, isOfficialId: catalog.isOfficialId }))
     .route('/', coopRoutes(rooms))
+    .route('/', friendsRoutes({ db }))
     .put('/me/handle', async c => {
       const body = (await c.req.json().catch(() => null)) as { handle?: unknown } | null
       const handle = typeof body?.handle === 'string' ? body.handle : ''

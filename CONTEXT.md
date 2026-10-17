@@ -185,18 +185,22 @@ _Avoid_: Creator, maker, community, custom, user-generated
 A published player-made **Puzzle** or **Campaign** its **Author** has closed to newcomers; anyone who started it can still finish it. Distinct from removed (taken down by an admin, gone for everyone).
 _Avoid_: Unpublished, archived, deleted
 
-### Co-op
+### Party
 
-**Co-op**:
-A live, shared grid on one **Puzzle** for up to four **Players**, started by a signed-in **Host** and joined by link. Started from the "Play together" button; started, joined, full or ended.
-_Avoid_: Party, room, lobby, session, multiplayer (in product copy)
+**Party**:
+A group of up to four **Players**, started by a signed-in **Host**, that stays together across **Puzzles** and solves them on one live, shared grid. The only way to play with others.
+_Avoid_: Co-op (retired), room, lobby, group, squad, multiplayer (in product copy)
+
+**Friend**:
+Another **Account** that accepted your friend request, or whose request you accepted; mutual, and either side can remove it.
+_Avoid_: Follower, contact, buddy, connection
 
 **Ping**:
-A ring a **Player** in a **Co-op** pulses on one cell, in their seat color, for everyone to see: "look here". Changes no cell.
+A ring a **Player** in a **Party** pulses on one cell, in their seat color, for everyone to see: "look here". Changes no cell.
 _Avoid_: Mark (a crossed-out cell), flag, highlight
 
 **Host**:
-The **Account** that started a **Co-op**; it owns the link and is the only one who can Clear or end it.
+The signed-in **Player** running a **Party**: whoever started it, until they hand it over or leave, when it passes to the longest-seated signed-in member. The only one who can start a **Puzzle** for the party, Clear, end, Remove a **Player** or make a new link. Any member can invite.
 _Avoid_: Owner, leader, admin
 
 ## Relationships
@@ -223,11 +227,13 @@ _Avoid_: Owner, leader, admin
 - A **Puzzle** or **Campaign** is official or player-made; a player-made one has exactly one **Author** and is reached only by its link
 - A player-made **Puzzle** earns a **Sticker** and **Foil** and counts toward a **Streak**, but never a **Stamp** and never appears on a **Profile**
 - An **Author** solving their own **Puzzle** records nothing
-- A **Co-op** solve gives every signed-in **Player** in it a **Verified solve** and **Sticker**, never **Foil** and never a **Best time**
-- A **Co-op** solve on a **Province** a **Player** hasn't unlocked stays hidden until they reach it
-- Today's **Daily** can't be played in a **Co-op**
-- An **Author** hosting a **Co-op** on their own **Puzzle** records nothing; the other **Players** record as usual
-- Only **Players** who already started a **Retired** **Puzzle** can join a **Co-op** on it
+- Both sides of a **Friend** pair have an **Account**; **Signed-out play** has no friends
+- A **Player** is in at most one **Party** at a time; a **Party** ends once nobody in it has been connected for 10 minutes
+- A **Party** solve gives every signed-in **Player** in it a **Verified solve** and **Sticker**, never **Foil** and never a **Best time**
+- A **Party** solve on a **Province** a **Player** hasn't unlocked stays hidden until they reach it
+- Today's **Daily** can't be played in a **Party**
+- An **Author** hosting a **Party** on their own **Puzzle** records nothing; the other **Players** record as usual
+- Only **Players** who already started a **Retired** **Puzzle** can join a **Party** on it
 - A player-made **Puzzle** is in at most one **Campaign**, and keeps its own link once it is; a solve counts in both places
 
 ## Example dialogue

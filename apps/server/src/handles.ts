@@ -1,5 +1,7 @@
 /** Handles are `[a-z0-9_]{3,20}`; uniqueness, reserved-word and blocklist checks ignore case. */
 import type { HandleProblem } from '@pixel-imperium/protocol'
+import { sql } from 'drizzle-orm'
+import { user } from './db/schema.ts'
 
 export const HANDLE_MIN = 3
 export const HANDLE_MAX = 20
@@ -53,6 +55,9 @@ export function handleProblem(handle: string): Exclude<HandleProblem, 'taken'> |
   if (isBlocked(handle)) return 'blocked'
   return null
 }
+
+/** Matches the account holding `handle`, ignoring case. */
+export const handleIs = (handle: string) => sql`lower(${user.handle}) = ${handle.toLowerCase()}`
 
 export const isValidHandle = (handle: string): boolean => handleProblem(handle) === null
 

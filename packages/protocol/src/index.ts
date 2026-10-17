@@ -1,4 +1,5 @@
 import type { Clues, Hint } from '@pixel-imperium/nonogram'
+import type { Friendship } from './friends.ts'
 
 export type { SeedPuzzle } from '@pixel-imperium/nonogram'
 
@@ -348,6 +349,8 @@ export interface Profile {
   years: ProfileCampaign[]
   /** Puzzle ids the player picked, biggest first; empty when they haven't, and the album falls back. */
   showcase: string[]
+  /** `null` for a signed-out viewer. */
+  friendship: Friendship | null
 }
 
 /** A player-picked paper: `#rrggbb`. */
@@ -555,3 +558,4 @@ export interface ReportRequest {
 }
 
 export * from './coop.ts'
+export * from './friends.ts'
