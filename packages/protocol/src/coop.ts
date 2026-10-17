@@ -8,7 +8,7 @@ import { type Hint, hashString } from '@pixel-imperium/nonogram'
 import type { SolveStamps } from './index.ts'
 
 /** Bump whenever a message changes shape; a client on another version gets `outdated` and is asked to reload. */
-export const COOP_PROTOCOL = 1
+export const COOP_PROTOCOL = 2
 
 export const COOP_SEATS = 4
 
@@ -45,9 +45,14 @@ export interface CoopState {
 export type CoopClientMsg =
   /** `started` is a signed-out device's word that it has progress on a Retired puzzle, as `?started=1` elsewhere. */
   | { type: 'join'; code: string; deviceToken: string; protocol: number; started?: boolean }
-  /** `id` is the client's, echoed back so it can tell its own stroke. */
-  | { type: 'stroke'; id: number; changes: CoopChange[] }
+  /**
+   * `id` is the client's, echoed back so it can tell its own stroke. A drag goes out in pieces as it is drawn;
+   * `joins` adds a piece to the stroke before it, so the whole drag stays one undo.
+   */
+  | { type: 'stroke'; id: number; changes: CoopChange[]; joins?: boolean }
   | { type: 'undo' }
+  /** Takes back the stroke still being drawn, as if it never was. */
+  | { type: 'cancel' }
   /** Host only. On a solved grid it starts a Replay. */
   | { type: 'clear' }
   | { type: 'cursor'; i: number | null }
@@ -66,7 +71,7 @@ export type CoopEndReason = 'host' | 'idle'
 
 export type CoopServerMsg =
   | { type: 'snapshot'; room: CoopState; you: number }
-  /** `id` is the sender's stroke id; `null` for an undo or a Clear. */
+  /** `id` is the sender's stroke id; `null` for an undo, a cancel or a Clear. */
   | { type: 'stroke'; id: number | null; by: number; changes: CoopChange[] }
   | { type: 'cursor'; seat: number; i: number | null }
   | { type: 'ping'; seat: number; i: number }

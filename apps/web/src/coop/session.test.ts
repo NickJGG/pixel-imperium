@@ -100,6 +100,54 @@ describe('CoopSession', () => {
     expect(ws().sent.filter(m => m.type === 'stroke')).toEqual([{ type: 'stroke', id: 2, changes: [{ i: 2, to: 'x' }] }])
   })
 
+  it('sends a drag in pieces, and cancels only what went out', () => {
+    const { store, ws, sent } = join()
+    store.beginStroke({ row: 0, col: 0 }, 'fill', { lockAxis: false })
+    store.extendStroke({ row: 0, col: 1 })
+    ws().drop()
+    store.extendStroke({ row: 1, col: 1 })
+    expect(sent('stroke')).toEqual([
+      {
+        type: 'stroke',
+        id: 1,
+        changes: [
+          { i: 0, to: '#' },
+          { i: 1, to: '#' },
+        ],
+      },
+    ])
+    store.cancelStroke()
+    // Back online, the piece drawn while away stays unsent.
+    vi.runOnlyPendingTimers()
+    ws().open()
+    ws().receive(snapshot('##..'))
+    expect(ws().sent.filter(m => m.type === 'stroke')).toEqual([])
+    expect(grid(store)).toBe('##..')
+  })
+
+  it('cancels a stroke whose pieces went out', () => {
+    const { store, ws, sent } = join()
+    store.beginStroke({ row: 1, col: 0 }, 'mark', { lockAxis: false })
+    store.extendStroke({ row: 1, col: 1 })
+    store.cancelStroke()
+    expect(sent('cancel')).toHaveLength(1)
+    ws().receive({ type: 'stroke', id: 1, by: 1, changes: [{ i: 2, to: 'x' }, { i: 3, to: 'x' }] })
+    ws().receive({ type: 'stroke', id: null, by: 1, changes: [{ i: 3, to: '.' }, { i: 2, to: '.' }] })
+    expect(grid(store)).toBe('....')
+  })
+
+  it('lets go of a drag the server solved partway through', () => {
+    const { store, ws } = join()
+    store.beginStroke({ row: 0, col: 0 }, 'fill', { lockAxis: false })
+    store.extendStroke({ row: 0, col: 1 })
+    ws().receive({ type: 'stroke', id: 1, by: 1, changes: [{ i: 0, to: '#' }, { i: 1, to: '#' }] })
+    store.extendStroke({ row: 1, col: 1 })
+    ws().receive({ type: 'solved', palette: ['#f00', '#0f0', null, null], foil: false })
+    store.endStroke()
+    expect(grid(store)).toBe('##..')
+    expect(store.getState()).toMatchObject({ solved: true, palette: ['#f00', '#0f0', null, null] })
+  })
+
   it('solves on a partner stroke and takes the reveal from the server', () => {
     const { store, ws } = join('#...')
     ws().receive({ type: 'stroke', id: 3, by: 0, changes: [{ i: 1, to: '#' }] })

@@ -257,8 +257,13 @@ export class CoopRooms {
     switch (msg.type) {
       case 'stroke': {
         if (typeof msg.id !== 'number') return
-        const changes = room.stroke(conn.seat, msg.changes)
+        const changes = room.stroke(conn.seat, msg.changes, msg.joins === true)
         if (changes) this.applied(live, conn.seat, msg.id, changes)
+        return
+      }
+      case 'cancel': {
+        const changes = room.cancel(conn.seat)
+        if (changes.length > 0) this.applied(live, conn.seat, null, changes)
         return
       }
       case 'undo': {

@@ -76,7 +76,7 @@ function Root() {
   // captures it, and its logo would hold still instead of slapping on.
   const playing = useRouterState({
     select: s =>
-      /^\/(?:play\/|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+|workshop\/p\/|workshop\/c\/[^/]+\/playtest\/[^/]+\/[^/]+|make$)/.test(s.matches.at(-1)?.pathname ?? s.location.pathname),
+      /^\/(?:play\/|co\/|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+|workshop\/p\/|workshop\/c\/[^/]+\/playtest\/[^/]+\/[^/]+|make$)/.test(s.matches.at(-1)?.pathname ?? s.location.pathname),
   })
   // An edge state in their place wants the HUD back, floating like any Worlds page's.
   const edge = useRouterState({

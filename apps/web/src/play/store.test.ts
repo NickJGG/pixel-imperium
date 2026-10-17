@@ -535,7 +535,7 @@ describe('PlayStore in a co-op', () => {
 
   const palette = Array.from({ length: 12 }, (_, i) => (solution[i] ? '#f0f' : null))
   const coopStore = (userId: string | null = null, grid = Array(12).fill('empty')) => {
-    const link = { stroke: vi.fn(), undo: vi.fn(), clear: vi.fn(), ping: vi.fn() } satisfies CoopLink
+    const link = { stroke: vi.fn(), cancel: vi.fn(), undo: vi.fn(), clear: vi.fn(), ping: vi.fn() } satisfies CoopLink
     const s = new PlayStore(
       { id: 'test', width: 4, height: 3, clues: cluesFromSolution(4, 3, solution) },
       { storage: new CoopStorage(userId, () => grid, false), coop: link },
@@ -555,11 +555,53 @@ describe('PlayStore in a co-op', () => {
     const { s, link } = coopStore()
     drag(s, 'fill', [at(0, 0), at(0, 1)])
     expect(render(s)[0]).toBe('##..')
-    expect(link.stroke).toHaveBeenCalledWith([
-      { index: 0, from: 'empty', to: 'filled' },
-      { index: 1, from: 'empty', to: 'filled' },
-    ])
+    expect(link.stroke).toHaveBeenCalledWith(
+      [
+        { index: 0, from: 'empty', to: 'filled' },
+        { index: 1, from: 'empty', to: 'filled' },
+      ],
+      false,
+    )
     expect(s.getState()).toMatchObject({ canUndo: true, canRedo: false })
+  })
+
+  it('sends a drag in pieces as it goes, its first cell once it moves on', () => {
+    const { s, link } = coopStore()
+    s.beginStroke(at(0, 0), 'fill', { lockAxis: false })
+    expect(link.stroke).not.toHaveBeenCalled()
+    s.extendStroke(at(0, 1))
+    s.extendStroke(at(0, 3))
+    s.endStroke()
+    expect(link.stroke.mock.calls).toEqual([
+      [
+        [
+          { index: 0, from: 'empty', to: 'filled' },
+          { index: 1, from: 'empty', to: 'filled' },
+        ],
+        false,
+      ],
+      [
+        [
+          { index: 2, from: 'empty', to: 'filled' },
+          { index: 3, from: 'empty', to: 'filled' },
+        ],
+        true,
+      ],
+    ])
+    s.undo()
+    expect(s.getState().canUndo).toBe(false)
+  })
+
+  it('cancels a stroke with the server only once some of it went out', () => {
+    const { s, link } = coopStore()
+    s.beginStroke(at(0, 0), 'fill', { lockAxis: false })
+    s.cancelStroke()
+    expect(link.cancel).not.toHaveBeenCalled()
+    s.beginStroke(at(0, 0), 'fill', { lockAxis: false })
+    s.extendStroke(at(0, 1))
+    s.cancelStroke()
+    expect(link.cancel).toHaveBeenCalledOnce()
+    expect(render(s)[0]).toBe('....')
   })
 
   it('asks the server to undo and to clear, changing nothing itself', () => {

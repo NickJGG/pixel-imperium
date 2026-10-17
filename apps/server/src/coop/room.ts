@@ -24,8 +24,12 @@ interface Seat extends SeatHolder {
   pointer: number | null
   lastEdit: number | null
   /** Their strokes, oldest first; each write is tagged with the serial it stamped on its cell. */
-  undo: { i: number; from: CoopCell; serial: number }[][]
+  undo: Stroke[]
+  /** The stroke a `joins` piece adds to while it is still the latest in `undo`. */
+  open: Stroke | null
 }
+
+type Stroke = { i: number; from: CoopCell; serial: number }[]
 
 export interface SavedRoom {
   code: string
@@ -71,7 +75,7 @@ export class Room {
     this.replaying = init.replaying
     this.seats = Array.from({ length: COOP_SEATS }, (_, k) => {
       const holder = init.seats[k]
-      return holder ? { ...holder, connections: 0, pointer: null, lastEdit: null, undo: [] } : null
+      return holder ? { ...holder, connections: 0, pointer: null, lastEdit: null, undo: [], open: null } : null
     })
     this.removed = new Set(init.removed)
     this.lastWrite = this.cells.map(() => 0)
@@ -130,7 +134,7 @@ export class Room {
     const held = this.seatOf(holder.identity)
     if (held >= 0) return held
     const seat = this.freeSeat()
-    if (seat >= 0) this.seats[seat] = { ...holder, connections: 0, pointer: null, lastEdit: null, undo: [] }
+    if (seat >= 0) this.seats[seat] = { ...holder, connections: 0, pointer: null, lastEdit: null, undo: [], open: null }
     return seat
   }
 
@@ -151,17 +155,18 @@ export class Room {
     return Number.isInteger(i) && (i as number) >= 0 && (i as number) < this.cells.length
   }
 
-  private write(seat: Seat, changes: readonly CoopChange[]): CoopChange[] {
+  private write(seat: Seat, changes: readonly CoopChange[], joins: boolean): CoopChange[] {
     const serial = ++this.serial
-    const undo: Seat['undo'][number] = []
+    // Pushed even while empty, so the stroke's later pieces still find it open.
+    const joined = joins && seat.open !== null && seat.undo.at(-1) === seat.open
+    const undo: Stroke = joined ? seat.open! : []
+    if (!joined) seat.undo.push(undo)
+    seat.open = undo
     for (const { i, to } of changes) {
       if (this.cells[i] === to) continue
       undo.push({ i, from: this.cells[i]!, serial })
       this.cells[i] = to
       this.lastWrite[i] = serial
-    }
-    if (undo.length > 0) {
-      seat.undo.push(undo)
       this.dirty = true
     }
     const last = changes.at(-1)
@@ -169,12 +174,15 @@ export class Room {
     return [...changes]
   }
 
-  /** Applies a stroke in arrival order; `null` for a malformed one, or any stroke on a solved grid. */
-  stroke(seat: number, changes: unknown): CoopChange[] | null {
+  /**
+   * Applies a stroke, or a piece of one sent mid-drag, in arrival order; `null` for a malformed one, or any stroke on
+   * a solved grid. A piece that `joins` adds to the seat's open stroke, so the whole drag stays one undo.
+   */
+  stroke(seat: number, changes: unknown, joins = false): CoopChange[] | null {
     const s = this.seats[seat]
     if (!s || this.solved || !Array.isArray(changes) || changes.length === 0 || changes.length > this.cells.length) return null
     const valid = changes.every(c => c && typeof c === 'object' && this.inRange(c.i) && CELLS.has(c.to))
-    return valid ? this.write(s, changes.map(({ i, to }: CoopChange) => ({ i, to }))) : null
+    return valid ? this.write(s, changes.map(({ i, to }: CoopChange) => ({ i, to })), joins) : null
   }
 
   /** Undoes the seat's latest stroke that still has a cell no one wrote over since; what changed, maybe nothing. */
@@ -182,22 +190,36 @@ export class Room {
     const s = this.seats[seat]
     if (!s || this.solved) return []
     while (s.undo.length > 0) {
-      const stroke = s.undo.pop()!
-      const serial = ++this.serial
-      const changes: CoopChange[] = []
-      for (const { i, from, serial: wrote } of stroke.toReversed()) {
-        if (this.lastWrite[i] !== wrote) continue
-        this.cells[i] = from
-        this.lastWrite[i] = serial
-        changes.push({ i, to: from })
-      }
-      if (changes.length > 0) {
-        this.dirty = true
-        s.lastEdit = changes.at(-1)!.i
-        return changes
-      }
+      const changes = this.revert(s, s.undo.pop()!)
+      if (changes.length > 0) return changes
     }
     return []
+  }
+
+  /** Takes back the seat's stroke still being drawn, as if it never was; what changed, maybe nothing. */
+  cancel(seat: number): CoopChange[] {
+    const s = this.seats[seat]
+    if (!s || this.solved || !s.open || s.undo.at(-1) !== s.open) return []
+    s.undo.pop()
+    const changes = this.revert(s, s.open)
+    s.open = null
+    return changes
+  }
+
+  private revert(s: Seat, stroke: Stroke): CoopChange[] {
+    const serial = ++this.serial
+    const changes: CoopChange[] = []
+    for (const { i, from, serial: wrote } of stroke.toReversed()) {
+      if (this.lastWrite[i] !== wrote) continue
+      this.cells[i] = from
+      this.lastWrite[i] = serial
+      changes.push({ i, to: from })
+    }
+    if (changes.length > 0) {
+      this.dirty = true
+      s.lastEdit = changes.at(-1)!.i
+    }
+    return changes
   }
 
   /** Host only; empties the grid and forgets every undo. On a solved grid it starts a Replay. */

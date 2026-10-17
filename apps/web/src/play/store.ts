@@ -82,7 +82,10 @@ export interface Change {
 
 /** A co-op's side of the store. */
 export interface CoopLink {
-  stroke(changes: readonly Change[]): void
+  /** A stroke, or the next piece of one still being drawn when `joins`. */
+  stroke(changes: readonly Change[], joins: boolean): void
+  /** Takes back the pieces of the stroke in hand already sent. */
+  cancel(): void
   undo(): void
   clear(): void
   ping(index: number): void
@@ -98,6 +101,8 @@ interface ActiveStroke {
   /** `row` = moving along the start row, `col` = along the start column. */
   axis: 'row' | 'col' | null
   changes: Change[]
+  /** How many of `changes` a co-op has been sent. */
+  sent: number
 }
 
 const toolState: Record<Tool, Cell> = { fill: 'filled', mark: 'marked' }
@@ -225,6 +230,7 @@ export class PlayStore {
       lockAxis,
       axis: null,
       changes: [],
+      sent: 0,
     }
     this.apply(pos)
     this.emit({ cursor: pos })
@@ -249,6 +255,7 @@ export class PlayStore {
     if (jump) {
       this.apply(target)
       s.last = target
+      this.sendStroke()
       return this.emit({ cursor: target })
     }
     let { row, col } = s.last
@@ -270,6 +277,7 @@ export class PlayStore {
       this.apply({ row, col })
     }
     s.last = target
+    this.sendStroke()
     this.emit({ cursor: target })
   }
 
@@ -279,7 +287,7 @@ export class PlayStore {
     this.stroke = null
     if (s.changes.length === 0) return
     if (this.coop) {
-      this.coop.stroke(s.changes)
+      this.sendStroke(s)
       this.coopUndos++
     } else {
       this.undoStack.push(s.changes)
@@ -293,10 +301,16 @@ export class PlayStore {
     const s = this.stroke
     if (!s) return
     this.stroke = null
+    if (s.sent > 0) this.coop?.cancel()
     if (s.changes.length === 0) return
     for (const c of s.changes.toReversed()) this.cells[c.index] = c.from
     this.cellsChanged = true
     this.emit({})
+  }
+
+  /** Lets go of the stroke in hand where it stands: nothing sent, no undo step. For a co-op solved under it. */
+  releaseStroke(): void {
+    this.stroke = null
   }
 
   undo(): void {
@@ -488,6 +502,16 @@ export class PlayStore {
       bestMs: this.storage.loadBest(id),
       priorBestMs: this.state.bestMs,
     }
+  }
+
+  /**
+   * Sends a co-op what the stroke has drawn since last time, so partners watch it as it goes. Its first cell waits
+   * until it moves on or ends, as a touch held there may yet turn into a Ping.
+   */
+  private sendStroke(s = this.stroke!): void {
+    if (!this.coop || s.sent === s.changes.length) return
+    this.coop.stroke(s.changes.slice(s.sent), s.sent > 0)
+    s.sent = s.changes.length
   }
 
   private apply(pos: Pos): void {

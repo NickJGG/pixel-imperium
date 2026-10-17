@@ -64,6 +64,7 @@ const decode = (cells: string): Cell[] => Array.from(cells, ch => DECODE[ch as C
 interface Pending {
   id: number
   changes: CoopChange[]
+  joins: boolean
   sent: boolean
 }
 
@@ -83,6 +84,8 @@ export class CoopSession implements CoopLink {
   private socket: CoopSocket | null = null
   private confirmed: Cell[] = []
   private pending: Pending[] = []
+  /** The pieces of the stroke being drawn. */
+  private drawing: Pending[] = []
   private strokeId = 0
   private store: PlayStore | null = null
   /** A `solved` that came before the store did. */
@@ -177,10 +180,22 @@ export class CoopSession implements CoopLink {
     }
   }
 
-  stroke(changes: readonly Change[]): void {
-    const p: Pending = { id: ++this.strokeId, changes: changes.map(c => ({ i: c.index, to: ENCODE[c.to] })), sent: false }
+  stroke(changes: readonly Change[], joins: boolean): void {
+    const p: Pending = { id: ++this.strokeId, changes: changes.map(c => ({ i: c.index, to: ENCODE[c.to] })), joins, sent: false }
     this.pending.push(p)
-    p.sent = this.socket?.send({ type: 'stroke', id: p.id, changes: p.changes }) ?? false
+    this.drawing = joins ? [...this.drawing, p] : [p]
+    p.sent = this.send(p)
+  }
+
+  cancel(): void {
+    const drawn = this.drawing
+    this.drawing = []
+    this.pending = this.pending.filter(p => p.sent || !drawn.includes(p))
+    if (drawn.some(p => p.sent)) this.socket?.send({ type: 'cancel' })
+  }
+
+  private send(p: Pending): boolean {
+    return this.socket?.send({ type: 'stroke', id: p.id, changes: p.changes, ...(p.joins && { joins: true }) }) ?? false
   }
 
   undo(): void {
@@ -241,7 +256,7 @@ export class CoopSession implements CoopLink {
         if (moved) this.leavePuzzle()
         this.confirmed = decode(room.cells)
         this.pending = this.pending.filter(p => !p.sent)
-        for (const p of this.pending) p.sent = this.socket?.send({ type: 'stroke', id: p.id, changes: p.changes }) ?? false
+        for (const p of this.pending) p.sent = this.send(p)
         this.patch({ room: { code: room.code, puzzleId: room.puzzleId, seats: room.seats, you } })
         this.updatePartners()
         return this.settle()
@@ -267,6 +282,11 @@ export class CoopSession implements CoopLink {
         return this.store?.showHint(msg.hint)
       case 'solved':
         this.solvedMsg = msg
+        // The server took no more of a drag once it solved the grid, so what was drawn past that goes.
+        this.pending = []
+        this.drawing = []
+        this.store?.releaseStroke()
+        this.settle()
         return this.applySolved(msg)
       case 'moved': {
         const room = this.view.room
@@ -289,6 +309,7 @@ export class CoopSession implements CoopLink {
   /** Drops what belonged to the puzzle left; the store for the next one binds afresh. */
   private leavePuzzle(): void {
     this.pending = []
+    this.drawing = []
     this.solvedMsg = null
     this.store = null
     this.resolveHint(null)

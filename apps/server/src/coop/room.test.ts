@@ -76,6 +76,43 @@ describe('Room undo', () => {
     expect(r.undo(0)).toEqual([{ i: 3, to: '.' }])
     expect(r.undo(0)).toEqual([])
   })
+
+  it('undoes a stroke sent in pieces as one', () => {
+    const r = room()
+    r.stroke(0, [{ i: 0, to: '#' }])
+    r.stroke(0, [{ i: 0, to: '#' }], false)
+    r.stroke(0, [{ i: 1, to: '#' }], true)
+    r.stroke(0, [{ i: 2, to: '#' }], true)
+    expect(r.undo(0)).toEqual([
+      { i: 2, to: '.' },
+      { i: 1, to: '.' },
+    ])
+    expect(r.grid).toBe('#.....')
+  })
+
+  it("starts afresh on a piece whose stroke is no longer the latest, as after a Clear", () => {
+    const r = room()
+    r.stroke(0, [{ i: 0, to: '#' }])
+    r.clear(0)
+    r.stroke(0, [{ i: 1, to: '#' }], true)
+    expect(r.undo(0)).toEqual([{ i: 1, to: '.' }])
+    expect(r.undo(0)).toEqual([])
+  })
+})
+
+describe('Room cancel', () => {
+  it('takes back the stroke being drawn, but no stroke before it', () => {
+    const r = room()
+    const g = seated(r, fox)
+    r.stroke(0, [{ i: 0, to: '#' }])
+    r.stroke(0, [{ i: 3, to: 'x' }])
+    r.stroke(0, [{ i: 4, to: 'x' }], true)
+    r.stroke(g, [{ i: 4, to: '#' }])
+    expect(r.cancel(0)).toEqual([{ i: 3, to: '.' }])
+    expect(r.grid).toBe('#...#.')
+    expect(r.cancel(0)).toEqual([])
+    expect(r.undo(0)).toEqual([{ i: 0, to: '.' }])
+  })
 })
 
 describe('Room clear', () => {
