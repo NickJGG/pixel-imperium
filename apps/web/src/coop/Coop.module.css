@@ -1,6 +1,8 @@
 /* The co-op's pill, its card, and the join card over the board. Seat colors are --seat-1..4 in tokens.css. */
 .card {
   display: grid;
+  /* Else the link's unbroken text widens the column past the card. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   width: 300px;
   text-align: left;
