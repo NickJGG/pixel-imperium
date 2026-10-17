@@ -6,6 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': `http://localhost:${process.env.API_PORT ?? 8787}`,
+      '/ws': { target: `ws://localhost:${process.env.API_PORT ?? 8787}`, ws: true },
     },
   },
 })

@@ -185,6 +185,20 @@ _Avoid_: Creator, maker, community, custom, user-generated
 A published player-made **Puzzle** or **Campaign** its **Author** has closed to newcomers; anyone who started it can still finish it. Distinct from removed (taken down by an admin, gone for everyone).
 _Avoid_: Unpublished, archived, deleted
 
+### Co-op
+
+**Co-op**:
+A live, shared grid on one **Puzzle** for up to four **Players**, started by a signed-in **Host** and joined by link. Started from the "Play together" button; started, joined, full or ended.
+_Avoid_: Party, room, lobby, session, multiplayer (in product copy)
+
+**Ping**:
+A ring a **Player** in a **Co-op** pulses on one cell, in their seat color, for everyone to see: "look here". Changes no cell.
+_Avoid_: Mark (a crossed-out cell), flag, highlight
+
+**Host**:
+The **Account** that started a **Co-op**; it owns the link and is the only one who can Clear or end it.
+_Avoid_: Owner, leader, admin
+
 ## Relationships
 
 - An **Account** has exactly one **Handle** and one **Profile**
@@ -209,6 +223,11 @@ _Avoid_: Unpublished, archived, deleted
 - A **Puzzle** or **Campaign** is official or player-made; a player-made one has exactly one **Author** and is reached only by its link
 - A player-made **Puzzle** earns a **Sticker** and **Foil** and counts toward a **Streak**, but never a **Stamp** and never appears on a **Profile**
 - An **Author** solving their own **Puzzle** records nothing
+- A **Co-op** solve gives every signed-in **Player** in it a **Verified solve** and **Sticker**, never **Foil** and never a **Best time**
+- A **Co-op** solve on a **Province** a **Player** hasn't unlocked stays hidden until they reach it
+- Today's **Daily** can't be played in a **Co-op**
+- An **Author** hosting a **Co-op** on their own **Puzzle** records nothing; the other **Players** record as usual
+- Only **Players** who already started a **Retired** **Puzzle** can join a **Co-op** on it
 - A player-made **Puzzle** is in at most one **Campaign**, and keeps its own link once it is; a solve counts in both places
 
 ## Example dialogue

@@ -314,6 +314,7 @@ export function createApp(
 
   return new Hono<AppEnv>()
     .basePath('/api')
+    .get('/health', c => c.text('ok'))
     .on(['GET', 'POST'], '/auth/*', c => auth.handler(c.req.raw))
     .use(async (c, next) => {
       const session = await auth.api.getSession({ headers: c.req.raw.headers })
