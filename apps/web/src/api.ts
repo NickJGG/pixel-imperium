@@ -2,6 +2,7 @@ import type {
   Assists,
   Campaign,
   CampaignSummary,
+  CoopRoomInfo,
   DailyYear,
   DeleteRejection,
   DraftCampaign,
@@ -81,6 +82,15 @@ export async function fetchPuzzle(id: string, started = false): Promise<PuzzleCl
   if (res.status === 404) return null
   if (!res.ok && res.status !== 410) throw new Error(`${res.status} ${res.statusText}`)
   return (await res.json()) as PuzzleClues | RetiredError
+}
+
+/** A co-op link as the join card sees it; `null` for a code that never was. A signed-out device passes its token. */
+export async function fetchCoop(code: string, device: string | null, started = false): Promise<CoopRoomInfo | null> {
+  const query = new URLSearchParams({ ...(device && { device }), ...(started && { started: '1' }) })
+  const res = await fetch(`/api/coop/${encodeURIComponent(code)}${query.size > 0 ? `?${query}` : ''}`)
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+  return (await res.json()) as CoopRoomInfo
 }
 
 // A board being played was served to this device, so a retired puzzle's solve and hints are its to finish.

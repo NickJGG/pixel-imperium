@@ -19,6 +19,7 @@ import { Sticker, tiltOf } from '../album/Sticker.tsx'
 import { type AccountState, useAccount } from '../account.ts'
 import { requestHint } from '../api.ts'
 import { solve } from '../content.ts'
+import type { CoopSession } from '../coop/session.ts'
 import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { NextUp } from '../campaign/NextUp.tsx'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
@@ -256,14 +257,17 @@ const centerOf = (el: Element) => {
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
 }
 
+/** With `coop`, the grid is the co-op's: the server owns it and records the solve, so none is sent from here. */
 export function Play({
   puzzle,
   context,
   account: { storage, sync },
+  coop,
 }: {
   puzzle: PuzzleClues
   context: PlayContext
   account: AccountState
+  coop?: CoopSession | undefined
 }) {
   const { album, paper } = context
   const isConquered = () =>
@@ -277,8 +281,10 @@ export function Play({
           if (album) markStarted(storage, album.campaign.id)
           sync?.markDirty(puzzle.id)
         },
+        coop,
       }),
   )
+  useEffect(() => coop?.bind(store), [coop, store])
   const [boardView] = useState(() => new BoardView(puzzle, true))
   const boardRef = useBoardGestures(store, boardView)
   const solved = useStoreValue(store, s => s.solved)
@@ -343,7 +349,7 @@ export function Play({
   // sends the sticker off without them. A Replay that sets a new best still tells an account's server.
   const [revealFailed, setRevealFailed] = useState(false)
   useEffect(() => {
-    if (!solved) return
+    if (!solved || coop) return
     const { palette, cells, solveMs, bestMs, attemptHinted } = store.getState()
     const newBest = solveMs !== null && solveMs === bestMs && !attemptHinted && storage.userId !== null
     if (palette && !newBest) return
@@ -359,7 +365,7 @@ export function Play({
       () => !abort.signal.aborted && setRevealFailed(true),
     )
     return () => abort.abort()
-  }, [solved, store, puzzle.id, storage])
+  }, [solved, store, puzzle.id, storage, coop])
 
   // A solve while zoomed glides back to fit before the reveal and the sticker's moment, so they
   // see the whole picture; the view stays locked there until a replay.
@@ -547,7 +553,7 @@ export function Play({
   const hintButton = (popover: boolean) => (
     <HintButton
       store={store}
-      confirmFirst={firstSolve && !hinted}
+      confirmFirst={firstSolve && !hinted && !coop}
       popover={popover}
       stakes={popover ? undefined : stakes}
       note={
@@ -558,7 +564,7 @@ export function Play({
           </p>
         )
       }
-      request={cells => requestHint(puzzle.id, { cells: encodeCells(cells) })}
+      request={cells => (coop ? coop.requestHint() : requestHint(puzzle.id, { cells: encodeCells(cells) }))}
       onError={setHintFailed}
     />
   )
@@ -775,7 +781,7 @@ export function Play({
                 <Minimap store={store} view={boardView} cellSize={cellSize} />
                 <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={assists} />
                 <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={assists} />
-                <Board store={store} cellSize={cellSize} view={boardView} />
+                <Board store={store} cellSize={cellSize} view={boardView} presence={coop} />
                 {hint && <HintTag hint={hint} cells={cells} view={boardView} />}
               </div>
             )}

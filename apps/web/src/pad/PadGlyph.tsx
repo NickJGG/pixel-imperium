@@ -21,6 +21,7 @@ const FACE: Record<GlyphButton, ReactNode> = {
   RB: 'RB',
   LT: 'LT',
   RT: 'RT',
+  RS: 'RS',
   View: icon(
     <>
       <rect x="1" y="1" width="7" height="7" rx="1" />

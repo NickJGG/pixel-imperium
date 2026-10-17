@@ -14,6 +14,9 @@
  * `pause()` (the player's) or a `suspend()` (the page hidden or left); `clear()` restarts the
  * Attempt. A solve stops it, and sets a Best time unless a Hint was used in the Attempt.
  *
+ * In a co-op the server owns the grid and each player's undo: own strokes still land at once and go out through
+ * `coop`, Undo and Clear are asked of it, and what the server settles comes back through `applyRemote`.
+ *
  * `cells` in the published state is a new array only when a cell changed, so it can
  * key derived per-line work.
  */
@@ -71,10 +74,18 @@ export interface PlayState {
   priorBestMs: number | null
 }
 
-interface Change {
+export interface Change {
   index: number
   from: Cell
   to: Cell
+}
+
+/** A co-op's side of the store. */
+export interface CoopLink {
+  stroke(changes: readonly Change[]): void
+  undo(): void
+  clear(): void
+  ping(index: number): void
 }
 
 interface ActiveStroke {
@@ -130,6 +141,7 @@ export interface PlayStoreOptions {
   onSave?: (() => void) | undefined
   /** The clock's time source, in ms. */
   now?: () => number
+  coop?: CoopLink | undefined
 }
 
 export class PlayStore {
@@ -137,9 +149,12 @@ export class PlayStore {
   readonly now: () => number
   private readonly storage: ProgressStorage
   private readonly onSave: (() => void) | undefined
+  private readonly coop: CoopLink | undefined
   private cells: Cell[]
   private undoStack: Change[][] = []
   private redoStack: Change[][] = []
+  /** Own co-op strokes not yet undone, as far as this device knows: the server may skip some. */
+  private coopUndos = 0
   private stroke: ActiveStroke | null = null
   private cellsChanged = false
   /** The clock was running when the page went away, so `wake()` restarts it. */
@@ -149,11 +164,12 @@ export class PlayStore {
 
   constructor(
     puzzle: PlayPuzzle,
-    { autoMarkEmptyLines = false, storage = signedOutStorage, onSave, now = () => performance.now() }: PlayStoreOptions = {},
+    { autoMarkEmptyLines = false, storage = signedOutStorage, onSave, now = () => performance.now(), coop }: PlayStoreOptions = {},
   ) {
     this.puzzle = puzzle
     this.storage = storage
     this.onSave = onSave
+    this.coop = coop
     this.now = now
     const { id, width, height } = puzzle
     this.cells = storage.loadProgress(id, width * height) ?? Array<Cell>(width * height).fill('empty')
@@ -262,8 +278,13 @@ export class PlayStore {
     if (!s) return
     this.stroke = null
     if (s.changes.length === 0) return
-    this.undoStack.push(s.changes)
-    this.redoStack = []
+    if (this.coop) {
+      this.coop.stroke(s.changes)
+      this.coopUndos++
+    } else {
+      this.undoStack.push(s.changes)
+      this.redoStack = []
+    }
     this.commit()
   }
 
@@ -281,6 +302,13 @@ export class PlayStore {
   undo(): void {
     if (this.state.solved) return
     this.endStroke()
+    if (this.coop) {
+      if (this.coopUndos === 0) return
+      this.coopUndos--
+      this.startClock()
+      this.coop.undo()
+      return this.emit({})
+    }
     const changes = this.undoStack.pop()
     if (!changes) return
     this.startClock()
@@ -291,7 +319,7 @@ export class PlayStore {
   }
 
   redo(): void {
-    if (this.state.solved) return
+    if (this.state.solved || this.coop) return
     this.endStroke()
     const changes = this.redoStack.pop()
     if (!changes) return
@@ -305,6 +333,7 @@ export class PlayStore {
   /** Resets to the fresh grid as one undo step; on a solved puzzle this starts a replay. */
   clear({ autoMarkEmptyLines }: { autoMarkEmptyLines: boolean }): void {
     this.endStroke()
+    if (this.coop) return this.coop.clear()
     const changes: Change[] = []
     freshCells(this.puzzle, autoMarkEmptyLines).forEach((to, index) => {
       const from = this.cells[index]!
@@ -387,6 +416,34 @@ export class PlayStore {
     if (this.storage.userId !== null) this.storage.saveSolved(this.puzzle.id, 'verified')
     if (foil !== null) this.storage.saveFoil(this.puzzle.id, foil)
     this.emit({ palette, stamps })
+  }
+
+  /**
+   * Writes cells as a co-op's server settled them, outside the undo history; cells the stroke in hand has drawn
+   * stay as drawn. A grid un-solved this way is a Clear's Replay. `forgetUndo` follows a Clear, which drops every undo.
+   */
+  applyRemote(changes: readonly Pick<Change, 'index' | 'to'>[], { forgetUndo = false } = {}): void {
+    if (forgetUndo) this.coopUndos = 0
+    const held = new Set(this.stroke?.changes.map(c => c.index))
+    for (const { index, to } of changes) {
+      if (held.has(index) || this.cells[index] === to) continue
+      this.cells[index] = to
+      this.cellsChanged = true
+    }
+    if (!this.cellsChanged) return forgetUndo ? this.emit({}) : undefined
+    const restart = { elapsedMs: 0, runningSince: null, paused: false, attemptHinted: false, solveMs: null }
+    this.commit(this.state.solved ? { ...restart, replaying: true, palette: null, stamps: null } : {})
+  }
+
+  /** A co-op's Ping on `pos`; whether there was a co-op to ping. */
+  ping(pos: Pos): boolean {
+    if (!this.coop) return false
+    this.coop.ping(this.index(this.clamp(pos)))
+    return true
+  }
+
+  get inCoop(): boolean {
+    return this.coop !== undefined
   }
 
   showHint(hint: HintResponse): void {
@@ -480,7 +537,7 @@ export class PlayStore {
       ...this.state,
       ...patch,
       cells: this.cellsChanged ? this.cells.slice() : this.state.cells,
-      canUndo: this.undoStack.length > 0,
+      canUndo: (this.coop ? this.coopUndos : this.undoStack.length) > 0,
       canRedo: this.redoStack.length > 0,
     }
     this.cellsChanged = false

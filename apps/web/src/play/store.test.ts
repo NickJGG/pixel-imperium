@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cluesFromSolution } from '@pixel-imperium/nonogram'
 import { stubStorage } from '../test-storage.ts'
+import { CoopStorage } from '../coop/coop-storage.ts'
 import { ProgressStorage, signedOutStorage as storage } from './progress-storage.ts'
-import { PlayStore, type Pos, type Tool, crosshairOf, elapsedAt } from './store.ts'
+import { type CoopLink, PlayStore, type Pos, type Tool, crosshairOf, elapsedAt } from './store.ts'
 
 // 4×3 plus sign with a tail:
 //   .#..
@@ -525,5 +526,130 @@ describe('PlayStore with an account', () => {
     expect(account.loadFoil('test')).toBe(true)
     s.setPalette(palette, false)
     expect(account.loadFoil('test')).toBe(false)
+  })
+})
+
+describe('PlayStore in a co-op', () => {
+  beforeEach(stubStorage)
+  afterEach(() => vi.unstubAllGlobals())
+
+  const palette = Array.from({ length: 12 }, (_, i) => (solution[i] ? '#f0f' : null))
+  const coopStore = (userId: string | null = null, grid = Array(12).fill('empty')) => {
+    const link = { stroke: vi.fn(), undo: vi.fn(), clear: vi.fn(), ping: vi.fn() } satisfies CoopLink
+    const s = new PlayStore(
+      { id: 'test', width: 4, height: 3, clues: cluesFromSolution(4, 3, solution) },
+      { storage: new CoopStorage(userId, () => grid, false), coop: link },
+    )
+    return { s, link }
+  }
+  const remoteSolve = (s: PlayStore) =>
+    s.applyRemote(solution.flatMap((filled, index) => (filled ? [{ index, to: 'filled' as const }] : [])))
+
+  it('opens on the shared grid', () => {
+    const grid = Array(12).fill('empty')
+    grid[1] = 'filled'
+    expect(render(coopStore(null, grid).s)[0]).toBe('.#..')
+  })
+
+  it('shows its own stroke at once and sends it, keeping no local undo history', () => {
+    const { s, link } = coopStore()
+    drag(s, 'fill', [at(0, 0), at(0, 1)])
+    expect(render(s)[0]).toBe('##..')
+    expect(link.stroke).toHaveBeenCalledWith([
+      { index: 0, from: 'empty', to: 'filled' },
+      { index: 1, from: 'empty', to: 'filled' },
+    ])
+    expect(s.getState()).toMatchObject({ canUndo: true, canRedo: false })
+  })
+
+  it('asks the server to undo and to clear, changing nothing itself', () => {
+    const { s, link } = coopStore()
+    drag(s, 'fill', [at(0, 0)])
+    s.undo()
+    expect(link.undo).toHaveBeenCalledOnce()
+    expect(render(s)[0]).toBe('#...')
+    expect(s.getState().canUndo).toBe(false)
+    s.undo()
+    expect(link.undo).toHaveBeenCalledOnce()
+    s.redo()
+    s.clear({ autoMarkEmptyLines: false })
+    expect(link.clear).toHaveBeenCalledOnce()
+    expect(render(s)[0]).toBe('#...')
+  })
+
+  it('writes remote changes without an undo step or a send', () => {
+    const { s, link } = coopStore()
+    s.applyRemote([{ index: 4, to: 'marked' }])
+    expect(render(s)[1]).toBe('x...')
+    expect(s.getState().canUndo).toBe(false)
+    expect(link.stroke).not.toHaveBeenCalled()
+  })
+
+  it('leaves the cells of the stroke in hand as drawn', () => {
+    const { s } = coopStore()
+    s.beginStroke(at(0, 0), 'fill', { lockAxis: false })
+    s.applyRemote([
+      { index: 0, to: 'marked' },
+      { index: 1, to: 'marked' },
+    ])
+    expect(render(s)[0]).toBe('#x..')
+    s.endStroke()
+  })
+
+  it('solves on a remote stroke and locks, never foil and never a Best time', () => {
+    const { s } = coopStore()
+    remoteSolve(s)
+    expect(s.getState()).toMatchObject({ solved: true, bestMs: null })
+    expect(storage.loadSolved('test')).toBe('local')
+    expect(storage.loadFoil('test')).toBe(false)
+    expect(storage.loadBest('test')).toBeNull()
+    drag(s, 'fill', [at(2, 3)])
+    expect(render(s)[2]).toBe('.#..')
+  })
+
+  it("keeps an account's solve off the device until the server verifies it", () => {
+    const account = new ProgressStorage('u1')
+    const { s } = coopStore('u1')
+    remoteSolve(s)
+    expect(account.loadSolved('test')).toBeNull()
+    s.setPalette(palette, false)
+    expect(account.loadSolved('test')).toBe('verified')
+  })
+
+  it('never takes foil from a solo solve made before', () => {
+    storage.saveSolved('test', 'local')
+    storage.saveFoil('test', true)
+    const { s } = coopStore()
+    remoteSolve(s)
+    s.setPalette(palette, false)
+    expect(storage.loadFoil('test')).toBe(true)
+  })
+
+  it("leaves the player's own saved Attempt alone", () => {
+    storage.saveProgress('test', Array(12).fill('marked'))
+    const { s } = coopStore()
+    drag(s, 'fill', [at(0, 0)])
+    expect(storage.loadCells('test')).toBe('xxxxxxxxxxxx')
+  })
+
+  it("turns a Clear of the solved grid into a Replay, forgetting this player's undos", () => {
+    const { s } = coopStore()
+    drag(s, 'mark', [at(0, 0)])
+    remoteSolve(s)
+    s.setPalette(palette, false)
+    s.applyRemote(
+      s.getState().cells.flatMap((c, index) => (c === 'empty' ? [] : [{ index, to: 'empty' as const }])),
+      { forgetUndo: true },
+    )
+    expect(s.getState()).toMatchObject({ solved: false, replaying: true, palette: null, canUndo: false })
+    drag(s, 'fill', [at(0, 1)])
+    expect(render(s)[0]).toBe('.#..')
+  })
+
+  it('pings a cell only in a co-op', () => {
+    const { s, link } = coopStore()
+    expect(s.ping(at(1, 2))).toBe(true)
+    expect(link.ping).toHaveBeenCalledWith(6)
+    expect(makeStore().ping(at(1, 2))).toBe(false)
   })
 })

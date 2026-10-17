@@ -206,6 +206,12 @@
   --board-aside: var(--blue);
   --board-reveal: var(--blue);
   --board-target: var(--pink);
+
+  /* Co-op seats, by name in coop/seats.ts: gold, pink, mint, periwinkle. */
+  --seat-1: #ffc92e;
+  --seat-2: #ff4fa3;
+  --seat-3: #5fd3a0;
+  --seat-4: #9db2ff;
 }
 
 @media (prefers-color-scheme: light) {
@@ -254,6 +260,10 @@
     --board-line-major: #13306b;
     --board-crosshair: rgba(35, 72, 232, 0.12);
     --board-guess: var(--gold-dk);
+    --seat-1: #c78a00;
+    --seat-2: #c42d78;
+    --seat-3: #1f9a68;
+    --seat-4: #4d63d6;
     --blue: #2348e8;
     --blue-dk: #13299c;
     --on-blue: #fff;
@@ -305,6 +315,10 @@
   --board-line-major: #13306b;
   --board-crosshair: rgba(35, 72, 232, 0.12);
   --board-guess: var(--gold-dk);
+  --seat-1: #c78a00;
+  --seat-2: #c42d78;
+  --seat-3: #1f9a68;
+  --seat-4: #4d63d6;
   --blue: #2348e8;
   --blue-dk: #13299c;
   --on-blue: #fff;

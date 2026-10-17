@@ -4,7 +4,8 @@
  * a stroke began cancels the stroke, later it keeps it; the finger left after a pinch does nothing
  * until lifted. Pressing or dragging on the minimap centres the view there. With a mouse, the wheel
  * zooms, and a middle drag or a drag with Space held pans. While the board can't zoom, only
- * painting is left, and the wheel scrolls the page.
+ * painting is left, and the wheel scrolls the page. In a co-op, Alt+click Pings a cell, and so does
+ * a finger held still on one, dropping the stroke it began.
  */
 import { useCallback, useRef } from 'react'
 import { getSettings } from '../settings.ts'
@@ -14,6 +15,7 @@ import { type BoardView, type View, cellAt, zoomAt } from './viewport.ts'
 
 /** A second finger this soon after a stroke began means the stroke was the start of a pinch. */
 const GRACE_MS = 250
+const LONG_PRESS_MS = 500
 
 interface Point {
   x: number
@@ -21,7 +23,7 @@ interface Point {
 }
 
 type Gesture =
-  | { type: 'stroke'; id: number; at: number }
+  | { type: 'stroke'; id: number; at: number; press: { cell: Pos; timer: ReturnType<typeof setTimeout> } | null }
   | { type: 'pan'; id: number; last: Point }
   | { type: 'map'; id: number; map: Element }
   | { type: 'pinch'; ids: [number, number]; distance: number; mid: Point; view: View }
@@ -83,7 +85,10 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
       const startStroke = (e: PointerEvent, p: Point): Gesture | null => {
         let tool: Tool
         if (e.pointerType === 'mouse') {
-          if (e.button === 0) tool = 'fill'
+          if (e.button === 0 && e.altKey && store.inCoop) {
+            store.ping(posAt(p))
+            return null
+          } else if (e.button === 0) tool = 'fill'
           else if (e.button === 2) {
             tool = 'mark'
             armContextMenuBlock()
@@ -95,8 +100,25 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
         store.setHover(null)
         const { lockLine } = assistsRef.current ?? getSettings()
         const lockAxis = e.pointerType === 'mouse' ? e.shiftKey || lockLine : lockLine
-        store.beginStroke(posAt(p), tool, { lockAxis })
-        return { type: 'stroke', id: e.pointerId, at: performance.now() }
+        const cell = posAt(p)
+        store.beginStroke(cell, tool, { lockAxis })
+        const stroke: Gesture = { type: 'stroke', id: e.pointerId, at: performance.now(), press: null }
+        if (e.pointerType !== 'mouse' && store.inCoop) {
+          const timer = setTimeout(() => {
+            if (gesture !== stroke) return
+            store.cancelStroke()
+            store.ping(cell)
+            gesture = { type: 'tail' }
+          }, LONG_PRESS_MS)
+          stroke.press = { cell, timer }
+        }
+        return stroke
+      }
+
+      const endPress = () => {
+        if (gesture?.type !== 'stroke' || !gesture.press) return
+        clearTimeout(gesture.press.timer)
+        gesture.press = null
       }
 
       const centerFromMap = (map: Element, e: PointerEvent) => {
@@ -137,6 +159,7 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
           if (!gesture) return
         } else if (pointers.size === 1 && view.canZoom && e.pointerType !== 'mouse') {
           if (gesture?.type === 'stroke') {
+            endPress()
             if (performance.now() - gesture.at < GRACE_MS) store.cancelStroke()
             else store.endStroke()
           }
@@ -161,7 +184,10 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
         const p = local(e)
         pointers.set(e.pointerId, p)
         if (gesture?.type === 'stroke' && gesture.id === e.pointerId) {
-          store.extendStroke(posAt(p))
+          const cell = posAt(p)
+          const { press } = gesture
+          if (press && (press.cell.row !== cell.row || press.cell.col !== cell.col)) endPress()
+          store.extendStroke(cell)
         } else if (gesture?.type === 'pan' && gesture.id === e.pointerId) {
           const v = view.view
           view.set({ cell: v.cell, panX: v.panX + p.x - gesture.last.x, panY: v.panY + p.y - gesture.last.y })
@@ -182,6 +208,7 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
       const onPointerEnd = (e: PointerEvent) => {
         if (!pointers.delete(e.pointerId)) return
         if (gesture?.type === 'stroke' && gesture.id === e.pointerId) {
+          endPress()
           gesture = null
           store.endStroke()
         } else if (
@@ -236,6 +263,7 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
       window.addEventListener('keyup', onKeyUp)
       window.addEventListener('blur', onBlur)
       return () => {
+        endPress()
         detach()
         disarmContextMenu?.()
         board.removeEventListener('pointerdown', onPointerDown)

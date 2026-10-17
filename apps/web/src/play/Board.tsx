@@ -1,5 +1,7 @@
 import { type KeyboardEvent, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import { usePadBoard } from '../pad/usePadBoard.ts'
+import { PING_MS, type Presence } from '../coop/session.ts'
+import { seatColor } from '../coop/seats.ts'
 import { getSettings, subscribeSettings } from '../settings.ts'
 import { move, startStroke } from './board-actions.ts'
 import { type PlayState, type PlayStore, type Pos, type Tool, crosshairOf } from './store.ts'
@@ -42,14 +44,23 @@ interface Props {
   flag?: BoardFlag | null | undefined
   /** Set during a Lesson's talk beat, when a controller's A advances it. */
   onTalkNext?: (() => void) | undefined
+  /** A co-op's partners and Pings. */
+  presence?: PresenceSource | undefined
 }
+
+export interface PresenceSource {
+  getPresence(): Presence
+  subscribePresence(listener: () => void): () => void
+}
+
+const NO_PRESENCE: Presence = { partners: [], pings: [] }
 
 export interface BoardFlag {
   index: number
   tone: 'mistake' | 'guess' | 'aside'
 }
 
-export function Board({ store, cellSize, view, assists, highlight, flag = null, onTalkNext }: Props) {
+export function Board({ store, cellSize, view, assists, highlight, flag = null, onTalkNext, presence }: Props) {
   const { width, height } = store.puzzle
   const options = useRef({ assists, highlight, flag })
   options.current = { assists, highlight, flag }
@@ -76,13 +87,17 @@ export function Board({ store, cellSize, view, assists, highlight, flag = null, 
         revealElapsed = now - revealStart.current
       }
       const { assists = getSettings(), highlight = [], flag } = options.current
+      const { partners, pings } = presence?.getPresence() ?? NO_PRESENCE
+      const live = pings.flatMap(p => (now - p.at < PING_MS ? [{ ...p, t: Math.max(0, now - p.at) / PING_MS }] : []))
       paint(canvas, state, width, height, cellSize, view.view, {
         crosshair: assists.crosshair ? crosshairOf(state) : null,
         revealElapsed,
         highlight,
         flag,
+        partners,
+        pings: live,
       })
-      if (revealElapsed !== null && revealElapsed < REVEAL_MS) request()
+      if ((revealElapsed !== null && revealElapsed < REVEAL_MS) || live.length > 0) request()
     }
     const request = () => {
       frame ||= requestAnimationFrame(draw)
@@ -92,6 +107,7 @@ export function Board({ store, cellSize, view, assists, highlight, flag = null, 
     const unsubscribe = store.subscribe(request)
     const unsubscribeView = view.subscribe(request)
     const unsubscribeSettings = subscribeSettings(request)
+    const unsubscribePresence = presence?.subscribePresence(request)
     darkScheme.addEventListener('change', request)
     // Catches devicePixelRatio changes from browser zoom or moving between screens.
     window.addEventListener('resize', request)
@@ -99,11 +115,12 @@ export function Board({ store, cellSize, view, assists, highlight, flag = null, 
       unsubscribe()
       unsubscribeView()
       unsubscribeSettings()
+      unsubscribePresence?.()
       cancelAnimationFrame(frame)
       darkScheme.removeEventListener('change', request)
       window.removeEventListener('resize', request)
     }
-  }, [store, view, width, height, cellSize])
+  }, [store, view, width, height, cellSize, presence])
 
   useEffect(() => redraw.current(), [assists?.crosshair, highlight, flag])
 
@@ -182,6 +199,9 @@ interface PaintOptions {
   revealElapsed: number | null
   highlight: readonly number[]
   flag: BoardFlag | null
+  partners: readonly { index: number; seat: number; initial: string }[]
+  /** `t` runs 0 to 1 over the Ping. */
+  pings: readonly { index: number; seat: number; initial: string; t: number }[]
 }
 
 const smoothstep = (t: number) => {
@@ -196,7 +216,7 @@ function paint(
   height: number,
   fitCell: number,
   view: View,
-  { crosshair, revealElapsed, highlight, flag }: PaintOptions,
+  { crosshair, revealElapsed, highlight, flag, partners, pings }: PaintOptions,
 ) {
   const dpr = window.devicePixelRatio || 1
   const boxWidth = width * fitCell
@@ -312,6 +332,49 @@ function paint(
     ctx.globalAlpha = 1
     ctx.lineWidth = 4
     ctx.strokeRect(x + 2, y + 2, cell - 4, cell - 4)
+  }
+
+  const tag = (x: number, y: number, seat: number, initial: string) => {
+    const r = Math.max(6, cell * 0.2)
+    ctx.fillStyle = color(seatColor(seat))
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = color('--board-bg')
+    ctx.font = `700 ${Math.round(r * 1.25)}px system-ui, sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(initial, x, y + r * 0.06)
+  }
+
+  if (!state.solved) {
+    ctx.lineWidth = 3
+    for (const { index, seat, initial } of partners) {
+      const x = (index % width) * cell
+      const y = Math.floor(index / width) * cell
+      ctx.strokeStyle = color(seatColor(seat))
+      ctx.strokeRect(x + 2, y + 2, cell - 4, cell - 4)
+      tag(x + 2, y + 2, seat, initial)
+    }
+  }
+
+  for (const { index, seat, initial, t } of pings) {
+    const cx = (index % width) * cell + cell / 2
+    const cy = Math.floor(index / width) * cell + cell / 2
+    ctx.strokeStyle = color(seatColor(seat))
+    ctx.lineWidth = 3
+    // Two rings ripple out from the cell, the second half a beat behind.
+    for (const lag of [0, 0.35]) {
+      const k = (t - lag) / (1 - lag)
+      if (k <= 0) continue
+      ctx.globalAlpha = 1 - k
+      ctx.beginPath()
+      ctx.arc(cx, cy, cell * (0.4 + 1.2 * k), 0, Math.PI * 2)
+      ctx.stroke()
+    }
+    ctx.globalAlpha = 1 - t
+    tag(cx + cell / 2 - 2, cy - cell / 2 + 2, seat, initial)
+    ctx.globalAlpha = 1
   }
 
   if (state.focused && !state.solved) {

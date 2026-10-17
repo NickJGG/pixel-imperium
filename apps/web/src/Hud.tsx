@@ -135,7 +135,7 @@ export function Hud({ float }: { float?: boolean | undefined }) {
  */
 export function ThumbBar() {
   const next = useContinue()
-  const playing = useRouterState({ select: s => s.location.pathname.startsWith('/play/') })
+  const playing = useRouterState({ select: s => /^\/(play|co)\//.test(s.location.pathname) })
   usePrefetch(playing ? null : next?.puzzle.id)
   if (playing) return null
 

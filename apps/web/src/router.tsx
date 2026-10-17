@@ -11,10 +11,12 @@ import {
 } from '@tanstack/react-router'
 import type { Campaign, CampaignSummary, MadePuzzleSummary, Paper, PuzzleClues, RetiredError } from '@pixel-imperium/protocol'
 import { accountReady, getAccount, useAccount } from './account.ts'
-import { fetchMade, fetchProfile, isRetired } from './api.ts'
+import { fetchCoop, fetchMade, fetchProfile, isRetired } from './api.ts'
 import * as content from './content.ts'
 import { LoadError, NotFound, Retired } from './EdgeStates.tsx'
 import { CampaignsPage } from './campaign/CampaignsPage.tsx'
+import { CoopPage, loadCoopPuzzle } from './coop/CoopPage.tsx'
+import { deviceToken } from './coop/device.ts'
 import { CampaignsSkeleton } from './campaign/CampaignsSkeleton.tsx'
 import { newestFeatured } from './campaign/campaigns.ts'
 import { pickCampaign, rememberCampaign, rememberCampaigns } from './campaign/last-campaign.ts'
@@ -301,6 +303,28 @@ const playRoute = createRoute({
     return morphPendingMs()
   },
   notFoundComponent: () => <NotFound>There’s no puzzle by that name.</NotFound>,
+})
+
+/**
+ * A co-op by its link. A signed-out device asks with its token, so it learns the name it would join under, and a
+ * second time with `started` when the puzzle is Retired and the device has progress on it.
+ */
+const coopRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/co/$code',
+  loader: async ({ params }) => {
+    await accountReady
+    const device = getAccount().account ? null : deviceToken()
+    let info = await fetchCoop(params.code, device)
+    if (!info) throw notFound()
+    const started = device !== null && 'puzzleId' in info && deviceStartedPuzzle(info.puzzleId)
+    if (started && info.access === 'retired-closed') info = (await fetchCoop(params.code, device, true)) ?? info
+    const first = info.access === 'join' ? await loadCoopPuzzle(info.puzzleId, started) : null
+    return { info, first, started }
+  },
+  component: CoopPage,
+  pendingComponent: PlaySkeleton,
+  notFoundComponent: () => <NotFound>There’s no co-op at this link. Ask for a new one.</NotFound>,
 })
 
 /** A Month of Dailies, `month` being `01`–`12`; the Year's other Months stand beside it. */
@@ -669,6 +693,7 @@ export const router = createRouter({
     campaignRoute,
     provinceRoute,
     playRoute,
+    coopRoute,
     monthRoute,
     dailyPlayRoute,
     profileRoute,

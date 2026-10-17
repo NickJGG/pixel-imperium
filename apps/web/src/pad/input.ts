@@ -16,6 +16,7 @@ export const BUTTON_INDEX = {
   RT: 7,
   View: 8,
   Menu: 9,
+  RS: 11,
   Up: 12,
   Down: 13,
   Left: 14,
