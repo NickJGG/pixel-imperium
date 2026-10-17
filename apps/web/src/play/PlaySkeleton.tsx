@@ -8,7 +8,7 @@ import { boardMorph, columnPaper, slotMorph, slotName } from '../campaign/worlds
 import { CrownMark, MenuCrown } from '../Hud.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { useHudTrail } from '../Trail.tsx'
-import { HOME, coopTrail, dailyTrail, puzzleTrail } from '../trails.ts'
+import { HOME, dailyTrail, partyTrail, puzzleTrail } from '../trails.ts'
 import { useCentredFilm } from './Filmstrip.tsx'
 import { RAIL_WIDTH, useRail } from './layout.ts'
 import styles from './Play.module.css'
@@ -42,7 +42,7 @@ export function PlaySkeleton() {
     year !== undefined && month !== undefined && day !== undefined
       ? dailyTrail(Number(year), Number(month), Number(day))
       : code !== undefined
-        ? coopTrail(code, null, null)
+        ? partyTrail(code, null, null)
         : found
           ? puzzleTrail(found.campaign, found.province, found.puzzle)
           : [HOME],
@@ -200,7 +200,7 @@ export function Film({
 
 const railMorph = boardMorph('rail', 'rail')
 
-/** The right rail; Play's clears the co-op pill in the corner above it, which `bare` leaves out. */
+/** The right rail; Play's clears the party pill in the corner above it, which `bare` leaves out. */
 export function Rail({ children, bare }: { children: ReactNode; bare?: boolean }) {
   return (
     <aside className={bare ? styles.rail : `${styles.rail} ${styles.underPills}`} {...railMorph} style={{ ...railMorph.style, width: RAIL_WIDTH }}>

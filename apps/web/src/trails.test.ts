@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { DraftCampaignDoc } from '@pixel-imperium/protocol'
 import {
   HOME,
-  coopTrail,
+  partyTrail,
   dailyTrail,
   lessonTrail,
   madeTrail,
@@ -39,18 +39,18 @@ describe('trails', () => {
     expect(madeTrail('home', made)).toEqual([HOME, { to: '/play/p4', label: 'Lighthouse', paper: 'forge' }])
   })
 
-  it('end a co-op in the co-op, under its puzzle’s province when it has one', () => {
-    expect(coopTrail('abc', { title: 'Lighthouse', paper: 'coast' }, { campaign, province }).map(s => s.label)).toEqual([
+  it('end a party link in the link, under its puzzle’s province when it has one', () => {
+    expect(partyTrail('abc', { title: 'Lighthouse', paper: 'coast' }, { campaign, province }).map(s => s.label)).toEqual([
       'Home',
       'Imperium',
       'Coast',
-      'Co-op · Lighthouse',
+      'Party · Lighthouse',
     ])
-    expect(coopTrail('abc', { title: 'Heron', paper: 'forge' }, null)).toEqual([
+    expect(partyTrail('abc', { title: 'Heron', paper: 'forge' }, null)).toEqual([
       HOME,
-      { to: '/co/abc', label: 'Co-op · Heron', paper: 'forge' },
+      { to: '/party/abc', label: 'Party · Heron', paper: 'forge' },
     ])
-    expect(coopTrail('abc', null, null)).toEqual([HOME, { to: '/co/abc', label: 'Co-op' }])
+    expect(partyTrail('abc', null, null)).toEqual([HOME, { to: '/party/abc', label: 'Party' }])
   })
 
   it('end a Daily in its day, under its Month in the season’s paper', () => {

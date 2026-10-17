@@ -1,28 +1,28 @@
 import { Link } from '@tanstack/react-router'
-import type { HintResponse } from '@pixel-imperium/protocol'
+import type { HintResponse, PartyState } from '@pixel-imperium/protocol'
 import { ArrowIcon } from '../album/icons.tsx'
 import { NextUp } from '../campaign/NextUp.tsx'
 import { PadGlyph } from '../pad/PadGlyph.tsx'
 import type { NextPick } from '../play/PlayPage.tsx'
 import type { ProgressStorage } from '../play/progress-storage.ts'
 import { backLink } from '../tutorial/handoff.ts'
-import { PeopleIcon } from './CoopCard.tsx'
+import { PeopleIcon } from './PartyCard.tsx'
+import { party as session } from './party-store.ts'
 import { namesOf, seatLabel } from './seats.ts'
-import type { CoopRoomView, CoopSession } from './session.ts'
-import styles from './Coop.module.css'
+import styles from './Party.module.css'
 import play from '../play/Play.module.css'
 
 /** Who a partner's hint on show came from; `null` for this player's own. */
-export function coopHintNote(room: CoopRoomView, by: number | null, hint: HintResponse): string | null {
-  if (by === null || by === room.you) return null
-  const seat = room.seats.find(s => s.seat === by)
+export function partyHintNote(party: PartyState, you: number | null, by: number | null, hint: HintResponse): string | null {
+  if (by === null || by === you) return null
+  const seat = party.seats.find(s => s.seat === by)
   const name = seat ? seatLabel(seat, true) : 'A partner'
   return hint.kind === 'reveal' ? `${name} revealed a cell.` : `${name} found a mistake.`
 }
 
 interface Props {
-  session: CoopSession
-  room: CoopRoomView
+  party: PartyState
+  you: number | null
   /** The Host's Next for Next together, or a guest's own. */
   next: NextPick | null
   storage: ProgressStorage
@@ -33,14 +33,14 @@ interface Props {
 }
 
 /**
- * The solved rail's way on in a co-op, which carries on after the Reveal: the Host picks Next together (or goes on
+ * The solved rail's way on in a Party, which carries on after the Reveal: the Host picks Next together (or goes on
  * alone), and guests wait for them, leave, or go on alone.
  */
-export function CoopOnward({ session, room, next, storage, leaveTo, named }: Props) {
-  const host = room.you === 0
-  const others = room.seats.filter(s => s.seat !== room.you)
+export function PartyOnward({ party, you, next, storage, leaveTo, named }: Props) {
+  const host = you === party.host
+  const others = party.seats.filter(s => s.seat !== you)
   const withWho = others.length > 0 ? `Solved with ${namesOf(others)}.` : ''
-  const hostSeat = room.seats.find(s => s.seat === 0)
+  const hostSeat = party.seats.find(s => s.seat === party.host)
   const nextName = next && named && (
     <small>
       #{next.number} {next.puzzle.title}
@@ -61,7 +61,7 @@ export function CoopOnward({ session, room, next, storage, leaveTo, named }: Pro
         {withWho && <p className={play.railNote}>{withWho}</p>}
         {nextUp}
         {next && (
-          <button type="button" data-variant="primary" data-pad-default onClick={() => session.next(next.puzzle.id)}>
+          <button type="button" data-variant="primary" data-pad-default onClick={() => session.play(next.puzzle.id)}>
             <PeopleIcon />
             Next together
             {nextName}
@@ -76,12 +76,18 @@ export function CoopOnward({ session, room, next, storage, leaveTo, named }: Pro
   return (
     <>
       <div className={styles.waiting}>
-        <h2>Co-op</h2>
+        <h2>Party</h2>
         <p>
           {withWho} Waiting for {hostSeat ? seatLabel(hostSeat) : 'the Host'} to pick the next puzzle.
         </p>
-        <Link {...backLink(leaveTo)} data-variant="flat" data-size="compact" data-pad-default={!next || undefined}>
-          Leave co-op
+        <Link
+          {...backLink(leaveTo)}
+          data-variant="flat"
+          data-size="compact"
+          data-pad-default={!next || undefined}
+          onClick={() => session.leave()}
+        >
+          Leave party
         </Link>
       </div>
       {nextUp}

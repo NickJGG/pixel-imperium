@@ -2,9 +2,6 @@ import type {
   Assists,
   Campaign,
   CampaignSummary,
-  CoopRoomInfo,
-  CreateCoopRequest,
-  CreateCoopResponse,
   DailyYear,
   DeleteRejection,
   DraftCampaign,
@@ -23,6 +20,7 @@ import type {
   ImportResponse,
   Made,
   MyProgress,
+  PartyInfo,
   PatchMadePuzzle,
   Played,
   Profile,
@@ -90,17 +88,14 @@ export async function fetchPuzzle(id: string, started = false): Promise<PuzzleCl
   return (await res.json()) as PuzzleClues | RetiredError
 }
 
-/** A co-op link as the join card sees it; `null` for a code that never was. A signed-out device passes its token. */
-export async function fetchCoop(code: string, device: string | null, started = false): Promise<CoopRoomInfo | null> {
+/** A party link as the join card sees it; `null` for a code that never was. A signed-out device passes its token. */
+export async function fetchParty(code: string, device: string | null, started = false): Promise<PartyInfo | null> {
   const query = new URLSearchParams({ ...(device && { device }), ...(started && { started: '1' }) })
-  const res = await fetch(`/api/coop/${encodeURIComponent(code)}${query.size > 0 ? `?${query}` : ''}`)
+  const res = await fetch(`/api/party/${encodeURIComponent(code)}${query.size > 0 ? `?${query}` : ''}`)
   if (res.status === 404) return null
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
-  return (await res.json()) as CoopRoomInfo
+  return (await res.json()) as PartyInfo
 }
-
-export const createCoop = (puzzleId: string) =>
-  getJson<CreateCoopResponse>('/api/coop', jsonInit('POST', { puzzleId } satisfies CreateCoopRequest))
 
 // A board being played was served to this device, so a retired puzzle's solve and hints are its to finish.
 export const submitSolve = (id: string, body: SolveRequest, signal: AbortSignal | null = null) =>

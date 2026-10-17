@@ -207,7 +207,7 @@
   --board-reveal: var(--blue);
   --board-target: var(--pink);
 
-  /* Co-op seats, by name in coop/seats.ts: gold, pink, mint, periwinkle. */
+  /* Party seats, by name in party/seats.ts: gold, pink, mint, periwinkle. */
   --seat-1: #ffc92e;
   --seat-2: #ff4fa3;
   --seat-3: #5fd3a0;

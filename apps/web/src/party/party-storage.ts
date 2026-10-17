@@ -2,12 +2,12 @@ import type { Cell } from '@pixel-imperium/nonogram'
 import { ProgressStorage, type SolveMark } from '../play/progress-storage.ts'
 
 /**
- * A player's own storage while in a co-op. The server keeps the shared grid, and the Host's progress from it, so
+ * A player's own storage while in a party. The server keeps the shared grid, and the Host's progress from it, so
  * this player's own Attempt, clock and Best time are left alone. A signed-out guest's solve goes in the device's
  * album, as a solo one would; an account's only once the server has verified it. Never foil, and an Author on
  * their own puzzle keeps nothing.
  */
-export class CoopStorage extends ProgressStorage {
+export class PartyStorage extends ProgressStorage {
   constructor(
     userId: string | null,
     private readonly grid: () => readonly Cell[],
@@ -41,7 +41,7 @@ export class CoopStorage extends ProgressStorage {
   override saveSolvedAt(puzzleId: string, iso: string): void {
     if (!this.own) super.saveSolvedAt(puzzleId, iso)
   }
-  /** Only a first solve settles foil, and a co-op's is never foil. */
+  /** Only a first solve settles foil, and a party's is never foil. */
   override saveFoil(puzzleId: string): void {
     if (!this.own && this.loadSolved(puzzleId) === null) super.saveFoil(puzzleId, false)
   }

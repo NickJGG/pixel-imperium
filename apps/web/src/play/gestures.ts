@@ -4,7 +4,7 @@
  * a stroke began cancels the stroke, later it keeps it; the finger left after a pinch does nothing
  * until lifted. Pressing or dragging on the minimap centres the view there. With a mouse, the wheel
  * zooms, and a middle drag or a drag with Space held pans. While the board can't zoom, only
- * painting is left, and the wheel scrolls the page. In a co-op, Alt+click Pings a cell, and so does
+ * painting is left, and the wheel scrolls the page. In a party, Alt+click Pings a cell, and so does
  * a finger held still on one, dropping the stroke it began.
  */
 import { useCallback, useRef } from 'react'
@@ -85,7 +85,7 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
       const startStroke = (e: PointerEvent, p: Point): Gesture | null => {
         let tool: Tool
         if (e.pointerType === 'mouse') {
-          if (e.button === 0 && e.altKey && store.inCoop) {
+          if (e.button === 0 && e.altKey && store.inParty) {
             store.ping(posAt(p))
             return null
           } else if (e.button === 0) tool = 'fill'
@@ -103,7 +103,7 @@ export function useBoardGestures(store: PlayStore, view: BoardView, assists?: Bo
         const cell = posAt(p)
         store.beginStroke(cell, tool, { lockAxis })
         const stroke: Gesture = { type: 'stroke', id: e.pointerId, at: performance.now(), press: null }
-        if (e.pointerType !== 'mouse' && store.inCoop) {
+        if (e.pointerType !== 'mouse' && store.inParty) {
           const timer = setTimeout(() => {
             if (gesture !== stroke) return
             store.cancelStroke()

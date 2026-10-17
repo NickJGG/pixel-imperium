@@ -29,7 +29,7 @@ const PING = {
   pad: [['RS'], 'Ping'],
 } as const
 
-/** What the board does that no button in the rail says: for the mouse, touch, or in pad mode the controller. `ping` in a co-op. */
+/** What the board does that no button in the rail says: for the mouse, touch, or in pad mode the controller. `ping` in a Party. */
 export function ControlsLegend({ ping = false }: { ping?: boolean }) {
   const pad = usePadMode()
   const mouse = ping ? [...MOUSE, PING.mouse] : MOUSE

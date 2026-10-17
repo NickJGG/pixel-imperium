@@ -54,15 +54,12 @@ function setState(patch: Partial<AccountState>): void {
 
 export const getAccount = (): AccountState => state
 
-export function useAccount(): AccountState {
-  return useSyncExternalStore(
-    listener => {
-      listeners.add(listener)
-      return () => listeners.delete(listener)
-    },
-    getAccount,
-  )
+export function subscribeAccount(listener: () => void): () => void {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
 }
+
+export const useAccount = (): AccountState => useSyncExternalStore(subscribeAccount, getAccount)
 
 const ACCOUNT_KEY = 'pixel-imperium:account'
 
@@ -248,7 +245,7 @@ export async function acceptImport(): Promise<void> {
   await refresh(sync)
 }
 
-/** Re-reads the account from the server, which changed it behind this device's back: a co-op it hosted. */
+/** Re-reads the account from the server, which changed it behind this device's back: a Party grid it hosted. */
 export async function refreshAccount(): Promise<void> {
   if (state.sync) await refresh(state.sync)
 }

@@ -260,7 +260,7 @@
 }
 
 /*
- * Play's right rail on the province's darker paper, under the co-op pill: the way back and the hero,
+ * Play's right rail on the province's darker paper, under the party pill: the way back and the hero,
  * the tools, Hint and its stakes, Controls and Assists, and How to play | Clear pinned to the foot.
  */
 .rail {
@@ -275,7 +275,7 @@
   box-shadow: inset 4px 0 0 var(--gutter-shade);
 }
 
-/* Clears the co-op pill in the top-right corner: the HUD's top padding, a 44px pill and a gap. */
+/* Clears the party pill in the top-right corner: the HUD's top padding, a 44px pill and a gap. */
 .rail.underPills {
   padding-top: calc(2 * var(--space-4) + 44px); /* token-exempt: the HUD pill's height */
 }

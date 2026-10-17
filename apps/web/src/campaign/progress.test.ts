@@ -27,7 +27,7 @@ describe('provinceStates', () => {
     expect(provinceStates(campaign, id => id === 'a1').provinces[0]).toEqual({ state: 'active', solved: 1, total: 2 })
   })
 
-  it('hides solves in a province not reached yet, as a co-op leaves them, without unlocking it', () => {
+  it('hides solves in a province not reached yet, as a Party leaves them, without unlocking it', () => {
     const { provinces } = provinceStates(campaign, id => id === 'c1')
     expect(provinces.map(p => [p.state, p.solved])).toEqual([
       ['active', 0],

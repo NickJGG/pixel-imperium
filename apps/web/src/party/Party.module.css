@@ -1,4 +1,4 @@
-/* The co-op's pill, its card, and the join card over the board. Seat colors are --seat-1..4 in tokens.css. */
+/* The party's pill, its card, and the join card over the board. Seat colors are --seat-1..4 in tokens.css. */
 .card {
   display: grid;
   /* Else the link's unbroken text widens the column past the card. */
@@ -73,6 +73,15 @@
 }
 
 .hudPill svg {
+  width: 20px;
+  height: 20px;
+}
+
+.playPill {
+  min-height: 44px;
+}
+
+.playPill svg {
   width: 20px;
   height: 20px;
 }
@@ -189,7 +198,7 @@
   color: var(--ink-soft);
 }
 
-/* The co-op's place in the solved rail, for a guest waiting on the Host. */
+/* The party's place in the solved rail, for a guest waiting on the Host. */
 .waiting {
   display: grid;
   gap: var(--space-2);
@@ -217,4 +226,11 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* A party with no puzzle yet: its join card on the page alone. */
+.bare {
+  position: relative;
+  min-height: 100dvh;
+  background: var(--paper);
 }

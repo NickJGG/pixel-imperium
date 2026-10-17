@@ -24,12 +24,14 @@ import { Dymo } from '../album/Dymo.tsx'
 import { ArrowIcon, CheckIcon } from '../album/icons.tsx'
 import { paperFor } from '../album/paper.ts'
 import { Sticker, tiltOf } from '../album/Sticker.tsx'
-import { type AccountState, useAccount } from '../account.ts'
+import { type AccountState, refreshAccount, useAccount } from '../account.ts'
 import { requestHint } from '../api.ts'
 import { solve } from '../content.ts'
-import { CoopPill, useCoopView } from '../coop/CoopCard.tsx'
-import { CoopOnward, coopHintNote } from '../coop/CoopRail.tsx'
-import type { CoopSession } from '../coop/session.ts'
+import { PartyPill, PlayWithParty } from '../party/PartyCard.tsx'
+import { PartyOnward, partyHintNote } from '../party/PartyRail.tsx'
+import { PartyStorage } from '../party/party-storage.ts'
+import { party as partySession, usePartyView } from '../party/party-store.ts'
+import type { PartySession } from '../party/session.ts'
 import { type CampaignProgress, campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { NextUp } from '../campaign/NextUp.tsx'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
@@ -82,7 +84,8 @@ import { useRailFold } from './useRailFold.ts'
 import { useUndoKeys } from './useUndoKeys.ts'
 import { BoardView, fitView } from './viewport.ts'
 import { ReportButton } from '../workshop/Report.tsx'
-import coopStyles from '../coop/Coop.module.css'
+import { PlaySkeleton } from './PlaySkeleton.tsx'
+import partyStyles from '../party/Party.module.css'
 import styles from './Play.module.css'
 
 const route = getRouteApi('/play/$id')
@@ -91,6 +94,10 @@ export function PlayPage() {
   const data = route.useLoaderData()
   const previewConquest = route.useSearch().conquest === true
   const account = useAccount()
+  const { party, grid } = usePartyView()
+  // The Party's puzzle is its shared grid here, once the server has sent it.
+  const shared = data.kind !== 'retired' && party?.puzzle?.id === data.puzzle.id
+  if (shared && grid !== data.puzzle.id) return <PlaySkeleton />
   if (data.kind === 'retired') {
     return (
       <>
@@ -117,15 +124,29 @@ export function PlayPage() {
         account={account}
         own={own}
         album={inAlbum ? albumContext(puzzle, campaign, province, previewConquest) : null}
+        inParty={shared}
       />
     )
   }
   const { puzzle, campaign } = data
   const province = campaign.provinces.find(p => p.id === puzzle.provinceId)!
   const progress = campaignProgress(campaign, account.storage)
-  if (!isOpen(progress.provinces[campaign.provinces.indexOf(province)]!.state)) {
-    return <Locked puzzle={puzzle} campaign={campaign} province={province} progress={progress} />
+  const open = isOpen(progress.provinces[campaign.provinces.indexOf(province)]!.state)
+  if (shared) {
+    const next = nextPuzzle(province.puzzles, puzzle.id, id => account.storage.loadSolved(id) !== null)
+    return (
+      <PartyPlay
+        key={`${account.generation}:${puzzle.id}`}
+        puzzle={puzzle}
+        account={account}
+        // A Province not yet open to this player keeps the sticker hidden until it is, so it has no album here.
+        context={open ? albumContext(puzzle, campaign, province, previewConquest) : unopenedContext(puzzle, campaign, province)}
+        own={false}
+        next={next && { puzzle: next, number: province.puzzles.indexOf(next) + 1 }}
+      />
+    )
   }
+  if (!open) return <Locked puzzle={puzzle} campaign={campaign} province={province} progress={progress} />
   return (
     <Play
       key={`${account.generation}:${puzzle.id}`}
@@ -162,6 +183,55 @@ function albumContext(puzzle: PuzzleClues, campaign: Campaign, province: Provinc
   }
 }
 
+/** A campaign puzzle its Party is solving in a Province this player hasn't opened. */
+function unopenedContext(puzzle: PuzzleClues, campaign: Campaign, province: Province): PlayContext {
+  return {
+    place: province.name,
+    paper: paperFor(province.paper),
+    back: `/c/${campaign.id}/${province.id}`,
+    here: `/play/${puzzle.id}`,
+    meta: [puzzle.tier && TIER_NAME[puzzle.tier], `${puzzle.width}×${puzzle.height}`].filter(Boolean).join(' · '),
+    campaign,
+    trail: puzzleTrail(campaign, province, puzzle),
+  }
+}
+
+/**
+ * The Party's shared grid. The server keeps it, and the grid's progress is the Host's who started it, so a Host
+ * leaving it re-reads their account to see it.
+ */
+function PartyPlay({
+  puzzle,
+  account,
+  context,
+  own,
+  next,
+}: {
+  puzzle: PuzzleClues
+  account: AccountState
+  context: PlayContext
+  own: boolean
+  next: NextPick | null
+}) {
+  const { party, you } = usePartyView()
+  const hosting = you !== null && you === party?.host && account.account !== null
+  useEffect(() => {
+    if (!hosting) return
+    return () => void refreshAccount()
+  }, [hosting])
+  const userId = account.storage.userId
+  const storage = useMemo(() => new PartyStorage(userId, () => partySession.grid(), own), [userId, own])
+  return (
+    <Play
+      puzzle={puzzle}
+      context={context}
+      account={{ ...account, storage, sync: null }}
+      party={partySession}
+      partyNext={next}
+    />
+  )
+}
+
 /**
  * A player-made puzzle: in its album when `album` is given, else on its own in its Author's paper (or the Workshop's),
  * belonging to the Workshop's Played by link, or to Home signed out. Its Author plays it as a playtest, saving nothing.
@@ -171,11 +241,14 @@ function MadePlay({
   account,
   own,
   album,
+  inParty,
 }: {
   puzzle: PuzzleClues & { made: MadeContext }
   account: AccountState
   own: boolean
   album: PlayContext | null
+  /** The Party's grid. */
+  inParty: boolean
 }) {
   const { made } = puzzle
   const [playtest] = useState(() => (own ? new PlaytestStorage() : null))
@@ -211,6 +284,7 @@ function MadePlay({
               ),
             }),
       }
+  if (inParty) return <PartyPlay puzzle={puzzle} account={account} context={context} own={own} next={null} />
   return (
     <Play
       puzzle={puzzle}
@@ -280,7 +354,7 @@ const centerOf = (el: Element) => {
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
 }
 
-/** Next up in the puzzle's Province, for a co-op's solved rail. */
+/** Next up in the puzzle's Province, for a Party's solved rail. */
 export interface NextPick {
   puzzle: PuzzleSummary
   /** 1-based on the Province's pages. */
@@ -288,23 +362,23 @@ export interface NextPick {
 }
 
 /**
- * With `coop`, the grid is the co-op's: the server owns it and records the solve, so none is sent from here, and
- * `coopNext` is where Next together (or a guest's Next on my own) goes. `cover` lays a card over the board, with the
+ * With `party`, the grid is the Party's: the server owns it and records the solve, so none is sent from here, and
+ * `partyNext` is where Next together (or a guest's Next on my own) goes. `cover` lays a card over the board, with the
  * rest of the page asleep under it.
  */
 export function Play({
   puzzle,
   context,
   account: { storage, sync },
-  coop,
-  coopNext = null,
+  party,
+  partyNext = null,
   cover,
 }: {
   puzzle: PuzzleClues
   context: PlayContext
   account: AccountState
-  coop?: CoopSession | undefined
-  coopNext?: NextPick | null
+  party?: PartySession | undefined
+  partyNext?: NextPick | null
   cover?: ReactNode
 }) {
   const { album, paper } = context
@@ -320,10 +394,10 @@ export function Play({
           if (album) markStarted(storage, album.campaign.id)
           sync?.markDirty(puzzle.id)
         },
-        coop,
+        party,
       }),
   )
-  useEffect(() => coop?.bind(store), [coop, store])
+  useEffect(() => party?.bind(store), [party, store])
   useEffect(() => showBoard(puzzle.id), [puzzle.id])
   const [boardView] = useState(() => new BoardView(puzzle, true))
   const boardRef = useBoardGestures(store, boardView)
@@ -352,10 +426,10 @@ export function Play({
   const crossRow = useStoreValue(store, s => (settings.crosshair ? (crosshairOf(s)?.row ?? null) : null))
   const crossCol = useStoreValue(store, s => (settings.crosshair ? (crosshairOf(s)?.col ?? null) : null))
   const paused = useStoreValue(store, s => s.paused && !s.solved)
-  const coopView = useCoopView(coop)
-  const room = coopView?.room ?? null
+  const partyView = usePartyView()
+  const shared = party ? partyView.party : null
   // Clear and Replay are the Host's alone.
-  const mayClear = !coop || room?.you === 0
+  const mayClear = !party || (shared !== null && partyView.you === shared.host)
 
   const [lineHints] = useState(() => createLineHints(puzzle))
   const hints = useMemo(() => lineHints(cells), [lineHints, cells])
@@ -393,7 +467,7 @@ export function Play({
   // sends the sticker off without them. A Replay that sets a new best still tells an account's server.
   const [revealFailed, setRevealFailed] = useState(false)
   useEffect(() => {
-    if (!solved || coop) return
+    if (!solved || party) return
     const { palette, cells, solveMs, bestMs, attemptHinted } = store.getState()
     const newBest = solveMs !== null && solveMs === bestMs && !attemptHinted && storage.userId !== null
     if (palette && !newBest) return
@@ -409,7 +483,7 @@ export function Play({
       () => !abort.signal.aborted && setRevealFailed(true),
     )
     return () => abort.abort()
-  }, [solved, store, puzzle.id, storage, coop])
+  }, [solved, store, puzzle.id, storage, party])
 
   // A solve while zoomed glides back to fit before the reveal and the sticker's moment, so they
   // see the whole picture; the view stays locked there until a replay.
@@ -585,8 +659,8 @@ export function Play({
 
   const stakes = replaying ? (
     <Stakes title="Already in the album">Replays never change the sticker.</Stakes>
-  ) : !firstSolve ? null : coop ? (
-    <Stakes swatch="plain" title="Co-op sticker">
+  ) : !firstSolve ? null : party ? (
+    <Stakes swatch="plain" title="Party sticker">
       Solving together never earns foil.
     </Stakes>
   ) : hinted ? (
@@ -598,11 +672,11 @@ export function Play({
       A hint makes it a regular sticker.
     </Stakes>
   )
-  const hintNote = hint && room && coopHintNote(room, coopView?.hintBy ?? null, hint)
+  const hintNote = hint && shared && partyHintNote(shared, partyView.you, partyView.hintBy, hint)
   const hintButton = (popover: boolean) => (
     <HintButton
       store={store}
-      confirmFirst={firstSolve && !hinted && !coop}
+      confirmFirst={firstSolve && !hinted && !party}
       popover={popover}
       stakes={popover ? undefined : stakes}
       note={
@@ -619,7 +693,7 @@ export function Play({
           )
         ))
       }
-      request={cells => (coop ? coop.requestHint() : requestHint(puzzle.id, { cells: encodeCells(cells) }))}
+      request={cells => (party ? party.requestHint() : requestHint(puzzle.id, { cells: encodeCells(cells) }))}
       onError={setHintFailed}
     />
   )
@@ -684,11 +758,11 @@ export function Play({
       <PadGlyph button="A" />
     </Link>
   )
-  const coopOnward = (named: boolean) =>
-    coop && room ? (
-      <CoopOnward session={coop} room={room} next={coopNext} storage={storage} leaveTo={context.back} named={named} />
+  const partyOnward = (named: boolean) =>
+    shared ? (
+      <PartyOnward party={shared} you={partyView.you} next={partyNext} storage={storage} leaveTo={context.back} named={named} />
     ) : null
-  const onwardless = !room && (!album || (!conquest && !next))
+  const onwardless = !shared && (!album || (!conquest && !next))
   const backToPage = (
     <Link {...backTo(context.back)} data-variant="paper" data-pad-default={onwardless || undefined}>
       {context.place}
@@ -704,8 +778,8 @@ export function Play({
   )
   const foilChip = replaying ? (
     <p className={styles.panelNote}>Already in the album. Replays never change the sticker.</p>
-  ) : coop ? (
-    firstSolve && <p className={styles.panelNote}>Co-op sticker: solving together never earns foil.</p>
+  ) : party ? (
+    firstSolve && <p className={styles.panelNote}>Party sticker: solving together never earns foil.</p>
   ) : (
     firstSolve &&
     !hinted && (
@@ -737,7 +811,7 @@ export function Play({
       {!conquest && context.solvedNote}
       <TimeCard store={store} />
       {closing}
-      {coopOnward(true) ?? onward(true)}
+      {partyOnward(true) ?? onward(true)}
       <div className={styles.panelActions}>
         {replay}
         {backToPage}
@@ -794,21 +868,14 @@ export function Play({
     album && <ChoiceCard track={TRACKS.techniques} copy={techniquesOffer(album.province)} back={context.here} />
   )
 
-  // A Daily is played solo, and a join card's page isn't the co-op yet.
-  const coopPill = (phone: boolean) =>
-    !cover &&
-    !('daily' in puzzle) && (
-      <CoopPill
-        puzzleId={puzzle.id}
-        title={puzzle.title}
-        session={coop}
-        leaveTo={context.back}
-        triggerClassName={phone ? styles.round : coopStyles.hudPill}
-        {...(phone && { triggerVariant: 'flat', triggerSize: 'compact', sheet: true })}
-      />
-    )
-
-  const corner = wide && coopPill(false)
+  // A Daily is played solo, and a join card's page isn't the Party's yet. The phone's pill holds Play with party.
+  const partyTools = !cover && !('daily' in puzzle)
+  const corner = wide && partyTools && (
+    <>
+      <PlayWithParty puzzleId={puzzle.id} className={partyStyles.playPill} variant="flat" />
+      <PartyPill triggerClassName={partyStyles.hudPill} />
+    </>
+  )
   const paperMorph = columnPaper(album ? `province-${album.province.id}` : undefined)
   const surfaceMorph = boardMorph('surface', 'surface')
   const railMorph = boardMorph('rail', 'rail')
@@ -836,7 +903,9 @@ export function Play({
           {!solved && <span className={styles.topPercent}>{percent}%</span>}
           {!done && tag}
           <span className={styles.topTools}>
-            {coopPill(true)}
+            {partyTools && (
+              <PartyPill puzzleId={puzzle.id} triggerClassName={styles.round} triggerVariant="flat" triggerSize="compact" sheet />
+            )}
             <MenuCrown />
           </span>
         </header>
@@ -858,7 +927,7 @@ export function Play({
                 <Minimap store={store} view={boardView} cellSize={cellSize} />
                 <ColClues lines={puzzle.clues.cols} hints={hints.cols} active={crossCol} assists={assists} />
                 <RowClues lines={puzzle.clues.rows} hints={hints.rows} active={crossRow} assists={assists} />
-                <Board store={store} cellSize={cellSize} view={boardView} presence={coop} />
+                <Board store={store} cellSize={cellSize} view={boardView} presence={party} />
                 {hint && <HintTag hint={hint} cells={cells} view={boardView} />}
               </div>
             )}
@@ -869,7 +938,7 @@ export function Play({
               <ClockPill store={store} />
             </div>
           )}
-          {cover ?? (!coop && offer)}
+          {cover ?? (!party && offer)}
         </div>
         {wide && (
           <aside
@@ -919,7 +988,7 @@ export function Play({
                   {album && !conquest && next && (
                     <NextUp puzzle={next} number={album.province.puzzles.indexOf(next) + 1} storage={storage} />
                   )}
-                  {coopOnward(false) ?? onward(false)}
+                  {partyOnward(false) ?? onward(false)}
                   {replay}
                   {report}
                 </div>
@@ -931,7 +1000,7 @@ export function Play({
                 {fold < 2 && (
                   <section className={styles.railSection} aria-labelledby="rail-controls">
                     <h2 id="rail-controls">Controls</h2>
-                    <ControlsLegend ping={!!coop} />
+                    <ControlsLegend ping={!!party} />
                   </section>
                 )}
                 {fold < 1 && (

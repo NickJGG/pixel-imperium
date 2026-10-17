@@ -36,7 +36,7 @@ export function provinceStates(
     if (unlockAll) return { state: 'active', solved, total }
     const state: ProvinceState = reached === null ? 'active' : reached === 'active' ? 'next' : 'locked'
     reached = reached === null ? 'active' : 'next'
-    // A co-op can solve puzzles in a province not reached yet; they count once it is.
+    // A Party can solve puzzles in a province not reached yet; they count once it is.
     return { state, solved: state === 'active' ? solved : 0, total }
   })
   return { provinces, conquered: provinces.every(p => p.state === 'conquered') }

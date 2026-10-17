@@ -1,7 +1,7 @@
 import { type KeyboardEvent, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import { usePadBoard } from '../pad/usePadBoard.ts'
-import { PING_MS, type Presence } from '../coop/session.ts'
-import { seatColor } from '../coop/seats.ts'
+import { PING_MS, type Presence } from '../party/session.ts'
+import { seatColor } from '../party/seats.ts'
 import { getSettings, subscribeSettings } from '../settings.ts'
 import { move, startStroke } from './board-actions.ts'
 import { type PlayState, type PlayStore, type Pos, type Tool, crosshairOf } from './store.ts'
@@ -44,7 +44,7 @@ interface Props {
   flag?: BoardFlag | null | undefined
   /** Set during a Lesson's talk beat, when a controller's A advances it. */
   onTalkNext?: (() => void) | undefined
-  /** A co-op's partners and Pings. */
+  /** A party's partners and Pings. */
   presence?: PresenceSource | undefined
 }
 

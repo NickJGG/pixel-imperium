@@ -66,7 +66,7 @@ export function usePadBoard(canvasRef: RefObject<HTMLCanvasElement | null>, { st
         } else if (button === 'RB') {
           store.redo()
         } else if (button === 'RS') {
-          if (!store.inCoop) return false
+          if (!store.inParty) return false
           if (kind === 'press') store.ping(store.getState().cursor)
         } else {
           return false

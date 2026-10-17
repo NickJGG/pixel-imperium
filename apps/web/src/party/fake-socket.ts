@@ -1,4 +1,4 @@
-import type { CoopServerMsg } from '@pixel-imperium/protocol'
+import type { PartyServerMsg } from '@pixel-imperium/protocol'
 import type { WebSocketLike } from './socket.ts'
 
 /** A `WebSocket` the test opens, feeds and drops by hand. */
@@ -21,7 +21,7 @@ export class FakeSocket implements WebSocketLike {
     this.readyState = 1
     this.onopen?.(new Event('open'))
   }
-  receive(msg: CoopServerMsg): void {
+  receive(msg: PartyServerMsg): void {
     this.onmessage?.({ data: JSON.stringify(msg) } as MessageEvent)
   }
   drop(code = 1006): void {

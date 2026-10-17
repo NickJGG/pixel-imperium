@@ -59,16 +59,16 @@ export const madeTrail = (place: MadePlace, puzzle: { id: string; title: string;
   { to: `/play/${puzzle.id}`, label: puzzle.title, paper: puzzle.paper },
 ]
 
-/** A co-op's Trail is its puzzle's, the last step being the co-op; `album` is the puzzle's place, if it has one. */
-export const coopTrail = (
+/** A party link's Trail is its puzzle's, the last step being the link; `album` is the puzzle's place, if it has one. */
+export const partyTrail = (
   code: string,
   puzzle: { title: string; paper: Paper } | null,
   album: { campaign: Place; province: Place } | null,
 ): TrailStep[] => {
-  const coop = { to: `/co/${code}`, label: puzzle ? `Co-op · ${puzzle.title}` : 'Co-op' }
-  if (!puzzle) return [HOME, coop]
-  if (!album) return [HOME, { ...coop, paper: puzzle.paper }]
-  return [...provinceTrail(album.campaign, album.province), { ...coop, paper: album.province.paper }]
+  const link = { to: `/party/${code}`, label: puzzle ? `Party · ${puzzle.title}` : 'Party' }
+  if (!puzzle) return [HOME, link]
+  if (!album) return [HOME, { ...link, paper: puzzle.paper }]
+  return [...provinceTrail(album.campaign, album.province), { ...link, paper: album.province.paper }]
 }
 
 export const monthTrail = (year: number, month: number): TrailStep[] => [

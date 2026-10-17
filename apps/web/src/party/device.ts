@@ -10,7 +10,7 @@ function fresh(): string {
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
-/** This device's co-op identity while signed out: its guest name, its seat, and what a Host's Remove applies to. */
+/** This device's party identity while signed out: its guest name, its seat, and what a Host's Remove applies to. */
 export function deviceToken(): string {
   try {
     const stored = localStorage.getItem(KEY)

@@ -11,12 +11,10 @@ import {
 } from '@tanstack/react-router'
 import type { Campaign, CampaignSummary, MadePuzzleSummary, Paper, PuzzleClues, RetiredError } from '@pixel-imperium/protocol'
 import { accountReady, getAccount, useAccount } from './account.ts'
-import { fetchCoop, fetchMade, fetchProfile, isRetired } from './api.ts'
+import { fetchMade, fetchParty, fetchProfile, isRetired } from './api.ts'
 import * as content from './content.ts'
 import { LoadError, NotFound, Retired } from './EdgeStates.tsx'
 import { CampaignsPage } from './campaign/CampaignsPage.tsx'
-import { CoopPage, loadCoopPuzzle } from './coop/CoopPage.tsx'
-import { deviceToken } from './coop/device.ts'
 import { CampaignsSkeleton } from './campaign/CampaignsSkeleton.tsx'
 import { newestFeatured } from './campaign/campaigns.ts'
 import { pickCampaign, rememberCampaign, rememberCampaigns } from './campaign/last-campaign.ts'
@@ -41,6 +39,9 @@ import { SettingsPage } from './me/SettingsPage.tsx'
 import { SettingsSkeleton } from './me/SettingsSkeleton.tsx'
 import { MenuPanel } from './menu/MenuPanel.tsx'
 import { PadProvider } from './pad/PadProvider.tsx'
+import { deviceToken } from './party/device.ts'
+import { installParty } from './party/party-store.ts'
+import { PartyPage, loadPartyPuzzle } from './party/PartyPage.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
 import { PlaySkeleton } from './play/PlaySkeleton.tsx'
 import { signedOutStorage } from './play/progress-storage.ts'
@@ -77,7 +78,7 @@ function Root() {
   // captures it, and its logo would hold still instead of slapping on.
   const playing = useRouterState({
     select: s =>
-      /^\/(?:play\/|co\/|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+|workshop\/p\/|workshop\/c\/[^/]+\/playtest\/[^/]+\/[^/]+|make$)/.test(s.matches.at(-1)?.pathname ?? s.location.pathname),
+      /^\/(?:play\/|party\/|daily\/[^/]+\/[^/]+\/[^/]+|learn\/[^/]+\/[^/]+|workshop\/p\/|workshop\/c\/[^/]+\/playtest\/[^/]+\/[^/]+|make$)/.test(s.matches.at(-1)?.pathname ?? s.location.pathname),
   })
   // An edge state in their place wants the HUD back, floating like any Worlds page's.
   const edge = useRouterState({
@@ -308,25 +309,26 @@ const playRoute = createRoute({
 })
 
 /**
- * A co-op by its link. A signed-out device asks with its token, so it learns the name it would join under, and a
- * second time with `started` when the puzzle is Retired and the device has progress on it.
+ * A Party by its link. A signed-out device asks with its token, so it learns the name it would join under, and a
+ * second time with `started` when the Party's puzzle is Retired and the device has progress on it.
  */
-const coopRoute = createRoute({
+const partyRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/co/$code',
+  path: '/party/$code',
   loader: async ({ params }) => {
     await accountReady
     const device = getAccount().account ? null : deviceToken()
-    let info = await fetchCoop(params.code, device)
+    let info = await fetchParty(params.code, device)
     if (!info) throw notFound()
-    const started = device !== null && 'puzzleId' in info && deviceStartedPuzzle(info.puzzleId)
-    if (started && info.access === 'retired-closed') info = (await fetchCoop(params.code, device, true)) ?? info
-    const first = info.access === 'ended' || info.access === 'retired-closed' ? null : await loadCoopPuzzle(info.puzzleId, started)
+    const puzzleId = 'puzzle' in info ? info.puzzle?.id : undefined
+    const started = device !== null && puzzleId !== undefined && deviceStartedPuzzle(puzzleId)
+    if (started && info.access === 'retired-closed') info = (await fetchParty(params.code, device, true)) ?? info
+    const first = info.access === 'ended' || info.access === 'retired-closed' || !puzzleId ? null : await loadPartyPuzzle(puzzleId, started)
     return { info, first, started }
   },
-  component: CoopPage,
+  component: PartyPage,
   pendingComponent: PlaySkeleton,
-  notFoundComponent: () => <NotFound>There’s no co-op at this link. Ask for a new one.</NotFound>,
+  notFoundComponent: () => <NotFound>There’s no party at this link. Ask for a new one.</NotFound>,
 })
 
 /** A Month of Dailies, `month` being `01`–`12`; the Year's other Months stand beside it. */
@@ -695,7 +697,7 @@ export const router = createRouter({
     campaignRoute,
     provinceRoute,
     playRoute,
-    coopRoute,
+    partyRoute,
     monthRoute,
     dailyPlayRoute,
     profileRoute,
@@ -719,6 +721,7 @@ export const router = createRouter({
 })
 
 installMorphNavigation(router)
+installParty(router)
 
 declare module '@tanstack/react-router' {
   interface Register {

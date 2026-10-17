@@ -196,6 +196,7 @@
   top: var(--space-4);
   right: var(--space-5);
   display: flex;
+  gap: var(--space-2);
 }
 
 .corner [data-pad-menu] {

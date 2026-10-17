@@ -1,11 +1,12 @@
 /**
- * The co-op connection: `/ws` on this origin, so the session cookie rides along. It joins on every open, and after a
- * drop reconnects with exponential backoff and jitter; the server's `snapshot` on each join is the whole truth, so
- * nothing needs replaying. A close the server means as final (removed, full, ended, not allowed, outdated) ends it.
+ * The party connection: `/ws` on this origin, so the session cookie rides along. It says `hello` on every open, and is
+ * live once the server answers with the player's `party`; after a drop it reconnects with exponential backoff and
+ * jitter, and the server's answers to the new `hello` are the whole truth, so nothing needs replaying. A close the
+ * server means as final (not allowed, outdated) ends it.
  */
-import { COOP_CLOSE, type CoopClientMsg, type CoopServerMsg } from '@pixel-imperium/protocol'
+import { PARTY_CLOSE, type PartyClientMsg, type PartyServerMsg } from '@pixel-imperium/protocol'
 
-export type CoopEnd = 'removed' | 'full' | 'ended' | 'not-allowed' | 'outdated'
+export type PartyEnd = 'not-allowed' | 'outdated'
 
 export type SocketStatus = 'connecting' | 'live' | 'reconnecting'
 
@@ -19,15 +20,14 @@ export interface WebSocketLike {
   onclose: ((ev: CloseEvent) => void) | null
 }
 
-export interface CoopSocketHandlers {
-  /** The `join` to send on each open, read then so it carries the current link code. */
-  join: () => Extract<CoopClientMsg, { type: 'join' }>
-  onMessage: (msg: CoopServerMsg) => void
+export interface PartySocketHandlers {
+  hello: () => Extract<PartyClientMsg, { type: 'hello' }>
+  onMessage: (msg: PartyServerMsg) => void
   onStatus: (status: SocketStatus) => void
-  onEnd: (reason: CoopEnd) => void
+  onEnd: (reason: PartyEnd) => void
 }
 
-export interface CoopSocketEnv {
+export interface PartySocketEnv {
   create?: (url: string) => WebSocketLike
   url?: string
   random?: () => number
@@ -37,12 +37,9 @@ const OPEN = 1
 export const BACKOFF_BASE_MS = 500
 export const BACKOFF_MAX_MS = 15_000
 
-const FINAL: Partial<Record<number, CoopEnd>> = {
-  [COOP_CLOSE.removed]: 'removed',
-  [COOP_CLOSE.full]: 'full',
-  [COOP_CLOSE.ended]: 'ended',
-  [COOP_CLOSE.notAllowed]: 'not-allowed',
-  [COOP_CLOSE.outdated]: 'outdated',
+const FINAL: Partial<Record<number, PartyEnd>> = {
+  [PARTY_CLOSE.notAllowed]: 'not-allowed',
+  [PARTY_CLOSE.outdated]: 'outdated',
 }
 
 /** The wait before reconnect attempt `attempt` (from 0): half the capped exponential step, plus up to as much again. */
@@ -53,12 +50,12 @@ export function backoffMs(attempt: number, random: () => number = Math.random): 
 
 const sameOriginUrl = () => `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`
 
-export class CoopSocket {
+export class PartySocket {
   private ws: WebSocketLike | null = null
   private attempt = 0
   private timer: ReturnType<typeof setTimeout> | null = null
   private live = false
-  /** Joined at least once, so a drop is a reconnect. */
+  /** Live at least once, so a drop is a reconnect. */
   private joined = false
   private stopped = false
   private readonly create: (url: string) => WebSocketLike
@@ -66,8 +63,8 @@ export class CoopSocket {
   private readonly random: () => number
 
   constructor(
-    private readonly handlers: CoopSocketHandlers,
-    { create = url => new WebSocket(url), url = sameOriginUrl(), random = Math.random }: CoopSocketEnv = {},
+    private readonly handlers: PartySocketHandlers,
+    { create = url => new WebSocket(url), url = sameOriginUrl(), random = Math.random }: PartySocketEnv = {},
   ) {
     this.create = create
     this.url = url
@@ -75,8 +72,8 @@ export class CoopSocket {
     this.open()
   }
 
-  /** Sends while joined; `false` while connecting, or once closed. */
-  send(msg: CoopClientMsg): boolean {
+  /** Sends while live; `false` while connecting, or once closed. */
+  send(msg: PartyClientMsg): boolean {
     if (!this.live || this.ws?.readyState !== OPEN) return false
     this.ws.send(JSON.stringify(msg))
     return true
@@ -99,16 +96,16 @@ export class CoopSocket {
     this.handlers.onStatus(this.joined ? 'reconnecting' : 'connecting')
     const ws = this.create(this.url)
     this.ws = ws
-    ws.onopen = () => ws.send(JSON.stringify(this.handlers.join()))
+    ws.onopen = () => ws.send(JSON.stringify(this.handlers.hello()))
     ws.onmessage = ({ data }) => {
-      let msg: CoopServerMsg
+      let msg: PartyServerMsg
       try {
-        msg = JSON.parse(String(data)) as CoopServerMsg
+        msg = JSON.parse(String(data)) as PartyServerMsg
       } catch {
         return
       }
       if (msg.type === 'outdated') return this.finish('outdated')
-      if (msg.type === 'snapshot') {
+      if (msg.type === 'party' && !this.live) {
         this.attempt = 0
         this.live = true
         this.joined = true
@@ -122,14 +119,14 @@ export class CoopSocket {
       this.live = false
       const final = FINAL[code]
       if (final) return this.finish(final)
-      // A restart saved the co-op; back at once rather than after a backoff.
-      if (code === COOP_CLOSE.restarting) this.attempt = 0
+      // A restart saved the parties; back at once rather than after a backoff.
+      if (code === PARTY_CLOSE.restarting) this.attempt = 0
       if (this.joined) this.handlers.onStatus('reconnecting')
       this.timer = setTimeout(() => this.open(), backoffMs(this.attempt++, this.random))
     }
   }
 
-  private finish(reason: CoopEnd): void {
+  private finish(reason: PartyEnd): void {
     if (this.stopped) return
     this.close()
     this.handlers.onEnd(reason)

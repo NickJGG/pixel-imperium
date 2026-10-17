@@ -14,8 +14,8 @@
  * `pause()` (the player's) or a `suspend()` (the page hidden or left); `clear()` restarts the
  * Attempt. A solve stops it, and sets a Best time unless a Hint was used in the Attempt.
  *
- * In a co-op the server owns the grid and each player's undo: own strokes still land at once and go out through
- * `coop`, Undo and Clear are asked of it, and what the server settles comes back through `applyRemote`.
+ * In a party the server owns the grid and each player's undo: own strokes still land at once and go out through
+ * `party`, Undo and Clear are asked of it, and what the server settles comes back through `applyRemote`.
  *
  * `cells` in the published state is a new array only when a cell changed, so it can
  * key derived per-line work.
@@ -80,8 +80,8 @@ export interface Change {
   to: Cell
 }
 
-/** A co-op's side of the store. */
-export interface CoopLink {
+/** A Party's side of the store. */
+export interface PartyLink {
   /** A stroke, or the next piece of one still being drawn when `joins`. */
   stroke(changes: readonly Change[], joins: boolean): void
   /** Takes back the pieces of the stroke in hand already sent. */
@@ -101,7 +101,7 @@ interface ActiveStroke {
   /** `row` = moving along the start row, `col` = along the start column. */
   axis: 'row' | 'col' | null
   changes: Change[]
-  /** How many of `changes` a co-op has been sent. */
+  /** How many of `changes` a party has been sent. */
   sent: number
 }
 
@@ -146,7 +146,7 @@ export interface PlayStoreOptions {
   onSave?: (() => void) | undefined
   /** The clock's time source, in ms. */
   now?: () => number
-  coop?: CoopLink | undefined
+  party?: PartyLink | undefined
 }
 
 export class PlayStore {
@@ -154,12 +154,12 @@ export class PlayStore {
   readonly now: () => number
   private readonly storage: ProgressStorage
   private readonly onSave: (() => void) | undefined
-  private readonly coop: CoopLink | undefined
+  private readonly party: PartyLink | undefined
   private cells: Cell[]
   private undoStack: Change[][] = []
   private redoStack: Change[][] = []
-  /** Own co-op strokes not yet undone, as far as this device knows: the server may skip some. */
-  private coopUndos = 0
+  /** Own party strokes not yet undone, as far as this device knows: the server may skip some. */
+  private partyUndos = 0
   private stroke: ActiveStroke | null = null
   private cellsChanged = false
   /** The clock was running when the page went away, so `wake()` restarts it. */
@@ -169,12 +169,12 @@ export class PlayStore {
 
   constructor(
     puzzle: PlayPuzzle,
-    { autoMarkEmptyLines = false, storage = signedOutStorage, onSave, now = () => performance.now(), coop }: PlayStoreOptions = {},
+    { autoMarkEmptyLines = false, storage = signedOutStorage, onSave, now = () => performance.now(), party }: PlayStoreOptions = {},
   ) {
     this.puzzle = puzzle
     this.storage = storage
     this.onSave = onSave
-    this.coop = coop
+    this.party = party
     this.now = now
     const { id, width, height } = puzzle
     this.cells = storage.loadProgress(id, width * height) ?? Array<Cell>(width * height).fill('empty')
@@ -286,9 +286,9 @@ export class PlayStore {
     if (!s) return
     this.stroke = null
     if (s.changes.length === 0) return
-    if (this.coop) {
+    if (this.party) {
       this.sendStroke(s)
-      this.coopUndos++
+      this.partyUndos++
     } else {
       this.undoStack.push(s.changes)
       this.redoStack = []
@@ -301,14 +301,14 @@ export class PlayStore {
     const s = this.stroke
     if (!s) return
     this.stroke = null
-    if (s.sent > 0) this.coop?.cancel()
+    if (s.sent > 0) this.party?.cancel()
     if (s.changes.length === 0) return
     for (const c of s.changes.toReversed()) this.cells[c.index] = c.from
     this.cellsChanged = true
     this.emit({})
   }
 
-  /** Lets go of the stroke in hand where it stands: nothing sent, no undo step. For a co-op solved under it. */
+  /** Lets go of the stroke in hand where it stands: nothing sent, no undo step. For a party solved under it. */
   releaseStroke(): void {
     this.stroke = null
   }
@@ -316,11 +316,11 @@ export class PlayStore {
   undo(): void {
     if (this.state.solved) return
     this.endStroke()
-    if (this.coop) {
-      if (this.coopUndos === 0) return
-      this.coopUndos--
+    if (this.party) {
+      if (this.partyUndos === 0) return
+      this.partyUndos--
       this.startClock()
-      this.coop.undo()
+      this.party.undo()
       return this.emit({})
     }
     const changes = this.undoStack.pop()
@@ -333,7 +333,7 @@ export class PlayStore {
   }
 
   redo(): void {
-    if (this.state.solved || this.coop) return
+    if (this.state.solved || this.party) return
     this.endStroke()
     const changes = this.redoStack.pop()
     if (!changes) return
@@ -347,7 +347,7 @@ export class PlayStore {
   /** Resets to the fresh grid as one undo step; on a solved puzzle this starts a replay. */
   clear({ autoMarkEmptyLines }: { autoMarkEmptyLines: boolean }): void {
     this.endStroke()
-    if (this.coop) return this.coop.clear()
+    if (this.party) return this.party.clear()
     const changes: Change[] = []
     freshCells(this.puzzle, autoMarkEmptyLines).forEach((to, index) => {
       const from = this.cells[index]!
@@ -433,11 +433,11 @@ export class PlayStore {
   }
 
   /**
-   * Writes cells as a co-op's server settled them, outside the undo history; cells the stroke in hand has drawn
+   * Writes cells as a party's server settled them, outside the undo history; cells the stroke in hand has drawn
    * stay as drawn. A grid un-solved this way is a Clear's Replay. `forgetUndo` follows a Clear, which drops every undo.
    */
   applyRemote(changes: readonly Pick<Change, 'index' | 'to'>[], { forgetUndo = false } = {}): void {
-    if (forgetUndo) this.coopUndos = 0
+    if (forgetUndo) this.partyUndos = 0
     const held = new Set(this.stroke?.changes.map(c => c.index))
     for (const { index, to } of changes) {
       if (held.has(index) || this.cells[index] === to) continue
@@ -449,15 +449,15 @@ export class PlayStore {
     this.commit(this.state.solved ? { ...restart, replaying: true, palette: null, stamps: null } : {})
   }
 
-  /** A co-op's Ping on `pos`; whether there was a co-op to ping. */
+  /** A party's Ping on `pos`; whether there was a party to ping. */
   ping(pos: Pos): boolean {
-    if (!this.coop) return false
-    this.coop.ping(this.index(this.clamp(pos)))
+    if (!this.party) return false
+    this.party.ping(this.index(this.clamp(pos)))
     return true
   }
 
-  get inCoop(): boolean {
-    return this.coop !== undefined
+  get inParty(): boolean {
+    return this.party !== undefined
   }
 
   showHint(hint: HintResponse): void {
@@ -505,12 +505,12 @@ export class PlayStore {
   }
 
   /**
-   * Sends a co-op what the stroke has drawn since last time, so partners watch it as it goes. Its first cell waits
+   * Sends a party what the stroke has drawn since last time, so partners watch it as it goes. Its first cell waits
    * until it moves on or ends, as a touch held there may yet turn into a Ping.
    */
   private sendStroke(s = this.stroke!): void {
-    if (!this.coop || s.sent === s.changes.length) return
-    this.coop.stroke(s.changes.slice(s.sent), s.sent > 0)
+    if (!this.party || s.sent === s.changes.length) return
+    this.party.stroke(s.changes.slice(s.sent), s.sent > 0)
     s.sent = s.changes.length
   }
 
@@ -561,7 +561,7 @@ export class PlayStore {
       ...this.state,
       ...patch,
       cells: this.cellsChanged ? this.cells.slice() : this.state.cells,
-      canUndo: (this.coop ? this.coopUndos : this.undoStack.length) > 0,
+      canUndo: (this.party ? this.partyUndos : this.undoStack.length) > 0,
       canRedo: this.redoStack.length > 0,
     }
     this.cellsChanged = false

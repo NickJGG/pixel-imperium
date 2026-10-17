@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cluesFromSolution } from '@pixel-imperium/nonogram'
 import { stubStorage } from '../test-storage.ts'
-import { CoopStorage } from '../coop/coop-storage.ts'
+import { PartyStorage } from '../party/party-storage.ts'
 import { ProgressStorage, signedOutStorage as storage } from './progress-storage.ts'
-import { type CoopLink, PlayStore, type Pos, type Tool, crosshairOf, elapsedAt } from './store.ts'
+import { type PartyLink, PlayStore, type Pos, type Tool, crosshairOf, elapsedAt } from './store.ts'
 
 // 4×3 plus sign with a tail:
 //   .#..
@@ -529,16 +529,16 @@ describe('PlayStore with an account', () => {
   })
 })
 
-describe('PlayStore in a co-op', () => {
+describe('PlayStore in a party', () => {
   beforeEach(stubStorage)
   afterEach(() => vi.unstubAllGlobals())
 
   const palette = Array.from({ length: 12 }, (_, i) => (solution[i] ? '#f0f' : null))
-  const coopStore = (userId: string | null = null, grid = Array(12).fill('empty')) => {
-    const link = { stroke: vi.fn(), cancel: vi.fn(), undo: vi.fn(), clear: vi.fn(), ping: vi.fn() } satisfies CoopLink
+  const partyStore = (userId: string | null = null, grid = Array(12).fill('empty')) => {
+    const link = { stroke: vi.fn(), cancel: vi.fn(), undo: vi.fn(), clear: vi.fn(), ping: vi.fn() } satisfies PartyLink
     const s = new PlayStore(
       { id: 'test', width: 4, height: 3, clues: cluesFromSolution(4, 3, solution) },
-      { storage: new CoopStorage(userId, () => grid, false), coop: link },
+      { storage: new PartyStorage(userId, () => grid, false), party: link },
     )
     return { s, link }
   }
@@ -548,11 +548,11 @@ describe('PlayStore in a co-op', () => {
   it('opens on the shared grid', () => {
     const grid = Array(12).fill('empty')
     grid[1] = 'filled'
-    expect(render(coopStore(null, grid).s)[0]).toBe('.#..')
+    expect(render(partyStore(null, grid).s)[0]).toBe('.#..')
   })
 
   it('shows its own stroke at once and sends it, keeping no local undo history', () => {
-    const { s, link } = coopStore()
+    const { s, link } = partyStore()
     drag(s, 'fill', [at(0, 0), at(0, 1)])
     expect(render(s)[0]).toBe('##..')
     expect(link.stroke).toHaveBeenCalledWith(
@@ -566,7 +566,7 @@ describe('PlayStore in a co-op', () => {
   })
 
   it('sends a drag in pieces as it goes, its first cell once it moves on', () => {
-    const { s, link } = coopStore()
+    const { s, link } = partyStore()
     s.beginStroke(at(0, 0), 'fill', { lockAxis: false })
     expect(link.stroke).not.toHaveBeenCalled()
     s.extendStroke(at(0, 1))
@@ -593,7 +593,7 @@ describe('PlayStore in a co-op', () => {
   })
 
   it('cancels a stroke with the server only once some of it went out', () => {
-    const { s, link } = coopStore()
+    const { s, link } = partyStore()
     s.beginStroke(at(0, 0), 'fill', { lockAxis: false })
     s.cancelStroke()
     expect(link.cancel).not.toHaveBeenCalled()
@@ -605,7 +605,7 @@ describe('PlayStore in a co-op', () => {
   })
 
   it('asks the server to undo and to clear, changing nothing itself', () => {
-    const { s, link } = coopStore()
+    const { s, link } = partyStore()
     drag(s, 'fill', [at(0, 0)])
     s.undo()
     expect(link.undo).toHaveBeenCalledOnce()
@@ -620,7 +620,7 @@ describe('PlayStore in a co-op', () => {
   })
 
   it('writes remote changes without an undo step or a send', () => {
-    const { s, link } = coopStore()
+    const { s, link } = partyStore()
     s.applyRemote([{ index: 4, to: 'marked' }])
     expect(render(s)[1]).toBe('x...')
     expect(s.getState().canUndo).toBe(false)
@@ -628,7 +628,7 @@ describe('PlayStore in a co-op', () => {
   })
 
   it('leaves the cells of the stroke in hand as drawn', () => {
-    const { s } = coopStore()
+    const { s } = partyStore()
     s.beginStroke(at(0, 0), 'fill', { lockAxis: false })
     s.applyRemote([
       { index: 0, to: 'marked' },
@@ -639,7 +639,7 @@ describe('PlayStore in a co-op', () => {
   })
 
   it('solves on a remote stroke and locks, never foil and never a Best time', () => {
-    const { s } = coopStore()
+    const { s } = partyStore()
     remoteSolve(s)
     expect(s.getState()).toMatchObject({ solved: true, bestMs: null })
     expect(storage.loadSolved('test')).toBe('local')
@@ -651,7 +651,7 @@ describe('PlayStore in a co-op', () => {
 
   it("keeps an account's solve off the device until the server verifies it", () => {
     const account = new ProgressStorage('u1')
-    const { s } = coopStore('u1')
+    const { s } = partyStore('u1')
     remoteSolve(s)
     expect(account.loadSolved('test')).toBeNull()
     s.setPalette(palette, false)
@@ -661,7 +661,7 @@ describe('PlayStore in a co-op', () => {
   it('never takes foil from a solo solve made before', () => {
     storage.saveSolved('test', 'local')
     storage.saveFoil('test', true)
-    const { s } = coopStore()
+    const { s } = partyStore()
     remoteSolve(s)
     s.setPalette(palette, false)
     expect(storage.loadFoil('test')).toBe(true)
@@ -669,13 +669,13 @@ describe('PlayStore in a co-op', () => {
 
   it("leaves the player's own saved Attempt alone", () => {
     storage.saveProgress('test', Array(12).fill('marked'))
-    const { s } = coopStore()
+    const { s } = partyStore()
     drag(s, 'fill', [at(0, 0)])
     expect(storage.loadCells('test')).toBe('xxxxxxxxxxxx')
   })
 
   it("turns a Clear of the solved grid into a Replay, forgetting this player's undos", () => {
-    const { s } = coopStore()
+    const { s } = partyStore()
     drag(s, 'mark', [at(0, 0)])
     remoteSolve(s)
     s.setPalette(palette, false)
@@ -688,8 +688,8 @@ describe('PlayStore in a co-op', () => {
     expect(render(s)[0]).toBe('.#..')
   })
 
-  it('pings a cell only in a co-op', () => {
-    const { s, link } = coopStore()
+  it('pings a cell only in a party', () => {
+    const { s, link } = partyStore()
     expect(s.ping(at(1, 2))).toBe(true)
     expect(link.ping).toHaveBeenCalledWith(6)
     expect(makeStore().ping(at(1, 2))).toBe(false)

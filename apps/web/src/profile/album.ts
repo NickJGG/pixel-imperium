@@ -33,7 +33,7 @@ export const yearAlbum = (year: DailyYear): ProfileAlbum => ({
 export const albumProvinces = (album: ProfileAlbum): { puzzles: readonly PuzzleSummary[] }[] =>
   album.kind === 'campaign' ? album.campaign.provinces : album.year.months.map(puzzles => ({ puzzles }))
 
-/** The verified puzzles a Profile shows: a co-op solve in a Province the player hasn't reached stays hidden until they do. */
+/** The verified puzzles a Profile shows: a Party solve in a Province the player hasn't reached stays hidden until they do. */
 export function reachedSolves(album: ProfileAlbum, verified: readonly string[]): Set<string> {
   if (album.kind === 'year') return new Set(verified)
   const solved = new Set(verified)
