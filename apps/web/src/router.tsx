@@ -39,6 +39,7 @@ import type { Draft } from './make/draft.ts'
 import { HandlePicker } from './me/HandlePicker.tsx'
 import { SettingsPage } from './me/SettingsPage.tsx'
 import { SettingsSkeleton } from './me/SettingsSkeleton.tsx'
+import { MenuPanel } from './menu/MenuPanel.tsx'
 import { PadProvider } from './pad/PadProvider.tsx'
 import { PlayPage } from './play/PlayPage.tsx'
 import { PlaySkeleton } from './play/PlaySkeleton.tsx'
@@ -71,7 +72,7 @@ import styles from './App.module.css'
 
 function Root() {
   const { needsHandle } = useAccount()
-  // Play, a Lesson and the puzzle editor carry the HUD's pills in their own rail or top line, or place the HUD themselves. Read from the
+  // Play, a Lesson and the puzzle editor carry the crown in their own strip, or place the HUD themselves. Read from the
   // matches shown, not the address, which changes first: leaving Play, the HUD would mount over it before a morph
   // captures it, and its logo would hold still instead of slapping on.
   const playing = useRouterState({
@@ -89,6 +90,7 @@ function Root() {
         {needsHandle ? <HandlePicker /> : <Outlet />}
         <ThumbBar />
         <ImportPrompt />
+        <MenuPanel />
       </div>
     </PadProvider>
   )

@@ -4,7 +4,6 @@
  * with its live clues, and the tools in the rail. draft-store.ts keeps the draft and says when it reaches the server.
  */
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from '@tanstack/react-router'
 import {
   type Checks,
   MAX_COLORS,
@@ -16,7 +15,7 @@ import {
   toSeed,
 } from '@pixel-imperium/nonogram'
 import { type Paper, paperFor } from '../album/paper.ts'
-import { CrownMark, FloatingPills } from '../Hud.tsx'
+import { FloatingCrown, MenuCrown } from '../Hud.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import { useCentredFilm } from '../play/Filmstrip.tsx'
 import { RAIL_WIDTH } from '../play/layout.ts'
@@ -189,7 +188,7 @@ function MakePage({ workshop, paper = 'workshop', parent }: { workshop: boolean;
         commit(nudge(d, ...NUDGES[key]))
       } else if (TOOL_KEYS.has(key)) {
         setTool(TOOL_KEYS.get(key)!)
-      } else if (key === 'm') {
+      } else if (key === 'x') {
         setMirror(m => !m)
       } else if (key === 'h') {
         commit(flipH(d))
@@ -236,7 +235,7 @@ function MakePage({ workshop, paper = 'workshop', parent }: { workshop: boolean;
 
   return (
     <main className={`${playStyles.shell} ${styles.make}`} data-rail style={paperFor(paper)}>
-      <FloatingPills />
+      {test && <FloatingCrown />}
       <div className={playStyles.shellBody}>
         {!test && <ColorStrip draft={draft} chosen={color} onChoose={setChosen} />}
         <Stage puzzle={puzzle}>
@@ -258,7 +257,7 @@ function MakePage({ workshop, paper = 'workshop', parent }: { workshop: boolean;
             )
           }
         </Stage>
-        <div className={`${playStyles.rail} ${playStyles.underPills} ${styles.rail}`} style={{ width: RAIL_WIDTH }}>
+        <div className={`${playStyles.rail} ${styles.rail}`} style={{ width: RAIL_WIDTH }}>
           <div className={playStyles.railHead}>
             <p className={playStyles.railKicker} role="status">
               {workshop ? `Draft · ${SAVE_NOTE[saveState]}` : 'Make · draft on this device'}
@@ -312,7 +311,7 @@ function MakePage({ workshop, paper = 'workshop', parent }: { workshop: boolean;
                         <path d="M16 7l4 5-4 5" />
                       </svg>
                       Mirror
-                      <Keycap>M</Keycap>
+                      <Keycap>X</Keycap>
                     </button>
                     <button type="button" aria-label="Undo" title="Undo" disabled={!canUndo} onClick={undo}>
                       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -428,9 +427,7 @@ function ColorStrip({ draft, chosen, onChoose }: { draft: Draft; chosen: string 
 
   return (
     <nav ref={stripRef} className={`${playStyles.film} ${styles.strip}`} aria-label="Colors">
-      <Link to="/" className={playStyles.filmMark} aria-label="Pixel Imperium">
-        <CrownMark />
-      </Link>
+      <MenuCrown className={playStyles.filmMark} />
       <p className={playStyles.filmHead}>
         Colors
         <span>

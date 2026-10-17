@@ -10,7 +10,7 @@ import { getAccount } from '../account.ts'
 import { deleteMadePuzzle, patchMadePuzzle, retireMadePuzzle } from '../api.ts'
 import { paperFor } from '../album/paper.ts'
 import { forgetWorkshop } from '../content.ts'
-import { FloatingPills } from '../Hud.tsx'
+import { FloatingCrown } from '../Hud.tsx'
 import { RAIL_WIDTH } from '../play/layout.ts'
 import { usePadContain } from '../pad/PadProvider.tsx'
 import { type Draft, MAX_TITLE } from './draft.ts'
@@ -85,7 +85,7 @@ export function PublishedPage({ puzzle }: { puzzle: MadePuzzleSummary }) {
 
   return (
     <main className={`${playStyles.shell} ${styles.make}`} data-rail style={paperFor(puzzle.paper ?? 'workshop')}>
-      <FloatingPills />
+      <FloatingCrown />
       <div className={playStyles.shellBody}>
         <Stage puzzle={board}>
           {cellSize => (
@@ -103,7 +103,7 @@ export function PublishedPage({ puzzle }: { puzzle: MadePuzzleSummary }) {
             </Drawing>
           )}
         </Stage>
-        <div className={`${playStyles.rail} ${playStyles.underPills} ${styles.rail}`} style={{ width: RAIL_WIDTH }}>
+        <div className={`${playStyles.rail} ${styles.rail}`} style={{ width: RAIL_WIDTH }}>
           <div className={playStyles.railHead}>
             <p className={playStyles.railKicker}>
               {retired ? 'Retired' : 'Published'} · {picture.width}×{picture.height}

@@ -2,20 +2,14 @@
   position: relative;
   z-index: 20;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
   pointer-events: none;
-  view-transition-name: hud;
-}
-
-/* Above every morph's groups too, as the board morphs' spines, rail and slots, which pass under the pills. */
-::view-transition-group(hud) {
-  z-index: 10;
 }
 
 /*
- * The stickers, the logo and each Trail pill (`sticker` in Trail.tsx), are their own groups. One on both sides of a
+ * The stickers, the crown and the Workshop's tabs (`sticker` in Trail.tsx), are their own groups. One on both sides of a
  * move holds still; one on only one side slaps on, or pops off as the slap reversed, staggered by slot. Its duration
  * is the playing transition's, set on every `(*)`.
  */
@@ -131,61 +125,56 @@
   }
 }
 
-.hud.pillsOnly {
+.hud.over {
   position: absolute;
   inset: 0 0 auto;
 }
 
 /*
- * Leaving Play, the root's HUD mounts with the new address while Play's pills still stand; two `hud`s would abort
- * the morph.
+ * Leaving a board, the root's HUD mounts with the new address while the board's crown still stands; two
+ * `hud-logo`s would abort the morph. `!important` beats `sticker`'s inline name.
  */
-:root:has(.pillsOnly) .hud:not(.pillsOnly) {
-  view-transition-name: none;
+:root:has(.over) .hud:not(.over) .holder {
+  view-transition-name: none !important;
 }
 
 .hud > * {
   pointer-events: auto;
 }
 
-.logo {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5em;
-  margin-top: var(--space-2);
-  padding: var(--space-3) var(--space-3) var(--space-2);
-  background: var(--sticker);
-  color: var(--cobalt-ink);
+/* `rotate`, not `transform`, so the house button's lift and press still apply; `[aria-expanded]` outranks its inverted open state. */
+.crown,
+.crown[aria-expanded] {
+  --btn-bg: var(--sticker);
+  --btn-edge: var(--shade);
+  width: 52px;
+  height: 40px;
+  min-height: 0;
+  padding: 0;
   border-radius: var(--r-md);
-  font: 400 15px/1 var(--font-display); /* token-exempt: brand logo */
-  letter-spacing: -0.03em;
-  text-decoration: none;
-  white-space: nowrap;
-  transform: rotate(-3deg);
-  box-shadow: 0 3px 0 var(--shade);
+  rotate: -4deg;
 }
 
-.mark {
-  width: 1.5em;
-  height: 1em;
+.crown svg {
+  width: 30px;
+  height: 20px;
 }
 
-.wordmark span {
-  color: var(--pink);
-}
-
-/* Every pill one style, whatever variant AccountMenu gives its trigger. */
-.tools {
+.cap {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  margin-left: auto;
+  color: var(--ink-soft);
 }
 
-.tools > :is(button, a),
-.account [data-pad-menu],
-.lead [data-pad-menu] {
+.corner {
+  position: absolute;
+  z-index: 20;
+  top: var(--space-4);
+  right: var(--space-5);
+  display: flex;
+}
+
+.corner [data-pad-menu] {
   --btn-bg: var(--line-soft);
   --btn-ink: var(--ink);
   --btn-edge: var(--shade);
@@ -193,21 +182,10 @@
   font-size: var(--fs-16);
 }
 
-.account [data-pad-menu][aria-expanded='true'],
-.lead [data-pad-menu][aria-expanded='true'] {
+.corner [data-pad-menu][aria-expanded='true'] {
   --btn-bg: var(--ink);
   --btn-ink: var(--card);
   --btn-edge: transparent;
-}
-
-.account,
-.lead {
-  display: flex;
-}
-
-.round {
-  width: 44px;
-  padding: 0;
 }
 
 @media (max-width: 720px) {
@@ -215,11 +193,7 @@
     padding: var(--space-3) var(--space-4);
   }
 
-  .logo {
-    font-size: 11px; /* token-exempt: brand logo */
-  }
-
-  .pagePills > .account {
+  .cap {
     display: none;
   }
 }

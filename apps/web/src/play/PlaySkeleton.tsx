@@ -5,7 +5,7 @@ import { currentCampaign } from '../campaign/last-campaign.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { dailyId } from '../daily/clock.ts'
 import { boardMorph, columnPaper, slotMorph, slotName } from '../campaign/worlds/names.ts'
-import { CrownMark, FloatingPills, SoundButton, ThemeButton } from '../Hud.tsx'
+import { CrownMark, SoundButton, ThemeButton } from '../Hud.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { useCentredFilm } from './Filmstrip.tsx'
 import { RAIL_WIDTH, useRail } from './layout.ts'
@@ -56,7 +56,6 @@ export function PlaySkeleton() {
       aria-busy="true"
     >
       <SrLoading />
-      {wide && <FloatingPills />}
       {!wide && (
         <header className={styles.topLine}>
           <Bar w={28} h={18} />
@@ -191,10 +190,10 @@ export function Film({
 
 const railMorph = boardMorph('rail', 'rail')
 
-/** The right rail, clearing the HUD's pills floating over the page. */
-export function Rail({ children }: { children: ReactNode }) {
+/** The right rail; Play's clears the co-op pill in the corner above it, which `bare` leaves out. */
+export function Rail({ children, bare }: { children: ReactNode; bare?: boolean }) {
   return (
-    <aside className={`${styles.rail} ${styles.underPills}`} {...railMorph} style={{ ...railMorph.style, width: RAIL_WIDTH }}>
+    <aside className={bare ? styles.rail : `${styles.rail} ${styles.underPills}`} {...railMorph} style={{ ...railMorph.style, width: RAIL_WIDTH }}>
       {children}
     </aside>
   )

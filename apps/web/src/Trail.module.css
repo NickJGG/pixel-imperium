@@ -1,8 +1,8 @@
 .trail {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  margin-top: var(--space-2);
 }
 
 /* `rotate`, not `transform`, so the house button's hover lift and press still apply. */
@@ -11,7 +11,7 @@
   rotate: -2deg;
 }
 
-.trail > :nth-child(even) > .step {
+.trail > .step:nth-child(even) {
   rotate: 1.5deg;
 }
 
@@ -21,8 +21,3 @@
   --btn-edge: color-mix(in srgb, var(--tab) 55%, black);
 }
 
-@media (max-width: 720px) {
-  .trail {
-    display: none;
-  }
-}

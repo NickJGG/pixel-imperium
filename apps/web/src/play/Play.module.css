@@ -175,14 +175,19 @@
   box-shadow: inset -4px 0 0 var(--gutter-shade);
 }
 
-.filmMark {
+/* A button that summons the menu, or a skeleton's span. `rotate` keeps the house button's lift and press; `[aria-expanded]` outranks its inverted open state. */
+.filmMark,
+.filmMark[aria-expanded] {
+  --btn-bg: var(--sticker);
+  --btn-edge: var(--shade);
   display: grid;
   place-items: center;
   width: 52px;
   height: 52px;
-  background: var(--sticker);
+  padding: 0;
+  background: var(--btn-bg);
   border-radius: var(--r-md);
-  transform: rotate(-3deg);
+  rotate: -3deg;
   box-shadow: 0 3px 0 var(--shade);
 }
 
@@ -255,7 +260,7 @@
 }
 
 /*
- * Play's right rail on the province's darker paper, under the floating HUD pills: the way back and the hero,
+ * Play's right rail on the province's darker paper, under the co-op pill: the way back and the hero,
  * the tools, Hint and its stakes, Controls and Assists, and How to play | Clear pinned to the foot.
  */
 .rail {
@@ -270,7 +275,7 @@
   box-shadow: inset 4px 0 0 var(--gutter-shade);
 }
 
-/* Clears the floating pills: the HUD's top padding, a 44px pill and a gap. */
+/* Clears the co-op pill in the top-right corner: the HUD's top padding, a 44px pill and a gap. */
 .rail.underPills {
   padding-top: calc(2 * var(--space-4) + 44px); /* token-exempt: the HUD pill's height */
 }

@@ -6,38 +6,7 @@ import { AlbumIcon, SettingsIcon, SignOutIcon } from './album/icons.tsx'
 import { PROVIDERS, signIn, useSession } from './auth.ts'
 import styles from './App.module.css'
 
-/** The avatar sticker and its menu sheet when signed in; a "Sign in" sheet when signed out. */
-export function AccountMenu() {
-  const { data, isPending } = useSession()
-  if (isPending) return null
-  if (!data) return <SignInMenu trigger="Sign in" triggerVariant="paper" triggerSize="compact" />
-
-  const { handle, image } = data.user
-  return (
-    <Menu
-      label={`Account: @${handle}`}
-      triggerClassName={styles.avatar}
-      triggerVariant="flat"
-      triggerSize="compact"
-      trigger={
-        <>
-          <span className={styles.face}>
-            {image ? (
-              <img src={image} alt="" referrerPolicy="no-referrer" />
-            ) : (
-              <i aria-hidden="true">{handle[0]?.toUpperCase()}</i>
-            )}
-          </span>
-          <span className={styles.handle}>@{handle}</span>
-        </>
-      }
-    >
-      <AccountItems handle={handle} />
-    </Menu>
-  )
-}
-
-/** The phone thumb bar's Profile: the account menu or the sign-in sheet, opening upwards, since the phone's HUD leaves both out. */
+/** The phone thumb bar's Profile: the account menu or the sign-in sheet, opening upwards. */
 export function ThumbMenu({ trigger, triggerClassName }: { trigger: ReactNode; triggerClassName: string | undefined }) {
   const { data, isPending } = useSession()
   if (isPending) return <span />
@@ -91,13 +60,16 @@ interface TriggerProps {
 
 interface SignInMenuProps extends TriggerProps {
   trigger: ReactNode
+  label?: string | undefined
   /** Opens above the trigger, for the thumb bar. */
   up?: boolean
+  panelClassName?: string | undefined
 }
 
-function SignInMenu({ trigger, up, ...triggerProps }: SignInMenuProps) {
+/** The "Keep your album safe" sheet and its providers, behind `trigger`. */
+export function SignInMenu({ trigger, label, up, ...triggerProps }: SignInMenuProps) {
   return (
-    <Menu label="Sign in" trigger={trigger} up={up} {...triggerProps}>
+    <Menu label={label ?? 'Sign in'} trigger={trigger} up={up} {...triggerProps}>
       <h2>Keep your album safe</h2>
       <p>Sign in to earn foil and keep your stickers on any device.</p>
       {PROVIDERS.map(p => (

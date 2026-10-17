@@ -1,20 +1,23 @@
 import type { ReactNode } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useAccount } from './account.ts'
-import { AccountMenu, ThumbMenu } from './AccountMenu.tsx'
+import { ThumbMenu } from './AccountMenu.tsx'
+import { KeyCap } from './album/KeyCap.tsx'
 import { AutoIcon, DayIcon, HomeIcon, NightIcon, PlayIcon, ProfileIcon, SoundIcon } from './album/icons.tsx'
 import { useCurrentCampaign } from './campaign/last-campaign.ts'
 import { type ContinueAt, campaignProgress, continueAt } from './campaign/progress.ts'
+import { toggleMenu, useMenu } from './menu/menu-store.ts'
+import { PadGlyph } from './pad/PadGlyph.tsx'
 import { useEscapeUp } from './pad/PadProvider.tsx'
 import { usePrefetch } from './play/prefetch.ts'
 import { type Theme, updateSettings, useSettings } from './settings.ts'
-import { Trail, sticker } from './Trail.tsx'
+import { sticker } from './Trail.tsx'
 import app from './App.module.css'
 import styles from './Hud.module.css'
 
 const nextTheme: Record<Theme, Theme> = { dark: 'light', light: 'auto', auto: 'dark' }
-const themeLabel: Record<Theme, string> = { dark: 'Night', light: 'Day', auto: 'Auto' }
-const themeIcon: Record<Theme, ReactNode> = { dark: <NightIcon />, light: <DayIcon />, auto: <AutoIcon /> }
+export const themeLabel: Record<Theme, string> = { dark: 'Night', light: 'Day', auto: 'Auto' }
+export const themeIcon: Record<Theme, ReactNode> = { dark: <NightIcon />, light: <DayIcon />, auto: <AutoIcon /> }
 
 /** Pages whose Worlds columns run under the HUD, edge to edge; everywhere else it takes its own row. */
 const floats = (pathname: string) =>
@@ -56,7 +59,9 @@ export function SoundButton({ className, variant, size }: PillProps) {
       className={className}
       data-variant={variant}
       data-size={size}
+      data-on={sound || undefined}
       aria-label={sound ? 'Sound on. Turn it off.' : 'Sound off. Turn it on.'}
+      title={sound ? 'Sound on' : 'Sound off'}
       onClick={() => updateSettings({ sound: !sound })}
     >
       <SoundIcon on={sound} />
@@ -80,52 +85,69 @@ export function ThemeButton({ className, variant, size }: PillProps) {
   )
 }
 
-/** Sound, theme and the account, every pill one style: the HUD's top-right. `lead` is a page's own pill before them. */
-export function HudPills({ className, lead }: { className?: string | undefined; lead?: ReactNode }) {
+/**
+ * The crown sticker that summons the menu (`menu/MenuPanel.tsx`). `className` swaps the HUD's plate for a board's
+ * own, as the filmstrip's.
+ */
+export function MenuCrown({ className }: { className?: string | undefined }) {
+  const { open } = useMenu()
   return (
-    <span className={className ? `${styles.tools} ${className}` : styles.tools}>
-      {lead && <span className={styles.lead}>{lead}</span>}
-      <SoundButton className={styles.round} />
-      <ThemeButton className={styles.round} />
-      <span className={styles.account}>
-        <AccountMenu />
+    <button
+      type="button"
+      className={className ?? styles.crown}
+      data-menu-crown
+      data-pad-menu
+      aria-label="Menu"
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      onClick={e => toggleMenu(e.currentTarget)}
+    >
+      <CrownMark />
+    </button>
+  )
+}
+
+function CrownSticker() {
+  return (
+    <>
+      <span className={styles.holder} style={sticker('hud-logo', 0)}>
+        <MenuCrown />
       </span>
-    </span>
+      <span className={styles.cap}>
+        <KeyCap>M</KeyCap>
+        <PadGlyph button="Menu" />
+      </span>
+    </>
   )
 }
 
 /**
- * The pills alone, laid over the page where the floating HUD puts them and named as it is, so they hold still
- * when a page with the whole HUD morphs into Play or a Lesson.
+ * The crown alone, laid over a board with no crown of its own where the floating HUD puts it, so it holds still
+ * when a page with the HUD morphs into one.
  */
-export function FloatingPills({ lead }: { lead?: ReactNode }) {
+export function FloatingCrown() {
   return (
-    <div className={`${styles.hud} ${styles.pillsOnly}`}>
-      <HudPills className={styles.pagePills} lead={lead} />
+    <div className={`${styles.hud} ${styles.over}`}>
+      <CrownSticker />
     </div>
   )
 }
 
+/** A board's own pill, alone in the top-right corner where the HUD's pills stood. */
+export function HudCorner({ children }: { children: ReactNode }) {
+  return <div className={styles.corner}>{children}</div>
+}
+
 /**
- * The logo sticker top-left and the pills top-right. `float` lays it over the page instead of in its own
- * row; by default that follows the route. On a phone only sound and theme stay: the thumb bar has the rest.
- * Mounted wherever the HUD shows, it's where Esc goes up a level.
+ * The crown sticker top-left. `float` lays it over the page instead of in its own row; by default that follows the
+ * route. Mounted wherever the HUD shows, it's where Esc goes up a level.
  */
 export function Hud({ float }: { float?: boolean | undefined }) {
   const pathname = useRouterState({ select: s => s.location.pathname })
   useEscapeUp()
   return (
     <header className={styles.hud} data-float={(float ?? floats(pathname)) || undefined}>
-      <span className={styles.holder} style={sticker('hud-logo', 0)}>
-        <Link to="/" className={styles.logo}>
-          <CrownMark className={styles.mark} />
-          <span className={styles.wordmark}>
-            <span>Pixel</span> Imperium
-          </span>
-        </Link>
-      </span>
-      <Trail />
-      <HudPills className={styles.pagePills} />
+      <CrownSticker />
     </header>
   )
 }

@@ -11,7 +11,7 @@ import { TIER_NAME } from '../campaign/ProvincePage.tsx'
 import { SlotFace } from '../campaign/PuzzleSlot.tsx'
 import { type CampaignProgress, isOpen, provinceStates, shelfLayout, tierGroups } from '../campaign/progress.ts'
 import { Backdrop, DraftProvinceSpine, World, Worlds, draftProvinceMorph, usePhone, useSpineReach, useStep } from '../campaign/worlds/Worlds.tsx'
-import { FloatingPills } from '../Hud.tsx'
+import { FloatingCrown } from '../Hud.tsx'
 import type { Draft } from '../make/draft.ts'
 import { localDrafts } from '../make/draft-store.ts'
 import { PlaytestBoard, playtestStore, useStoreValue } from '../make/Playtest.tsx'
@@ -349,10 +349,10 @@ function PlaytestBoardPage({
 
   return (
     <main className={`${playStyles.shell} ${makeStyles.make}`} data-rail style={{ '--paper': 'var(--p-workshop)', '--tab': 'var(--t-workshop)' } as CSSProperties}>
-      <FloatingPills />
+      <FloatingCrown />
       <div className={playStyles.shellBody}>
         <Stage puzzle={clues}>{cellSize => <PlaytestBoard store={store} draft={picture} cellSize={cellSize} />}</Stage>
-        <div className={`${playStyles.rail} ${playStyles.underPills} ${makeStyles.rail}`} style={{ width: RAIL_WIDTH }}>
+        <div className={`${playStyles.rail} ${makeStyles.rail}`} style={{ width: RAIL_WIDTH }}>
           <div className={playStyles.railHead}>
             <p className={playStyles.railKicker}>
               Playtest · {province.name} · #{slot}

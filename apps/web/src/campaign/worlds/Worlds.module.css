@@ -438,13 +438,6 @@
   animation-direction: reverse;
 }
 
-/* The HUD isn't played back: reversed, its trail would fade in on the way out, then vanish. */
-:root:active-view-transition-type(to-home, out-of-album)::view-transition-group(hud),
-:root:active-view-transition-type(to-home, out-of-album)::view-transition-old(hud),
-:root:active-view-transition-type(to-home, out-of-album)::view-transition-new(hud) {
-  animation-direction: normal;
-}
-
 :root:active-view-transition-type(into-album, out-of-album)::view-transition-group(.provinceSpine) {
   animation-name: reach-in;
 }

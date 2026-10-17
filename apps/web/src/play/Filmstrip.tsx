@@ -1,10 +1,9 @@
 import { type RefCallback, useLayoutEffect, useRef } from 'react'
-import { Link } from '@tanstack/react-router'
 import type { Province } from '@pixel-imperium/protocol'
 import { Slot } from '../album/Slot.tsx'
 import { GOLD_SLOT, PuzzleSlot, SlotFace } from '../campaign/PuzzleSlot.tsx'
 import { boardMorph, markUnseen, slotMorph } from '../campaign/worlds/names.ts'
-import { CrownMark } from '../Hud.tsx'
+import { MenuCrown } from '../Hud.tsx'
 import type { ProgressStorage } from './progress-storage.ts'
 import styles from './Play.module.css'
 
@@ -77,9 +76,7 @@ export function Filmstrip(props: FilmProps) {
 
   return (
     <nav className={styles.film} aria-label={`${province.name} puzzles`} {...boardMorph('film', 'film')}>
-      <Link to="/" className={styles.filmMark} aria-label="Pixel Imperium">
-        <CrownMark />
-      </Link>
+      <MenuCrown className={styles.filmMark} />
       <p className={styles.filmHead}>
         <span>
           {province.puzzles.filter(p => has(p.id)).length} / {province.puzzles.length}

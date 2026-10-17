@@ -20,7 +20,7 @@ import { PadGlyph, PanelTag } from '../pad/PadGlyph.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
 import { firstFocusable, focusDefault } from '../pad/spatial.ts'
-import { FloatingPills, Hud } from '../Hud.tsx'
+import { Hud } from '../Hud.tsx'
 import { REVEAL_GUARD_MS } from '../pad/tuning.ts'
 import { useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
@@ -389,7 +389,6 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
         {...paperMorph}
         style={{ ...paperFor(track.paper), ...paperMorph.style }}
       >
-        {!stacked && <FloatingPills />}
         <div className={stacked ? `${playStyles.desk} ${styles.desk}` : playStyles.shellBody} style={stacked ? { gap: SIDE_PAGE_GAP } : undefined}>
           {!stacked && <LessonFilm track={track} index={index} back={foot.learn ? foot.back : null} />}
           <div
@@ -436,7 +435,7 @@ function Lesson({ track, index, startStep, foot, onNext, onFinish }: LessonProps
           </div>
           <div
             ref={railRef}
-            className={stacked ? styles.side : `${playStyles.rail} ${playStyles.underPills} ${styles.rail}`}
+            className={stacked ? styles.side : `${playStyles.rail} ${styles.rail}`}
             {...(!stacked && railMorph)}
             style={stacked ? { gap: SIDE_PAGE_GAP } : { ...railMorph.style, width: RAIL_WIDTH }}
             data-pad-panel={!stacked || undefined}

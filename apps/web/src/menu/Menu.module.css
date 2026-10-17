@@ -1,0 +1,148 @@
+/*
+ * The menu: a cobalt column laid over the dimmed page, cut on the Worlds' slant like a first `.world`. The dialog
+ * fills the height and carries the shadow, since the paper's clip-path would cut its own. `pinCrown` sets the
+ * `--crown-*` box from the crown that opened it; these defaults are the HUD's.
+ */
+.panel {
+  --crown-x: var(--space-5);
+  --crown-y: var(--space-4);
+  --crown-w: 52px;
+  --crown-h: 40px;
+  --crown-rotate: -4deg;
+  --mark-w: 30px;
+  --mark-h: 20px;
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: min(calc(476px + var(--slant)), 100vw);
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  color: var(--on-cover);
+  background: none;
+  border: 0;
+  overflow: visible;
+  filter: drop-shadow(6px 0 0 var(--shade));
+}
+
+.panel::backdrop {
+  background: var(--scrim);
+}
+
+.paper {
+  --focus: var(--on-cover);
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  height: 100%;
+  padding: calc(var(--crown-y) + var(--crown-h) + var(--space-6)) calc(var(--space-7) + var(--slant)) var(--space-6) var(--space-7);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  background: var(--cover) var(--cover-dots) 0 0 / 18px 18px fixed;
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+}
+
+.paper::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--space-2);
+  background: var(--sticker);
+}
+
+/* Above the paper, unscrolled, over the crown that opened the panel. */
+.panel .crown {
+  position: absolute;
+  z-index: 1;
+  top: var(--crown-y);
+  left: var(--crown-x);
+  width: var(--crown-w);
+  height: var(--crown-h);
+  rotate: var(--crown-rotate);
+}
+
+.panel .crown svg {
+  width: var(--mark-w);
+  height: var(--mark-h);
+}
+
+.wordmark {
+  position: absolute;
+  z-index: 1;
+  top: var(--crown-y);
+  left: calc(var(--crown-x) + var(--crown-w) + var(--space-3));
+  display: flex;
+  align-items: center;
+  height: var(--crown-h);
+  color: var(--on-cover);
+  font: 400 15px/1 var(--font-display); /* token-exempt: brand logo */
+  letter-spacing: -0.03em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.wordmark span {
+  color: var(--pink);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: 2px solid var(--on-cover-tint-strong);
+}
+
+.gap {
+  flex: 1;
+}
+
+.round {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: var(--fs-18);
+}
+
+/* Each outranks global.css's flat-on-cobalt tint. */
+.panel .foot button.round[data-on],
+.panel .foot button.round[data-on]:hover {
+  --btn-bg: var(--pink);
+  --btn-ink: var(--on-pink);
+}
+
+.themes {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--on-cover-tint);
+  border-radius: var(--r-pill);
+}
+
+.themes > button {
+  width: 36px;
+  padding: 0;
+  font-size: var(--fs-16);
+}
+
+.panel .themes > button[data-variant][aria-pressed],
+.panel .themes > button[data-variant][aria-pressed]:hover {
+  --btn-bg: transparent;
+}
+
+.panel .themes > button[data-variant][aria-pressed='true'],
+.panel .themes > button[data-variant][aria-pressed='true']:hover {
+  --btn-bg: var(--sticker);
+  --btn-ink: var(--cobalt-ink);
+}
+
+/* From the footer's left, the sign-in sheet opens up and to the right. */
+.signIn {
+  right: auto;
+  left: 0;
+}

@@ -43,7 +43,7 @@ import { usePadPage } from '../pad/PadProvider.tsx'
 import { rumble } from '../pad/rumble.ts'
 import { firstFocusable, focusDefault } from '../pad/spatial.ts'
 import { Retired } from '../EdgeStates.tsx'
-import { FloatingPills, Hud, SoundButton, ThemeButton } from '../Hud.tsx'
+import { FloatingCrown, Hud, HudCorner, SoundButton, ThemeButton } from '../Hud.tsx'
 import { getSettings, useSettings } from '../settings.ts'
 import { reducedMotion } from '../motion.ts'
 import { play } from '../sound.ts'
@@ -794,6 +794,7 @@ export function Play({
       />
     )
 
+  const corner = wide && coopPill(false)
   const paperMorph = columnPaper(album ? `province-${album.province.id}` : undefined)
   const surfaceMorph = boardMorph('surface', 'surface')
   const railMorph = boardMorph('rail', 'rail')
@@ -827,7 +828,8 @@ export function Play({
           </span>
         </header>
       )}
-      {wide && <FloatingPills lead={coopPill(false)} />}
+      {wide && !slotRow && <FloatingCrown />}
+      {corner && <HudCorner>{corner}</HudCorner>}
       <div className={styles.shellBody}>
         {wide && slotRow && <Filmstrip {...slotRow} slotRef={setSlot} glow={solved && moment === 'landed'} />}
         <div className={styles.surface} data-paused={paused || undefined} {...surfaceMorph}>

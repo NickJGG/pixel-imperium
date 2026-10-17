@@ -5,7 +5,7 @@ import { paperFor } from '../album/paper.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { boardMorph, columnPaper, dymoMorph, slotName } from '../campaign/worlds/names.ts'
 import { lessonId } from '../campaign/worlds/transitions.ts'
-import { FloatingPills, Hud } from '../Hud.tsx'
+import { Hud } from '../Hud.tsx'
 import { SIDE_PAGE_GAP, useLessonStacked } from '../play/layout.ts'
 import { BoardGhost, Film, Rail, Surface } from '../play/PlaySkeleton.tsx'
 import { Bar, Fallback, SrLoading } from '../skeleton/Skeleton.tsx'
@@ -89,7 +89,6 @@ export function LessonSkeleton() {
       aria-busy="true"
     >
       <SrLoading />
-      <FloatingPills />
       <div className={playStyles.shellBody}>
         <Film
           count={track.lessons.length}
@@ -103,7 +102,7 @@ export function LessonSkeleton() {
           }
         />
         <Surface>{board}</Surface>
-        <Rail>{coach}</Rail>
+        <Rail bare>{coach}</Rail>
       </div>
     </main>
   )
