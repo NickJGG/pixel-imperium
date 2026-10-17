@@ -27,3 +27,30 @@ export const closeMenu = (): void => set({ open: false, opener: state.opener })
 export const toggleMenu = (opener: HTMLElement | null = null): void => (state.open ? closeMenu() : openMenu(opener))
 
 export const useMenu = (): MenuState => useSyncExternalStore(subscribeMenu, getMenu)
+
+let board: string | null = null
+const boardListeners = new Set<() => void>()
+
+/** Marks `puzzleId`'s board as on the page, so the menu's Next up stays away from it; returns the unmarking. */
+export function showBoard(puzzleId: string): () => void {
+  markBoard(puzzleId)
+  return () => {
+    if (board === puzzleId) markBoard(null)
+  }
+}
+
+function markBoard(id: string | null): void {
+  board = id
+  for (const listener of boardListeners) listener()
+}
+
+export const getBoard = (): string | null => board
+
+export const useBoard = (): string | null =>
+  useSyncExternalStore(
+    listener => {
+      boardListeners.add(listener)
+      return () => boardListeners.delete(listener)
+    },
+    getBoard,
+  )

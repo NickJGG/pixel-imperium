@@ -13,10 +13,9 @@ import type { ProgressStorage } from '../play/progress-storage.ts'
 import { shortDate } from '../profile/activity.ts'
 import { Bar, Ghost } from '../skeleton/Skeleton.tsx'
 import { featuredUntil } from './campaigns.ts'
+import { NextUpCard } from './NextUpCard.tsx'
 import { campaignProgress, continueAt } from './progress.ts'
-import { SlotFace } from './PuzzleSlot.tsx'
 import { ReportButton } from '../workshop/Report.tsx'
-import { doorSlot } from './worlds/names.ts'
 import styles from '../home/Home.module.css'
 
 /**
@@ -56,6 +55,24 @@ export function CampaignStack({
   const { account } = useAccount()
   const { author } = campaign
   const own = author !== undefined && account?.handle.toLowerCase() === author.toLowerCase()
+
+  const open =
+    opens === 'campaign' ? (
+      <Link to="/c/$campaignId" params={{ campaignId: campaign.id }} data-variant="paper" data-pad-default={!next || undefined}>
+        {featured === 'home' ? `Open ${campaign.name.replace(/^The /, 'the ')}` : 'All campaigns'}
+      </Link>
+    ) : (
+      province && (
+        <Link
+          to="/c/$campaignId/$provinceId"
+          params={{ campaignId: campaign.id, provinceId: province.id }}
+          data-variant="paper"
+          data-pad-default={!next || undefined}
+        >
+          Open {province.name.replace(/^The /, 'the ')}
+        </Link>
+      )
+    )
 
   return (
     <div className={styles.column}>
@@ -99,57 +116,13 @@ export function CampaignStack({
             {province.name} · {here.solved}/{here.total}
           </p>
         )}
-        {next && (
-          <div className={styles.next}>
-            <Link
-              to="/play/$id"
-              params={{ id: next.puzzle.id }}
-              className={styles.nextSlot}
-              {...doorSlot(next.puzzle.id)}
-              tabIndex={-1}
-              aria-hidden="true"
-            >
-              <SlotFace puzzle={next.puzzle} number={next.number} storage={storage} next />
-            </Link>
-            <div className={styles.nextText}>
-              <p className={styles.kicker}>Next up</p>
-              <p className={styles.nextName}>
-                #{next.number} {next.puzzle.title}
-              </p>
-              <p className={styles.sub}>
-                {next.puzzle.width}×{next.puzzle.height} · {next.province.name}
-              </p>
-            </div>
-          </div>
+        {next ? (
+          <NextUpCard next={next} storage={storage}>
+            {open}
+          </NextUpCard>
+        ) : (
+          <div className={styles.actions}>{open}</div>
         )}
-        <div className={styles.actions}>
-          {next && (
-            <Link to="/play/$id" params={{ id: next.puzzle.id }} data-variant="primary" data-pad-default>
-              {next.fresh ? 'Start' : 'Continue'}
-            </Link>
-          )}
-          {opens === 'campaign' ? (
-            <Link
-              to="/c/$campaignId"
-              params={{ campaignId: campaign.id }}
-              data-variant="paper"
-              data-pad-default={!next || undefined}
-            >
-              {featured === 'home' ? `Open ${campaign.name.replace(/^The /, 'the ')}` : 'All campaigns'}
-            </Link>
-          ) : (
-            province && (
-              <Link
-                to="/c/$campaignId/$provinceId"
-                params={{ campaignId: campaign.id, provinceId: province.id }}
-                data-variant="paper"
-                data-pad-default={!next || undefined}
-              >
-                Open {province.name.replace(/^The /, 'the ')}
-              </Link>
-            )
-          )}
-        </div>
         {author !== undefined && !own && <ReportButton targetId={campaign.id} what="campaign" />}
       </div>
       {pixels && campaign.crest && (
@@ -185,7 +158,9 @@ export function CampaignStackSkeleton({ campaign }: { campaign: Campaign | null 
         <div className={styles.next}>
           <Ghost style={{ width: 64, height: 64 }} />
           <div className={styles.nextText}>
-            <p className={styles.kicker}>Next up</p>
+            <div className={styles.nextHead}>
+              <span className={styles.kicker}>Next up</span>
+            </div>
             <Bar w={160} h={20} style={{ margin: 'var(--space-1) 0' }} />
             <Bar w={90} h={16} />
           </div>

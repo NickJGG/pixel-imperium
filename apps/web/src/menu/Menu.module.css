@@ -88,6 +88,23 @@
   color: var(--pink);
 }
 
+/* Home's card, on the cobalt: a white tint for its card paper. */
+.nextUp {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: auto;
+}
+
+.nextUp > :first-child {
+  margin-top: 0;
+  background: var(--on-cover-tint);
+}
+
+.nextUp + .foot {
+  margin-top: 0;
+}
+
 .foot {
   display: flex;
   align-items: center;

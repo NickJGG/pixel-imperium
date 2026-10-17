@@ -36,6 +36,7 @@ import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
 import { hasProgress, markStarted, startedCampaigns } from '../campaign/started-campaigns.ts'
 import { boardMorph, columnPaper, slotName } from '../campaign/worlds/names.ts'
+import { showBoard } from '../menu/menu-store.ts'
 import { getPadMode } from '../pad/mode.ts'
 import { PadControls } from '../pad/PadControls.tsx'
 import { PadGlyph, PanelTag } from '../pad/PadGlyph.tsx'
@@ -311,6 +312,7 @@ export function Play({
       }),
   )
   useEffect(() => coop?.bind(store), [coop, store])
+  useEffect(() => showBoard(puzzle.id), [puzzle.id])
   const [boardView] = useState(() => new BoardView(puzzle, true))
   const boardRef = useBoardGestures(store, boardView)
   const solved = useStoreValue(store, s => s.solved)

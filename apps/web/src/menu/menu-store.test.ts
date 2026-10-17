@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { closeMenu, getMenu, openMenu, subscribeMenu, toggleMenu } from './menu-store.ts'
+import { closeMenu, getBoard, getMenu, openMenu, showBoard, subscribeMenu, toggleMenu } from './menu-store.ts'
 
 const crown = { id: 'crown' } as unknown as HTMLElement
 
@@ -37,5 +37,22 @@ describe('menu store', () => {
     stop()
     openMenu()
     expect(calls).toBe(2)
+  })
+})
+
+describe('board on the page', () => {
+  it('is marked while shown and unmarked after', () => {
+    const hide = showBoard('a')
+    expect(getBoard()).toBe('a')
+    hide()
+    expect(getBoard()).toBeNull()
+  })
+
+  it("keeps the next board when the last one's unmarking runs after it", () => {
+    const hideA = showBoard('a')
+    const hideB = showBoard('b')
+    hideA()
+    expect(getBoard()).toBe('b')
+    hideB()
   })
 })

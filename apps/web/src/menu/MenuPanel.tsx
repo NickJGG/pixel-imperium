@@ -2,12 +2,15 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { SignInMenu } from '../AccountMenu.tsx'
 import { ProfileIcon, SettingsIcon } from '../album/icons.tsx'
+import { useAccount } from '../account.ts'
 import { useSession } from '../auth.ts'
-import { CrownMark, SoundButton, themeIcon, themeLabel } from '../Hud.tsx'
+import { NextUpCard } from '../campaign/NextUpCard.tsx'
+import { CrownMark, SoundButton, themeIcon, themeLabel, useContinue } from '../Hud.tsx'
 import { usePadContain } from '../pad/PadProvider.tsx'
+import { usePrefetch } from '../play/prefetch.ts'
 import { type Theme, updateSettings, useSettings } from '../settings.ts'
 import { Trail } from '../Trail.tsx'
-import { closeMenu, toggleMenu, useMenu } from './menu-store.ts'
+import { closeMenu, toggleMenu, useBoard, useMenu } from './menu-store.ts'
 import app from '../App.module.css'
 import hud from '../Hud.module.css'
 import styles from './Menu.module.css'
@@ -40,8 +43,8 @@ function pinCrown(dialog: HTMLDialogElement, opener: HTMLElement | null): void {
 }
 
 /**
- * The menu any crown summons, over the dimmed page: the crown and wordmark, the trail, and a footer of the player
- * and the settings. Mounted once at the root; `menu-store.ts` holds whether it's open. M opens and closes it
+ * The menu any crown summons, over the dimmed page: the crown and wordmark, the trail, the puzzle due next, and a
+ * footer of the player and the settings. Mounted once at the root; `menu-store.ts` holds whether it's open. M opens and closes it
  * anywhere, Esc or B closes it, as do the crown, the dimmed page and any link inside.
  */
 export function MenuPanel() {
@@ -108,6 +111,7 @@ function Contents() {
       </Link>
       <div className={styles.paper} data-surface="cobalt">
         <Trail />
+        <NextUp />
         <div className={styles.foot}>
           <Profile />
           <Link to="/settings" className={styles.round} data-variant="flat" aria-label="Settings" title="Settings">
@@ -119,6 +123,20 @@ function Contents() {
         </div>
       </div>
     </>
+  )
+}
+
+/** The current campaign's Next up, unless its board is the one on the page. */
+function NextUp() {
+  const next = useContinue()
+  const board = useBoard()
+  const { storage } = useAccount()
+  usePrefetch(next?.puzzle.id)
+  if (!next || next.puzzle.id === board) return null
+  return (
+    <div className={styles.nextUp}>
+      <NextUpCard next={next} storage={storage} menu />
+    </div>
   )
 }
 

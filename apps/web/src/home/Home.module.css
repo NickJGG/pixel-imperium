@@ -105,7 +105,14 @@
 }
 
 .nextText {
+  flex: 1;
   min-width: 0;
+}
+
+.nextHead {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .nextName {
