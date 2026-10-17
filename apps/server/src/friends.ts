@@ -2,6 +2,7 @@
 import { Hono } from 'hono'
 import type {
   ApiError,
+  Friend,
   FriendRequestOutcome,
   FriendRequestResponse,
   Friends,
@@ -25,6 +26,15 @@ const requestIs = (fromId: string, toId: string) => and(eq(friendRequest.fromId,
 
 const person = { handle: user.handle, name: user.name, image: user.image }
 
+/** The live side of Friends, kept by the Party hub. */
+export interface FriendsHub {
+  presenceOf(userId: string): { online: boolean; party: number | null }
+  /** A request just reached `toId` from the player with Handle `from`. */
+  friendRequested(toId: string, from: string): void
+  /** These players' friendships changed. */
+  friendsChanged(...userIds: string[]): Promise<void>
+}
+
 const OUTCOME_STATUS = { sent: 201, accepted: 200, 'not-found': 404, self: 400, already: 409 } as const
 
 export async function friendshipOf(db: Db, viewerId: string, ownerId: string): Promise<Friendship> {
@@ -41,7 +51,7 @@ export async function friendshipOf(db: Db, viewerId: string, ownerId: string): P
   return !request ? 'none' : request.fromId === viewerId ? 'sent' : 'received'
 }
 
-export function friendsRoutes({ db }: { db: Db }) {
+export function friendsRoutes({ db, hub }: { db: Db; hub: FriendsHub }) {
   const requestAllowed = rateLimiter(30, 60 * 60_000)
 
   const idOf = async (handle: string) => {
@@ -55,9 +65,9 @@ export function friendsRoutes({ db }: { db: Db }) {
     .get('/me/friends', async c => {
       const me = c.get('user')!.id
       const other = sql`case when ${friendship.userA} = ${me} then ${friendship.userB} else ${friendship.userA} end`
-      const [friends, incoming, outgoing] = await Promise.all([
+      const [people, incoming, outgoing] = await Promise.all([
         db
-          .select(person)
+          .select({ id: user.id, ...person })
           .from(friendship)
           .innerJoin(user, eq(user.id, other))
           .where(or(eq(friendship.userA, me), eq(friendship.userB, me)))
@@ -75,6 +85,10 @@ export function friendsRoutes({ db }: { db: Db }) {
           .where(eq(friendRequest.fromId, me))
           .orderBy(desc(friendRequest.createdAt)),
       ])
+      // Sorting is stable, so each half keeps its Handle order.
+      const friends = people
+        .map(({ id, ...p }): Friend => ({ ...p, ...hub.presenceOf(id) }))
+        .sort((a, b) => Number(b.online) - Number(a.online))
       return c.json<Friends>({ friends, incoming, outgoing })
     })
     .post('/me/friends/requests', async c => {
@@ -94,9 +108,11 @@ export function friendsRoutes({ db }: { db: Db }) {
             await tx.delete(friendRequest).where(requestIs(them, me))
             await tx.insert(friendship).values(pairOf(me, them)).onConflictDoNothing()
           })
+          await hub.friendsChanged(me, them)
           return 'accepted'
         }
         await db.insert(friendRequest).values({ fromId: me, toId: them }).onConflictDoNothing()
+        hub.friendRequested(them, c.get('user')!.handle ?? c.get('user')!.name)
         return 'sent'
       })()
       return c.json<FriendRequestResponse>({ outcome }, OUTCOME_STATUS[outcome])
@@ -112,6 +128,7 @@ export function friendsRoutes({ db }: { db: Db }) {
         return true
       })
       if (!accepted) return c.json<ApiError>({ error: 'no friend request from them' }, 404)
+      await hub.friendsChanged(me, them)
       return c.body(null, 204)
     })
     .post('/me/friends/requests/:handle/decline', async c => {
@@ -136,6 +153,7 @@ export function friendsRoutes({ db }: { db: Db }) {
       if (!them) return c.json(noPlayer(c.req.param('handle')), 404)
       const gone = await db.delete(friendship).where(pairIs(me, them)).returning()
       if (gone.length === 0) return c.json<ApiError>({ error: 'not friends' }, 404)
+      await hub.friendsChanged(me, them)
       return c.body(null, 204)
     })
 }

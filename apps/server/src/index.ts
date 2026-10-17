@@ -8,9 +8,9 @@ import { createApi } from './app.ts'
 import { authEnvFromProcess, createAuth } from './auth.ts'
 import { loadCampaigns } from './campaigns.ts'
 import { createCatalog } from './catalog.ts'
-import { CoopRooms } from './coop/server.ts'
 import { loadDailies } from './dailies.ts'
 import { createDb } from './db/index.ts'
+import { PartyHub } from './party/server.ts'
 
 const envFile = new URL('../../../.env', import.meta.url)
 if (existsSync(envFile)) process.loadEnvFile(envFile)
@@ -23,10 +23,10 @@ const production = process.env.NODE_ENV === 'production'
 const port = Number(process.env.PORT ?? 8787)
 const auth = createAuth(db, authEnvFromProcess())
 const catalog = createCatalog(loadCampaigns({ includeDrafts: !production }), { db }, loadDailies())
-const coop = new CoopRooms({ db, auth, catalog })
-const restored = await coop.restore()
-if (restored > 0) console.log(`restored ${restored} co-op${restored === 1 ? '' : 's'}`)
-const api = createApi(catalog, { db, auth, coop })
+const party = new PartyHub({ db, auth, catalog })
+const restored = await party.restore()
+if (restored > 0) console.log(`restored ${restored} part${restored === 1 ? 'y' : 'ies'}`)
+const api = createApi(catalog, { db, auth, party })
 
 /** In production one origin serves the built SPA beside the API; in dev Vite serves it and proxies /api and /ws. */
 const WEB_DIST = fileURLToPath(new URL('../../web/dist', import.meta.url))
@@ -41,10 +41,10 @@ const app = production
 const server = serve({ fetch: app.fetch, port }, info => {
   console.log(`listening on http://localhost:${info.port}`)
 })
-coop.attach(server as Server)
+party.attach(server as Server)
 
 const shutdown = async () => {
-  await coop.shutdown().catch(e => console.error('saving co-ops failed', e))
+  await party.shutdown().catch(e => console.error('saving parties failed', e))
   server.close(async () => {
     await db.$client.end({ timeout: 5 })
     process.exit(0)

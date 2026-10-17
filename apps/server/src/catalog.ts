@@ -1,4 +1,4 @@
-/** Every puzzle the server knows, who may play it, and how its solves and grids are written; shared by the API and co-ops. */
+/** Every puzzle the server knows, who may play it, and how its solves and grids are written; shared by the API and parties. */
 import type { ApiError, RetiredError, SolveStamps, SolveStatus } from '@pixel-imperium/protocol'
 import { and, desc, eq, lt, sql } from 'drizzle-orm'
 import type { Db } from './db/index.ts'

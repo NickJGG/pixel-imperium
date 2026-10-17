@@ -56,7 +56,7 @@ describe('friends', () => {
 
     expect((await call('POST', '/me/friends/requests/nick/accept', juno.cookie)).status).toBe(204)
     expect(await friendsOf(nick.cookie)).toEqual({
-      friends: [{ handle: 'juno', name: 'juno', image: null }],
+      friends: [{ handle: 'juno', name: 'juno', image: null, online: false, party: null }],
       incoming: [],
       outgoing: [],
     })

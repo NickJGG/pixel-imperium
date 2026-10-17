@@ -40,8 +40,8 @@ import { type MadeCampaignRow, type MadePuzzle, isMadeId, madeCrest, madePuzzleF
 import { workshopRoutes } from './workshop.ts'
 import { friendsRoutes, friendshipOf } from './friends.ts'
 import { type Catalog, type Viewer, createCatalog, upsertProgress } from './catalog.ts'
-import { CoopRooms } from './coop/server.ts'
-import { coopRoutes } from './coop/routes.ts'
+import { PartyHub } from './party/server.ts'
+import { partyRoutes } from './party/routes.ts'
 
 export interface AppDeps {
   db: Db
@@ -49,7 +49,7 @@ export interface AppDeps {
   /** The clock Dailies are gated by. */
   now?: () => number
   /** Built over the same catalog when absent. */
-  coop?: CoopRooms
+  party?: PartyHub
 }
 
 type SessionUser = Auth['$Infer']['Session']['user']
@@ -119,10 +119,10 @@ export function createApp(campaigns: readonly Campaign[], deps: AppDeps, dailies
   return createApi(createCatalog(campaigns, deps, dailies), deps)
 }
 
-export function createApi(catalog: Catalog, { db, auth, now = Date.now, coop }: AppDeps) {
+export function createApi(catalog: Catalog, { db, auth, now = Date.now, party }: AppDeps) {
   const { campaigns, dailies, campaignsById, puzzleById, findPuzzle, mayPlayRetired, retiredError, crestOf } = catalog
   const { recordSolve, lowerBest, verifiedSolvesOf, solveStamps } = catalog
-  const rooms = coop ?? new CoopRooms({ db, auth, catalog, now })
+  const hub = party ?? new PartyHub({ db, auth, catalog, now })
   const isOwn = (c: Context<AppEnv>, p: Parameters<Catalog['isOwn']>[1]) => catalog.isOwn(c.get('user')?.id ?? null, p)
   const campaignPayloads = new Map(
     campaigns.map(({ id, name, released, paper, closingLine, crest, provinces }): [string, CampaignPayload] => [
@@ -384,8 +384,8 @@ export function createApi(catalog: Catalog, { db, auth, now = Date.now, coop }: 
       })
     })
     .route('/', workshopRoutes({ db, isOfficialId: catalog.isOfficialId }))
-    .route('/', coopRoutes(rooms))
-    .route('/', friendsRoutes({ db }))
+    .route('/', partyRoutes(hub))
+    .route('/', friendsRoutes({ db, hub }))
     .put('/me/handle', async c => {
       const body = (await c.req.json().catch(() => null)) as { handle?: unknown } | null
       const handle = typeof body?.handle === 'string' ? body.handle : ''

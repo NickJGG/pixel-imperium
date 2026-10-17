@@ -5,7 +5,8 @@
  */
 import type { Assists, CrestDraft, DraftCampaignDoc, MadeProvince, SeedPuzzle } from '@pixel-imperium/protocol'
 import { sql } from 'drizzle-orm'
-import type { Identity, SeatHolder } from '../coop/room.ts'
+import type { SavedGrid } from '../party/grid.ts'
+import type { Identity, SavedSeat } from '../party/party.ts'
 import { boolean, index, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
 export const user = pgTable(
@@ -252,19 +253,17 @@ export const report = pgTable('report', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
-/** Co-ops saved over a restart: written on shutdown, read back and deleted on boot. */
-export const coopRoom = pgTable('coop_room', {
+/** Parties saved over a restart: written on shutdown, read back and deleted on boot. */
+export const party = pgTable('party', {
   code: text('code').primaryKey(),
   previousCodes: text('previous_codes').array().notNull(),
   hostId: text('host_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  puzzleId: text('puzzle_id').notNull(),
-  cells: text('cells').notNull(),
-  seats: jsonb('seats').$type<(SeatHolder | null)[]>().notNull(),
+  hostSeat: integer('host_seat').notNull(),
+  seats: jsonb('seats').$type<(SavedSeat | null)[]>().notNull(),
   removed: jsonb('removed').$type<Identity[]>().notNull(),
-  solved: boolean('solved').notNull(),
-  replaying: boolean('replaying').notNull(),
+  grid: jsonb('grid').$type<SavedGrid>(),
   savedAt: timestamp('saved_at').defaultNow().notNull(),
 })
 

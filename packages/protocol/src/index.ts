@@ -557,5 +557,5 @@ export interface ReportRequest {
   reason: string
 }
 
-export * from './coop.ts'
+export * from './party.ts'
 export * from './friends.ts'

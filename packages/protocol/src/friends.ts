@@ -7,9 +7,19 @@ export interface FriendPerson {
   image: string | null
 }
 
+/** Whether a friend has a tab open, and how many seats their Party has taken, if they're in one. */
+export interface FriendPresence {
+  handle: string
+  online: boolean
+  party: number | null
+}
+
+export type Friend = FriendPerson & FriendPresence
+
 /** `GET /api/me/friends`. */
 export interface Friends {
-  friends: FriendPerson[]
+  /** Online first, then by Handle. */
+  friends: Friend[]
   /** Requests waiting on this player, newest first. */
   incoming: FriendPerson[]
   /** Requests this player sent that are still waiting, newest first. */
