@@ -7,6 +7,8 @@ import { dailyId } from '../daily/clock.ts'
 import { boardMorph, columnPaper, slotMorph, slotName } from '../campaign/worlds/names.ts'
 import { CrownMark, MenuCrown } from '../Hud.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
+import { useHudTrail } from '../Trail.tsx'
+import { HOME, coopTrail, dailyTrail, puzzleTrail } from '../trails.ts'
 import { useCentredFilm } from './Filmstrip.tsx'
 import { RAIL_WIDTH, useRail } from './layout.ts'
 import styles from './Play.module.css'
@@ -20,7 +22,7 @@ function findPuzzle(id: string) {
   const provinces = currentCampaign()?.provinces ?? []
   for (const province of provinces) {
     const number = province.puzzles.findIndex(p => p.id === id) + 1
-    if (number > 0) return { number, province, puzzle: province.puzzles[number - 1]! }
+    if (number > 0) return { number, campaign: currentCampaign()!, province, puzzle: province.puzzles[number - 1]! }
   }
   return null
 }
@@ -32,10 +34,19 @@ function findPuzzle(id: string) {
  * does, so the board morph can play into it; so does a Daily's board, for its door's.
  */
 export function PlaySkeleton() {
-  const { id, year, month, day } = useParams({ strict: false })
+  const { id, year, month, day, code } = useParams({ strict: false })
   const wide = useRail()
   useAnnounceSkeleton()
   const found = id === undefined ? null : findPuzzle(id)
+  useHudTrail(
+    year !== undefined && month !== undefined && day !== undefined
+      ? dailyTrail(Number(year), Number(month), Number(day))
+      : code !== undefined
+        ? coopTrail(code, null, null)
+        : found
+          ? puzzleTrail(found.campaign, found.province, found.puzzle)
+          : [HOME],
+  )
   const paper = found ? paperFor(found.province.paper) : month !== undefined ? seasonStyle(Number(month)) : FOG
   const paperMorph = columnPaper(found ? `province-${found.province.id}` : undefined)
   const daily = year !== undefined && month !== undefined && day !== undefined ? dailyId(`${year}-${month}-${day}`) : undefined

@@ -9,7 +9,7 @@ import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { CheckIcon, CrossIcon } from '../album/icons.tsx'
 import { FIRST_PICK } from '../make/PublishSheet.tsx'
 import { useHudTrail } from '../Trail.tsx'
-import { draftTrail } from './BuilderPage.tsx'
+import { crestTrail } from '../trails.ts'
 import {
   MAX_CREST_COLORS,
   MAX_CREST_SIDE,
@@ -40,7 +40,7 @@ export function CrestPage({ draftKey, opening }: { draftKey: CampaignKey; openin
   useEffect(flushOnLeave, [])
   const { doc } = useCampaign() ?? opening
   const navigate = useNavigate()
-  useHudTrail(draftTrail(draftKey.id, doc))
+  useHudTrail(crestTrail(draftKey.id, doc))
   const [mode, setMode] = useState<Mode>('picture')
   const [color, setColor] = useState<string | null>(() => Object.keys(doc.crest?.palette ?? {})[0] ?? null)
   const [region, setRegion] = useState(0)

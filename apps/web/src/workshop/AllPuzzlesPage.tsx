@@ -3,6 +3,7 @@ import { useAccount } from '../account.ts'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { localDrafts } from '../make/draft-store.ts'
 import { useHudTrail } from '../Trail.tsx'
+import { ALL_PUZZLES_TRAIL } from '../trails.ts'
 import { NewPuzzleLink } from './Columns.tsx'
 import { PuzzleTile } from './Shelf.tsx'
 import { type PuzzleFilter, type PuzzleSort, type Workshop, allPuzzles, findPuzzles, mergeDrafts } from './workshop.ts'
@@ -21,14 +22,9 @@ export const SORTS: { value: PuzzleSort; label: string }[] = [
   { value: 'size', label: 'Size' },
 ]
 
-export const TRAIL = [
-  { to: '/', label: 'Home' },
-  { to: '/workshop', label: 'Workshop', paper: 'workshop' as const },
-]
-
 /** Every puzzle of the Author's, drafts, published and retired, to search, filter and sort. */
 export function AllPuzzlesPage({ workshop }: { workshop: Workshop }) {
-  useHudTrail(TRAIL)
+  useHudTrail(ALL_PUZZLES_TRAIL)
   const { account } = useAccount()
   const [local] = useState(() => localDrafts(account?.userId ?? ''))
   const entries = useMemo(() => allPuzzles(mergeDrafts(workshop.drafts.puzzles, local), workshop.made), [workshop, local])

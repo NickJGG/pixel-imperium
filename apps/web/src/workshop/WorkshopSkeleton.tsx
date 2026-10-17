@@ -16,6 +16,8 @@ import { currentWorkshop } from '../content.ts'
 import { localDrafts } from '../make/draft-store.ts'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { BlankCrest } from '../home/Crest.tsx'
+import { useHudTrail } from '../Trail.tsx'
+import { WORKSHOP_TRAIL } from '../trails.ts'
 import {
   NEW_CAMPAIGN,
   type RowColumn,
@@ -43,6 +45,7 @@ export function WorkshopSkeleton() {
   const phone = usePhone()
   const ref = useRef<HTMLElement>(null)
   useSpineReach(ref)
+  useHudTrail(WORKSHOP_TRAIL)
   useAnnounceSkeleton()
   const userId = getAccount().account?.userId
   const workshop = currentWorkshop(userId)

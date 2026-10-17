@@ -24,6 +24,8 @@ import { Hud } from '../Hud.tsx'
 import { REVEAL_GUARD_MS } from '../pad/tuning.ts'
 import { useSettings } from '../settings.ts'
 import { play } from '../sound.ts'
+import { useHudTrail } from '../Trail.tsx'
+import { lessonTrail } from '../trails.ts'
 import { AssistChips } from '../play/AssistChips.tsx'
 import { AssistsDisclosure } from '../play/AssistsDisclosure.tsx'
 import { AssistSwitches } from '../play/AssistSwitches.tsx'
@@ -82,6 +84,7 @@ export function LessonPage({ track, index, handoff, back, learn }: PageProps) {
     return saved?.lesson === track.lessons[index]!.id ? saved.step : 0
   })
   const [finished, setFinished] = useState(false)
+  useHudTrail(lessonTrail(track, track.lessons[index]!))
   if (finished && handoff) return <HandoffView track={track} handoff={handoff} />
   const next = track.lessons[index + 1]
   return (

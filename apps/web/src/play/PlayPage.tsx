@@ -30,7 +30,7 @@ import { solve } from '../content.ts'
 import { CoopPill, useCoopView } from '../coop/CoopCard.tsx'
 import { CoopOnward, coopHintNote } from '../coop/CoopRail.tsx'
 import type { CoopSession } from '../coop/session.ts'
-import { campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
+import { type CampaignProgress, campaignProgress, isOpen, nextPuzzle } from '../campaign/progress.ts'
 import { NextUp } from '../campaign/NextUp.tsx'
 import { LockedProvince } from '../campaign/ProvincePage.tsx'
 import { GOLD_SLOT } from '../campaign/PuzzleSlot.tsx'
@@ -46,6 +46,8 @@ import { firstFocusable, focusDefault } from '../pad/spatial.ts'
 import { Retired } from '../EdgeStates.tsx'
 import { FloatingCrown, Hud, HudCorner, MenuCrown } from '../Hud.tsx'
 import { getSettings, useSettings } from '../settings.ts'
+import { type TrailStep, useHudTrail } from '../Trail.tsx'
+import { madeTrail, puzzleTrail } from '../trails.ts'
 import { reducedMotion } from '../motion.ts'
 import { play } from '../sound.ts'
 import { useShouldOffer, useShouldOfferTechniques } from '../tutorial/asked.ts'
@@ -122,12 +124,7 @@ export function PlayPage() {
   const province = campaign.provinces.find(p => p.id === puzzle.provinceId)!
   const progress = campaignProgress(campaign, account.storage)
   if (!isOpen(progress.provinces[campaign.provinces.indexOf(province)]!.state)) {
-    return (
-      <>
-        <Hud float />
-        <LockedProvince campaign={campaign} province={province} progress={progress} />
-      </>
-    )
+    return <Locked puzzle={puzzle} campaign={campaign} province={province} progress={progress} />
   }
   return (
     <Play
@@ -136,6 +133,16 @@ export function PlayPage() {
       account={account}
       context={albumContext(puzzle, campaign, province, previewConquest)}
     />
+  )
+}
+
+function Locked({ puzzle, ...props }: { puzzle: PuzzleClues; campaign: Campaign; province: Province; progress: CampaignProgress }) {
+  useHudTrail(puzzleTrail(props.campaign, props.province, puzzle))
+  return (
+    <>
+      <Hud float />
+      <LockedProvince {...props} />
+    </>
   )
 }
 
@@ -151,6 +158,7 @@ function albumContext(puzzle: PuzzleClues, campaign: Campaign, province: Provinc
     meta: [puzzle.tier && TIER_NAME[puzzle.tier], `${puzzle.width}×${puzzle.height}`].filter(Boolean).join(' · '),
     campaign,
     album: { campaign, province, index, number, previewConquest },
+    trail: puzzleTrail(campaign, province, puzzle),
   }
 }
 
@@ -185,6 +193,7 @@ function MadePlay({
         back: own ? '/workshop' : signedIn ? '/workshop?tab=played' : '/',
         here: `/play/${puzzle.id}`,
         meta: `${puzzle.width}×${puzzle.height}`,
+        trail: madeTrail(own ? 'workshop' : signedIn ? 'played' : 'home', { id: puzzle.id, title: puzzle.title, paper: made.paper ?? 'workshop' }),
         ...(own
           ? {
               note: <p className={styles.railNote}>Your puzzle: a playtest. Nothing is saved.</p>,
@@ -226,6 +235,8 @@ export interface PlayContext {
   meta: string
   /** Beside the meta while it's unsolved: how long is left to finish a Daily. */
   chip?: ReactNode
+  /** The menu's Trail, ending in this puzzle. */
+  trail: readonly TrailStep[]
   /** For How to play's New tag. */
   campaign?: Campaign
   album?: AlbumPlace
@@ -297,6 +308,7 @@ export function Play({
   cover?: ReactNode
 }) {
   const { album, paper } = context
+  useHudTrail(context.trail)
   const isConquered = () =>
     album !== undefined && campaignProgress(album.campaign, storage).provinces[album.index]!.state === 'conquered'
   const [store] = useState(

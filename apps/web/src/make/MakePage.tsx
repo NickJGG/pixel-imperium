@@ -21,6 +21,9 @@ import { useCentredFilm } from '../play/Filmstrip.tsx'
 import { RAIL_WIDTH } from '../play/layout.ts'
 import { RailTools } from '../play/RailTools.tsx'
 import type { PlayStore } from '../play/store.ts'
+import { useHudTrail } from '../Trail.tsx'
+import { MAKE_TRAIL, workshopPuzzleTrail } from '../trails.ts'
+import { titleOf } from '../workshop/workshop.ts'
 import { type Draft, MAX_TITLE, flipH, flipV, moveColor, nudge, resize, slugify, stepSize } from './draft.ts'
 import {
   type DraftKey,
@@ -153,6 +156,7 @@ const SAVE_NOTE: Record<SaveState, string> = { saved: 'Saved', saving: 'Savingâ€
 function MakePage({ workshop, paper = 'workshop', parent }: { workshop: boolean; paper?: Paper; parent?: string | undefined }) {
   usePadPage({ parent })
   const draft = useDraft()
+  useHudTrail(workshop ? workshopPuzzleTrail({ id: draft.id, title: titleOf(draft.title), paper }) : MAKE_TRAIL)
   const saveState = useSaveState()
   const { canUndo, canRedo } = useHistory()
   const [tool, setTool] = useState<Tool>('pencil')

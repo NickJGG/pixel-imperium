@@ -5,6 +5,8 @@ import { PROVIDERS, type Provider, linkSocial, listAccounts, signIn, unlinkAccou
 import { HandleHero } from '../album/HandleHero.tsx'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { type Theme, updateSettings, useSettings } from '../settings.ts'
+import { useHudTrail } from '../Trail.tsx'
+import { SETTINGS_TRAIL } from '../trails.ts'
 import { HandleForm } from './HandleForm.tsx'
 import styles from './Me.module.css'
 
@@ -40,6 +42,7 @@ export function SettingsPage() {
   const { error } = route.useSearch()
   const navigate = route.useNavigate()
   const router = useRouter()
+  useHudTrail(SETTINGS_TRAIL)
 
   useEffect(() => {
     if (!account) void navigate({ to: '/' })

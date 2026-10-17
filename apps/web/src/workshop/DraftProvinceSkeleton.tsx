@@ -17,7 +17,7 @@ import {
 } from '../campaign/worlds/Worlds.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { useHudTrail } from '../Trail.tsx'
-import { draftTrail } from './BuilderPage.tsx'
+import { HOME, draftProvinceTrail, playtestTrail } from '../trails.ts'
 import { MAX_PROVINCES, MAX_PROVINCE_PUZZLES, TIERED_FROM, draftAsCampaign } from './campaign-draft.ts'
 import { peekCampaign } from './campaign-store.ts'
 import { playtestSolved } from './CampaignPlaytest.tsx'
@@ -39,7 +39,7 @@ export function DraftProvinceSkeleton({ playtest = false }: { playtest?: boolean
   const k = Math.min(Math.max(0, (Number(n) || 1) - 1), Math.max(0, provinces.length - 1))
   const province = provinces[k]
   const states = campaign && (playtest ? provinceStates(campaign, playtestSolved(id)).provinces.map(p => p.state) : null)
-  useHudTrail(stored ? draftTrail(id, stored.doc) : [])
+  useHudTrail(stored && province ? (playtest ? playtestTrail : draftProvinceTrail)(id, stored.doc, k + 1, province) : [HOME])
 
   const column = (
     <Column

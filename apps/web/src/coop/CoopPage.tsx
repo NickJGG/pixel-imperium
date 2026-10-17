@@ -12,6 +12,8 @@ import { type NextPick, type PlayContext, Play, TIER_NAME } from '../play/PlayPa
 import { PlaySkeleton } from '../play/PlaySkeleton.tsx'
 import { PlaytestStorage } from '../play/playtest-storage.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
+import { useHudTrail } from '../Trail.tsx'
+import { coopTrail } from '../trails.ts'
 import { CoopStorage } from './coop-storage.ts'
 import { deviceToken } from './device.ts'
 import { JoinCard } from './JoinCard.tsx'
@@ -45,14 +47,17 @@ function coopContext({ puzzle, campaign }: CoopPuzzle, code: string): PlayContex
       here,
       meta: ['tier' in puzzle && puzzle.tier && TIER_NAME[puzzle.tier], size].filter(Boolean).join(' · '),
       campaign,
+      trail: coopTrail(code, { title: puzzle.title, paper: province.paper }, { campaign, province }),
     }
   }
+  const paper = 'made' in puzzle ? (puzzle.made.paper ?? 'workshop') : 'workshop'
   return {
     place: 'Home',
-    paper: paperFor('made' in puzzle ? (puzzle.made.paper ?? 'workshop') : 'workshop'),
+    paper: paperFor(paper),
     back: '/',
     here,
     meta: size,
+    trail: coopTrail(code, { title: puzzle.title, paper }, null),
     ...('made' in puzzle && { byline: puzzle.made.author }),
   }
 }
@@ -163,6 +168,7 @@ function PlaySolo({ puzzleId }: { puzzleId: string }) {
 }
 
 function CoopClosed({ info }: { info: CoopRoomInfo }) {
+  useHudTrail(coopTrail(route.useParams().code, null, null))
   if (info.access === 'retired-closed' && info.author) {
     return (
       <>
@@ -185,6 +191,7 @@ const OVER: Record<Exclude<CoopStatus, 'connecting' | 'live' | 'reconnecting'>, 
 
 function CoopOver({ status, puzzleId }: { status: keyof typeof OVER; puzzleId: string | null }) {
   const { title, body } = OVER[status]
+  useHudTrail(coopTrail(route.useParams().code, null, null))
   return (
     <>
       <Hud float />

@@ -1,6 +1,5 @@
 /** Home's columns: which the menu offers, which one is open, and the paper each wears. */
 import type { Paper, PaperId, Season } from '../album/paper.ts'
-import type { TrailStep } from '../Trail.tsx'
 import { TRACKS, nextTrack } from '../tutorial/tracks.ts'
 
 export type Column = 'campaign' | 'featured' | 'daily' | 'learn' | 'workshop' | 'profile' | 'settings' | 'signin'
@@ -23,12 +22,6 @@ export const COLUMN_NAME: Record<Exclude<Column, 'campaign' | 'featured'>, strin
 }
 
 export const campaignSpineName = (campaign: { name: string }): string => campaign.name.replace(/^The /, '')
-
-/** A province page's HUD Trail, for the page and its skeleton alike. */
-export const provinceTrail = (campaign: { id: string; name: string; paper: Paper }): TrailStep[] => [
-  { to: '/', label: 'Home' },
-  { to: `/c/${campaign.id}`, label: campaignSpineName(campaign), paper: campaign.paper },
-]
 
 const SIGNED_IN: readonly Column[] = ['campaign', 'daily', 'learn', 'workshop', 'profile', 'settings']
 const SIGNED_OUT: readonly Column[] = ['campaign', 'daily', 'learn', 'signin']

@@ -4,6 +4,8 @@ import type { Campaign, CampaignSummary, Profile } from '@pixel-imperium/protoco
 import { NewBadge } from '../album/NewBadge.tsx'
 import { useAccount } from '../account.ts'
 import { dayKey } from '../profile/activity.ts'
+import { useHudTrail } from '../Trail.tsx'
+import { campaignTrail } from '../trails.ts'
 import { CampaignStack } from './CampaignColumn.tsx'
 import { isFeatured, jump, rowOrder, windowOf } from './campaigns.ts'
 import { useStartedCampaigns } from './started-campaigns.ts'
@@ -54,6 +56,7 @@ export function CampaignsPage({
     void navigate({ to: '/c/$campaignId', params: { campaignId: to.id }, replace: true })
   }
   useStep(dir => goTo(at + dir))
+  useHudTrail(campaignTrail(campaign))
   const ref = useRef<HTMLElement>(null)
   useSpineReach(ref)
 

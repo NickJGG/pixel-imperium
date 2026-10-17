@@ -4,6 +4,8 @@ import { getAccount } from '../account.ts'
 import { NewBadge } from '../album/NewBadge.tsx'
 import { dayKey } from '../profile/activity.ts'
 import { SrLoading } from '../skeleton/Skeleton.tsx'
+import { useHudTrail } from '../Trail.tsx'
+import { HOME, campaignTrail } from '../trails.ts'
 import { CampaignStackSkeleton } from './CampaignColumn.tsx'
 import { isFeatured, rowOrder, windowOf } from './campaigns.ts'
 import { currentCampaign, currentCampaigns } from './last-campaign.ts'
@@ -39,6 +41,8 @@ export function CampaignsSkeleton() {
   const row = list && rowOrder(list, startedCampaigns(getAccount().storage), today)
   const at = row?.findIndex(c => c.id === campaignId) ?? -1
   const paper = campaign?.paper ?? row?.[at]?.paper ?? 'marches'
+  const known = campaign ?? row?.[at]
+  useHudTrail(known ? campaignTrail(known) : [HOME])
 
   const open = (
     <World key="page" paper={paper} fog={!campaign && at === -1} style={campaignMorphName(campaignId)} start pair>

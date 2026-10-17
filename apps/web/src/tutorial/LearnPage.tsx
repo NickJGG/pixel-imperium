@@ -11,6 +11,8 @@ import { useAccount } from '../account.ts'
 import { campaignProgress, techniquesRecommended } from '../campaign/progress.ts'
 import { Backdrop, TrackSpine, World, Worlds, trackMorphName, usePhone, useSpineReach, useStep } from '../campaign/worlds/Worlds.tsx'
 import { lessonId } from '../campaign/worlds/transitions.ts'
+import { useHudTrail } from '../Trail.tsx'
+import { trackTrail } from '../trails.ts'
 import { clearUnseen, getUnseen, useLessonsDone } from './done.ts'
 import { type LearnBack, backLink } from './handoff.ts'
 import { lessonPuzzle } from './lessons.ts'
@@ -25,6 +27,7 @@ export function LearnPage({ track, back }: { track: Track; back: LearnBack }) {
   const phone = usePhone()
   const ref = useRef<HTMLElement>(null)
   useSpineReach(ref)
+  useHudTrail(trackTrail(track))
   const { campaign } = back
   const recommended = useMemo(
     () => campaign !== null && techniquesRecommended(campaign, campaignProgress(campaign, storage)),

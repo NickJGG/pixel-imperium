@@ -4,7 +4,7 @@ import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { useHudTrail } from '../Trail.tsx'
-import { draftTrail } from './BuilderPage.tsx'
+import { HOME, crestTrail } from '../trails.ts'
 import { crestWidth } from './campaign-draft.ts'
 import { peekCampaign } from './campaign-store.ts'
 import home from '../home/Home.module.css'
@@ -18,7 +18,7 @@ export function CrestSkeleton() {
   const userId = getAccount().account?.userId
   const stored = userId === undefined ? null : peekCampaign({ userId, id })
   const crest = stored?.doc.crest
-  useHudTrail(stored ? draftTrail(id, stored.doc) : [])
+  useHudTrail(stored ? crestTrail(id, stored.doc) : [HOME])
   return (
     <main className={own.page} aria-busy="true">
       <SrLoading />

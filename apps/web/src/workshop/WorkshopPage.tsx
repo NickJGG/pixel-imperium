@@ -5,7 +5,8 @@ import { useAccount } from '../account.ts'
 import { jump } from '../campaign/campaigns.ts'
 import { Backdrop, WorkshopSpine, WorkshopStub, Worlds, usePhone, useSpineReach, useStep } from '../campaign/worlds/Worlds.tsx'
 import { localDrafts } from '../make/draft-store.ts'
-import { sticker } from '../Trail.tsx'
+import { sticker, useHudTrail } from '../Trail.tsx'
+import { WORKSHOP_TRAIL } from '../trails.ts'
 import type { StoredCampaign } from './campaign-store.ts'
 import {
   NewCampaignColumn,
@@ -57,6 +58,7 @@ export function WorkshopPage({
   const search = route.useSearch()
   const navigate = useNavigate()
   const phone = usePhone()
+  useHudTrail(WORKSHOP_TRAIL)
   const tab: WorkshopTab = search.tab ?? 'yours'
   const [local] = useState(() => localDrafts(account?.userId ?? ''))
   const entries = useMemo(

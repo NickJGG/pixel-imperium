@@ -6,6 +6,8 @@ import { type AccountState, useAccount } from '../account.ts'
 import { EdgeState } from '../EdgeStates.tsx'
 import { Hud } from '../Hud.tsx'
 import { Play, TIER_NAME } from '../play/PlayPage.tsx'
+import { useHudTrail } from '../Trail.tsx'
+import { dailyTrail } from '../trails.ts'
 import { GRACE_MS, dailyClock, dailyState, finishLeft, formatLeft, startOf } from './clock.ts'
 import { monthParams } from './month.ts'
 import { useNow } from './useNow.ts'
@@ -27,6 +29,9 @@ function DailyPlay({ puzzle, date, account }: { puzzle: PuzzleClues; date: strin
   const [state] = useState(() => dailyState(date, dailyClock(new Date(), account.storage)))
   const day = startOf(date)
   const month = day.getMonth() + 1
+  // Play sets the same Trail; this covers the gone and early pages.
+  const trail = dailyTrail(day.getFullYear(), month, day.getDate())
+  useHudTrail(trail)
 
   if (state === 'gone' || state === 'early') {
     return (
@@ -70,6 +75,7 @@ function DailyPlay({ puzzle, date, account }: { puzzle: PuzzleClues; date: strin
           .filter(Boolean)
           .join(' · '),
         chip: <FinishChip date={date} />,
+        trail,
       }}
     />
   )

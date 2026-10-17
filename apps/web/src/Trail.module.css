@@ -15,9 +15,17 @@
   rotate: 1.5deg;
 }
 
-.step[data-place] {
+/* Outranks the cobalt surface's sticker-white paper buttons in `global.css`. */
+.trail .step[data-place][data-variant] {
   --btn-bg: var(--tab);
   --btn-ink: var(--on-tab);
   --btn-edge: color-mix(in srgb, var(--tab) 55%, black);
 }
 
+.step[aria-current='page']::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}

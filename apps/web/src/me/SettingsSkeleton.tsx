@@ -2,6 +2,8 @@ import { PROVIDERS } from '../auth.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { Bar, SrLoading } from '../skeleton/Skeleton.tsx'
+import { useHudTrail } from '../Trail.tsx'
+import { SETTINGS_TRAIL } from '../trails.ts'
 import { THEMES } from './SettingsPage.tsx'
 import styles from './Me.module.css'
 
@@ -11,6 +13,7 @@ import styles from './Me.module.css'
  */
 export function SettingsSkeleton() {
   useAnnounceSkeleton()
+  useHudTrail(SETTINGS_TRAIL)
   return (
     <main className={styles.page} aria-busy="true">
       <SrLoading />

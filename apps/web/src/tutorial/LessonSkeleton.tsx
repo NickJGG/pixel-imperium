@@ -9,6 +9,8 @@ import { Hud } from '../Hud.tsx'
 import { SIDE_PAGE_GAP, useLessonStacked } from '../play/layout.ts'
 import { BoardGhost, Film, Rail, Surface } from '../play/PlaySkeleton.tsx'
 import { Bar, Fallback, SrLoading } from '../skeleton/Skeleton.tsx'
+import { useHudTrail } from '../Trail.tsx'
+import { HOME, lessonTrail } from '../trails.ts'
 import { lessonPuzzle } from './lessons.ts'
 import { type Track, trackOf } from './tracks.ts'
 import playStyles from '../play/Play.module.css'
@@ -27,6 +29,7 @@ export function LessonSkeleton() {
   useAnnounceSkeleton()
   const track = trackOf(params.track)
   const index = track?.lessons.findIndex(l => l.id === params.lesson) ?? -1
+  useHudTrail(track && index !== -1 ? lessonTrail(track, track.lessons[index]!) : [HOME])
   if (!track || index === -1) return <Fallback />
 
   const lesson = track.lessons[index]!

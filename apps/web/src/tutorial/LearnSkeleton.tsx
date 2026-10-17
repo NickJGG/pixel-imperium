@@ -3,6 +3,8 @@ import { useParams } from '@tanstack/react-router'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { Backdrop, SkeletonSpine, World, Worlds, trackMorphName, usePhone, useSpineReach } from '../campaign/worlds/Worlds.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
+import { useHudTrail } from '../Trail.tsx'
+import { trackTrail } from '../trails.ts'
 import { TRACKS, TRACK_ORDER, type Track, trackOf } from './tracks.ts'
 import styles from './Learn.module.css'
 
@@ -17,6 +19,7 @@ export function LearnSkeleton() {
   const ref = useRef<HTMLElement>(null)
   useSpineReach(ref)
   useAnnounceSkeleton()
+  useHudTrail(trackTrail(track))
   return (
     <main ref={ref} className={styles.page} aria-busy="true">
       <SrLoading />

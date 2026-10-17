@@ -1,6 +1,5 @@
 import { type CSSProperties, useEffect, useSyncExternalStore } from 'react'
 import { Link } from '@tanstack/react-router'
-import { KeyCap } from './album/KeyCap.tsx'
 import { type Paper, paperFor } from './album/paper.ts'
 import hud from './Hud.module.css'
 import styles from './Trail.module.css'
@@ -37,7 +36,7 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener)
 }
 
-/** Shows `steps`, Home first and the parent last, in the menu while the calling page is mounted. */
+/** Shows `steps`, Home first and the current page last, in the menu while the calling page is mounted. */
 export function useHudTrail(steps: readonly TrailStep[]): void {
   const key = JSON.stringify(steps)
   useEffect(() => {
@@ -47,33 +46,35 @@ export function useHudTrail(steps: readonly TrailStep[]): void {
 }
 
 /**
- * The way up from a page deeper than Home's own, in the menu: a pill per step, the parent's wearing Esc, and
- * taking the focus when the menu opens. Only for pages that call `useHudTrail`.
+ * The way up from a page deeper than Home's own, in the menu: a pill per step, the current page's last and the
+ * parent's taking the focus when the menu opens. A lone step is a skeleton's fallback Home, not the current page.
+ * Only for pages that call `useHudTrail`.
  */
 export function Trail() {
   const steps = useSyncExternalStore(subscribe, () => trail)
   if (steps.length === 0) return null
+  const current = steps.length > 1 ? steps.length - 1 : -1
+  const parent = Math.max(0, steps.length - 2)
   return (
     <nav className={styles.trail} aria-label="Where you are">
-      {steps.map((step, i) => {
-        const parent = i === steps.length - 1
-        return (
-          <Link
-            key={step.to}
-            to={step.to}
-            {...(step.search && { search: step.search })}
-            className={styles.step}
-            data-variant="paper"
-            data-size="compact"
-            data-place={step.paper ? '' : undefined}
-            data-menu-focus={parent || undefined}
-            style={step.paper && paperFor(step.paper)}
-          >
-            {step.label}
-            {parent && <KeyCap>Esc</KeyCap>}
-          </Link>
-        )
-      })}
+      {steps.map((step, i) => (
+        <Link
+          key={step.to}
+          to={step.to}
+          {...(step.search && { search: step.search })}
+          // Fuzzy matching would mark every step above this page `aria-current` too.
+          activeOptions={{ exact: true }}
+          className={styles.step}
+          data-variant="paper"
+          data-size="compact"
+          data-place={step.paper ? '' : undefined}
+          data-menu-focus={i === parent || undefined}
+          aria-current={i === current ? 'page' : undefined}
+          style={step.paper && paperFor(step.paper)}
+        >
+          {step.label}
+        </Link>
+      ))}
     </nav>
   )
 }

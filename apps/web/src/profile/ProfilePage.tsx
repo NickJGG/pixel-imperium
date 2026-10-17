@@ -6,6 +6,8 @@ import { useAccount } from '../account.ts'
 import { SHOWCASE_SIZE, profileStickers, showcaseOf } from '../campaign/stickers.ts'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { solveTime, solveTimes } from '../daily/clock.ts'
+import { useHudTrail } from '../Trail.tsx'
+import { profileTrail } from '../trails.ts'
 import { albumPages, albumProvinces, reachedSolves } from './album.ts'
 import { Showcase } from './Showcase.tsx'
 import { ShowcaseEditor } from './ShowcaseEditor.tsx'
@@ -26,6 +28,7 @@ export function ProfilePage() {
   const { profile, album, tabs } = route.useLoaderData()
   const { account, storage } = useAccount()
   const [now] = useState(() => new Date())
+  useHudTrail(profileTrail(profile.handle))
   const streakTimes = useMemo(() => solveTimes([...profile.campaigns, ...profile.years]), [profile])
   const record = useMemo(() => {
     if (!album) return null

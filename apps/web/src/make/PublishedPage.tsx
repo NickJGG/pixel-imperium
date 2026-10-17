@@ -13,6 +13,9 @@ import { forgetWorkshop } from '../content.ts'
 import { FloatingCrown } from '../Hud.tsx'
 import { RAIL_WIDTH } from '../play/layout.ts'
 import { usePadContain } from '../pad/PadProvider.tsx'
+import { useHudTrail } from '../Trail.tsx'
+import { workshopPuzzleTrail } from '../trails.ts'
+import { titleOf } from '../workshop/workshop.ts'
 import { type Draft, MAX_TITLE } from './draft.ts'
 import { createDraft } from './draft-store.ts'
 import { EditCanvas } from './EditCanvas.tsx'
@@ -36,6 +39,7 @@ export function PublishedPage({ puzzle }: { puzzle: MadePuzzleSummary }) {
   const [title, setTitle] = useState(puzzle.title)
   const [retired, setRetired] = useState(puzzle.retired === true)
   const [notice, setNotice] = useState<string | null>(null)
+  useHudTrail(workshopPuzzleTrail({ id: puzzle.id, title: titleOf(title), paper: puzzle.paper ?? 'workshop' }))
   const picture = useMemo(() => pictureOf(puzzle), [puzzle])
   const clues = useMemo(
     () => cluesFromSolution(picture.width, picture.height, picture.cells.map(c => c !== null)),

@@ -3,8 +3,8 @@
  * nothing is saved. Solves last for the tab's life, so the album and the boards agree; Start over clears them.
  */
 import { Link, useNavigate } from '@tanstack/react-router'
-import { type CSSProperties, Fragment, useEffect, useMemo, useRef, useState } from 'react'
-import type { Campaign, Province } from '@pixel-imperium/protocol'
+import { type CSSProperties, Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import type { Campaign, DraftCampaignDoc, Province } from '@pixel-imperium/protocol'
 import { CountPill } from '../album/CountPill.tsx'
 import { Lock } from '../album/Lock.tsx'
 import { TIER_NAME } from '../campaign/ProvincePage.tsx'
@@ -19,9 +19,9 @@ import { Stage } from '../make/Stage.tsx'
 import { RAIL_WIDTH } from '../play/layout.ts'
 import { PlaytestStorage } from '../play/playtest-storage.ts'
 import { RailTools } from '../play/RailTools.tsx'
-import { useHudTrail } from '../Trail.tsx'
-import { draftTrail } from './BuilderPage.tsx'
-import { draftAsCampaign, puzzleInfos } from './campaign-draft.ts'
+import { type TrailStep, useHudTrail } from '../Trail.tsx'
+import { HOME, playtestPuzzleTrail, playtestTrail } from '../trails.ts'
+import { draftAsCampaign, provinceName, puzzleInfos } from './campaign-draft.ts'
 import { type CampaignKey, type StoredCampaign, flushOnLeave, openCampaign, useCampaign } from './campaign-store.ts'
 import { type Workshop, mergeDrafts, titleOf, yourPuzzles } from './workshop.ts'
 import provinceStyles from '../campaign/Province.module.css'
@@ -74,8 +74,9 @@ export function PlaytestAlbum({
   const navigate = useNavigate()
   const phone = usePhone()
   const [, restart] = useState(0)
-  useHudTrail(draftTrail(draftKey.id, doc))
   const k = Math.min(Math.max(0, n - 1), campaign.provinces.length - 1)
+  const shown = campaign.provinces[k] ?? { name: provinceName(doc, 0), paper: doc.paper ?? 'workshop' }
+  useHudTrail(playtestTrail(draftKey.id, doc, Math.max(1, k + 1), shown))
   const goTo = (to: number) => {
     if (to < 0 || to >= campaign.provinces.length || to === k) return
     void navigate({ to: '/workshop/c/$id/playtest/$n', params: { id: draftKey.id, n: String(to + 1) }, replace: true })
@@ -298,7 +299,7 @@ export function PlaytestPuzzle({
   /** `null` when neither this device nor the server has the puzzle. */
   picture: Draft | null
 }) {
-  const { campaign, progress, solves } = usePlaytest(draftKey, opening, workshop)
+  const { doc, campaign, progress, solves } = usePlaytest(draftKey, opening, workshop)
   const k = n - 1
   const province = campaign.provinces[k]
   const puzzle = province?.puzzles[slot - 1]
@@ -308,15 +309,34 @@ export function PlaytestPuzzle({
 
   if (!province || !puzzle || !open || !store || !picture) {
     return (
-      <main className={styles.emptyPlaytest}>
+      <PlaytestMissing
+        trail={province && puzzle ? playtestPuzzleTrail(draftKey.id, doc, n, province, slot, `${puzzle.width}×${puzzle.height}`) : [HOME]}
+      >
         <p>{!open ? 'That province is still locked in this playtest.' : 'This puzzle has nothing drawn yet.'}</p>
         <Link {...back} data-variant="primary">
           Back to the album
         </Link>
-      </main>
+      </PlaytestMissing>
     )
   }
-  return <PlaytestBoardPage store={store} picture={picture} province={province} slot={slot} back={back} solves={solves} draftId={draftKey.id} n={n} />
+  return (
+    <PlaytestBoardPage
+      store={store}
+      picture={picture}
+      province={province}
+      slot={slot}
+      back={back}
+      solves={solves}
+      draftId={draftKey.id}
+      doc={doc}
+      n={n}
+    />
+  )
+}
+
+function PlaytestMissing({ trail, children }: { trail: readonly TrailStep[]; children: ReactNode }) {
+  useHudTrail(trail)
+  return <main className={styles.emptyPlaytest}>{children}</main>
 }
 
 function PlaytestBoardPage({
@@ -327,6 +347,7 @@ function PlaytestBoardPage({
   back,
   solves,
   draftId,
+  doc,
   n,
 }: {
   store: ReturnType<typeof playtestStore>
@@ -336,6 +357,7 @@ function PlaytestBoardPage({
   back: { to: '/workshop/c/$id/playtest/$n'; params: { id: string; n: string } }
   solves: Map<string, (string | null)[]>
   draftId: string
+  doc: DraftCampaignDoc
   n: number
 }) {
   const puzzle = province.puzzles[slot - 1]!
@@ -344,6 +366,9 @@ function PlaytestBoardPage({
   useEffect(() => {
     if (solved) solves.set(puzzle.id, picture.cells)
   }, [solved, solves, puzzle.id, picture])
+  // Its title stays hidden until it's solved, in the Trail as in the rail.
+  const name = solved ? puzzle.title : `${puzzle.width}×${puzzle.height}`
+  useHudTrail(playtestPuzzleTrail(draftId, doc, n, province, slot, name))
   const next = province.puzzles.findIndex((p, i) => i !== slot - 1 && !solves.has(p.id))
   const clues = store.puzzle
 
@@ -357,7 +382,7 @@ function PlaytestBoardPage({
             <p className={playStyles.railKicker}>
               Playtest · {province.name} · #{slot}
             </p>
-            <h1 className={playStyles.railName}>{solved ? puzzle.title : `${puzzle.width}×${puzzle.height}`}</h1>
+            <h1 className={playStyles.railName}>{name}</h1>
             <p className={`${playStyles.railNote} ${makeStyles.tight}`}>Nothing here is saved.</p>
           </div>
           <div className={playStyles.railBody}>

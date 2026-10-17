@@ -5,7 +5,8 @@ import { currentWorkshop } from '../content.ts'
 import { localDrafts } from '../make/draft-store.ts'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { useHudTrail } from '../Trail.tsx'
-import { FILTERS, SORTS, TRAIL } from './AllPuzzlesPage.tsx'
+import { ALL_PUZZLES_TRAIL } from '../trails.ts'
+import { FILTERS, SORTS } from './AllPuzzlesPage.tsx'
 import { allPuzzles, mergeDrafts } from './workshop.ts'
 import homeStyles from '../home/Home.module.css'
 import styles from './Workshop.module.css'
@@ -13,7 +14,7 @@ import styles from './Workshop.module.css'
 /** All puzzles while it loads: its heading and controls as the page has them, inert, and a tile per puzzle last loaded. */
 export function AllPuzzlesSkeleton() {
   useAnnounceSkeleton()
-  useHudTrail(TRAIL)
+  useHudTrail(ALL_PUZZLES_TRAIL)
   const userId = getAccount().account?.userId
   const workshop = currentWorkshop(userId)
   const count = workshop ? allPuzzles(mergeDrafts(workshop.drafts.puzzles, localDrafts(userId ?? '')), workshop.made).length : 12

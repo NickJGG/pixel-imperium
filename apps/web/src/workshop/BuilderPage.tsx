@@ -28,6 +28,7 @@ import {
 import { MAX_TITLE } from '../make/draft.ts'
 import { localDrafts, newDraftId } from '../make/draft-store.ts'
 import { useHudTrail } from '../Trail.tsx'
+import { draftProvinceTrail } from '../trails.ts'
 import {
   MAX_PROVINCES,
   MAX_PROVINCE_PUZZLES,
@@ -57,12 +58,6 @@ import styles from './Builder.module.css'
 
 const MAX_FLAVOUR = 200
 
-/** The trail up from a draft campaign's pages: the Workshop, open on its column. */
-export const draftTrail = (id: string, doc: DraftCampaignDoc) => [
-  { to: '/', label: 'Home' },
-  { to: '/workshop', label: titleOf(doc.title), paper: doc.paper ?? ('workshop' as const), search: { open: id } },
-]
-
 export function BuilderPage({
   draftKey,
   opening,
@@ -85,7 +80,9 @@ export function BuilderPage({
   const infos = useMemo(() => puzzleInfos(entries, local), [entries, local])
   const campaign = draftAsCampaign(draftKey.id, doc, preview, infos)
   const k = Math.min(Math.max(0, n - 1), doc.provinces.length - 1)
-  useHudTrail(draftTrail(draftKey.id, doc))
+  // A draft with no provinces yet opens on its first.
+  const shown = campaign.provinces[k] ?? { name: provinceName(doc, 0), paper: doc.paper ?? 'workshop' }
+  useHudTrail(draftProvinceTrail(draftKey.id, doc, Math.max(1, k + 1), shown))
 
   const goTo = (to: number) => {
     if (to < 0 || to >= doc.provinces.length || to === k) return

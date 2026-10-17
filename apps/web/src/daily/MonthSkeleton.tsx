@@ -5,6 +5,8 @@ import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { Backdrop, SkeletonSpine, SkeletonYearSpine, World, Worlds, monthMorphName, usePhone, useSpineReach } from '../campaign/worlds/Worlds.tsx'
 import { dayKey } from '../profile/activity.ts'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
+import { useHudTrail } from '../Trail.tsx'
+import { monthTrail } from '../trails.ts'
 import { MONTH_NAMES, tallyOf } from './month.ts'
 import { MonthGridSkeleton } from './MonthCalendar.tsx'
 import { currentDailyYear } from './year.ts'
@@ -33,6 +35,7 @@ export function MonthSkeleton() {
   const ref = useRef<HTMLElement>(null)
   useSpineReach(ref)
   useAnnounceSkeleton()
+  useHudTrail(monthTrail(year, month))
 
   const column = (m: number) => (
     <World key={m} paper={seasonOf(m)} fog={dim(m)} style={monthMorphName(m)} start={m === month} pair={m === month}>

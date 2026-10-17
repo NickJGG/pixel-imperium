@@ -3,6 +3,8 @@ import { HandleHero } from '../album/HandleHero.tsx'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
+import { useHudTrail } from '../Trail.tsx'
+import { profileTrail } from '../trails.ts'
 import { CALENDAR_WEEKS } from './activity.ts'
 import styles from './Profile.module.css'
 import showcaseStyles from './Showcase.module.css'
@@ -23,6 +25,7 @@ const STAMPS = 11
 export function ProfileSkeleton() {
   const { handle } = useParams({ from: '/u/$handle' })
   useAnnounceSkeleton()
+  useHudTrail(profileTrail(handle))
   return (
     <main className={styles.page} aria-busy="true">
       <SrLoading />

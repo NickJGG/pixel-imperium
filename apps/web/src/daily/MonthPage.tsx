@@ -18,6 +18,8 @@ import {
 import { doorSlot } from '../campaign/worlds/names.ts'
 import { usePrefetch } from '../play/prefetch.ts'
 import type { ProgressStorage } from '../play/progress-storage.ts'
+import { useHudTrail } from '../Trail.tsx'
+import { monthTrail } from '../trails.ts'
 import { type DailyClock, dailyId, startOf } from './clock.ts'
 import { DayFace, MonthCalendar } from './MonthCalendar.tsx'
 import { MONTH_NAMES, type MonthTally, dayParams, isSolvedWith, mm, monthParams, summaryOf, tallyOf } from './month.ts'
@@ -49,6 +51,7 @@ function Year({ data, month }: { data: DailyYear; month: number }) {
   const tallies = MONTHS.map(m => tallyOf(data.year, m, data.launch, clock.today, isSolved))
   const ref = useRef<HTMLElement>(null)
   useSpineReach(ref)
+  useHudTrail(monthTrail(data.year, month))
 
   const before = data.year > Number(data.launch.slice(0, 4)) ? data.year - 1 : null
   const after = data.year < Number(clock.today.slice(0, 4)) ? data.year + 1 : null
