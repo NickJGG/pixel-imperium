@@ -15,7 +15,7 @@ import {
   toSeed,
 } from '@pixel-imperium/nonogram'
 import { type Paper, paperFor } from '../album/paper.ts'
-import { FloatingCrown, MenuCrown } from '../Hud.tsx'
+import { FloatingCrown, MenuCrown, MenuKeys } from '../Hud.tsx'
 import { usePadPage } from '../pad/PadProvider.tsx'
 import { useCentredFilm } from '../play/Filmstrip.tsx'
 import { RAIL_WIDTH } from '../play/layout.ts'
@@ -47,6 +47,7 @@ import { Drawing, Stage } from './Stage.tsx'
 import { useChecks } from './useChecks.ts'
 import { useChipDrag } from './useChipDrag.ts'
 import pillStyles from '../album/CountPill.module.css'
+import hud from '../Hud.module.css'
 import playStyles from '../play/Play.module.css'
 import styles from './Make.module.css'
 
@@ -427,7 +428,10 @@ function ColorStrip({ draft, chosen, onChoose }: { draft: Draft; chosen: string 
 
   return (
     <nav ref={stripRef} className={`${playStyles.film} ${styles.strip}`} aria-label="Colors">
-      <MenuCrown className={playStyles.filmMark} />
+      <span className={hud.crownCorner}>
+        <MenuCrown className={playStyles.filmMark} />
+        <MenuKeys corner />
+      </span>
       <p className={playStyles.filmHead}>
         Colors
         <span>

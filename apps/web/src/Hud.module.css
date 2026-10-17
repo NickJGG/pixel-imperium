@@ -132,9 +132,9 @@
 
 /*
  * Leaving a board, the root's HUD mounts with the new address while the board's crown still stands; two
- * `hud-logo`s would abort the morph. `!important` beats `sticker`'s inline name.
+ * `hud-logo`s would abort the morph, as would two `hud-keys`. `!important` beats `sticker`'s inline name.
  */
-:root:has(.over) .hud:not(.over) .holder {
+:root:has(.over) .hud:not(.over) :is(.holder, .cap) {
   view-transition-name: none !important;
 }
 
@@ -173,8 +173,21 @@
 }
 
 /* Out as the menu's edge passes, for its wordmark. */
-.hud:has([aria-expanded='true']) .cap {
+.hud:has([aria-expanded='true']) .cap,
+[aria-expanded='true'] ~ .cap {
   opacity: 0;
+}
+
+.crownCorner {
+  position: relative;
+  display: flex;
+}
+
+.capCorner {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  z-index: 1;
 }
 
 .corner {

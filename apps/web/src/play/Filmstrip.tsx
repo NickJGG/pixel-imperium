@@ -3,8 +3,9 @@ import type { Province } from '@pixel-imperium/protocol'
 import { Slot } from '../album/Slot.tsx'
 import { GOLD_SLOT, PuzzleSlot, SlotFace } from '../campaign/PuzzleSlot.tsx'
 import { boardMorph, markUnseen, slotMorph } from '../campaign/worlds/names.ts'
-import { MenuCrown } from '../Hud.tsx'
+import { MenuCrown, MenuKeys } from '../Hud.tsx'
 import type { ProgressStorage } from './progress-storage.ts'
+import hud from '../Hud.module.css'
 import styles from './Play.module.css'
 
 const ROW = 5
@@ -76,7 +77,10 @@ export function Filmstrip(props: FilmProps) {
 
   return (
     <nav className={styles.film} aria-label={`${province.name} puzzles`} {...boardMorph('film', 'film')}>
-      <MenuCrown className={styles.filmMark} />
+      <span className={hud.crownCorner}>
+        <MenuCrown className={styles.filmMark} />
+        <MenuKeys corner />
+      </span>
       <p className={styles.filmHead}>
         <span>
           {province.puzzles.filter(p => has(p.id)).length} / {province.puzzles.length}

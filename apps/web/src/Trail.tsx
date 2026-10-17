@@ -2,7 +2,6 @@ import { type CSSProperties, useEffect, useSyncExternalStore } from 'react'
 import { Link } from '@tanstack/react-router'
 import { KeyCap } from './album/KeyCap.tsx'
 import { type Paper, paperFor } from './album/paper.ts'
-import { PadGlyph } from './pad/PadGlyph.tsx'
 import hud from './Hud.module.css'
 import styles from './Trail.module.css'
 
@@ -48,7 +47,7 @@ export function useHudTrail(steps: readonly TrailStep[]): void {
 }
 
 /**
- * The way up from a page deeper than Home's own, in the menu: a pill per step, the parent's wearing Esc and B, and
+ * The way up from a page deeper than Home's own, in the menu: a pill per step, the parent's wearing Esc, and
  * taking the focus when the menu opens. Only for pages that call `useHudTrail`.
  */
 export function Trail() {
@@ -71,12 +70,7 @@ export function Trail() {
             style={step.paper && paperFor(step.paper)}
           >
             {step.label}
-            {parent && (
-              <>
-                <KeyCap>Esc</KeyCap>
-                <PadGlyph button="B" />
-              </>
-            )}
+            {parent && <KeyCap>Esc</KeyCap>}
           </Link>
         )
       })}

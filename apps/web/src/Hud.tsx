@@ -90,16 +90,26 @@ export function MenuCrown({ className, children }: { className?: string | undefi
   )
 }
 
+/**
+ * M and the pad's Menu, beside the HUD's crown. Named, as the crown is, so the columns' morphing groups don't paint
+ * over it. `corner` pins it to the corner of a board's own crown instead, wrapped with it in a `crownCorner`.
+ */
+export function MenuKeys({ corner = false }: { corner?: boolean }) {
+  return (
+    <span className={corner ? `${styles.cap} ${styles.capCorner}` : styles.cap} style={corner ? undefined : sticker('hud-keys', 0)}>
+      <KeyCap>M</KeyCap>
+      <PadGlyph button="Menu" />
+    </span>
+  )
+}
+
 function CrownSticker() {
   return (
     <>
       <span className={styles.holder} style={sticker('hud-logo', 0)}>
         <MenuCrown />
       </span>
-      <span className={styles.cap}>
-        <KeyCap>M</KeyCap>
-        <PadGlyph button="Menu" />
-      </span>
+      <MenuKeys />
     </>
   )
 }

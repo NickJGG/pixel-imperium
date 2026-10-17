@@ -2,12 +2,13 @@ import { useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
 import { boardMorph, markUnseen, slotMorph } from '../campaign/worlds/names.ts'
 import { lessonId } from '../campaign/worlds/transitions.ts'
-import { MenuCrown } from '../Hud.tsx'
+import { MenuCrown, MenuKeys } from '../Hud.tsx'
 import { useCentredFilm } from '../play/Filmstrip.tsx'
 import { useLessonsDone } from './done.ts'
 import { lessonPuzzle } from './lessons.ts'
 import { LessonSlot } from './LessonSlot.tsx'
 import { type Track, lessonKey } from './tracks.ts'
+import hud from '../Hud.module.css'
 import playStyles from '../play/Play.module.css'
 
 /**
@@ -23,7 +24,10 @@ export function LessonFilm({ track, index, back }: { track: Track; index: number
 
   return (
     <nav className={playStyles.film} aria-label={`${track.name} lessons`} {...boardMorph('film', 'film')}>
-      <MenuCrown className={playStyles.filmMark} />
+      <span className={hud.crownCorner}>
+        <MenuCrown className={playStyles.filmMark} />
+        <MenuKeys corner />
+      </span>
       <p className={playStyles.filmHead}>
         {track.name}
         <span>
