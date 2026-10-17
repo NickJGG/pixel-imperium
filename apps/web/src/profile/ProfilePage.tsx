@@ -6,7 +6,7 @@ import { useAccount } from '../account.ts'
 import { SHOWCASE_SIZE, profileStickers, showcaseOf } from '../campaign/stickers.ts'
 import { World, Worlds } from '../campaign/worlds/Worlds.tsx'
 import { solveTime, solveTimes } from '../daily/clock.ts'
-import { albumPages, albumProvinces } from './album.ts'
+import { albumPages, albumProvinces, reachedSolves } from './album.ts'
 import { Showcase } from './Showcase.tsx'
 import { ShowcaseEditor } from './ShowcaseEditor.tsx'
 import { Stamps, stampsOf } from './Stamps.tsx'
@@ -30,8 +30,13 @@ export function ProfilePage() {
   const record = useMemo(() => {
     if (!album) return null
     const entries = album.kind === 'campaign' ? profile.campaigns : profile.years
-    const entry = entries.find(e => e.id === album.id) ?? NO_SOLVES
-    const verified = new Set(entry.verifiedPuzzleIds)
+    const all = entries.find(e => e.id === album.id) ?? NO_SOLVES
+    const verified = reachedSolves(album, all.verifiedPuzzleIds)
+    const entry = {
+      ...all,
+      verifiedPuzzleIds: all.verifiedPuzzleIds.filter(id => verified.has(id)),
+      foilPuzzleIds: all.foilPuzzleIds.filter(id => verified.has(id)),
+    }
     const foil = new Set(entry.foilPuzzleIds)
     return {
       entry,

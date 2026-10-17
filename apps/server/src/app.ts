@@ -25,55 +25,40 @@ import type {
   Showcase,
   SolveResponse,
   SolveStamps,
-  SolveStatus,
 } from '@pixel-imperium/protocol'
-import { and, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Auth } from './auth.ts'
 import type { Db } from './db/index.ts'
 import { hint, lessonDone, madeCampaign, madePuzzle, progress, solve, user, userSettings } from './db/schema.ts'
 import { handleProblem } from './handles.ts'
 import { rateLimiter } from './rate-limit.ts'
 import { parseCells, planImport } from './import.ts'
-import type { Campaign, CampaignPuzzle } from './campaigns.ts'
-import {
-  type Dailies,
-  type DailyPuzzle,
-  dailyDate,
-  dailyFor,
-  datesInMonth,
-  isPlayableDate,
-  latestPlayableDate,
-  yearAlbum,
-} from './dailies.ts'
-import { type StampSolve, stampProgress, stampsFor } from './stamps.ts'
-import {
-  type MadeCampaignRow,
-  type MadePuzzle,
-  hasStarted,
-  isMadeId,
-  loadMadePuzzle,
-  madeCrest,
-  madePuzzleFrom,
-} from './made.ts'
+import type { Campaign } from './campaigns.ts'
+import { type Dailies, dailyFor, datesInMonth, latestPlayableDate, yearAlbum } from './dailies.ts'
+import { stampsFor } from './stamps.ts'
+import { type MadeCampaignRow, type MadePuzzle, isMadeId, madeCrest, madePuzzleFrom } from './made.ts'
 import { workshopRoutes } from './workshop.ts'
+import { type Catalog, type Viewer, createCatalog, upsertProgress } from './catalog.ts'
+import { CoopRooms } from './coop/server.ts'
+import { coopRoutes } from './coop/routes.ts'
 
 export interface AppDeps {
   db: Db
   auth: Auth
   /** The clock Dailies are gated by. */
   now?: () => number
+  /** Built over the same catalog when absent. */
+  coop?: CoopRooms
 }
-
-const NO_DAILIES: Dailies = { launch: '9999-12-31', authored: new Map() }
 
 type SessionUser = Auth['$Infer']['Session']['user']
 
 export type AppEnv = { Variables: { user: SessionUser | null } }
 
-type Found = CampaignPuzzle | DailyPuzzle | MadePuzzle
-
-/** A puzzle a request may play, or why not: unknown or taken down (404), or retired before this player started it (410). */
-type Lookup = { puzzle: Found } | { status: 404 | 410; error: ApiError | RetiredError }
+export const viewerOf = (c: Context<AppEnv>): Viewer => ({
+  userId: c.get('user')?.id ?? null,
+  started: c.req.query('started') === '1',
+})
 
 const ASSIST_KEYS = ['fadeClues', 'impossibleLines', 'autoMarkEmptyLines', 'crosshair', 'lockLine'] as const
 
@@ -131,22 +116,15 @@ const summarize = ({ id, title, width, height, filledCount, tier }: PuzzleSummar
   ...(tier && { tier }),
 })
 
-export function createApp(
-  campaigns: readonly Campaign[],
-  { db, auth, now = Date.now }: AppDeps,
-  dailies: Dailies = NO_DAILIES,
-) {
-  const byId = new Map(campaigns.flatMap(c => c.provinces.flatMap(p => p.puzzles)).map(p => [p.id, p]))
-  /** A campaign puzzle, or a Daily by its `daily:<date>` id, whatever its date. */
-  const puzzleById = (id: string): CampaignPuzzle | DailyPuzzle | undefined => {
-    const date = dailyDate(id)
-    return date === null ? byId.get(id) : (dailyFor(dailies, date) ?? undefined)
-  }
-  /** Like `puzzleById`, but a Daily only while its date is "today" somewhere. */
-  const playable = (id: string) => {
-    const p = puzzleById(id)
-    return p && (!('date' in p) || isPlayableDate(p.date, now())) ? p : undefined
-  }
+export function createApp(campaigns: readonly Campaign[], deps: AppDeps, dailies?: Dailies) {
+  return createApi(createCatalog(campaigns, deps, dailies), deps)
+}
+
+export function createApi(catalog: Catalog, { db, auth, now = Date.now, coop }: AppDeps) {
+  const { campaigns, dailies, campaignsById, puzzleById, findPuzzle, mayPlayRetired, retiredError, crestOf } = catalog
+  const { recordSolve, lowerBest, verifiedSolvesOf, solveStamps } = catalog
+  const rooms = coop ?? new CoopRooms({ db, auth, catalog, now })
+  const isOwn = (c: Context<AppEnv>, p: Parameters<Catalog['isOwn']>[1]) => catalog.isOwn(c.get('user')?.id ?? null, p)
   const campaignPayloads = new Map(
     campaigns.map(({ id, name, released, paper, closingLine, crest, provinces }): [string, CampaignPayload] => [
       id,
@@ -175,35 +153,6 @@ export function createApp(
       },
     ]),
   )
-  const campaignsById = new Map(campaigns.map(c => [c.id, c]))
-  const crestColor = (puzzleId: string) => {
-    const p = byId.get(puzzleId)
-    return p && campaignsById.get(p.campaignId)?.crest?.color.get(puzzleId)
-  }
-  const notFound = (id: string): ApiError =>
-    dailyDate(id) === null ? { error: `no puzzle '${id}'` } : { error: `no Daily '${id}' to play today` }
-  const isOfficialId = (id: string) => byId.has(id) || campaignsById.has(id)
-
-  /** Its Author, a signed-in player with a grid or solve on it, or a signed-out device saying it has progress (`?started=1`). */
-  const mayPlayRetired = async (c: Context<AppEnv>, authorId: string, startedIds: readonly string[]) => {
-    const viewer = c.get('user')
-    if (!viewer) return c.req.query('started') === '1'
-    return viewer.id === authorId || hasStarted(db, viewer.id, startedIds)
-  }
-  const retiredError = (author: string): RetiredError => ({ error: `@${author} retired this`, retired: true, author })
-
-  /** `playable`, falling back to published player-made puzzles. */
-  const findPuzzle = async (c: Context<AppEnv>, id: string): Promise<Lookup> => {
-    const official = playable(id)
-    if (official) return { puzzle: official }
-    const made = await loadMadePuzzle(db, id)
-    if (!made) return { status: 404, error: notFound(id) }
-    if (made.made.retired && !(await mayPlayRetired(c, made.authorId, made.startedIds))) {
-      return { status: 410, error: retiredError(made.made.author) }
-    }
-    return { puzzle: made }
-  }
-  const isOwn = (c: Context<AppEnv>, p: Found) => 'made' in p && c.get('user')?.id === p.authorId
 
   /** Published puzzles by id; taken-down ones left out. */
   const madePuzzlesById = async (ids: readonly string[]) => {
@@ -263,54 +212,7 @@ export function createApp(
     }
   }
 
-  /** A solved puzzle's Crest pixel color, if its campaign has a Crest. */
-  const crestOf = (p: Found) => ('made' in p ? p.campaign && madeCrest(p.campaign)?.color.get(p.id) : crestColor(p.id))
-
-  /**
-   * A verified solve upgrades an unverified one; nothing ever downgrades or re-dates a solve.
-   * `foil` counts only for the first solve, so an upgrade never makes one foil.
-   */
-  const recordSolve = (tx: Pick<Db, 'insert'>, userId: string, puzzleId: string, status: SolveStatus, foil: boolean) => {
-    const insert = tx.insert(solve).values({ userId, puzzleId, verified: status === 'verified', foil })
-    return status === 'verified'
-      ? insert.onConflictDoUpdate({
-          target: [solve.userId, solve.puzzleId],
-          set: { verified: true, solvedAt: new Date() },
-          setWhere: eq(solve.verified, false),
-        })
-      : insert.onConflictDoNothing()
-  }
-
-  /** Apart from `recordSolve`, whose upsert leaves a verified row untouched. Postgres' `least` skips a null. */
-  const lowerBest = (tx: Pick<Db, 'update'>, userId: string, puzzleId: string, ms: number) =>
-    tx
-      .update(solve)
-      .set({ bestMs: sql`least(${solve.bestMs}, ${ms})` })
-      .where(and(eq(solve.userId, userId), eq(solve.puzzleId, puzzleId)))
-
   const hintAllowed = rateLimiter(60, 60_000)
-
-  const verifiedSolvesOf = (userId: string) =>
-    db
-      .select({ puzzleId: solve.puzzleId, foil: solve.foil, solvedAt: solve.solvedAt })
-      .from(solve)
-      .where(and(eq(solve.userId, userId), eq(solve.verified, true)))
-      .orderBy(desc(solve.solvedAt))
-
-  /** What a newly verified solve of `p` earned, and what it brings near; earns nothing when it was verified already. */
-  const solveStamps = async (userId: string, p: CampaignPuzzle | DailyPuzzle, fresh: boolean): Promise<SolveStamps> => {
-    const solves = await verifiedSolvesOf(userId)
-    const [album, options] =
-      'date' in p
-        ? [yearAlbum(dailies.launch, Number(p.date.slice(0, 4))), { year: true }]
-        : [campaignsById.get(p.campaignId)!, {}]
-    const ids = (list: readonly StampSolve[]) => stampsFor(album, list, options).map(s => s.id)
-    const before = new Set(fresh ? ids(solves.filter(s => s.puzzleId !== p.id)) : [])
-    return {
-      earned: fresh ? ids(solves).filter(id => !before.has(id)) : [],
-      near: stampProgress(album, solves, p.id, options),
-    }
-  }
 
   return new Hono<AppEnv>()
     .basePath('/api')
@@ -352,7 +254,7 @@ export function createApp(
       if (!row) return c.json<ApiError>({ error: `no campaign '${id}'` }, 404)
       const { campaign, author } = row
       const ids = campaign.provinces.flatMap(p => p.puzzleIds)
-      if (campaign.retiredAt && !(await mayPlayRetired(c, campaign.authorId, ids))) {
+      if (campaign.retiredAt && !(await mayPlayRetired(viewerOf(c), campaign.authorId, ids))) {
         return c.json<RetiredError>(retiredError(author), 410)
       }
       return c.json(await madeCampaignPayload(campaign, author))
@@ -369,7 +271,7 @@ export function createApp(
       return c.json<DailyYear>({ year, launch: dailies.launch, months })
     })
     .get('/puzzles/:id', async c => {
-      const found = await findPuzzle(c, c.req.param('id'))
+      const found = await findPuzzle(viewerOf(c), c.req.param('id'))
       if ('status' in found) return c.json(found.error, found.status)
       const p = found.puzzle
       const context =
@@ -381,7 +283,7 @@ export function createApp(
       return c.json<PuzzleClues>({ ...summarize(p), ...context, clues: p.clues })
     })
     .post('/puzzles/:id/solve', async c => {
-      const found = await findPuzzle(c, c.req.param('id'))
+      const found = await findPuzzle(viewerOf(c), c.req.param('id'))
       if ('status' in found) return c.json(found.error, found.status)
       const p = found.puzzle
 
@@ -420,7 +322,7 @@ export function createApp(
       return c.json<SolveResponse>({ solved: true, palette: p.palette, foil, ...(crest && { crest }), ...(stamps && { stamps }) })
     })
     .post('/puzzles/:id/hint', async c => {
-      const found = await findPuzzle(c, c.req.param('id'))
+      const found = await findPuzzle(viewerOf(c), c.req.param('id'))
       if ('status' in found) return c.json(found.error, found.status)
       const p = found.puzzle
       const user = c.get('user')
@@ -480,7 +382,8 @@ export function createApp(
         showcase: owner.showcase.filter(id => verified.has(id) && puzzleById(id)),
       })
     })
-    .route('/', workshopRoutes({ db, isOfficialId }))
+    .route('/', workshopRoutes({ db, isOfficialId: catalog.isOfficialId }))
+    .route('/', coopRoutes(rooms))
     .put('/me/handle', async c => {
       const body = (await c.req.json().catch(() => null)) as { handle?: unknown } | null
       const handle = typeof body?.handle === 'string' ? body.handle : ''
@@ -597,7 +500,7 @@ export function createApp(
       return c.json<Showcase>({ puzzleIds })
     })
     .put('/me/progress/:id', async c => {
-      const found = await findPuzzle(c, c.req.param('id'))
+      const found = await findPuzzle(viewerOf(c), c.req.param('id'))
       if ('status' in found) return c.json(found.error, found.status)
       const p = found.puzzle
 
@@ -626,16 +529,7 @@ export function createApp(
       // A client clock running ahead must not lock out every later write.
       const at = new Date(Math.min(updatedAt.getTime(), Date.now()))
       const values = { cells: body.cells as string, replaying: body.replaying, updatedAt: at, elapsedMs, attemptHinted }
-      const applied = await db
-        .insert(progress)
-        .values({ userId: c.get('user')!.id, puzzleId: p.id, ...values })
-        .onConflictDoUpdate({
-          target: [progress.userId, progress.puzzleId],
-          set: values,
-          setWhere: lt(progress.updatedAt, at),
-        })
-        .returning({ puzzleId: progress.puzzleId })
-      return c.json<PutProgressResponse>({ applied: applied.length > 0 })
+      return c.json<PutProgressResponse>({ applied: await upsertProgress(db, c.get('user')!.id, p.id, values) })
     })
     .put('/me/settings', async c => {
       const body = (await c.req.json().catch(() => null)) as { assists?: unknown } | null

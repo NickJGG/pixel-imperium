@@ -1,6 +1,6 @@
 import type { Campaign, DailyYear, PuzzleSummary } from '@pixel-imperium/protocol'
 import { type Paper, seasonOf } from '../album/paper.ts'
-import { provinceStates } from '../campaign/progress.ts'
+import { isOpen, provinceStates } from '../campaign/progress.ts'
 import { dailyId } from '../daily/clock.ts'
 import { MONTH_NAMES, datesOf, mm } from '../daily/month.ts'
 
@@ -32,6 +32,18 @@ export const yearAlbum = (year: DailyYear): ProfileAlbum => ({
 /** The album's puzzles page by page, a Year's Months holding only the Dailies listed so far. */
 export const albumProvinces = (album: ProfileAlbum): { puzzles: readonly PuzzleSummary[] }[] =>
   album.kind === 'campaign' ? album.campaign.provinces : album.year.months.map(puzzles => ({ puzzles }))
+
+/** The verified puzzles a Profile shows: a co-op solve in a Province the player hasn't reached stays hidden until they do. */
+export function reachedSolves(album: ProfileAlbum, verified: readonly string[]): Set<string> {
+  if (album.kind === 'year') return new Set(verified)
+  const solved = new Set(verified)
+  const { provinces } = provinceStates(album.campaign, id => solved.has(id))
+  return new Set(
+    album.campaign.provinces.flatMap((p, i) =>
+      isOpen(provinces[i]!.state) ? p.puzzles.flatMap(z => (solved.has(z.id) ? [z.id] : [])) : [],
+    ),
+  )
+}
 
 export interface AlbumPage {
   id: string

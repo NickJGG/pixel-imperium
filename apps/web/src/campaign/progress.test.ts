@@ -27,6 +27,16 @@ describe('provinceStates', () => {
     expect(provinceStates(campaign, id => id === 'a1').provinces[0]).toEqual({ state: 'active', solved: 1, total: 2 })
   })
 
+  it('hides solves in a province not reached yet, as a co-op leaves them, without unlocking it', () => {
+    const { provinces } = provinceStates(campaign, id => id === 'c1')
+    expect(provinces.map(p => [p.state, p.solved])).toEqual([
+      ['active', 0],
+      ['next', 0],
+      ['locked', 0],
+      ['locked', 0],
+    ])
+  })
+
   it('conquers a province once every puzzle is solved, unlocking the next', () => {
     expect(statesOf(['a1', 'a2'])).toEqual(['conquered', 'active', 'next', 'locked'])
     expect(statesOf(['a1', 'a2', 'b1', 'c1'])).toEqual(['conquered', 'conquered', 'conquered', 'active'])

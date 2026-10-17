@@ -1,7 +1,7 @@
 /**
  * Where a player stands in a campaign. Provinces unlock one at a time: each is conquered once
  * every puzzle in it is solved, the first unconquered one is active, the one after it is next
- * (named, still locked) and the rest are locked.
+ * (named, still locked) and the rest are locked. Solves past the active province stay hidden until it is reached.
  */
 import type { Campaign, Province, PuzzleSummary, Tier } from '@pixel-imperium/protocol'
 import type { ProgressStorage } from '../play/progress-storage.ts'
@@ -36,7 +36,8 @@ export function provinceStates(
     if (unlockAll) return { state: 'active', solved, total }
     const state: ProvinceState = reached === null ? 'active' : reached === 'active' ? 'next' : 'locked'
     reached = reached === null ? 'active' : 'next'
-    return { state, solved, total }
+    // A co-op can solve puzzles in a province not reached yet; they count once it is.
+    return { state, solved: state === 'active' ? solved : 0, total }
   })
   return { provinces, conquered: provinces.every(p => p.state === 'conquered') }
 }

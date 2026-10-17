@@ -5,6 +5,7 @@
  */
 import type { Assists, CrestDraft, DraftCampaignDoc, MadeProvince, SeedPuzzle } from '@pixel-imperium/protocol'
 import { sql } from 'drizzle-orm'
+import type { Identity, SeatHolder } from '../coop/room.ts'
 import { boolean, index, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
 export const user = pgTable(
@@ -249,4 +250,20 @@ export const report = pgTable('report', {
   reporterId: text('reporter_id').references(() => user.id, { onDelete: 'set null' }),
   reporterIp: text('reporter_ip'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+/** Co-ops saved over a restart: written on shutdown, read back and deleted on boot. */
+export const coopRoom = pgTable('coop_room', {
+  code: text('code').primaryKey(),
+  previousCodes: text('previous_codes').array().notNull(),
+  hostId: text('host_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  puzzleId: text('puzzle_id').notNull(),
+  cells: text('cells').notNull(),
+  seats: jsonb('seats').$type<(SeatHolder | null)[]>().notNull(),
+  removed: jsonb('removed').$type<Identity[]>().notNull(),
+  solved: boolean('solved').notNull(),
+  replaying: boolean('replaying').notNull(),
+  savedAt: timestamp('saved_at').defaultNow().notNull(),
 })
