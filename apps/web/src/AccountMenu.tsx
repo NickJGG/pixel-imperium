@@ -1,55 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
-import { Link, useRouter } from '@tanstack/react-router'
-import { signOutAccount } from './account.ts'
 import { usePadContain } from './pad/PadProvider.tsx'
-import { AlbumIcon, SettingsIcon, SignOutIcon } from './album/icons.tsx'
 import { PROVIDERS, signIn, useSession } from './auth.ts'
 import styles from './App.module.css'
-
-/** The phone thumb bar's Profile: the account menu or the sign-in sheet, opening upwards. */
-export function ThumbMenu({ trigger, triggerClassName }: { trigger: ReactNode; triggerClassName: string | undefined }) {
-  const { data, isPending } = useSession()
-  if (isPending) return <span />
-  const common = { trigger, triggerClassName, triggerVariant: 'flat', up: true } as const
-  if (!data) return <SignInMenu {...common} />
-  return (
-    <Menu label={`Account: @${data.user.handle}`} {...common}>
-      <AccountItems handle={data.user.handle} />
-    </Menu>
-  )
-}
-
-function AccountItems({ handle }: { handle: string }) {
-  const router = useRouter()
-  return (
-    <>
-      <Link to="/u/$handle" params={{ handle }} role="menuitem" className={styles.item} data-variant="flat">
-        <span className={styles.ico}>
-          <AlbumIcon />
-        </span>
-        My album
-      </Link>
-      <Link to="/settings" role="menuitem" className={styles.item} data-variant="flat">
-        <span className={styles.ico}>
-          <SettingsIcon />
-        </span>
-        Settings
-      </Link>
-      <button
-        type="button"
-        role="menuitem"
-        className={styles.item}
-        data-variant="flat"
-        onClick={() => void signOutAccount().then(() => router.invalidate())}
-      >
-        <span className={styles.ico}>
-          <SignOutIcon />
-        </span>
-        Sign out
-      </button>
-    </>
-  )
-}
 
 interface TriggerProps {
   triggerClassName?: string | undefined
@@ -61,7 +13,7 @@ interface TriggerProps {
 interface SignInMenuProps extends TriggerProps {
   trigger: ReactNode
   label?: string | undefined
-  /** Opens above the trigger, for the thumb bar. */
+  /** Opens above the trigger. */
   up?: boolean
   panelClassName?: string | undefined
 }

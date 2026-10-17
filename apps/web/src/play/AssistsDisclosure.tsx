@@ -1,5 +1,4 @@
 import { type ReactNode, type RefObject, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
-import { PadGlyph } from '../pad/PadGlyph.tsx'
 import { usePadContain } from '../pad/PadProvider.tsx'
 import { useSettings } from '../settings.ts'
 import { assists } from './AssistChips.tsx'
@@ -13,7 +12,7 @@ export function AssistsDisclosure({ store }: { store: PlayStore }) {
   const settings = useSettings()
   const on = assists.filter(({ key }) => settings[key]).length
   return (
-    <RailDisclosure store={store} label={`Assists · ${on}`} icon={<SlidersIcon />} menu>
+    <RailDisclosure store={store} label={`Assists · ${on}`} icon={<SlidersIcon />}>
       <AssistSwitches />
     </RailDisclosure>
   )
@@ -30,19 +29,17 @@ export function ControlsDisclosure({ store }: { store: PlayStore }) {
 
 /**
  * A folded rail section: a button opening `children` below it, or above when the window runs out. Escape, a
- * click away or a board stroke closes it. `menu` makes it the controller's Menu target.
+ * click away or a board stroke closes it.
  */
 function RailDisclosure({
   store,
   label,
   icon,
-  menu = false,
   children,
 }: {
   store: PlayStore
   label: string
   icon: ReactNode
-  menu?: boolean
   children: ReactNode
 }) {
   const [open, setOpen] = useState(false)
@@ -65,7 +62,6 @@ function RailDisclosure({
       <button
         ref={buttonRef}
         type="button"
-        data-pad-menu={menu || undefined}
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen(o => !o)}
@@ -75,7 +71,6 @@ function RailDisclosure({
         <svg className={styles.chevron} viewBox="0 0 24 24" aria-hidden="true">
           <path d="M6 9l6 6 6-6" />
         </svg>
-        {menu && <PadGlyph button="Menu" corner />}
       </button>
       {open && (
         <div ref={popRef} id={id} className={styles.assistsPop} data-up={up || undefined}>

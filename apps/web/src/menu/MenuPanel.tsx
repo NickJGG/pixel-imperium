@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { SignInMenu } from '../AccountMenu.tsx'
 import { ProfileIcon, SettingsIcon } from '../album/icons.tsx'
@@ -42,34 +42,75 @@ function pinCrown(dialog: HTMLDialogElement, opener: HTMLElement | null): void {
   for (const [name, value] of Object.entries(vars)) dialog.style.setProperty(name, value)
 }
 
+/** On a phone, the sheet stands on the thumb bar, where there is one. */
+function seatSheet(dialog: HTMLDialogElement): void {
+  const bar = document.querySelector<HTMLElement>('[data-thumb-bar]')
+  const bottom = bar?.checkVisibility() ? innerHeight - bar.getBoundingClientRect().top : 0
+  dialog.style.setProperty('--sheet-bottom', `${bottom}px`)
+}
+
+/** Numbers the stickers in reading order, the trail's, the card and the footer's, so they slap on in turn. */
+function stagger(dialog: HTMLDialogElement): void {
+  const stickers = dialog.querySelectorAll<HTMLElement>(`.${styles.paper} nav a, .${styles.nextUp}, .${styles.foot} > :not(.${styles.gap})`)
+  stickers.forEach((el, i) => {
+    el.classList.add(`${styles.slap}`)
+    el.style.setProperty('--i', String(i))
+  })
+  dialog.style.setProperty('--n', String(stickers.length))
+}
+
 /**
  * The menu any crown summons, over the dimmed page: the crown and wordmark, the trail, the puzzle due next, and a
  * footer of the player and the settings. Mounted once at the root; `menu-store.ts` holds whether it's open. M opens and closes it
- * anywhere, Esc or B closes it, as do the crown, the dimmed page and any link inside.
+ * anywhere, Esc or B closes it, as do the crown, the dimmed page and any link inside. It wipes open and its stickers
+ * slap on (`Menu.module.css`); closing plays that back and only then closes the dialog, except for a navigation,
+ * which closes it at once so the page's morph never captures it. On a phone it rises as a sheet instead.
  */
 export function MenuPanel() {
   const { open, opener } = useMenu()
   const ref = useRef<HTMLDialogElement>(null)
   const restore = useRef<HTMLElement | null>(null)
   restore.current = opener
+  const [closing, setClosing] = useState(false)
   const pathname = useRouterState({ select: s => s.location.pathname })
+
+  const closeNow = () => {
+    ref.current?.close()
+    closeMenu()
+  }
 
   useLayoutEffect(() => {
     const dialog = ref.current
     if (!dialog) return
-    if (open && !dialog.open) {
+    if (open) {
+      setClosing(false)
+      if (dialog.open) return
       pinCrown(dialog, opener)
+      seatSheet(dialog)
+      stagger(dialog)
       dialog.showModal()
       const first =
         dialog.querySelector<HTMLElement>('[data-menu-focus]') ?? dialog.querySelector<HTMLElement>(`.${styles.foot} :is(a, button)`)
       first?.focus()
-    } else if (!open && dialog.open) {
-      dialog.close()
+    } else if (dialog.open) {
+      setClosing(true)
     }
   }, [open, opener])
-  usePadContain(ref, open, closeMenu, restore)
+  usePadContain(ref, open || closing, closeMenu, restore)
 
-  useEffect(() => closeMenu(), [pathname])
+  useEffect(() => {
+    const dialog = ref.current
+    if (!closing || !dialog) return
+    let live = true
+    // Only the finite ones: a looping pulse inside, as Next up's slot, would never finish.
+    const ending = dialog.getAnimations({ subtree: true }).filter(a => a.effect?.getComputedTiming().activeDuration !== Infinity)
+    void Promise.allSettled(ending.map(a => a.finished)).then(() => live && dialog.close())
+    return () => {
+      live = false
+    }
+  }, [closing])
+
+  useEffect(() => closeNow(), [pathname])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -92,10 +133,21 @@ export function MenuPanel() {
       ref={ref}
       className={styles.panel}
       aria-label="Menu"
-      onClose={closeMenu}
-      onClick={e => (e.target === e.currentTarget || (e.target as Element).closest('a')) && closeMenu()}
+      data-closing={closing || undefined}
+      onCancel={e => {
+        e.preventDefault()
+        closeMenu()
+      }}
+      onClose={() => {
+        setClosing(false)
+        closeMenu()
+      }}
+      onClick={e => {
+        if ((e.target as Element).closest('a')) closeNow()
+        else if (e.target === e.currentTarget) closeMenu()
+      }}
     >
-      {open && <Contents />}
+      {(open || closing) && <Contents />}
     </dialog>
   )
 }
@@ -107,7 +159,7 @@ function Contents() {
         <CrownMark />
       </button>
       <Link to="/" className={styles.wordmark}>
-        <span>Pixel</span> Imperium
+        <span>Pixel</span>&nbsp;Imperium
       </Link>
       <div className={styles.paper} data-surface="cobalt">
         <Trail />

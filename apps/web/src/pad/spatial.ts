@@ -96,9 +96,8 @@ export function focusInto(root: HTMLElement): void {
   if (!root.contains(document.activeElement)) firstFocusable(root)?.focus()
 }
 
-/** Clicks the visible `[data-pad-menu]` trigger, preferring a page's own inside `<main>`, then a menu crown. */
+/** Clicks the visible `[data-pad-menu]` trigger, a menu crown first, so Menu summons the menu wherever one shows. */
 export function openPageMenu(): void {
   const triggers = [...document.querySelectorAll<HTMLElement>('[data-pad-menu]')].filter(visible)
-  const crown = (el: HTMLElement) => el.hasAttribute('data-menu-crown')
-  ;(triggers.find(el => el.closest('main') && !crown(el)) ?? triggers.find(crown) ?? triggers[0])?.click()
+  ;(triggers.find(el => el.hasAttribute('data-menu-crown')) ?? triggers[0])?.click()
 }

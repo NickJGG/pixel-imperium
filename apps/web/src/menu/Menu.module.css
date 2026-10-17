@@ -28,6 +28,11 @@
 
 .panel::backdrop {
   background: var(--scrim);
+  animation: fade-in 0.25s ease-out;
+}
+
+.panel[data-closing]::backdrop {
+  animation: fade-out 0.3s ease-in 0.15s forwards;
 }
 
 .paper {
@@ -43,6 +48,12 @@
   scrollbar-width: thin;
   background: var(--cover) var(--cover-dots) 0 0 / 18px 18px fixed;
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+  animation: wipe 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* After the stickers have popped off. */
+.panel[data-closing] .paper {
+  animation: unwipe 0.3s ease-in calc(var(--n) * 0.03s + 0.12s) forwards;
 }
 
 .paper::before {
@@ -82,6 +93,11 @@
   letter-spacing: -0.03em;
   text-decoration: none;
   white-space: nowrap;
+  animation: wordmark-in 0.2s ease-out 0.12s backwards;
+}
+
+.panel[data-closing] .wordmark {
+  animation: fade-out 0.15s ease-in calc(var(--n) * 0.03s + 0.12s) forwards;
 }
 
 .wordmark span {
@@ -129,8 +145,8 @@
 /* Each outranks global.css's flat-on-cobalt tint. */
 .panel .foot button.round[data-on],
 .panel .foot button.round[data-on]:hover {
-  --btn-bg: var(--pink);
-  --btn-ink: var(--on-pink);
+  --btn-bg: var(--sticker);
+  --btn-ink: var(--cobalt-ink);
 }
 
 .themes {
@@ -162,4 +178,161 @@
 .signIn {
   right: auto;
   left: 0;
+}
+
+/*
+ * Set by `stagger` on each sticker, numbered `--i` of `--n`: they slap on in reading order once the edge has passed,
+ * and pop off the other way first. `backwards`, not `both`, so a resting sticker's own lift and press still apply.
+ */
+.slap {
+  animation: slap 0.36s calc(0.3s + var(--i) * 0.05s) backwards;
+}
+
+.panel[data-closing] .slap {
+  animation: pop 0.18s calc((var(--n) - 1 - var(--i)) * 0.03s) forwards;
+}
+
+@keyframes wipe {
+  from {
+    clip-path: polygon(0 0, 0 0, calc(0px - var(--slant)) 100%, 0 100%);
+  }
+}
+
+@keyframes unwipe {
+  to {
+    clip-path: polygon(0 0, 0 0, calc(0px - var(--slant)) 100%, 0 100%);
+  }
+}
+
+/* The shape of `sticker-on-*` in Hud.module.css. */
+@keyframes slap {
+  from {
+    opacity: 0;
+    transform: scale(1.3) rotate(14deg);
+    animation-timing-function: ease-out;
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(0.92) rotate(-2deg);
+    animation-timing-function: ease-out;
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pop {
+  30% {
+    opacity: 1;
+    transform: scale(0.92) rotate(-2deg);
+    animation-timing-function: ease-in;
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.3) rotate(14deg);
+  }
+}
+
+@keyframes wordmark-in {
+  from {
+    opacity: 0;
+    translate: calc(-1 * var(--space-3)) 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    translate: 0 100%;
+  }
+}
+
+@keyframes sink {
+  to {
+    translate: 0 100%;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* A sheet standing on the thumb bar, unslanted, rising whole with its crown in its own top corner. */
+@media (max-width: 720px) {
+  .panel {
+    inset: auto 0 var(--sheet-bottom, 0px) 0;
+    width: auto;
+    height: auto;
+    max-height: calc(100dvh - var(--sheet-bottom, 0px) - var(--space-7));
+    filter: drop-shadow(0 -4px 0 var(--shade));
+    animation: rise 0.32s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .panel[data-closing] {
+    animation: sink 0.24s ease-in calc(var(--n) * 0.03s + 0.1s) forwards;
+  }
+
+  .paper,
+  .panel[data-closing] .paper {
+    height: auto;
+    max-height: inherit;
+    /* Room above the footer for the sign-in sheet, which opens upwards inside the scrolling paper. */
+    min-height: 360px;
+    padding: calc(var(--space-5) + 40px + var(--space-5)) var(--space-5) var(--space-5); /* token-exempt: clears the crown's 40px */
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    clip-path: none;
+    animation: none;
+  }
+
+  .panel .crown {
+    top: var(--space-5);
+    left: var(--space-5);
+    width: 52px;
+    height: 40px;
+    rotate: -4deg;
+  }
+
+  .panel .crown svg {
+    width: 30px;
+    height: 20px;
+  }
+
+  .wordmark,
+  .panel[data-closing] .wordmark {
+    top: var(--space-5);
+    left: calc(var(--space-5) + 52px + var(--space-3));
+    height: 40px;
+    animation: none;
+  }
+}
+
+/* No wipe, rise or slap: the whole panel fades. */
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: fade-in 0.2s ease-out;
+  }
+
+  .panel[data-closing] {
+    animation: fade-out 0.2s ease-in forwards;
+  }
+
+  .paper,
+  .panel[data-closing] .paper,
+  .wordmark,
+  .panel[data-closing] .wordmark,
+  .slap,
+  .panel[data-closing] .slap {
+    animation: none;
+  }
 }

@@ -5,7 +5,7 @@ import { currentCampaign } from '../campaign/last-campaign.ts'
 import { useAnnounceSkeleton } from '../campaign/worlds/morph-nav.ts'
 import { dailyId } from '../daily/clock.ts'
 import { boardMorph, columnPaper, slotMorph, slotName } from '../campaign/worlds/names.ts'
-import { CrownMark, SoundButton, ThemeButton } from '../Hud.tsx'
+import { CrownMark, MenuCrown } from '../Hud.tsx'
 import { Bar, Ghost, SrLoading } from '../skeleton/Skeleton.tsx'
 import { useCentredFilm } from './Filmstrip.tsx'
 import { RAIL_WIDTH, useRail } from './layout.ts'
@@ -61,8 +61,7 @@ export function PlaySkeleton() {
           <Bar w={28} h={18} />
           <Bar w="min(220px, 40%)" h={18} />
           <span className={styles.topTools}>
-            <SoundButton className={styles.round} variant="flat" size="compact" />
-            <ThemeButton className={styles.round} variant="flat" size="compact" />
+            <MenuCrown />
           </span>
         </header>
       )}

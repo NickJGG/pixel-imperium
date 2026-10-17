@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useAccount } from './account.ts'
-import { ThumbMenu } from './AccountMenu.tsx'
 import { KeyCap } from './album/KeyCap.tsx'
-import { AutoIcon, DayIcon, HomeIcon, NightIcon, PlayIcon, ProfileIcon, SoundIcon } from './album/icons.tsx'
+import { AutoIcon, DayIcon, HomeIcon, NightIcon, PlayIcon, SoundIcon } from './album/icons.tsx'
 import { useCurrentCampaign } from './campaign/last-campaign.ts'
 import { type ContinueAt, campaignProgress, continueAt } from './campaign/progress.ts'
 import { toggleMenu, useMenu } from './menu/menu-store.ts'
@@ -15,7 +14,6 @@ import { sticker } from './Trail.tsx'
 import app from './App.module.css'
 import styles from './Hud.module.css'
 
-const nextTheme: Record<Theme, Theme> = { dark: 'light', light: 'auto', auto: 'dark' }
 export const themeLabel: Record<Theme, string> = { dark: 'Night', light: 'Day', auto: 'Auto' }
 export const themeIcon: Record<Theme, ReactNode> = { dark: <NightIcon />, light: <DayIcon />, auto: <AutoIcon /> }
 
@@ -35,7 +33,7 @@ export function useContinue(): ContinueAt | null {
 /** The logo mark: a 9×6-cell pixel crown, drawn in cell units. Decorative. */
 export function CrownMark({ className }: { className?: string | undefined }) {
   return (
-    <svg className={className} viewBox="0 0 9 6" shapeRendering="crispEdges" aria-hidden="true">
+    <svg className={`${styles.mark} ${className ?? ''}`} viewBox="0 0 9 6" shapeRendering="crispEdges" aria-hidden="true">
       <path d="M0 0h1v1h1v1h1V1h1V0h1v1h1v1h1V1h1V0h1v5H0z" fill="var(--gold)" />
       <rect y="5" width="9" height="1" fill="var(--gold-dk)" />
       <path d="M1 3h1v1H1zM5 3h1v1H5z" fill="var(--pink)" />
@@ -69,27 +67,11 @@ export function SoundButton({ className, variant, size }: PillProps) {
   )
 }
 
-export function ThemeButton({ className, variant, size }: PillProps) {
-  const { theme } = useSettings()
-  return (
-    <button
-      type="button"
-      className={className}
-      data-variant={variant}
-      data-size={size}
-      aria-label={`Theme: ${themeLabel[theme]}. Switch to ${themeLabel[nextTheme[theme]]}.`}
-      onClick={() => updateSettings({ theme: nextTheme[theme] })}
-    >
-      {themeIcon[theme]}
-    </button>
-  )
-}
-
 /**
  * The crown sticker that summons the menu (`menu/MenuPanel.tsx`). `className` swaps the HUD's plate for a board's
- * own, as the filmstrip's.
+ * own, as the filmstrip's; `children` captions it, as in the thumb bar.
  */
-export function MenuCrown({ className }: { className?: string | undefined }) {
+export function MenuCrown({ className, children }: { className?: string | undefined; children?: ReactNode }) {
   const { open } = useMenu()
   return (
     <button
@@ -103,6 +85,7 @@ export function MenuCrown({ className }: { className?: string | undefined }) {
       onClick={e => toggleMenu(e.currentTarget)}
     >
       <CrownMark />
+      {children}
     </button>
   )
 }
@@ -153,8 +136,8 @@ export function Hud({ float }: { float?: boolean | undefined }) {
 }
 
 /**
- * The phone's bottom bar: Home, a raised Continue, and Profile, whose menu holds the account.
- * Hidden while playing and on wider screens.
+ * The phone's bottom bar, in place of the crown up top: Home, a raised Continue, and the crown, whose menu rises
+ * over it. Hidden while playing and on wider screens.
  */
 export function ThumbBar() {
   const next = useContinue()
@@ -163,7 +146,7 @@ export function ThumbBar() {
   if (playing) return null
 
   return (
-    <nav className={app.thumbBar} aria-label="Main navigation">
+    <nav className={app.thumbBar} aria-label="Main navigation" data-thumb-bar>
       <Link to="/" className={app.thumbItem}>
         <HomeIcon />
         Home
@@ -180,15 +163,7 @@ export function ThumbBar() {
       ) : (
         <span />
       )}
-      <ThumbMenu
-        trigger={
-          <>
-            <ProfileIcon />
-            Profile
-          </>
-        }
-        triggerClassName={app.thumbItem}
-      />
+      <MenuCrown className={`${app.thumbItem} ${app.thumbCrown}`}>Menu</MenuCrown>
     </nav>
   )
 }

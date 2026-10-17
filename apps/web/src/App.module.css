@@ -71,34 +71,8 @@
   color: var(--ink-soft);
 }
 
-.menu > button:not(.item) {
+.menu > button {
   justify-content: flex-start;
-}
-
-.menu .item {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: var(--space-3);
-  min-height: 0;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--r-md);
-  font: var(--type-button);
-  color: var(--ink);
-  text-decoration: none;
-  transform: none;
-}
-
-.ico {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  font-size: 16px; /* token-exempt: icon size */
-  background: var(--card-2);
-  border-radius: var(--r-sm);
-  transform: rotate(-4deg);
-  box-shadow: 0 2px 0 var(--line-soft);
 }
 
 /* The phone's thumb bar */
@@ -130,6 +104,11 @@
   font-size: 22px; /* token-exempt: icon size */
 }
 
+.thumbItem.thumbCrown > svg {
+  width: 30px;
+  height: 20px;
+}
+
 .thumbBar > :first-child {
   justify-self: start;
 }
@@ -142,7 +121,7 @@
   color: var(--pink);
 }
 
-/* No ink fill while its sign-in sheet is open: the sheet itself shows that. */
+/* No ink fill while its menu is open: the menu itself shows that. */
 .thumbBar button.thumbItem {
   --btn-bg: transparent;
   --btn-ink: var(--ink);

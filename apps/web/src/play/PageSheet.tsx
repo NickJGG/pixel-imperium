@@ -1,5 +1,4 @@
 import { type CSSProperties, type ReactNode, useId, useRef, useState } from 'react'
-import { PadGlyph } from '../pad/PadGlyph.tsx'
 import { usePadContain } from '../pad/PadProvider.tsx'
 import { SlidersIcon, useDismiss } from './AssistsDisclosure.tsx'
 import type { PlayStore } from './store.ts'
@@ -33,7 +32,6 @@ export function PageSheet({ store, solved, paper, children }: Props) {
         className={styles.sheetButton}
         data-variant="flat"
         data-size="compact"
-        data-pad-menu
         aria-label="Page and assists"
         title="Page and assists"
         aria-expanded={open}
@@ -41,7 +39,6 @@ export function PageSheet({ store, solved, paper, children }: Props) {
         onClick={() => setOpen(o => !o)}
       >
         <SlidersIcon />
-        <PadGlyph button="Menu" corner />
       </button>
       {open && (
         <div ref={sheetRef} id={id} className={`${styles.sheet} ${styles.sheetFace}`} style={paper}>
