@@ -2,6 +2,9 @@ import { useSyncExternalStore } from 'react'
 
 export type MenuColumn = 'menu' | 'friends' | 'party'
 
+/** Left to right. */
+export const MENU_COLUMNS: readonly MenuColumn[] = ['menu', 'friends', 'party']
+
 export interface MenuState {
   open: boolean
   /** The crown or party sticker that opened it, where focus goes back to; null from M. */
@@ -34,6 +37,11 @@ export const toggleMenu = (opener: HTMLElement | null = null, column: MenuColumn
 /** Switches the open menu to `column`, folding the one that was open into its spine. */
 export const setColumn = (column: MenuColumn): void => {
   if (state.open) set({ ...state, column })
+}
+/** Switches to the column before or after the open one, stopping at either end. */
+export const stepColumn = (dir: -1 | 1): void => {
+  const next = MENU_COLUMNS[MENU_COLUMNS.indexOf(state.column) + dir]
+  if (next) setColumn(next)
 }
 
 let landing: { pathname: string; column: MenuColumn } | null = null

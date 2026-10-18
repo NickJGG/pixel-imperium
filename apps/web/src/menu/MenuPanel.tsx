@@ -15,7 +15,18 @@ import { usePrefetch } from '../play/prefetch.ts'
 import { type Theme, updateSettings, useSettings } from '../settings.ts'
 import { Trail } from '../Trail.tsx'
 import { FriendsColumn } from './FriendsColumn.tsx'
-import { type MenuColumn, closeMenu, openMenu, setColumn, takeLanding, toggleMenu, useBoard, useMenu } from './menu-store.ts'
+import {
+  MENU_COLUMNS,
+  type MenuColumn,
+  closeMenu,
+  openMenu,
+  setColumn,
+  stepColumn,
+  takeLanding,
+  toggleMenu,
+  useBoard,
+  useMenu,
+} from './menu-store.ts'
 import { PartyColumn } from './PartyColumn.tsx'
 import app from '../App.module.css'
 import hud from '../Hud.module.css'
@@ -23,7 +34,6 @@ import styles from './Menu.module.css'
 
 const THEMES: readonly Theme[] = ['dark', 'light', 'auto']
 
-const COLUMNS: readonly MenuColumn[] = ['menu', 'friends', 'party']
 const NAMES: Record<MenuColumn, string> = { menu: 'Menu', friends: 'Friends', party: 'Party' }
 const PAPERS: Record<MenuColumn, CSSProperties | undefined> = {
   menu: undefined,
@@ -124,7 +134,7 @@ export function MenuPanel() {
       setClosing(true)
     }
   }, [open, opener])
-  usePadContain(ref, open || closing, closeMenu, restore)
+  usePadContain(ref, open || closing, closeMenu, restore, stepColumn)
 
   useEffect(() => {
     const dialog = ref.current
@@ -208,7 +218,7 @@ function Contents() {
       )}
       <Tabs column={column} />
       <div ref={ref} className={styles.columns}>
-        {COLUMNS.map((c, k) => {
+        {MENU_COLUMNS.map((c, k) => {
           const open = c === column
           return (
             <div
@@ -276,12 +286,14 @@ function Badge({ column, tab = false }: { column: MenuColumn; tab?: boolean }) {
   )
 }
 
-/** A folded column: its badge, and its name standing up the spine. */
+/** A folded column: its name standing up the spine, and its badge. */
 function Spine({ column }: { column: MenuColumn }) {
   return (
     <button type="button" className={styles.spine} aria-label={`Open ${NAMES[column]}`} onClick={() => setColumn(column)}>
-      <Badge column={column} />
-      <span className={styles.name}>{NAMES[column]}</span>
+      <span className={styles.stack}>
+        <span className={styles.name}>{NAMES[column]}</span>
+        <Badge column={column} />
+      </span>
     </button>
   )
 }
@@ -290,7 +302,7 @@ function Spine({ column }: { column: MenuColumn }) {
 function Tabs({ column }: { column: MenuColumn }) {
   return (
     <div className={styles.tabs} role="group" aria-label="Menu columns">
-      {COLUMNS.map(c => (
+      {MENU_COLUMNS.map(c => (
         <button key={c} type="button" data-size="compact" aria-pressed={c === column} onClick={() => setColumn(c)}>
           {NAMES[c]}
           <Badge column={c} tab />

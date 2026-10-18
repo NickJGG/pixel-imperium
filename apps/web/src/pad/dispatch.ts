@@ -29,8 +29,8 @@ export interface PadPage {
 
 export interface Dispatcher {
   register(board: PadBoard): () => void
-  /** Registers an open `[data-pad-contain]` scope, which B closes. */
-  contain(root: HTMLElement, close: () => void): () => void
+  /** Registers an open `[data-pad-contain]` scope, which B closes and LB/RB step within, in place of the page. */
+  contain(root: HTMLElement, close: () => void, step?: (dir: -1 | 1) => void): () => void
   /** Read at each event, so it can change between renders. */
   setPage(page: (() => PadPage) | null): void
   /** Goes to the page's parent; returns whether there was one. */
@@ -45,7 +45,7 @@ export interface Dispatcher {
  */
 export function createDispatcher(navigate: (href: string) => void): Dispatcher {
   const boards = new Set<PadBoard>()
-  const scopes = new Map<HTMLElement, () => void>()
+  const scopes = new Map<HTMLElement, { close: () => void; step?: ((dir: -1 | 1) => void) | undefined }>()
   let page: (() => PadPage) | null = null
   /** The button that woke focus; its repeats and release are swallowed too. */
   let waking: PadButton | null = null
@@ -61,7 +61,7 @@ export function createDispatcher(navigate: (href: string) => void): Dispatcher {
   const back = () => {
     const scope = currentScope()
     if (scope) {
-      const close = scopes.get(scope)
+      const close = scopes.get(scope)?.close
       if (close) close()
       else if (scope instanceof HTMLDialogElement) scope.close()
       return
@@ -69,6 +69,12 @@ export function createDispatcher(navigate: (href: string) => void): Dispatcher {
     const board = liveBoard()
     if (board) return board.canvas.focus()
     up()
+  }
+
+  const step = (dir: -1 | 1) => {
+    const scope = currentScope()
+    if (scope) scopes.get(scope)?.step?.(dir)
+    else page?.().step?.(dir)
   }
 
   const view = () => {
@@ -81,8 +87,8 @@ export function createDispatcher(navigate: (href: string) => void): Dispatcher {
       boards.add(board)
       return () => boards.delete(board)
     },
-    contain(root, close) {
-      scopes.set(root, close)
+    contain(root, close, step) {
+      scopes.set(root, { close, step })
       return () => scopes.delete(root)
     },
     setPage(next) {
@@ -113,8 +119,8 @@ export function createDispatcher(navigate: (href: string) => void): Dispatcher {
         if (!now?.hold && active instanceof HTMLElement) active.click()
       } else if (button === 'B') back()
       else if (button === 'View') view()
-      else if (button === 'LB') now?.step?.(-1)
-      else if (button === 'RB') now?.step?.(1)
+      else if (button === 'LB') step(-1)
+      else if (button === 'RB') step(1)
       else if (button === 'Menu') {
         if (now?.menu) now.menu()
         else openPageMenu()

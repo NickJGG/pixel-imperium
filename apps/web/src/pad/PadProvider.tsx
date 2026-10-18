@@ -78,7 +78,7 @@ export function useEscapeUp(): void {
 }
 
 /**
- * While `open`, keeps the d-pad inside `ref` and lets B close it through `onClose`. On close, focus that
+ * While `open`, keeps the d-pad inside `ref`, lets B close it through `onClose` and LB/RB call `onStep`. On close, focus that
  * was lost goes back to `restore` (for a confirm that replaced its button), else to whatever had it on
  * open, else to the page default in pad mode.
  */
@@ -87,17 +87,20 @@ export function usePadContain(
   open: boolean,
   onClose: () => void,
   restore?: RefObject<HTMLElement | null>,
+  onStep?: (dir: -1 | 1) => void,
 ): void {
   const dispatcher = usePadDispatcher()
   const close = useRef(onClose)
   close.current = onClose
+  const step = useRef(onStep)
+  step.current = onStep
 
   useLayoutEffect(() => {
     const root = ref.current
     if (!open || !root) return
     const opener = document.activeElement
     root.dataset.padContain = ''
-    const unregister = dispatcher?.contain(root, () => close.current())
+    const unregister = dispatcher?.contain(root, () => close.current(), dir => step.current?.(dir))
     if (getPadMode()) focusInto(root)
     return () => {
       unregister?.()

@@ -7,6 +7,7 @@ import {
   openMenuOn,
   setColumn,
   showBoard,
+  stepColumn,
   subscribeMenu,
   takeLanding,
   toggleMenu,
@@ -47,6 +48,19 @@ describe('menu store', () => {
     closeMenu()
     setColumn('party')
     expect(getMenu()).toEqual({ open: false, opener: crown, column: 'friends' })
+  })
+
+  it('steps between columns, stopping at either end', () => {
+    openMenu(crown)
+    stepColumn(-1)
+    expect(getMenu().column).toBe('menu')
+    stepColumn(1)
+    stepColumn(1)
+    expect(getMenu().column).toBe('party')
+    stepColumn(1)
+    expect(getMenu().column).toBe('party')
+    stepColumn(-1)
+    expect(getMenu().column).toBe('friends')
   })
 
   it('toggles', () => {
