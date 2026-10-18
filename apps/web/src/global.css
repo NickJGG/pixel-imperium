@@ -100,13 +100,19 @@ a:where([data-variant]) {
 }
 
 :is(button, a)[data-variant='flat']:hover:not(:disabled, [aria-pressed='true'], [aria-expanded='true']) {
-  --btn-bg: var(--card-2);
+  --btn-bg: color-mix(in srgb, var(--ink) 12%, transparent);
 }
 
 /* Before the colored variants, so they outrank it. */
 button:is([aria-pressed='true'], [aria-expanded='true']) {
   --btn-bg: var(--ink);
   --btn-ink: var(--card);
+  --btn-edge: transparent;
+}
+
+button[data-variant='flat'][aria-expanded='true'] {
+  --btn-bg: color-mix(in srgb, var(--ink) 22%, transparent);
+  --btn-ink: var(--ink);
   --btn-edge: transparent;
 }
 
