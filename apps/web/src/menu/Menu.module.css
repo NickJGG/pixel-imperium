@@ -47,14 +47,30 @@
   view-transition-name: none !important;
 }
 
+/* Named, so they stand over the columns' groups rather than under them in the root snapshot. */
+:root:active-view-transition-type(menu-step) .crownHolder {
+  view-transition-name: menu-crown;
+}
+
+:root:active-view-transition-type(menu-step) .wordmark {
+  view-transition-name: menu-wordmark;
+}
+
 .columns,
 .panel .row {
   height: 100%;
 }
 
-/* Each wipes in from its own left edge, `--k` in from the cobalt's, so together they sweep open left to right. */
+/*
+ * On opening, each wipes in from its own left edge, `--k` in from the cobalt's, so together they sweep open left to
+ * right. Not the columns a step mounts, which would wipe in again under the step's morph.
+ */
 .col {
   animation: wipe 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--k) * 0.06s) backwards;
+}
+
+.columns[data-stepped] .col {
+  animation: none;
 }
 
 /* After the stickers have popped off. */
@@ -145,12 +161,19 @@
   display: none;
 }
 
-/* Above the paper, unscrolled, over the crown that opened the panel. */
-.panel .crown {
+/*
+ * Above the paper, unscrolled, over the crown that opened the panel. Tilted inside an untilted holder, which a step
+ * names: a named element's own tilt moves to its group, which rotates the flat snapshot as a bitmap and blurs it.
+ */
+.crownHolder {
   position: absolute;
   z-index: 1;
   top: var(--crown-y);
   left: var(--crown-x);
+  display: flex;
+}
+
+.panel .crown {
   width: var(--crown-w);
   height: var(--crown-h);
   rotate: var(--crown-rotate);
@@ -432,9 +455,12 @@
     display: none;
   }
 
-  .panel .crown {
+  .crownHolder {
     top: var(--space-5);
     left: var(--space-5);
+  }
+
+  .panel .crown {
     width: 52px;
     height: 40px;
     rotate: -4deg;

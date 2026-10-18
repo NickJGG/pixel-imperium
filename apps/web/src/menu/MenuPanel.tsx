@@ -213,6 +213,7 @@ function Contents() {
     const dialog = ref.current?.closest('dialog')
     if (!dialog || shown.current === column) return
     shown.current = column
+    ref.current!.dataset.stepped = ''
     stagger(dialog, false)
     focusColumn(dialog)
   }, [column])
@@ -238,9 +239,11 @@ function Contents() {
 
   return (
     <>
-      <button type="button" className={`${hud.crown} ${styles.crown}`} aria-label="Close menu" onClick={closeMenu}>
-        <CrownMark />
-      </button>
+      <span className={styles.crownHolder}>
+        <button type="button" className={`${hud.crown} ${styles.crown}`} aria-label="Close menu" onClick={closeMenu}>
+          <CrownMark />
+        </button>
+      </span>
       {column === 'menu' && (
         <Link to="/" className={styles.wordmark}>
           <span>Pixel</span>&nbsp;Imperium

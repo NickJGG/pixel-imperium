@@ -1,0 +1,41 @@
+/*
+ * A menu step, over column-morph.css's: the menu's columns are sparse text on plain paper, so an old snapshot fading
+ * at Home's pace lingers mid-column (the opening column's spine name, the folding one's text). Here it's gone almost
+ * at once, the column's paper on its group showing between it and the new one fading in. Global, since a CSS module
+ * would rename `.column`.
+ */
+:root:root:active-view-transition-type(menu-step)::view-transition-old(.column) {
+  animation-duration: 0.1s;
+}
+
+/*
+ * A step key on only one side of the step rides with its column's group (`StepKeys.tsx`'s `follow`), from mid-column
+ * or into it; so it shows only near its own spine, gone early or in late. Keys gliding spine to spine keep both images.
+ */
+:root:root:active-view-transition-type(menu-step)::view-transition-old(step-key-prev):only-child,
+:root:root:active-view-transition-type(menu-step)::view-transition-old(step-key-next):only-child {
+  animation-name: menu-key-out;
+}
+
+:root:root:active-view-transition-type(menu-step)::view-transition-new(step-key-prev):only-child,
+:root:root:active-view-transition-type(menu-step)::view-transition-new(step-key-next):only-child {
+  animation-name: menu-key-in;
+}
+
+@keyframes menu-key-out {
+  40%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes menu-key-in {
+  0%,
+  60% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
