@@ -9,7 +9,7 @@
   transform: translateY(-2px);
 }
 
-.slotLink .replay {
+.solved .replay {
   position: absolute;
   top: -8px;
   right: -8px;

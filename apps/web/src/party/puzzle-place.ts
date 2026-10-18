@@ -18,7 +18,7 @@ async function placeOf(id: string): Promise<PuzzlePlace | null> {
   const found = at && (await campaign(at.id).catch(() => null))
   const province = at && found?.provinces.find(p => p.id === at.provinceId)
   const number = province ? province.puzzles.findIndex(p => p.id === id) + 1 : 0
-  if (found && province && number > 0) return { puzzle: clues, number, where: `${found.name} · ${province.name}` }
+  if (found && province && number > 0) return { puzzle: clues, number, where: `${found.name} · ${province.name}` }
   return { puzzle: clues, where: made ? `By @${made.author}` : '' }
 }
 

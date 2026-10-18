@@ -94,7 +94,7 @@ export function SlotFace({
 }) {
   const gold = number === GOLD_SLOT
   return status.kind === 'solved' ? (
-    <Slot number={number} width={p.width} height={p.height}>
+    <Slot number={number} width={p.width} height={p.height} className={styles.solved}>
       <Sticker
         title={p.title}
         width={p.width}
