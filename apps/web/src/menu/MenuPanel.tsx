@@ -67,6 +67,12 @@ function focusColumn(dialog: HTMLDialogElement): void {
   first?.focus()
 }
 
+/** Once the dialog's running animations are done; only the finite ones, as a looping pulse in Next up's slot never is. */
+function settled(dialog: HTMLDialogElement): Promise<unknown> {
+  const ending = dialog.getAnimations({ subtree: true }).filter(a => a.effect?.getComputedTiming().activeDuration !== Infinity)
+  return Promise.allSettled(ending.map(a => a.finished))
+}
+
 /** On a phone, the sheet stands on the thumb bar, where there is one. */
 function seatSheet(dialog: HTMLDialogElement): void {
   const bar = document.querySelector<HTMLElement>('[data-thumb-bar]')
@@ -124,6 +130,8 @@ export function MenuPanel() {
       stagger(dialog, true)
       dialog.showModal()
       focusColumn(dialog)
+      dialog.dataset.opening = ''
+      void settled(dialog).then(() => delete dialog.dataset.opening)
     } else if (dialog.open) {
       setClosing(true)
     }
@@ -148,9 +156,7 @@ export function MenuPanel() {
     const dialog = ref.current
     if (!closing || !dialog) return
     let live = true
-    // Only the finite ones: a looping pulse inside, as Next up's slot, would never finish.
-    const ending = dialog.getAnimations({ subtree: true }).filter(a => a.effect?.getComputedTiming().activeDuration !== Infinity)
-    void Promise.allSettled(ending.map(a => a.finished)).then(() => live && dialog.close())
+    void settled(dialog).then(() => live && dialog.close())
     return () => {
       live = false
     }

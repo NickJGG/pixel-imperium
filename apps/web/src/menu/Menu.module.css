@@ -90,6 +90,11 @@
   scrollbar-width: thin;
 }
 
+/* A slapping or popping sticker, Next up's card most, overflows the column for a moment; no scrollbar for that. */
+.panel:is([data-opening], [data-closing]) .col.open {
+  scrollbar-width: none;
+}
+
 .panel .col.open:first-child {
   padding-left: var(--space-7);
 }
