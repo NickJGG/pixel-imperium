@@ -213,17 +213,16 @@ function Contents() {
     const dialog = ref.current?.closest('dialog')
     if (!dialog || shown.current === column) return
     shown.current = column
-    ref.current!.dataset.stepped = ''
     stagger(dialog, false)
     focusColumn(dialog)
   }, [column])
 
-  const wide = (c: MenuColumn, k: number) => (
+  const wide = (c: MenuColumn) => (
     <World
       key={c}
       paper={PAPERS[c]}
       className={[styles.col, styles.open, c === 'menu' ? styles.cover : styles.sheet].join(' ')}
-      style={{ ...columnName(c), '--k': k } as CSSProperties}
+      style={columnName(c)}
     >
       {c === 'menu' ? (
         <div className={styles.surface} data-surface="cobalt">
@@ -252,19 +251,19 @@ function Contents() {
       <Tabs column={column} />
       <div ref={ref} className={styles.columns}>
         {phone ? (
-          wide(column, 0)
+          wide(column)
         ) : (
           <Worlds className={styles.row} step={stepMenu}>
-            {MENU_COLUMNS.map((c, k) =>
+            {MENU_COLUMNS.map(c =>
               c === column ? (
-                wide(c, k)
+                wide(c)
               ) : (
                 <SpineButton
                   key={c}
                   name={NAMES[c]}
                   onClick={() => goToColumn(c)}
                   className={[styles.col, styles.folded, c === 'menu' && styles.cover].filter(Boolean).join(' ')}
-                  style={{ ...paperFor(PAPERS[c]), ...columnName(c), '--k': k } as CSSProperties}
+                  style={{ ...paperFor(PAPERS[c]), ...columnName(c) }}
                 >
                   <Badge column={c} />
                 </SpineButton>

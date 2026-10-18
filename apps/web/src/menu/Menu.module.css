@@ -62,19 +62,15 @@
 }
 
 /*
- * On opening, each wipes in from its own left edge, `--k` in from the cobalt's, so together they sweep open left to
- * right. Not the columns a step mounts, which would wipe in again under the step's morph.
+ * The row wipes open as one sweep, its edge at the last column's slant. Wiping each column from its own left edge
+ * instead left the narrow spines as slivers out ahead of the cobalt's edge, and on closing, stranded behind it.
  */
-.col {
-  animation: wipe 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--k) * 0.06s) backwards;
-}
-
-.columns[data-stepped] .col {
-  animation: none;
+.columns {
+  animation: wipe 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
 }
 
 /* After the stickers have popped off. */
-.panel[data-closing] .col {
+.panel[data-closing] .columns {
   animation: unwipe 0.3s ease-in calc(var(--n) * 0.03s + 0.12s) forwards;
 }
 
@@ -297,13 +293,22 @@
   animation: pop 0.18s calc((var(--n) - 1 - var(--i)) * 0.03s) forwards;
 }
 
+/* Explicit both ways: the row's own `clip-path: none` wouldn't interpolate with a polygon. */
 @keyframes wipe {
   from {
     clip-path: polygon(0 0, 0 0, calc(0px - var(--slant)) 100%, 0 100%);
   }
+
+  to {
+    clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+  }
 }
 
 @keyframes unwipe {
+  from {
+    clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+  }
+
   to {
     clip-path: polygon(0 0, 0 0, calc(0px - var(--slant)) 100%, 0 100%);
   }
@@ -394,6 +399,11 @@
     max-height: inherit;
   }
 
+  .columns,
+  .panel[data-closing] .columns {
+    animation: none;
+  }
+
   /* Only the open column, as the whole sheet: the sheet wears its paper. */
   .panel .col.open,
   .panel .col.open:first-child,
@@ -407,7 +417,6 @@
     padding: calc(var(--space-5) + 40px + var(--space-5)) var(--space-5) var(--space-5); /* token-exempt: clears the crown's 40px */
     border-radius: var(--r-xl) var(--r-xl) 0 0;
     clip-path: none;
-    animation: none;
   }
 
   .panel[data-col='friends'],
@@ -483,8 +492,8 @@
     animation: fade-out 0.2s ease-in forwards;
   }
 
-  .col,
-  .panel[data-closing] .col,
+  .columns,
+  .panel[data-closing] .columns,
   .wordmark,
   .panel[data-closing] .wordmark,
   .slap,
