@@ -9,6 +9,7 @@ import { solveTime, solveTimes } from '../daily/clock.ts'
 import { useHudTrail } from '../Trail.tsx'
 import { profileTrail } from '../trails.ts'
 import { albumPages, albumProvinces, reachedSolves } from './album.ts'
+import { FriendButton } from './FriendButton.tsx'
 import { Showcase } from './Showcase.tsx'
 import { ShowcaseEditor } from './ShowcaseEditor.tsx'
 import { Stamps, stampsOf } from './Stamps.tsx'
@@ -103,6 +104,11 @@ export function ProfilePage() {
                     ? 'Your first sticker lands here.'
                     : 'No stickers yet.'}
             </p>
+            {!own && (
+              <div className={styles.actions}>
+                <FriendButton handle={profile.handle} friendship={profile.friendship} />
+              </div>
+            )}
             {own && !editing && (
               <div className={styles.actions}>
                 {stickers.length > 0 ? (

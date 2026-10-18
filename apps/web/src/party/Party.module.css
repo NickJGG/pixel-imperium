@@ -1,4 +1,4 @@
-/* The party sticker and its slip, the party's details, and the join card over the board. Seat colors are --seat-1..4 in tokens.css. */
+/* The party sticker and its slip, and the join card over the board. Seat colors are --seat-1..4 in tokens.css. */
 .card {
   display: grid;
   /* Else the link's unbroken text widens the column past the card. */
@@ -23,16 +23,6 @@
 
 .card p b {
   color: var(--ink);
-}
-
-/* In the menu, a card on its paper as wide as it. */
-.details {
-  width: auto;
-  padding: var(--space-5);
-  background: var(--card);
-  color: var(--ink);
-  border-radius: var(--r-lg);
-  box-shadow: 0 5px 0 var(--shade);
 }
 
 .dot {
@@ -201,66 +191,6 @@
   }
 }
 
-.link {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.link code {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--r-sm);
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
-  font: var(--fs-14) var(--font-mono);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.seats {
-  display: grid;
-  gap: var(--space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: var(--fs-14);
-}
-
-.seats li {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 28px;
-}
-
-.seats small {
-  margin-left: auto;
-  font-size: var(--fs-12);
-  color: var(--ink-soft);
-}
-
-.you {
-  color: var(--ink-soft);
-}
-
-.empty {
-  color: var(--ink-soft);
-}
-
-.empty > .dot {
-  background: none;
-  border: 2px dashed var(--line-soft);
-}
-
-.card .remove {
-  width: 28px;
-  min-height: 28px;
-  padding: 0;
-  font-size: var(--fs-16);
-}
-
 .row {
   display: flex;
   gap: var(--space-2);
@@ -325,15 +255,6 @@
   margin: 0;
   font-size: var(--fs-14);
   color: var(--ink-soft);
-}
-
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }
 
 /* A party with no puzzle yet: its join card on the page alone. */

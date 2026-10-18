@@ -5,6 +5,7 @@ import {
   getMenu,
   openMenu,
   openMenuOn,
+  setColumn,
   showBoard,
   subscribeMenu,
   takeLanding,
@@ -37,6 +38,15 @@ describe('menu store', () => {
     expect(getMenu().column).toBe('party')
     toggleMenu(crown)
     expect(getMenu().column).toBe('menu')
+  })
+
+  it('switches column while open, and only then', () => {
+    openMenu(crown)
+    setColumn('friends')
+    expect(getMenu()).toEqual({ open: true, opener: crown, column: 'friends' })
+    closeMenu()
+    setColumn('party')
+    expect(getMenu()).toEqual({ open: false, opener: crown, column: 'friends' })
   })
 
   it('toggles', () => {

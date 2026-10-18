@@ -1,7 +1,8 @@
 /*
- * The menu: a cobalt column laid over the dimmed page, cut on the Worlds' slant like a first `.world`. The dialog
- * fills the height and carries the shadow, since the paper's clip-path would cut its own. `pinCrown` sets the
- * `--crown-*` box from the crown that opened it; these defaults are the HUD's.
+ * The menu: three columns laid over the dimmed page, cut on the Worlds' slant like Home's: the cobalt Menu, then
+ * Friends and Party on their papers. One is open at `--open-w`; the others fold to `--spine-w` spines, a seam of
+ * the dimmed page between each. The dialog fills the height and carries the shadow, since the columns' clip-paths
+ * would cut their own. `pinCrown` sets the `--crown-*` box from the crown that opened it; these defaults are the HUD's.
  */
 .panel {
   --crown-x: var(--space-5);
@@ -11,9 +12,11 @@
   --crown-rotate: -4deg;
   --mark-w: 30px;
   --mark-h: 20px;
+  --open-w: 476px;
+  --spine-w: 64px;
   position: fixed;
   inset: 0 auto 0 0;
-  width: min(calc(476px + var(--slant)), 100vw);
+  width: min(calc(var(--open-w) + 2 * (var(--spine-w) + var(--space-2)) + var(--slant)), 100vw);
   max-width: none;
   height: 100dvh;
   max-height: none;
@@ -35,33 +38,165 @@
   animation: fade-out 0.3s ease-in 0.15s forwards;
 }
 
-.paper {
-  --focus: var(--on-cover);
+.columns {
+  display: flex;
+  height: 100%;
+}
+
+/* Each wipes in from its own left edge, `--k` in from the cobalt's, so together they sweep open left to right. */
+.col {
   position: relative;
+  flex: none;
   box-sizing: border-box;
+  width: calc(var(--spine-w) + var(--slant));
+  height: 100%;
+  clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+  animation: wipe 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) calc(var(--k) * 0.06s) backwards;
+}
+
+.col:first-child {
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+}
+
+.col + .col {
+  margin-left: calc(var(--space-2) - var(--slant));
+}
+
+/* Narrower than all three, the open one gives way so the spines stay on screen. */
+.col[data-open] {
+  flex-shrink: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  height: 100%;
-  padding: calc(var(--crown-y) + var(--crown-h) + var(--space-6)) calc(var(--space-7) + var(--slant)) var(--space-6) var(--space-7);
+  width: calc(var(--open-w) + var(--slant));
+  padding: calc(var(--crown-y) + var(--crown-h) + var(--space-6)) calc(var(--space-7) + var(--slant)) var(--space-6)
+    calc(var(--space-6) + var(--slant));
   overflow-y: auto;
   scrollbar-width: thin;
-  background: var(--cover) var(--cover-dots) 0 0 / 18px 18px fixed;
-  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
-  animation: wipe 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.col:first-child[data-open] {
+  padding-left: var(--space-7);
 }
 
 /* After the stickers have popped off. */
-.panel[data-closing] .paper {
+.panel[data-closing] .col {
   animation: unwipe 0.3s ease-in calc(var(--n) * 0.03s + 0.12s) forwards;
 }
 
-.paper::before {
+.col::before {
   content: '';
   position: absolute;
   inset: 0 0 auto;
   height: var(--space-2);
-  background: var(--sticker);
+  background: var(--tab);
+}
+
+/* Menu, in the cover's cobalt. */
+.paper {
+  --focus: var(--on-cover);
+  --tab: var(--sticker);
+  color: var(--on-cover);
+  background: var(--cover) var(--cover-dots) 0 0 / 18px 18px fixed;
+}
+
+/* Friends and Party, on their papers as Home's columns are, with buttons in the tab's color. */
+.sheet {
+  color: var(--ink);
+  background: var(--paper) radial-gradient(color-mix(in srgb, var(--ink) 9%, transparent) 1.5px, transparent 1.6px) 0 0 / 18px 18px fixed;
+}
+
+.sheet :is(button:not([data-variant]), :is(button, a)[data-variant='paper']) {
+  --btn-bg: var(--tab);
+  --btn-ink: var(--on-tab);
+}
+
+/* A folded column, filling it: its badge, then its name standing up it, centred in the strip the slant leaves. */
+.spine,
+.panel .spine:is(:hover, :active) {
+  --btn-bg: transparent;
+  --btn-edge: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: calc(var(--crown-y) + var(--crown-h) + var(--space-6)) calc(var(--slant) / 2) var(--space-6);
+  border-radius: 0;
+  color: inherit;
+  font: inherit;
+  transform: none;
+  box-shadow: none;
+}
+
+.spine:hover {
+  filter: brightness(1.08);
+}
+
+.name {
+  font: var(--type-heading);
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+/* The clip would cut a ring round the whole column, so focus rings the name instead. */
+.spine:focus-visible,
+:root[data-pad] .spine:focus {
+  outline: none;
+}
+
+.spine:focus-visible .name,
+:root[data-pad] .spine:focus .name {
+  outline: 3px solid var(--focus, var(--blue));
+  outline-offset: 6px;
+  border-radius: var(--r-xs);
+}
+
+.badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  font: 700 var(--fs-14) / 1 var(--font-ui);
+}
+
+/* Stacked down the spine. */
+.spine .faces > * {
+  flex-direction: column;
+}
+
+.panel .spine .faces > * > :nth-child(n + 2) {
+  margin: calc(-1 * var(--space-2)) 0 0;
+}
+
+/* Ringed, so the green still reads on Spring's green paper. */
+.on {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The phone's; wider, the spines do this. */
+.tabs {
+  display: none;
 }
 
 /* Above the paper, unscrolled, over the crown that opened the panel. */
@@ -283,16 +418,75 @@
     animation: sink 0.24s ease-in calc(var(--n) * 0.03s + 0.1s) forwards;
   }
 
-  .paper,
-  .panel[data-closing] .paper {
+  .columns {
+    display: block;
+    height: auto;
+    max-height: inherit;
+  }
+
+  /* Only the open column, as the whole sheet: the sheet wears its paper. */
+  .col {
+    display: none;
+  }
+
+  .col[data-open],
+  .panel[data-closing] .col[data-open] {
+    display: flex;
+    width: auto;
     height: auto;
     max-height: inherit;
     /* Room above the footer for the sign-in sheet, which opens upwards inside the scrolling paper. */
     min-height: 360px;
+    margin: 0;
     padding: calc(var(--space-5) + 40px + var(--space-5)) var(--space-5) var(--space-5); /* token-exempt: clears the crown's 40px */
     border-radius: var(--r-xl) var(--r-xl) 0 0;
     clip-path: none;
     animation: none;
+  }
+
+  .panel[data-col='friends'],
+  .panel[data-col='party'] {
+    color: var(--ink);
+  }
+
+  /* In the wordmark's place, beside the crown. */
+  .tabs {
+    position: absolute;
+    z-index: 1;
+    top: var(--space-5);
+    left: calc(var(--space-5) + 52px + var(--space-3));
+    right: var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    height: 40px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs > button {
+    flex: none;
+    padding: 0 var(--space-3);
+  }
+
+  .tabs > button[aria-pressed='false'] {
+    --btn-bg: color-mix(in srgb, currentColor 14%, transparent);
+    --btn-ink: currentColor;
+    --btn-edge: transparent;
+  }
+
+  .panel .tabs .faces > * > * {
+    width: 18px;
+    height: 18px;
+    font-size: var(--fs-12);
+  }
+
+  .tabs .badge {
+    flex-direction: row;
+  }
+
+  .wordmark {
+    display: none;
   }
 
   .panel .crown {
@@ -308,13 +502,6 @@
     height: 20px;
   }
 
-  .wordmark,
-  .panel[data-closing] .wordmark {
-    top: var(--space-5);
-    left: calc(var(--space-5) + 52px + var(--space-3));
-    height: 40px;
-    animation: none;
-  }
 }
 
 /* No wipe, rise or slap: the whole panel fades. */
@@ -327,8 +514,8 @@
     animation: fade-out 0.2s ease-in forwards;
   }
 
-  .paper,
-  .panel[data-closing] .paper,
+  .col,
+  .panel[data-closing] .col,
   .wordmark,
   .panel[data-closing] .wordmark,
   .slap,

@@ -343,12 +343,14 @@ describe('PartySession', () => {
       expect(session.getState()).toMatchObject({ notice: null, party: { code: 'def' } })
     })
 
-    it('collects friend requests once each', () => {
+    it('collects friend requests once each, until answered', () => {
       const { session, ws } = connect()
       ws().receive(partyMsg(null, null))
       ws().receive({ type: 'friendRequest', from: 'juno' })
       ws().receive({ type: 'friendRequest', from: 'juno' })
       expect(session.getState().friendRequests).toEqual(['juno'])
+      session.answeredFriendRequest('Juno')
+      expect(session.getState().friendRequests).toEqual([])
     })
 
     it('forgets everything on stop', () => {

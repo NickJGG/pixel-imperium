@@ -31,6 +31,10 @@ export const openMenu = (opener: HTMLElement | null = null, column: MenuColumn =
 export const closeMenu = (): void => set({ ...state, open: false })
 export const toggleMenu = (opener: HTMLElement | null = null, column: MenuColumn = 'menu'): void =>
   state.open ? closeMenu() : openMenu(opener, column)
+/** Switches the open menu to `column`, folding the one that was open into its spine. */
+export const setColumn = (column: MenuColumn): void => {
+  if (state.open) set({ ...state, column })
+}
 
 let landing: { pathname: string; column: MenuColumn } | null = null
 

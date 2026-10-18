@@ -263,6 +263,13 @@ export class PartySession implements PartyLink {
     this.patch({ notice: null })
   }
 
+  /** The player answered `handle`'s friend request, so it no longer waits. */
+  answeredFriendRequest(handle: string): void {
+    const wanted = handle.toLowerCase()
+    const left = this.view.friendRequests.filter(h => h.toLowerCase() !== wanted)
+    if (left.length < this.view.friendRequests.length) this.patch({ friendRequests: left })
+  }
+
   private control(msg: PartyClientMsg): void {
     if (!this.greeted || !this.socket?.send(msg)) return void this.outbox.push(msg)
     if (msg.type === 'join') this.joinSent = msg
