@@ -66,9 +66,12 @@ export function Worlds({
   className,
   carousel = false,
   onSnap,
+  step,
 }: {
   children: ReactNode
   className?: string | undefined
+  /** Steps this row on its own, as the menu's in its dialog, rather than by the page's `useStep`; for its step keys. */
+  step?: ((dir: -1 | 1) => void) | undefined
   /**
    * On a phone, a scroll-snapped row resting on the column marked `start`: it opens there, and glides there
    * whenever `start` moves to a column it isn't already resting on.
@@ -136,7 +139,7 @@ export function Worlds({
       <div ref={ref} className={[styles.worlds, className].filter(Boolean).join(' ')} data-carousel={carousel || undefined}>
         {children}
       </div>
-      <StepKeys row={ref} />
+      <StepKeys row={ref} step={step} />
     </>
   )
 }
@@ -625,6 +628,37 @@ export function MenuSpine({
         {featured && <NewBadge />}
       </span>
     </Link>
+  )
+}
+
+/** A spine that opens its column in place rather than by a link, as the menu's do; built like `MenuSpine`. */
+export function SpineButton({
+  name,
+  onClick,
+  children,
+  className,
+  style,
+}: {
+  name: string
+  onClick: () => void
+  /** Under the name, e.g. a badge. */
+  children?: ReactNode
+  className?: string | undefined
+  /** Its paper and the morph name it shares with its opened column. */
+  style: CSSProperties
+}) {
+  return (
+    <button
+      type="button"
+      className={[styles.world, styles.spine, className].filter(Boolean).join(' ')}
+      style={{ ...style, viewTransitionClass: columnClass('spine') }}
+      onClick={onClick}
+    >
+      <span className={styles.stack}>
+        <span className={styles.name}>{name}</span>
+        {children}
+      </span>
+    </button>
   )
 }
 

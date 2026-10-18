@@ -3,31 +3,23 @@ import { Link, useRouterState } from '@tanstack/react-router'
 import { PARTY_SEATS } from '@pixel-imperium/protocol'
 import { SignInMenu } from '../AccountMenu.tsx'
 import { ProfileIcon, SettingsIcon } from '../album/icons.tsx'
-import { paperFor } from '../album/paper.ts'
+import { type Paper, paperFor } from '../album/paper.ts'
 import { useAccount } from '../account.ts'
 import { useSession } from '../auth.ts'
 import { NextUpCard } from '../campaign/NextUpCard.tsx'
+import { SpineButton, World, Worlds, usePhone, useSpineReach } from '../campaign/worlds/Worlds.tsx'
 import { CrownMark, SoundButton, themeIcon, themeLabel, useContinue } from '../Hud.tsx'
 import { usePadContain } from '../pad/PadProvider.tsx'
+import { currentScope } from '../pad/spatial.ts'
 import { Faces } from '../party/PartyCard.tsx'
 import { usePartyView } from '../party/party-store.ts'
 import { usePrefetch } from '../play/prefetch.ts'
 import { type Theme, updateSettings, useSettings } from '../settings.ts'
 import { Trail } from '../Trail.tsx'
 import { FriendsColumn } from './FriendsColumn.tsx'
-import {
-  MENU_COLUMNS,
-  type MenuColumn,
-  closeMenu,
-  openMenu,
-  setColumn,
-  stepColumn,
-  takeLanding,
-  toggleMenu,
-  useBoard,
-  useMenu,
-} from './menu-store.ts'
+import { MENU_COLUMNS, type MenuColumn, closeMenu, openMenu, takeLanding, toggleMenu, useBoard, useMenu } from './menu-store.ts'
 import { PartyColumn } from './PartyColumn.tsx'
+import { goToColumn, stepMenu } from './step.ts'
 import app from '../App.module.css'
 import hud from '../Hud.module.css'
 import styles from './Menu.module.css'
@@ -35,11 +27,11 @@ import styles from './Menu.module.css'
 const THEMES: readonly Theme[] = ['dark', 'light', 'auto']
 
 const NAMES: Record<MenuColumn, string> = { menu: 'Menu', friends: 'Friends', party: 'Party' }
-const PAPERS: Record<MenuColumn, CSSProperties | undefined> = {
-  menu: undefined,
-  friends: paperFor('spring'),
-  party: paperFor('throne'),
-}
+/** Menu's lies under its cobalt (`.cover`), as Home's Profile column's does. */
+const PAPERS: Record<MenuColumn, Paper> = { menu: 'marches', friends: 'spring', party: 'throne' }
+
+/** Pairs a column across a step, wide when it's open and a spine when it isn't. */
+const columnName = (column: MenuColumn): CSSProperties => ({ viewTransitionName: `menu-${column}` })
 
 /**
  * Pins the panel's crown over the one that opened it, or the first one showing, so the crown seems to hold still
@@ -69,9 +61,9 @@ function pinCrown(dialog: HTMLDialogElement, opener: HTMLElement | null): void {
 /** Menu's own focus, else its footer's first; a paper column's first control. */
 function focusColumn(dialog: HTMLDialogElement): void {
   const first =
-    dialog.querySelector<HTMLElement>(`.${styles.paper}[data-open] [data-menu-focus]`) ??
-    dialog.querySelector<HTMLElement>(`.${styles.paper}[data-open] .${styles.foot} :is(a, button)`) ??
-    dialog.querySelector<HTMLElement>(`.${styles.sheet}[data-open] :is(input, a[href], button:not(:disabled))`)
+    dialog.querySelector<HTMLElement>(`.${styles.open} [data-menu-focus]`) ??
+    dialog.querySelector<HTMLElement>(`.${styles.open} .${styles.foot} :is(a, button)`) ??
+    dialog.querySelector<HTMLElement>(`.${styles.sheet}.${styles.open} :is(input, a[href], button:not(:disabled))`)
   first?.focus()
 }
 
@@ -84,14 +76,15 @@ function seatSheet(dialog: HTMLDialogElement): void {
 
 /**
  * Numbers the open column's stickers in reading order (the trail's, the card and the footer's, or a paper column's
- * rows), so they slap on in turn.
+ * rows), so they pop off in turn on closing, and on opening (`enter`) slap on in turn; a step's arrive with their column.
  */
-function stagger(dialog: HTMLDialogElement): void {
+function stagger(dialog: HTMLDialogElement, enter: boolean): void {
   const stickers = dialog.querySelectorAll<HTMLElement>(
-    `.${styles.paper} nav a, .${styles.nextUp}, .${styles.foot} > :not(.${styles.gap}), .${styles.sheet}[data-open] section > *`,
+    `.${styles.open} nav a, .${styles.nextUp}, .${styles.foot} > :not(.${styles.gap}), .${styles.sheet}.${styles.open} section > *`,
   )
   stickers.forEach((el, i) => {
-    el.classList.add(`${styles.slap}`)
+    el.classList.add(`${styles.sticker}`)
+    if (enter) el.classList.add(`${styles.slap}`)
     el.style.setProperty('--i', String(i))
   })
   dialog.style.setProperty('--n', String(stickers.length))
@@ -100,7 +93,8 @@ function stagger(dialog: HTMLDialogElement): void {
 /**
  * The menu any crown or party sticker summons, over the dimmed page: three slanted columns, one open and the others
  * folded to spines. Menu (the cobalt) holds the crown and wordmark, the trail, the puzzle due next, and a footer of
- * the player and the settings; Friends and Party wear papers of their own. Mounted once at the root; `menu-store.ts`
+ * the player and the settings; Friends and Party wear papers of their own. They're Worlds, and step as Home's columns
+ * do, by a spine, ←/→, LB/RB or the keys under the spines (`step.ts`). Mounted once at the root; `menu-store.ts`
  * holds whether it's open and on which column. M opens and closes it anywhere, Esc or B closes it, as do the crown,
  * the dimmed page and any link inside. It wipes open and its stickers slap on (`Menu.module.css`); closing plays that
  * back and only then closes the dialog, except for a navigation, which closes it at once so the page's morph never
@@ -127,14 +121,28 @@ export function MenuPanel() {
       if (dialog.open) return
       pinCrown(dialog, opener)
       seatSheet(dialog)
-      stagger(dialog)
+      stagger(dialog, true)
       dialog.showModal()
       focusColumn(dialog)
     } else if (dialog.open) {
       setClosing(true)
     }
   }, [open, opener])
-  usePadContain(ref, open || closing, closeMenu, restore, stepColumn)
+  usePadContain(ref, open || closing, closeMenu, restore, stepMenu)
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+      if ((e.target as HTMLElement).closest?.('input, textarea, select, [contenteditable]')) return
+      if (currentScope() !== ref.current) return
+      e.preventDefault()
+      stepMenu(e.key === 'ArrowLeft' ? -1 : 1)
+    }
+    addEventListener('keydown', onKey)
+    return () => removeEventListener('keydown', onKey)
+  }, [open])
 
   useEffect(() => {
     const dialog = ref.current
@@ -197,15 +205,37 @@ export function MenuPanel() {
 
 function Contents() {
   const { column } = useMenu()
+  const phone = usePhone()
   const ref = useRef<HTMLDivElement>(null)
   const shown = useRef(column)
+  useSpineReach(ref)
   useLayoutEffect(() => {
     const dialog = ref.current?.closest('dialog')
     if (!dialog || shown.current === column) return
     shown.current = column
-    stagger(dialog)
+    stagger(dialog, false)
     focusColumn(dialog)
   }, [column])
+
+  const wide = (c: MenuColumn, k: number) => (
+    <World
+      key={c}
+      paper={PAPERS[c]}
+      className={[styles.col, styles.open, c === 'menu' ? styles.cover : styles.sheet].join(' ')}
+      style={{ ...columnName(c), '--k': k } as CSSProperties}
+    >
+      {c === 'menu' ? (
+        <div className={styles.surface} data-surface="cobalt">
+          <MenuContents />
+        </div>
+      ) : c === 'friends' ? (
+        <FriendsColumn />
+      ) : (
+        <PartyColumn />
+      )}
+    </World>
+  )
+
   return (
     <>
       <button type="button" className={`${hud.crown} ${styles.crown}`} aria-label="Close menu" onClick={closeMenu}>
@@ -218,20 +248,27 @@ function Contents() {
       )}
       <Tabs column={column} />
       <div ref={ref} className={styles.columns}>
-        {MENU_COLUMNS.map((c, k) => {
-          const open = c === column
-          return (
-            <div
-              key={c}
-              className={`${styles.col} ${c === 'menu' ? styles.paper : styles.sheet}`}
-              style={{ ...PAPERS[c], '--k': k } as CSSProperties}
-              data-open={open || undefined}
-              data-surface={open && c === 'menu' ? 'cobalt' : undefined}
-            >
-              {!open ? <Spine column={c} /> : c === 'menu' ? <MenuContents /> : c === 'friends' ? <FriendsColumn /> : <PartyColumn />}
-            </div>
-          )
-        })}
+        {phone ? (
+          wide(column, 0)
+        ) : (
+          <Worlds className={styles.row} step={stepMenu}>
+            {MENU_COLUMNS.map((c, k) =>
+              c === column ? (
+                wide(c, k)
+              ) : (
+                <SpineButton
+                  key={c}
+                  name={NAMES[c]}
+                  onClick={() => goToColumn(c)}
+                  className={[styles.col, styles.folded, c === 'menu' && styles.cover].filter(Boolean).join(' ')}
+                  style={{ ...paperFor(PAPERS[c]), ...columnName(c), '--k': k } as CSSProperties}
+                >
+                  <Badge column={c} />
+                </SpineButton>
+              ),
+            )}
+          </Worlds>
+        )}
       </div>
     </>
   )
@@ -286,24 +323,12 @@ function Badge({ column, tab = false }: { column: MenuColumn; tab?: boolean }) {
   )
 }
 
-/** A folded column: its name standing up the spine, and its badge. */
-function Spine({ column }: { column: MenuColumn }) {
-  return (
-    <button type="button" className={styles.spine} aria-label={`Open ${NAMES[column]}`} onClick={() => setColumn(column)}>
-      <span className={styles.stack}>
-        <span className={styles.name}>{NAMES[column]}</span>
-        <Badge column={column} />
-      </span>
-    </button>
-  )
-}
-
 /** On a phone, the columns as tabs along the sheet's top. */
 function Tabs({ column }: { column: MenuColumn }) {
   return (
     <div className={styles.tabs} role="group" aria-label="Menu columns">
       {MENU_COLUMNS.map(c => (
-        <button key={c} type="button" data-size="compact" aria-pressed={c === column} onClick={() => setColumn(c)}>
+        <button key={c} type="button" data-size="compact" aria-pressed={c === column} onClick={() => goToColumn(c)}>
           {NAMES[c]}
           <Badge column={c} tab />
         </button>

@@ -9,7 +9,7 @@ import { party, usePartyView, usePlayOffer } from '../party/party-store.ts'
 import { usePuzzlePlace } from '../party/puzzle-place.ts'
 import { SEAT_NAMES, initialOf, seatColor, seatLabel } from '../party/seats.ts'
 import type { PartyNotice, PartyView } from '../party/session.ts'
-import { setColumn } from './menu-store.ts'
+import { goToColumn } from './step.ts'
 import styles from './Columns.module.css'
 
 const dotStyle = (seat: number) => ({ '--seat': `var(${seatColor(seat)})` }) as CSSProperties
@@ -141,7 +141,7 @@ function Live({ view, current }: { view: PartyView; current: PartyState }) {
             <Seat key={n} seat={s} view={view} current={current} />
           ) : (
             <li key={n}>
-              <button type="button" className={styles.open} data-variant="flat" onClick={() => setColumn('friends')}>
+              <button type="button" className={styles.open} data-variant="flat" onClick={() => goToColumn('friends')}>
                 <span className={styles.seatDot} aria-hidden="true" />
                 <span className={styles.who}>
                   Open seat

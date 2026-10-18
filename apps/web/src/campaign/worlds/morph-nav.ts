@@ -96,6 +96,17 @@ function stripOf(pathname: string): readonly string[] | undefined {
   return puzzle === undefined ? undefined : provinceHolding(puzzle)?.province.puzzles.map(p => p.id)
 }
 
+/**
+ * Runs `update`, a step between columns that isn't a navigation (the menu's), as the `step` morph Home's columns
+ * play, typed `types` besides; or plainly where they'd cut, or mid-navigation, whose morph a second would cancel.
+ */
+export function startStep(update: () => void, types: readonly string[] = []): void {
+  if (flight || typeof document.startViewTransition !== 'function' || !typed() || reducedMotion() || matchMedia(PHONE).matches) {
+    return update()
+  }
+  document.startViewTransition({ update, types: ['step', ...types] })
+}
+
 /** Set by the Navigation API when the browser animates the move itself, read as the router begins it. */
 let uaAnimated = false
 

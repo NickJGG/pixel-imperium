@@ -61,6 +61,16 @@
   padding-inline: calc(var(--slant) / 2);
 }
 
+/* `SpineButton`: none of a button's own pill, press or lift. */
+button.spine,
+button.spine:is(:hover, :active):not(:disabled) {
+  min-height: 0;
+  font: inherit;
+  border-radius: 0;
+  box-shadow: none;
+  transform: none;
+}
+
 .spine[data-state='next'] {
   --spine-w: 72px;
 }

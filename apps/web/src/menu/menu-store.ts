@@ -38,11 +38,9 @@ export const toggleMenu = (opener: HTMLElement | null = null, column: MenuColumn
 export const setColumn = (column: MenuColumn): void => {
   if (state.open) set({ ...state, column })
 }
-/** Switches to the column before or after the open one, stopping at either end. */
-export const stepColumn = (dir: -1 | 1): void => {
-  const next = MENU_COLUMNS[MENU_COLUMNS.indexOf(state.column) + dir]
-  if (next) setColumn(next)
-}
+/** The column before or after `column`, none past either end. */
+export const columnBeside = (column: MenuColumn, dir: -1 | 1): MenuColumn | undefined =>
+  MENU_COLUMNS[MENU_COLUMNS.indexOf(column) + dir]
 
 let landing: { pathname: string; column: MenuColumn } | null = null
 

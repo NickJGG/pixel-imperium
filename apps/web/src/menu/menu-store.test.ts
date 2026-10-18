@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   closeMenu,
+  columnBeside,
   getBoard,
   getMenu,
   openMenu,
   openMenuOn,
   setColumn,
   showBoard,
-  stepColumn,
   subscribeMenu,
   takeLanding,
   toggleMenu,
@@ -50,17 +50,11 @@ describe('menu store', () => {
     expect(getMenu()).toEqual({ open: false, opener: crown, column: 'friends' })
   })
 
-  it('steps between columns, stopping at either end', () => {
-    openMenu(crown)
-    stepColumn(-1)
-    expect(getMenu().column).toBe('menu')
-    stepColumn(1)
-    stepColumn(1)
-    expect(getMenu().column).toBe('party')
-    stepColumn(1)
-    expect(getMenu().column).toBe('party')
-    stepColumn(-1)
-    expect(getMenu().column).toBe('friends')
+  it('finds the column beside one, none past either end', () => {
+    expect(columnBeside('menu', 1)).toBe('friends')
+    expect(columnBeside('party', -1)).toBe('friends')
+    expect(columnBeside('menu', -1)).toBeUndefined()
+    expect(columnBeside('party', 1)).toBeUndefined()
   })
 
   it('toggles', () => {

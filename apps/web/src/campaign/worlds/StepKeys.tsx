@@ -44,21 +44,33 @@ const keyName = (dir: Dir) => (dir === -1 ? 'step-key-prev' : 'step-key-next')
 /** The transitions whose spines slide or grow at the window's edges, which `StepKeys.module.css` fades the keys over. */
 const LEVELS = ['to-home', 'to-province', 'into-album', 'out-of-album', 'to-board', 'from-board', 'door-board', 'door-back']
 
-/** The keys as last laid out, and the row they stood under. */
-let laidOut: { keys: readonly Key[]; row: HTMLElement | null } = { keys: [], row: null }
-const planned = new WeakSet<ViewTransition>()
+/** Whose keys: the page's, from `registerStep`, or a row's stepping on its own, by its step. */
+type Owner = ((dir: Dir) => void) | 'page'
+
+interface LaidOut {
+  keys: readonly Key[]
+  row: HTMLElement | null
+}
+
+const NONE: LaidOut = { keys: [], row: null }
+
+/** Each owner's keys as last laid out, and the row they stood under. */
+const laidOut = new Map<Owner, LaidOut>()
+const planned = new WeakMap<ViewTransition, Set<Owner>>()
 
 /**
  * Called before the keys are laid out again or leave: the first call in a transition holds the keys its old state
  * captured, and plans their part once both states are in.
  */
-function notice(): void {
+function notice(owner: Owner): void {
   const transition = document.activeViewTransition
-  if (!transition || planned.has(transition)) return
-  planned.add(transition)
-  const before = laidOut.keys
+  if (!transition) return
+  const seen = planned.get(transition) ?? new Set()
+  if (seen.has(owner)) return
+  planned.set(transition, seen.add(owner))
+  const before = (laidOut.get(owner) ?? NONE).keys
   transition.ready.then(() => {
-    const { keys, row } = laidOut
+    const { keys, row } = laidOut.get(owner) ?? NONE
     if (transition.types.has('step')) follow(row, before, keys)
     else if (LEVELS.some(type => transition.types.has(type))) ride(before, keys)
   }, () => {})
@@ -140,25 +152,28 @@ function ride(before: readonly Key[], after: readonly Key[]): void {
 /**
  * A key under each spine beside the open column, saying ← or → (LB or RB on a pad) steps there. Placed on the
  * stack's lean line rather than the strip's centre, in a layer of its own so the clipped spines render unchanged.
+ * The page's step, unless the row brings its own.
  */
-export function StepKeys({ row }: { row: RefObject<HTMLDivElement | null> }) {
-  const step = useSyncExternalStore(subscribe, () => stepper)
+export function StepKeys({ row, step: own }: { row: RefObject<HTMLDivElement | null>; step?: ((dir: Dir) => void) | undefined }) {
+  const registered = useSyncExternalStore(subscribe, () => stepper)
+  const step = own ?? registered
+  const owner: Owner = own ?? 'page'
   const pad = usePadMode()
   const [keys, setKeys] = useState<readonly Key[]>([])
 
   useLayoutEffect(
     () => () => {
-      notice()
-      laidOut = { keys: [], row: null }
+      notice(owner)
+      laidOut.set(owner, NONE)
     },
-    [],
+    [owner],
   )
 
   useLayoutEffect(() => {
     const el = row.current
     if (!el || !step) {
-      notice()
-      laidOut = { keys: [], row: el }
+      notice(owner)
+      laidOut.set(owner, { keys: [], row: el })
       return setKeys(keys => (keys.length === 0 ? keys : []))
     }
     const open = [...el.children].find(c => c.classList.contains(worlds.world!) && !c.classList.contains(worlds.spine!))
@@ -185,8 +200,8 @@ export function StepKeys({ row }: { row: RefObject<HTMLDivElement | null> }) {
           y: Math.round(y),
         }
       })
-      notice()
-      laidOut = { keys: next, row: el }
+      notice(owner)
+      laidOut.set(owner, { keys: next, row: el })
       setKeys(keys => (JSON.stringify(keys) === JSON.stringify(next) ? keys : next))
     }
 
