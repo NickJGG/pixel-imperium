@@ -1,10 +1,10 @@
-import { type CSSProperties, useEffect, useState } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { PARTY_SEATS, type PartyInvite, type PartySeat, type PartyState } from '@pixel-imperium/protocol'
 import { useAccount } from '../account.ts'
 import { SlotFace } from '../campaign/PuzzleSlot.tsx'
 import { addFriend, useFriends } from '../friends/friends-store.ts'
-import { PeopleIcon, PlayWithParty, SignInButtons, useAcceptInvite } from '../party/PartyCard.tsx'
+import { PeopleIcon, PlayWithParty, SignInButtons, mayPlayWithParty, useAcceptInvite } from '../party/PartyCard.tsx'
 import { party, usePartyView, usePlayOffer } from '../party/party-store.ts'
 import { usePuzzlePlace } from '../party/puzzle-place.ts'
 import { SEAT_NAMES, initialOf, seatColor, seatLabel } from '../party/seats.ts'
@@ -21,7 +21,7 @@ const NOTICE: Record<PartyNotice['kind'], string> = {
 }
 
 /**
- * The menu's Party column: what's waiting, what the Party is solving, its link and the Host's tools, then its seats.
+ * The menu's Party column: what's waiting, what the Party is solving, its seats, its link, then the ways out.
  * Out of a Party, a way to start one; signed out and in none, sign-in. Invites stay here until answered, after their
  * slip has tucked away.
  */
@@ -52,7 +52,7 @@ export function PartyColumn() {
         <Invite key={invite.id} invite={invite} inParty={current !== null} />
       ))}
       {current ? (
-        <Live view={view} current={current} />
+        <Live view={view} current={current} offer={offer} />
       ) : account ? (
         <>
           <p className={styles.blurb}>Solve puzzles together, up to four of you. Invite friends, or share the party’s link with anyone.</p>
@@ -72,7 +72,7 @@ export function PartyColumn() {
           </div>
         </>
       )}
-      {offer && (
+      {!current && offer && (
         <div className={styles.actions}>
           <PlayWithParty puzzleId={offer} size="compact" />
         </div>
@@ -100,40 +100,11 @@ function Invite({ invite, inParty }: { invite: PartyInvite; inParty: boolean }) 
   )
 }
 
-function Live({ view, current }: { view: PartyView; current: PartyState }) {
+function Live({ view, current, offer }: { view: PartyView; current: PartyState; offer: string | null }) {
   const host = view.you === current.host
-  const hostSeat = current.seats.find(s => s.seat === current.host)
   return (
     <>
-      {view.started ? (
-        <div className={styles.note}>
-          <span>
-            <b>@{view.started.by}</b> started <b>{view.started.title}</b>
-          </span>
-          <Link to="/play/$id" params={{ id: view.started.puzzleId }} data-variant="paper" data-size="compact">
-            Join
-          </Link>
-          <button type="button" data-variant="flat" data-size="compact" onClick={() => party.dismissStarted()}>
-            Later
-          </button>
-        </div>
-      ) : current.puzzle ? (
-        <Solving puzzle={current.puzzle} away={view.grid !== current.puzzle.id} />
-      ) : (
-        <div className={styles.now}>
-          <span className={styles.nowText}>
-            <small>Not on a puzzle</small>
-            {host ? (
-              <span>
-                Open any puzzle and press <b>Play with party</b>.
-              </span>
-            ) : (
-              <span>Waiting for {hostSeat ? seatLabel(hostSeat) : 'the Host'} to pick a puzzle.</span>
-            )}
-          </span>
-        </div>
-      )}
-      <Actions host={host} code={current.code} />
+      <Now view={view} current={current} offer={host && offer && mayPlayWithParty(view, offer) ? offer : null} />
       <ul className={styles.seats}>
         {Array.from({ length: PARTY_SEATS }, (_, n) => {
           const s = current.seats.find(seat => seat.seat === n)
@@ -152,38 +123,137 @@ function Live({ view, current }: { view: PartyView; current: PartyState }) {
           )
         })}
       </ul>
+      <Share host={host} code={current.code} />
+      <Exits host={host} />
     </>
   )
 }
 
-function Solving({ puzzle, away }: { puzzle: { id: string; title: string }; away: boolean }) {
-  const place = usePuzzlePlace(puzzle.id)
-  const { storage } = useAccount()
+/**
+ * The Party's puzzle, always as a tinted block. `offer` is the Host's own puzzle when it isn't the Party's: then the
+ * Party's sits over it, with a way to bring the Party along.
+ */
+function Now({ view, current, offer }: { view: PartyView; current: PartyState; offer: string | null }) {
+  const puzzle = current.puzzle
+  const join = (id: string) => (
+    <Link to="/play/$id" params={{ id }} data-variant="paper" data-size="compact">
+      Join
+    </Link>
+  )
+  if (offer) {
+    return (
+      <div className={styles.now}>
+        {puzzle ? (
+          <PuzzleRow id={puzzle.id} title={puzzle.title} label="Party">
+            {join(puzzle.id)}
+          </PuzzleRow>
+        ) : (
+          <EmptyRow>
+            <small>Party</small>
+            <span>No puzzle yet</span>
+          </EmptyRow>
+        )}
+        <span className={styles.arrow} aria-hidden="true">
+          ↑
+        </span>
+        <Offer puzzleId={offer} />
+      </div>
+    )
+  }
+  if (view.started) {
+    return (
+      <div className={styles.now}>
+        <PuzzleRow id={view.started.puzzleId} title={view.started.title}>
+          {join(view.started.puzzleId)}
+          <button type="button" data-variant="flat" data-size="compact" onClick={() => party.dismissStarted()}>
+            Later
+          </button>
+        </PuzzleRow>
+      </div>
+    )
+  }
+  if (puzzle) {
+    return (
+      <div className={styles.now}>
+        <PuzzleRow id={puzzle.id} title={puzzle.title} where>
+          {view.grid !== puzzle.id && join(puzzle.id)}
+        </PuzzleRow>
+      </div>
+    )
+  }
+  const hostSeat = current.seats.find(s => s.seat === current.host)
   return (
     <div className={styles.now}>
-      <span className={styles.thumb} aria-hidden="true">
-        {place && <SlotFace puzzle={place.puzzle} number={place.number ?? 0} storage={storage} />}
-      </span>
-      <span className={styles.nowText}>
-        <small>Solving</small>
-        <b>
-          {place?.number && `#${place.number} `}
-          {puzzle.title}
-        </b>
-        {place?.where && <small>{place.where}</small>}
-      </span>
-      {away && (
-        <Link to="/play/$id" params={{ id: puzzle.id }} data-variant="paper" data-size="compact">
-          Back to {puzzle.title}
-        </Link>
-      )}
+      <EmptyRow>
+        {view.you === current.host ? (
+          <span>
+            Open any puzzle and press <b>Play with party</b>.
+          </span>
+        ) : (
+          <span>Waiting for {hostSeat ? seatLabel(hostSeat) : 'the Host'} to pick a puzzle.</span>
+        )}
+      </EmptyRow>
     </div>
   )
 }
 
-function Actions({ host, code }: { host: boolean; code: string }) {
+function Offer({ puzzleId }: { puzzleId: string }) {
+  const place = usePuzzlePlace(puzzleId)
+  return (
+    <>
+      <PuzzleRow id={puzzleId} label="You" />
+      <div className={`${styles.actions} ${styles.wide}`}>
+        <PlayWithParty
+          puzzleId={puzzleId}
+          size="compact"
+          label={place ? `Play ${place.puzzle.title} with party` : 'Play with party'}
+        />
+      </div>
+    </>
+  )
+}
+
+interface PuzzleRowProps {
+  id: string
+  /** Until the puzzle's place loads, or in place of its own. */
+  title?: string
+  label?: string
+  where?: boolean
+  children?: ReactNode
+}
+
+function PuzzleRow({ id, title, label, where, children }: PuzzleRowProps) {
+  const place = usePuzzlePlace(id)
+  const { storage } = useAccount()
+  return (
+    <div className={styles.nowRow}>
+      <span className={styles.thumb} aria-hidden="true">
+        {place && <SlotFace puzzle={place.puzzle} number={place.number ?? 0} storage={storage} />}
+      </span>
+      <span className={styles.nowText}>
+        {label && <small>{label}</small>}
+        <b>
+          {place?.number && `#${place.number} `}
+          {title ?? place?.puzzle.title}
+        </b>
+        {where && place?.where && <small>{place.where}</small>}
+      </span>
+      {children && <span className={styles.nowButtons}>{children}</span>}
+    </div>
+  )
+}
+
+function EmptyRow({ children }: { children: ReactNode }) {
+  return (
+    <div className={styles.nowRow}>
+      <span className={styles.thumb} aria-hidden="true" />
+      <span className={styles.nowText}>{children}</span>
+    </div>
+  )
+}
+
+function Share({ host, code }: { host: boolean; code: string }) {
   const [copied, setCopied] = useState(false)
-  const [ending, setEnding] = useState(false)
   useEffect(() => {
     if (!copied) return
     const timer = setTimeout(() => setCopied(false), 2000)
@@ -194,18 +264,6 @@ function Actions({ host, code }: { host: boolean; code: string }) {
       () => setCopied(true),
       () => {},
     )
-  if (ending) {
-    return (
-      <div className={styles.actions} role="group" aria-label="End party">
-        <button type="button" data-variant="danger" data-size="compact" onClick={() => party.end()}>
-          End for everyone
-        </button>
-        <button type="button" data-variant="flat" data-size="compact" onClick={() => setEnding(false)}>
-          Cancel
-        </button>
-      </div>
-    )
-  }
   return (
     <div className={styles.actions}>
       <button type="button" data-size="compact" title={`${location.host}/party/${code}`} onClick={() => void copy()}>
@@ -223,7 +281,26 @@ function Actions({ host, code }: { host: boolean; code: string }) {
           New link
         </button>
       )}
-      <span className={styles.gap} />
+    </div>
+  )
+}
+
+function Exits({ host }: { host: boolean }) {
+  const [ending, setEnding] = useState(false)
+  if (ending) {
+    return (
+      <div className={`${styles.actions} ${styles.foot}`} role="group" aria-label="End party">
+        <button type="button" data-variant="danger" data-size="compact" onClick={() => party.end()}>
+          End for everyone
+        </button>
+        <button type="button" data-variant="flat" data-size="compact" onClick={() => setEnding(false)}>
+          Cancel
+        </button>
+      </div>
+    )
+  }
+  return (
+    <div className={`${styles.actions} ${styles.foot}`}>
       {host && (
         <button type="button" data-variant="flat" data-size="compact" onClick={() => setEnding(true)}>
           End party

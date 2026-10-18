@@ -1,5 +1,6 @@
 /* What the menu's Friends and Party columns hold, in ink on their papers (Menu.module.css's `.sheet`). */
 .column {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -38,8 +39,14 @@
   gap: var(--space-2);
 }
 
-.gap {
+.wide > * {
   flex: 1;
+}
+
+/* The ways out, at the paper's foot. */
+.foot {
+  margin-top: auto;
+  justify-content: flex-end;
 }
 
 /* An invite, a request or a notice: a tinted strip with its answers. */
@@ -189,32 +196,34 @@
   font-size: var(--fs-14);
 }
 
-/* What the Party is solving, or that it isn't yet. */
+/* What the Party is solving, or that it isn't yet; for a Host elsewhere, over their own puzzle. */
 .now {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
+  display: grid;
+  gap: var(--space-2);
   padding: var(--space-3);
   border-radius: var(--r-lg);
-  background: color-mix(in srgb, var(--card) 70%, transparent);
-  box-shadow: 0 3px 0 var(--shade);
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
+}
+
+.nowRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .thumb {
   flex: none;
-  width: 48px;
+  width: 44px;
 }
 
 .thumb:empty {
-  height: 48px;
+  height: 44px;
   border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
-/* Wide enough for a title to fit; past that the Back link drops to its own row. */
 .nowText {
-  flex: 1 1 12rem;
+  flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -231,8 +240,16 @@
   overflow-wrap: anywhere;
 }
 
-.now > a {
-  margin-left: auto;
+.nowButtons {
+  flex: none;
+  display: flex;
+  gap: var(--space-1);
+}
+
+.arrow {
+  padding-left: 15px; /* token-exempt: centres it under the 44px thumb */
+  font: 700 var(--fs-14) / 1 var(--font-ui);
+  color: var(--ink-soft);
 }
 
 .seatDot {

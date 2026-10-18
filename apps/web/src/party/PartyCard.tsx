@@ -33,13 +33,14 @@ interface PlayProps {
   className?: string | undefined
   variant?: 'primary' | 'flat' | undefined
   size?: 'compact' | undefined
+  label?: string | undefined
 }
 
 /**
  * The Host's (or, in no Party, anyone's): the Party solves this puzzle next, from the Host's own grid, which is why
  * this device's latest goes to the server first. Signed out, it asks for sign-in.
  */
-export function PlayWithParty({ puzzleId, className, variant = 'primary', size }: PlayProps) {
+export function PlayWithParty({ puzzleId, className, variant = 'primary', size, label = 'Play with party' }: PlayProps) {
   const { account, sync } = useAccount()
   const view = usePartyView()
   const [starting, setStarting] = useState(false)
@@ -55,7 +56,7 @@ export function PlayWithParty({ puzzleId, className, variant = 'primary', size }
     return (
       <Link to="/" search={{ open: 'signin' }} className={className} data-variant={variant} data-size={size}>
         <PeopleIcon />
-        Play with party
+        {label}
       </Link>
     )
   }
@@ -74,7 +75,7 @@ export function PlayWithParty({ puzzleId, className, variant = 'primary', size }
       onClick={() => void start()}
     >
       <PeopleIcon />
-      Play with party
+      {label}
     </button>
   )
 }
