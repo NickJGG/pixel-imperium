@@ -95,9 +95,16 @@ export function PlayPage() {
   const data = route.useLoaderData()
   const previewConquest = route.useSearch().conquest === true
   const account = useAccount()
-  const { party, grid } = usePartyView()
+  const { party, grid, you } = usePartyView()
   // The Party's puzzle is its shared grid here, once the server has sent it.
   const shared = data.kind !== 'retired' && party?.puzzle?.id === data.puzzle.id
+  const hosted = shared && you === party.host && account.account !== null ? party.puzzle!.id : null
+  // The grid's progress lands in the Host's account, so leaving it re-reads that. Here, not in PartyPlay: a re-read
+  // remounts PartyPlay (keyed by generation), and its own unmount re-reading would loop.
+  useEffect(() => {
+    if (!hosted) return
+    return () => void refreshAccount()
+  }, [hosted])
   if (shared && grid !== data.puzzle.id) return <PlaySkeleton />
   if (data.kind === 'retired') {
     return (
@@ -197,10 +204,7 @@ function unopenedContext(puzzle: PuzzleClues, campaign: Campaign, province: Prov
   }
 }
 
-/**
- * The Party's shared grid. The server keeps it, and the grid's progress is the Host's who started it, so a Host
- * leaving it re-reads their account to see it.
- */
+/** The Party's shared grid. The server keeps it, as the progress of the Host who started it. */
 function PartyPlay({
   puzzle,
   account,
@@ -214,12 +218,6 @@ function PartyPlay({
   own: boolean
   next: NextPick | null
 }) {
-  const { party, you } = usePartyView()
-  const hosting = you !== null && you === party?.host && account.account !== null
-  useEffect(() => {
-    if (!hosting) return
-    return () => void refreshAccount()
-  }, [hosting])
   const userId = account.storage.userId
   const storage = useMemo(() => new PartyStorage(userId, () => partySession.grid(), own), [userId, own])
   return (
