@@ -9,7 +9,7 @@ export interface MenuState {
   open: boolean
   /** The crown or party sticker that opened it, where focus goes back to; null from M. */
   opener: HTMLElement | null
-  /** The column open in it: Menu from a crown or M, Party from the party sticker. */
+  /** The column open in it: Menu from a crown or M, Party or Friends from the party sticker. */
   column: MenuColumn
 }
 

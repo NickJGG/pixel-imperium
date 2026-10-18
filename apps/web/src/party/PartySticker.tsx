@@ -9,15 +9,16 @@ import { type Slip, pickSlip, slipItem, tucks, waiting } from './slip.ts'
 import styles from './Party.module.css'
 
 /**
- * The party sticker, opening the menu on Party. Out of a Party it's the people icon with the count of Friends online;
- * in one, the players' faces and the seats taken. Signed out it's the icon alone. A pink dot marks anything waiting.
- * `small` is the phone's, in its top line and thumb bar.
+ * The party sticker, opening the menu on Party, or on Friends out of one. Out of a Party it's the people icon with the
+ * count of Friends online; in one, the players' faces and the seats taken. Signed out it's the icon alone. A pink dot
+ * marks anything waiting. `small` is the phone's, in its top line and thumb bar.
  */
 export function PartySticker({ small = false }: { small?: boolean }) {
   const { account } = useAccount()
   const view = usePartyView()
   const { open, column } = useMenu()
   const current = view.party
+  const target = current ? 'party' : 'friends'
   const online = account ? view.friends.filter(f => f.online).length : 0
   const dot = waiting(view)
   const label = [
@@ -34,8 +35,8 @@ export function PartySticker({ small = false }: { small?: boolean }) {
       data-bare={(!current && online === 0) || undefined}
       aria-label={label}
       aria-haspopup="dialog"
-      aria-expanded={open && column === 'party'}
-      onClick={e => toggleMenu(e.currentTarget, 'party')}
+      aria-expanded={open && column === target}
+      onClick={e => toggleMenu(e.currentTarget, target)}
     >
       {current ? (
         <>
